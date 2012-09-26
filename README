@@ -1,1 +1,5 @@
-FIXME
+QtHybris
+--------
+
+  QtHybris is a Qt Platform Abstraction (QPA) plugin for Qt5 using
+  libhybris and the compatibility layer from lp:aal+.
