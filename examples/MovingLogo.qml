@@ -40,12 +40,12 @@ Item {
                 loops: Animation.Infinite
                 NumberAnimation {
                     from: 0.0; to: surface.width - logo.width
-                    duration: Math.floor(lerp(Math.random(), 1750, 2750))
+                    duration: Math.floor(lerp(Math.random(), 1750, 2250))
                     easing.type: Easing.InOutSine;
                 }
                 NumberAnimation {
                     to: 0.0; from: surface.width - logo.width
-                    duration: Math.floor(lerp(Math.random(), 1250, 1750))
+                    duration: Math.floor(lerp(Math.random(), 1750, 2250))
                     easing.type: Easing.InOutSine;
                 }
             }
