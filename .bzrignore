@@ -8,3 +8,5 @@ src/plugins/Makefile
 src/plugins/platforms/Makefile
 src/plugins/platforms/hybris/Makefile
 src/plugins/platforms/hybris/main.moc
+examples/hybris-qmlscene
+examples/moc_hybrisqmlscene.cpp
