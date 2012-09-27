@@ -16,15 +16,16 @@ QT_BEGIN_NAMESPACE
 
 QHybrisIntegration::QHybrisIntegration()
     : mFontDb(new QGenericUnixFontDatabase())
-    , mScreen(new QHybrisScreen(EGL_DEFAULT_DISPLAY)) {
+    , mScreen(new QHybrisScreen()) {
   screenAdded(mScreen);
 #ifdef QHYBRIS_DEBUG
-  qWarning("QHybrisIntegration\n");
+  qWarning("created QHybrisIntegration\n");
 #endif
 }
 
 QHybrisIntegration::~QHybrisIntegration() {
   delete mScreen;
+  delete mFontDb;  // FIXME(loicm) minimalegl doesn't delete the font database.
 }
 
 bool QHybrisIntegration::hasCapability(QPlatformIntegration::Capability cap) const {
@@ -53,7 +54,10 @@ QPlatformBackingStore* QHybrisIntegration::createPlatformBackingStore(QWindow* w
 }
 
 QPlatformOpenGLContext* QHybrisIntegration::createPlatformOpenGLContext(
-    QOpenGLContext *context) const {
+    QOpenGLContext* context) const {
+#ifdef QHYBRIS_DEBUG
+  qWarning("QHybrisIntegration::createPlatformOpenGLContext %p\n", context);
+#endif
   return static_cast<QHybrisScreen*>(context->screen()->handle())->platformContext();
 }
 

@@ -19,7 +19,7 @@ class QHybrisWindow : public QPlatformWindow {
   WId winId() const;
 
  private:
-  WId m_winid;
+  WId m_winId;
 };
 
 QT_END_NAMESPACE

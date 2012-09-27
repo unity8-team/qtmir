@@ -9,9 +9,9 @@ QT_BEGIN_NAMESPACE
 QHybrisWindow::QHybrisWindow(QWindow* w)
     : QPlatformWindow(w) {
   static int serialNo = 0;
-  m_winid  = ++serialNo;
+  m_winId = ++serialNo;
 #ifdef QHYBRIS_DEBUG
-  qWarning("QEglWindow %p: %p 0x%x\n", this, w, uint(m_winid));
+  qWarning("QEglWindow %p: %p 0x%x\n", this, w, uint(m_winId));
 #endif
 
   QRect screenGeometry(screen()->availableGeometry());
@@ -28,7 +28,7 @@ void QHybrisWindow::setGeometry(const QRect&) {
 }
 
 WId QHybrisWindow::winId() const {
-  return m_winid;
+  return m_winId;
 }
 
 QT_END_NAMESPACE

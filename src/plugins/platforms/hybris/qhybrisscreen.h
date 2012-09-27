@@ -10,11 +10,13 @@
 
 QT_BEGIN_NAMESPACE
 
+struct SfClient;
+struct SfSurface;
 class QPlatformOpenGLContext;
 
 class QHybrisScreen : public QPlatformScreen {
  public:
-  QHybrisScreen(EGLNativeDisplayType display);
+  QHybrisScreen();
   ~QHybrisScreen();
 
   QRect geometry() const;
@@ -30,6 +32,8 @@ class QHybrisScreen : public QPlatformScreen {
   QRect m_geometry;
   int m_depth;
   QImage::Format m_format;
+  SfClient* m_sfClient;
+  SfSurface* m_sfSurface;
   QPlatformOpenGLContext* m_platformContext;
   EGLDisplay m_dpy;
   EGLSurface m_surface;

@@ -3,3 +3,13 @@ QtHybris
 
   QtHybris is a Qt Platform Abstraction (QPA) plugin for Qt5 using
   libhybris and the compatibility layer from lp:aal+.
+
+
+Environment variables
+---------------------
+
+  - QT_QPA_HYBRIS_SWAPINTERVAL: Specifies the required swap interval
+                                as an integer. 1 by default.
+
+  - QT_QPA_HYBRIS_MULTISAMPLE: Enables multisampling with using 4
+                               samples per fragment.

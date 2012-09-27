@@ -10,9 +10,15 @@ QT_BEGIN_NAMESPACE
 QHybrisBackingStore::QHybrisBackingStore(QWindow* window)
     : QPlatformBackingStore(window)
     , m_context(new QOpenGLContext) {
+#ifdef QHYBRIS_DEBUG
+  qWarning("creating QHybrisBackingStore");
+#endif
   m_context->setFormat(window->requestedFormat());
   m_context->setScreen(window->screen());
   m_context->create();
+#ifdef QHYBRIS_DEBUG
+  qWarning("created QHybrisBackingStore");
+#endif
 }
 
 QHybrisBackingStore::~QHybrisBackingStore() {
