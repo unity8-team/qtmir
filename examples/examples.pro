@@ -10,7 +10,7 @@ SOURCES += hybrisqmlscene.cpp
 LIBS += -L/media/data/dev/projects/display_server/chroot/aal+/hybris -lhybris_ics
 LIBS += -lrt
 
-OTHER_FILES += *.qml logo.png
+OTHER_FILES += *.qml logo.png noise.png
 
 target.path = $$[QT_INSTALL_EXAMPLES]/qthtbris
 sources.path = $$[QT_INSTALL_EXAMPLES]/qthybris
