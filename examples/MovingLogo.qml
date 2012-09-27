@@ -10,6 +10,8 @@ Item {
     width: 720
     height: 1280
 
+    property real seed
+
     function lerp(x, a, b) {
         return ((1.0 - x) * a) + (x * b);
     }
@@ -26,12 +28,12 @@ Item {
                 loops: Animation.Infinite
                 NumberAnimation {
                     from: 0.0; to: surface.height - logo.height
-                    duration: Math.floor(lerp(Math.random(), 2250, 2750))
+                    duration: Math.floor(lerp(Math.random(surface.seed), 2250.0, 2750.0))
                     easing.type: Easing.InOutSine;
                 }
                 NumberAnimation {
                     to: 0.0; from: surface.height - logo.height
-                    duration: Math.floor(lerp(Math.random(), 2250, 2750))
+                    duration: Math.floor(lerp(Math.random(surface.seed), 2250.0, 2750.0))
                     easing.type: Easing.InOutSine;
                 }
             }
@@ -40,15 +42,20 @@ Item {
                 loops: Animation.Infinite
                 NumberAnimation {
                     from: 0.0; to: surface.width - logo.width
-                    duration: Math.floor(lerp(Math.random(), 1750, 2250))
+                    duration: Math.floor(lerp(Math.random(surface.seed), 1750.0, 2250.0))
                     easing.type: Easing.InOutSine;
                 }
                 NumberAnimation {
                     to: 0.0; from: surface.width - logo.width
-                    duration: Math.floor(lerp(Math.random(), 1750, 2250))
+                    duration: Math.floor(lerp(Math.random(surface.seed), 1750.0, 2250.0))
                     easing.type: Easing.InOutSine;
                 }
             }
         }
+    }
+
+    Component.onCompleted: {
+        var d = new Date();
+        surface.seed = d.getSeconds();
     }
 }
