@@ -76,10 +76,11 @@ QHybrisScreen::QHybrisScreen()
 }
 
 QHybrisScreen::~QHybrisScreen() {
-  // FIXME(loicm) Clean up m_sfClient and m_sfSurface once supported.
   if (m_surface)
     eglDestroySurface(m_dpy, m_surface);
   eglTerminate(m_dpy);
+  delete m_sfSurface;
+  delete m_sfClient;
 }
 
 void QHybrisScreen::createAndSetPlatformContext() const {
