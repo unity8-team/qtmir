@@ -2,27 +2,22 @@
 // FIXME(loicm) Add copyright notice here.
 
 #include "qhybrisbackingstore.h"
+#include "qhybrislogging.h"
 #include <QtGui/QOpenGLContext>
 #include <QtGui/QOpenGLPaintDevice>
-
-QT_BEGIN_NAMESPACE
 
 QHybrisBackingStore::QHybrisBackingStore(QWindow* window)
     : QPlatformBackingStore(window)
     , m_context(new QOpenGLContext) {
-#ifdef QHYBRIS_DEBUG
-  qWarning("creating QHybrisBackingStore");
-#endif
   m_context->setFormat(window->requestedFormat());
   m_context->setScreen(window->screen());
   m_context->create();
-#ifdef QHYBRIS_DEBUG
-  qWarning("created QHybrisBackingStore");
-#endif
+  DLOG("created QHybrisBackingStore (this=%p, window=%p)", this, window);
 }
 
 QHybrisBackingStore::~QHybrisBackingStore() {
   delete m_context;
+  DLOG("destroyed QHybrisBackingStore");
 }
 
 QPaintDevice *QHybrisBackingStore::paintDevice() {
@@ -32,26 +27,24 @@ QPaintDevice *QHybrisBackingStore::paintDevice() {
 void QHybrisBackingStore::flush(QWindow* window, const QRegion& region, const QPoint& offset) {
   Q_UNUSED(region);
   Q_UNUSED(offset);
-
-#ifdef QHYBRIS_DEBUG
-  qWarning("QEglBackingStore::flush %p", window);
-#endif
+  DLOG("QHybrisBackingStore::flush (this=%p, window=%p)", this, window);
   m_context->swapBuffers(window);
 }
 
-void QHybrisBackingStore::beginPaint(const QRegion& ) {
+void QHybrisBackingStore::beginPaint(const QRegion&) {
+  DLOG("QHybrisBackingStore::beginPaint (this=%p)", this);
   window()->setSurfaceType(QSurface::OpenGLSurface);
   m_context->makeCurrent(window());
   m_device = new QOpenGLPaintDevice(window()->size());
 }
 
 void QHybrisBackingStore::endPaint() {
+  DLOG("QHybrisBackingStore::endPaint (this=%p)", this);
   delete m_device;
 }
 
 void QHybrisBackingStore::resize(const QSize& size, const QRegion& staticContents) {
   Q_UNUSED(size);
   Q_UNUSED(staticContents);
+  DLOG("QHybrisBackingStore::resize (this=%p)", this);
 }
-
-QT_END_NAMESPACE

@@ -8,25 +8,28 @@ DESTDIR = ../../../../plugins/platforms
 # Avoid X11 header collision (from the minimalegl plugin)
 DEFINES += MESA_EGL_NO_X11_HEADERS
 
-# Uncomment for debugging logs.
-# DEFINES += QHYBRIS_DEBUG
+# Comment for debugging logs.
+DEFINES += QHYBRIS_DEBUG
 
 SOURCES = main.cpp \
           qhybrisintegration.cpp \
           qhybriswindow.cpp \
           qhybrisbackingstore.cpp \
-          qhybrisscreen.cpp
+          qhybrisscreen.cpp \
+          qhybrisinput.cpp
 
-HEADERS = qhybrisintegration.h \
+HEADERS = qhybrislogging.h \
+          qhybrisintegration.h \
           qhybriswindow.h \
           qhybrisbackingstore.h \
-          qhybrisscreen.h
+          qhybrisscreen.h \
+          qhybrisinput.h
 
 CONFIG += egl qpa/genericunixfontdatabase
 
 # FIXME(loicm) Remove hard-coded paths by adding pkg-config support to aal+.
 INCLUDEPATH += /media/data/dev/projects/display_server/chroot/aal+/compat
-LIBS += -L/media/data/dev/projects/display_server/chroot/aal+/hybris -lsf
+LIBS += -L/media/data/dev/projects/display_server/chroot/aal+/hybris -lsf -lis
 
 OTHER_FILES += hybris.json
 

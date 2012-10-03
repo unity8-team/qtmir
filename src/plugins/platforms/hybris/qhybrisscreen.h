@@ -8,8 +8,6 @@
 #include <QtCore/QTextStream>
 #include <EGL/egl.h>
 
-QT_BEGIN_NAMESPACE
-
 struct SfClient;
 struct SfSurface;
 class QPlatformOpenGLContext;
@@ -38,7 +36,5 @@ class QHybrisScreen : public QPlatformScreen {
   EGLDisplay m_dpy;
   EGLSurface m_surface;
 };
-
-QT_END_NAMESPACE
 
 #endif  // QHYBRISSCREEN_H

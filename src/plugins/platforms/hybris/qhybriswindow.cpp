@@ -2,22 +2,17 @@
 // FIXME(loicm) Add copyright notice here.
 
 #include "qhybriswindow.h"
+#include "qhybrislogging.h"
 #include <qpa/qwindowsysteminterface.h>
-
-QT_BEGIN_NAMESPACE
 
 QHybrisWindow::QHybrisWindow(QWindow* w)
     : QPlatformWindow(w) {
   static int serialNo = 0;
   m_winId = ++serialNo;
-#ifdef QHYBRIS_DEBUG
-  qWarning("QEglWindow %p: %p 0x%x\n", this, w, uint(m_winId));
-#endif
-
   QRect screenGeometry(screen()->availableGeometry());
-  if (w->geometry() != screenGeometry) {
+  if (w->geometry() != screenGeometry)
     QWindowSystemInterface::handleGeometryChange(w, screenGeometry);
-  }
+  DLOG("created QHybrisWindow (this=%p)", this);
 }
 
 void QHybrisWindow::setGeometry(const QRect&) {
@@ -25,10 +20,10 @@ void QHybrisWindow::setGeometry(const QRect&) {
   QRect rect(screen()->availableGeometry());
   QWindowSystemInterface::handleGeometryChange(window(), rect);
   QPlatformWindow::setGeometry(rect);
+  DLOG("deleted QHybrisWindow");
 }
 
 WId QHybrisWindow::winId() const {
+  DLOG("QHybrisWindow::winId");
   return m_winId;
 }
-
-QT_END_NAMESPACE

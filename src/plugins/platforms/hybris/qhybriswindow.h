@@ -9,8 +9,6 @@
 #include <qpa/qplatformwindow.h>
 #include <QtWidgets/QWidget>
 
-QT_BEGIN_NAMESPACE
-
 class QHybrisWindow : public QPlatformWindow {
  public:
   QHybrisWindow(QWindow* w);
@@ -26,7 +24,5 @@ class QHybrisWindow : public QPlatformWindow {
  private:
   WId m_winId;
 };
-
-QT_END_NAMESPACE
 
 #endif  // QHYBRISWINDOW_H

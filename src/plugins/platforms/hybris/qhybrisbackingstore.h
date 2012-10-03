@@ -6,8 +6,6 @@
 
 #include <qpa/qplatformbackingstore.h>
 
-QT_BEGIN_NAMESPACE
-
 class QOpenGLContext;
 class QOpenGLPaintDevice;
 
@@ -26,7 +24,5 @@ class QHybrisBackingStore : public QPlatformBackingStore {
   QOpenGLContext* m_context;
   QOpenGLPaintDevice* m_device;
 };
-
-QT_END_NAMESPACE
 
 #endif  // QHYBRISBACKINGSTORE_H

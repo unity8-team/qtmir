@@ -8,8 +8,8 @@
 #include <qpa/qplatformintegration.h>
 #include <qpa/qplatformscreen.h>
 
-QT_BEGIN_HEADER
-QT_BEGIN_NAMESPACE
+class QAbstractEventDispatcher;
+class QHybrisInput;
 
 class QHybrisIntegration : public QPlatformIntegration {
  public:
@@ -17,19 +17,24 @@ class QHybrisIntegration : public QPlatformIntegration {
   ~QHybrisIntegration();
 
   bool hasCapability(QPlatformIntegration::Capability cap) const;
+  QAbstractEventDispatcher* guiThreadEventDispatcher() const;
   QPlatformWindow* createPlatformWindow(QWindow* window) const;
+  QPlatformWindow* createPlatformWindow(QWindow* window);
   QPlatformBackingStore* createPlatformBackingStore(QWindow* window) const;
   QPlatformOpenGLContext* createPlatformOpenGLContext(QOpenGLContext* context) const;
   QPlatformFontDatabase* fontDatabase() const;
-  QAbstractEventDispatcher* guiThreadEventDispatcher() const;
   QVariant styleHint(QPlatformIntegration::StyleHint hint) const;
 
-private:
+  // FIXME(loicm) Only one window can be created for now, remove that function when adding support
+  //     for multiple windows.
+  QPlatformWindow* platformWindow() const { return mWindow; }
+
+ private:
+  QAbstractEventDispatcher* mEventDispatcher;
+  QPlatformWindow* mWindow;
   QPlatformFontDatabase* mFontDb;
   QPlatformScreen* mScreen;
+  QHybrisInput* mInput;
 };
-
-QT_END_NAMESPACE
-QT_END_HEADER
 
 #endif  // QHYBRISINTEGRATION_H
