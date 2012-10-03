@@ -44,10 +44,10 @@ static void usage() {
   fprintf(stdout, "Usage: hybris-qmlscene <filename>\n");
 }
 
-static void logger(QtMsgType type, const char* msg) {
-  Q_UNUSED(type);
-  Q_UNUSED(msg);
-}
+// static void logger(QtMsgType type, const char* msg) {
+//   Q_UNUSED(type);
+//   Q_UNUSED(msg);
+// }
 
 static void signalHandler(int signal) {
   switch (signal) {
@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Swallow all the messages to avoid cluttering the standard output.
-  qInstallMsgHandler(logger);
+  // qInstallMsgHandler(logger);
 
   // Ensure the libs are loaded and threading is all setup.
   init_hybris();
