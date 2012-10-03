@@ -7,7 +7,9 @@ Build-Depends:  debhelper (>= 8.0.0),
                 libudev-dev,
                 libgles2-mesa-dev,
                 libegl1-mesa-dev,
-                libhybris-dev
+                libhybris-dev,
+                libglib2.0-dev,
+                zlib1g-dev
 Standards-Version: 3.9.3
 Section: libs
 
