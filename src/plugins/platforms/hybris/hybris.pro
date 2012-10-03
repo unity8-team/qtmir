@@ -9,7 +9,7 @@ DESTDIR = ../../../../plugins/platforms
 DEFINES += MESA_EGL_NO_X11_HEADERS
 
 # Comment for debugging logs.
-DEFINES += QHYBRIS_DEBUG
+# DEFINES += QHYBRIS_DEBUG
 
 SOURCES = main.cpp \
           qhybrisintegration.cpp \
