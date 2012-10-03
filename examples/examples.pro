@@ -7,8 +7,7 @@ HEADERS += hybrisqmlscene.h
 SOURCES += hybrisqmlscene.cpp
 
 # FIXME(loicm) Remove hard-coded paths by adding pkg-config support to aal+.
-LIBS += -L/media/data/dev/projects/display_server/chroot/aal+/hybris -lhybris_ics
-LIBS += -lrt
+LIBS += -lhybris_ics -lrt
 
 OTHER_FILES += *.qml logo.png noise.png
 

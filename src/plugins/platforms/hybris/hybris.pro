@@ -28,8 +28,8 @@ HEADERS = qhybrislogging.h \
 CONFIG += egl qpa/genericunixfontdatabase
 
 # FIXME(loicm) Remove hard-coded paths by adding pkg-config support to aal+.
-INCLUDEPATH += /media/data/dev/projects/display_server/chroot/aal+/compat
-LIBS += -L/media/data/dev/projects/display_server/chroot/aal+/hybris -lsf -lis
+INCLUDEPATH += /usr/include/hybris
+LIBS += -lsf -lis
 
 OTHER_FILES += hybris.json
 

@@ -1,0 +1,11 @@
+qthybris (0.2) quantal; urgency=low
+
+  * Correctly install artwork and examples
+
+ -- Ricardo Mendoza <ricardo.mendoza@canonical.com>  Wed, 03 Oct 2012 13:39:27 +0000
+
+qthybris (0.1) quantal; urgency=low
+
+  * Initial release
+
+ -- Ricardo Mendoza <ricardo.mendoza@canonical.com>  Fri, 28 Sep 2012 10:28:22 -0430
