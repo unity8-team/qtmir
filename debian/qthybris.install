@@ -1,0 +1,2 @@
+examples/*.qml /opt/qt5/examples/
+examples/*.png /opt/qt5/examples/
