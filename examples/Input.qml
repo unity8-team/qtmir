@@ -10,6 +10,9 @@ Item {
     width: 720
     height: 1280
 
+    // Needed for the key events to be emitted.
+    focus: true
+
     MultiPointTouchArea {
         anchors.fill: parent
         touchPoints: [
@@ -18,6 +21,7 @@ Item {
         ]
     }
 
+    // Touch elements.
     Text {
         font.family: "Ubuntu Mono"; font.weight: Font.Bold; font.pixelSize: 100; color: "#9F9F00"
         x: point5.x + 50; y: point5.y - 200
@@ -48,4 +52,27 @@ Item {
         visible: point1.pressed
         text: "1"
     }
+
+    // Key elements
+    Text {
+        id: keyText
+        font.family: "Ubuntu Mono"; font.weight: Font.Bold; font.pixelSize: 75; color: "#DFDFDF"
+        anchors.centerIn: surface
+        visible: false
+        text: ""
+    }
+    Keys.onPressed: {
+        if (event.key == Qt.Key_PowerOff)
+            keyText.text = "Power Off";
+        else if (event.key == Qt.Key_VolumeUp)
+            keyText.text = "Volume Up";
+        else if (event.key == Qt.Key_VolumeDown)
+            keyText.text = "Volume Down";
+        keyText.visible = true;
+    }
+    Keys.onReleased: {
+        keyText.visible = false;
+    }
+
+    Component.onCompleted: console.debug("onCompleted");
 }

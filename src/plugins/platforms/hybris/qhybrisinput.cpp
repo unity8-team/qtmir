@@ -102,6 +102,56 @@ void handleMotionEvent(Event* event, QHybrisInput* input) {
        touchPoints[5].state, touchPoints[6].state, touchPoints[7].state);
 }
 
+void handleKeyEvent(Event* event, QHybrisInput* input) {
+  // FIXME(loicm) We need to be able to retrieve the window from an event in order to support
+  //     multiple surfaces.
+  QPlatformWindow* window = input->mIntegration->platformWindow();
+  if (!window)
+    return;
+
+  int key = 0;
+#if defined(QHYBRIS_DEBUG)
+  const char* keyName;
+#endif
+
+  switch (event->details.key.key_code) {
+    case 24: {
+      key = Qt::Key_VolumeUp;
+#if defined(QHYBRIS_DEBUG)
+      keyName = static_cast<const char*>("VolumeUp");
+#endif
+      break;
+    }
+    case 25: {
+      key = Qt::Key_VolumeDown;
+#if defined(QHYBRIS_DEBUG)
+      keyName = static_cast<const char*>("VolumeDown");
+#endif
+      break;
+    }
+    case 26: {
+      key = Qt::Key_PowerOff;
+#if defined(QHYBRIS_DEBUG)
+      keyName = static_cast<const char*>("PowerOff");
+#endif
+      break;
+    }
+    default: {
+      return;
+    }
+  }
+
+  QEvent::Type type = (event->action == 0) ? QEvent::KeyPress : QEvent::KeyRelease;
+  QWindowSystemInterface::handleExtendedKeyEvent(
+      window->window(), event->details.key.event_time, type, key, Qt::NoModifier,
+      event->details.key.scan_code, event->details.key.key_code, 0);
+
+#if defined(QHYBRIS_DEBUG)
+  const char* stateName[] = { "pressed", "released" };
+  LOG("key state: %s %s", keyName, stateName[event->action]);
+#endif
+}
+
 void hybrisEventCallback(Event* event, void* context) {
   DLOG("hybrisEventCallback (event=%p, context=%p)", event, context);
   QHybrisInput* input = static_cast<QHybrisInput*>(context);
@@ -149,18 +199,17 @@ void hybrisEventCallback(Event* event, void* context) {
           event->details.key.repeat_count, event->details.key.down_time,
           event->details.key.event_time, event->details.key.is_system_key);
 #endif
-      // FIXME(loicm) Events for the buttons on the side of the phone, not sure if we should expose
-      //     them through multimedia keys or through the QPA native interface.
+      handleKeyEvent(event, input);
       break;
     }
 
     case HW_SWITCH_EVENT_TYPE: {
 #if (LOG_EVENTS == 1)
-      DLOG("HW_SWITCH device_id:%d source_id:%d action:%d flags:%d meta_state:%d event_time:%lld "
-           "policy_flags:%u switch_code:%d switch_value:%d\n", event->device_id, event->source_id,
-           event->action, event->flags, event->meta_state, event->details.hw_switch.event_time,
-           event->details.hw_switch.policy_flags, event->details.hw_switch.switch_code,
-           event->details.hw_switch.switch_value);
+      LOG("HW_SWITCH device_id:%d source_id:%d action:%d flags:%d meta_state:%d event_time:%lld "
+          "policy_flags:%u switch_code:%d switch_value:%d\n", event->device_id, event->source_id,
+          event->action, event->flags, event->meta_state, event->details.hw_switch.event_time,
+          event->details.hw_switch.policy_flags, event->details.hw_switch.switch_code,
+          event->details.hw_switch.switch_value);
 #endif
       // FIXME(loicm) Haven't received such type of events yet, not sure how to interpret them.
       break;
@@ -199,7 +248,9 @@ QHybrisInput::QHybrisInput(QHybrisIntegration* integration)
   mConfig.default_layer_for_touch_point_visualization = INT_MAX - 1;
   mListener.on_new_event = hybrisEventCallback;
   mListener.context = this;
+  DLOG("initializing input stack");
   android_input_stack_initialize(&mListener, &mConfig);
+  DLOG("starting input stack");
   android_input_stack_start();
 
   DLOG("created QHybrisInput (this=%p)", this);
@@ -208,9 +259,9 @@ QHybrisInput::QHybrisInput(QHybrisIntegration* integration)
 QHybrisInput::~QHybrisInput() {
   // Stop input stack.
   mStopping.fetchAndStoreRelease(1);
-  DLOG("Stopping input stack");
+  DLOG("stopping input stack");
   android_input_stack_stop();
-  DLOG("Shutting down input stack");
+  DLOG("shutting down input stack");
   android_input_stack_shutdown();
 
   // Clean up touch device and touch points.
