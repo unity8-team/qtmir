@@ -6,6 +6,5 @@ To do
     - window resizing
     - window restacking
     - "-fullscreen" support
-  - Add support for volume up/down and power off buttons on Maguro.
   - Fix the multitouch tracking bug when using more than 2 fingers.
   - Add support for legacy mouse event apps (showshoe).
