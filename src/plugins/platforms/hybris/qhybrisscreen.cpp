@@ -2,25 +2,56 @@
 // FIXME(loicm) Add copyright notice here.
 
 #include "qhybrisscreen.h"
-#include "qhybriswindow.h"
+#include "qhybriscontext.h"
 #include "qhybrislogging.h"
+#include <qpa/qplatformwindow.h>
 #include <QtPlatformSupport/private/qeglconvenience_p.h>
-#include <QtPlatformSupport/private/qeglplatformcontext_p.h>
 #include <surface_flinger/surface_flinger_compatibility_layer.h>
 
-class QHybrisContext : public QEGLPlatformContext {
- public:
-  QHybrisContext(const QSurfaceFormat& format, QPlatformOpenGLContext* share, EGLDisplay display,
-                 EGLenum eglApi = EGL_OPENGL_ES_API)
-      : QEGLPlatformContext(format, share, display, eglApi) {
-  }
+namespace {
 
-  EGLSurface eglSurfaceForPlatformSurface(QPlatformSurface* surface) {
-    QHybrisWindow* window = static_cast<QHybrisWindow*>(surface);
-    QHybrisScreen* screen = static_cast<QHybrisScreen*>(window->screen());
-    return screen->surface();
+#if defined(QHYBRIS_DEBUG)
+void printEglConfig(EGLDisplay display, EGLConfig config) {
+  static struct AttrInfo { EGLint attr; const char* name; } attrs[] = {
+    { EGL_BUFFER_SIZE, "EGL_BUFFER_SIZE" },
+    { EGL_ALPHA_SIZE, "EGL_ALPHA_SIZE" },
+    { EGL_BLUE_SIZE, "EGL_BLUE_SIZE" },
+    { EGL_GREEN_SIZE, "EGL_GREEN_SIZE" },
+    { EGL_RED_SIZE, "EGL_RED_SIZE" },
+    { EGL_DEPTH_SIZE, "EGL_DEPTH_SIZE" },
+    { EGL_STENCIL_SIZE, "EGL_STENCIL_SIZE" },
+    { EGL_CONFIG_CAVEAT, "EGL_CONFIG_CAVEAT" },
+    { EGL_CONFIG_ID, "EGL_CONFIG_ID" },
+    { EGL_LEVEL, "EGL_LEVEL" },
+    { EGL_MAX_PBUFFER_HEIGHT, "EGL_MAX_PBUFFER_HEIGHT" },
+    { EGL_MAX_PBUFFER_PIXELS, "EGL_MAX_PBUFFER_PIXELS" },
+    { EGL_MAX_PBUFFER_WIDTH, "EGL_MAX_PBUFFER_WIDTH" },
+    { EGL_NATIVE_RENDERABLE, "EGL_NATIVE_RENDERABLE" },
+    { EGL_NATIVE_VISUAL_ID, "EGL_NATIVE_VISUAL_ID" },
+    { EGL_NATIVE_VISUAL_TYPE, "EGL_NATIVE_VISUAL_TYPE" },
+    { EGL_SAMPLES, "EGL_SAMPLES" },
+    { EGL_SAMPLE_BUFFERS, "EGL_SAMPLE_BUFFERS" },
+    { EGL_SURFACE_TYPE, "EGL_SURFACE_TYPE" },
+    { EGL_TRANSPARENT_TYPE, "EGL_TRANSPARENT_TYPE" },
+    { EGL_TRANSPARENT_BLUE_VALUE, "EGL_TRANSPARENT_BLUE_VALUE" },
+    { EGL_TRANSPARENT_GREEN_VALUE, "EGL_TRANSPARENT_GREEN_VALUE" },
+    { EGL_TRANSPARENT_RED_VALUE, "EGL_TRANSPARENT_RED_VALUE" },
+    { EGL_BIND_TO_TEXTURE_RGB, "EGL_BIND_TO_TEXTURE_RGB" },
+    { EGL_BIND_TO_TEXTURE_RGBA, "EGL_BIND_TO_TEXTURE_RGBA" },
+    { EGL_MIN_SWAP_INTERVAL, "EGL_MIN_SWAP_INTERVAL" },
+    { EGL_MAX_SWAP_INTERVAL, "EGL_MAX_SWAP_INTERVAL" },
+    {-1, 0}
+  };
+  LOG("EGL configuration attibutes:");
+  for (int index = 0; attrs[index].attr != -1; index++) {
+    EGLint value;
+    if (eglGetConfigAttrib(display, config, attrs[index].attr, &value))
+      LOG("  %s: %d", attrs[index].name, (int) value);
   }
-};
+}
+#endif
+
+}  // Anonymous namespace.
 
 QHybrisScreen::QHybrisScreen()
     : m_depth(32)
@@ -92,7 +123,9 @@ void QHybrisScreen::createAndSetPlatformContext() {
   }
 
   EGLConfig config = q_configFromGLFormat(m_dpy, platformFormat);
-  // q_printEglConfig(m_dpy, config);
+#if defined(QHYBRIS_DEBUG)
+  printEglConfig(m_dpy, config);
+#endif
   w = sf_get_display_width(SURFACE_FLINGER_DEFAULT_DISPLAY_ID);
   h = sf_get_display_height(SURFACE_FLINGER_DEFAULT_DISPLAY_ID);
   SfSurfaceCreationParameters parameters = { 0, 0, w, h, -1, INT_MAX, 1.0f, false, "qthybris" };
@@ -103,7 +136,7 @@ void QHybrisScreen::createAndSetPlatformContext() {
   ASSERT(m_surface != EGL_NO_SURFACE);
   DLOG("created EGL surface %p", m_surface);
 
-  m_platformContext = new QHybrisContext(platformFormat, 0, m_dpy);
+  m_platformContext = new QHybrisContext(platformFormat, m_dpy);
 
   eglQuerySurface(m_dpy, m_surface, EGL_WIDTH, &w);
   eglQuerySurface(m_dpy, m_surface, EGL_HEIGHT, &h);
