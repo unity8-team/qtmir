@@ -29,7 +29,7 @@ QHybrisScreen::QHybrisScreen()
     , m_sfSurface(0)
     , m_platformContext(0)
     , m_surface(0) {
-  // Initialize and surface flinger compatibility library and EGL.
+  // Initialize surface flinger compatibility library and EGL.
   m_sfClient = sf_client_create_full(false);
   ASSERT(m_sfClient != NULL);
   bool eglBindApiResult = eglBindAPI(EGL_OPENGL_ES_API);
