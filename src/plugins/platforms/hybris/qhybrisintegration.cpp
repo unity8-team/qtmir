@@ -20,7 +20,7 @@ QHybrisIntegration::QHybrisIntegration()
     , mWindow(NULL)
     , mFontDb(new QGenericUnixFontDatabase())
     , mScreen(new QHybrisScreen())
-    , mInput(new QHybrisInput(this)) {
+    , mInput(NULL) {
   QGuiApplicationPrivate::instance()->setEventDispatcher(mEventDispatcher);
   screenAdded(mScreen);
   DLOG("created QHybrisIntegration (this=%p)", this);
@@ -66,6 +66,12 @@ QPlatformWindow* QHybrisIntegration::createPlatformWindow(QWindow* window) {
   ASSERT(mWindow == NULL);  // FIXME(loicm) Multiple windows are not supported yet.
   mWindow = new QHybrisWindow(window);
   mWindow->requestActivateWindow();
+
+  // Input initialization is delayed after the creation of the first window in order to avoid a
+  // deadlock in the input stack.
+  if (mInput == NULL)
+    mInput = new QHybrisInput(this);
+
   return mWindow;
 }
 
