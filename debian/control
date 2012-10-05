@@ -10,8 +10,8 @@ Build-Depends:  debhelper (>= 8.0.0),
                 libhybris-dev,
                 libglib2.0-dev,
                 zlib1g-dev,
-                libfontconfig1,
-                libfreetype6
+                libfontconfig1-dev,
+                libfreetype6-dev
 Standards-Version: 3.9.3
 Section: libs
 
