@@ -8,8 +8,8 @@ QtHybris
 Environment variables
 ---------------------
 
-  - QT_QPA_HYBRIS_SWAPINTERVAL: Specifies the required swap interval
-                                as an integer. 1 by default.
+  - QTHYBRIS_SWAPINTERVAL: Specifies the required swap interval as an
+                           integer. 1 by default.
 
-  - QT_QPA_HYBRIS_MULTISAMPLE: Enables multisampling with using 4
-                               samples per fragment.
+  - QTHYBRIS_MULTISAMPLE: Enables multisampling with using 4 samples
+                          per fragment.
