@@ -13,6 +13,7 @@ DEFINES += MESA_EGL_NO_X11_HEADERS
 
 SOURCES = main.cpp \
           qhybrisintegration.cpp \
+          qhybriscontext.cpp \
           qhybriswindow.cpp \
           qhybrisbackingstore.cpp \
           qhybrisscreen.cpp \
@@ -20,6 +21,7 @@ SOURCES = main.cpp \
 
 HEADERS = qhybrislogging.h \
           qhybrisintegration.h \
+          qhybriscontext.h \
           qhybriswindow.h \
           qhybrisbackingstore.h \
           qhybrisscreen.h \
