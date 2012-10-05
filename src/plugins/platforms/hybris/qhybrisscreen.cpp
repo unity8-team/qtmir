@@ -60,7 +60,7 @@ QHybrisScreen::QHybrisScreen()
     , m_sfSurface(0)
     , m_platformContext(0)
     , m_surface(0) {
-  // Initialize and surface flinger compatibility library and EGL.
+  // Initialize surface flinger compatibility library and EGL.
   m_sfClient = sf_client_create_full(false);
   ASSERT(m_sfClient != NULL);
   bool eglBindApiResult = eglBindAPI(EGL_OPENGL_ES_API);
@@ -74,7 +74,7 @@ QHybrisScreen::QHybrisScreen()
 
   // Set swap interval.
   int swapInterval = 1;
-  QByteArray swapIntervalString = qgetenv("QT_QPA_HYBRIS_SWAPINTERVAL");
+  QByteArray swapIntervalString = qgetenv("QTHYBRIS_SWAPINTERVAL");
   if (!swapIntervalString.isEmpty()) {
     bool ok;
     swapInterval = swapIntervalString.toInt(&ok);
@@ -117,7 +117,7 @@ void QHybrisScreen::createAndSetPlatformContext() {
   platformFormat.setBlueBufferSize(8);
   m_depth = 32;
   m_format = QImage::Format_RGB32;
-  if (!qEnvironmentVariableIsEmpty("QT_QPA_HYBRIS_MULTISAMPLE")) {
+  if (!qEnvironmentVariableIsEmpty("QTHYBRIS_MULTISAMPLE")) {
     platformFormat.setSamples(4);
     DLOG("setting MSAA to 4 samples");
   }

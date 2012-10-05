@@ -1,4 +1,10 @@
 To do
 -----
 
-  - Qt 4.8 support
+  - Add support for more windowing operations:
+    - multiple windows
+    - window resizing
+    - window restacking
+    - "-fullscreen" support
+  - Fix the multitouch tracking bug when using more than 2 fingers.
+  - Add support for legacy mouse event apps (showshoe).
