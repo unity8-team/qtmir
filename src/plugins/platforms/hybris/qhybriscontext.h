@@ -12,6 +12,7 @@ class QHybrisContext : public QPlatformOpenGLContext {
  public:
   QHybrisContext(const QSurfaceFormat& format, EGLDisplay display);
   ~QHybrisContext();
+
   bool makeCurrent(QPlatformSurface* surface);
   void doneCurrent();
   void swapBuffers(QPlatformSurface* surface);

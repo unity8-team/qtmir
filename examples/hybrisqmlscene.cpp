@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <ctime>
 #include <csignal>
+#include <cfloat>
 
 extern "C" void init_hybris();
 
@@ -13,7 +14,7 @@ Scene::Scene(QObject* parent)
     : QObject(parent)
     , frames_(0)
     , sum_(0.0)
-    , min_(std::numeric_limits<double>::max())
+    , min_(DBL_MAX)
     , max_(0.0) {
 }
 

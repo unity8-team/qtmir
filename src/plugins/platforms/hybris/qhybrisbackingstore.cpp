@@ -8,39 +8,36 @@
 
 QHybrisBackingStore::QHybrisBackingStore(QWindow* window)
     : QPlatformBackingStore(window)
-    , m_context(new QOpenGLContext) {
-  m_context->setFormat(window->requestedFormat());
-  m_context->setScreen(window->screen());
-  m_context->create();
-  DLOG("created QHybrisBackingStore (this=%p, window=%p)", this, window);
+    , context_(new QOpenGLContext) {
+  context_->setFormat(window->requestedFormat());
+  context_->setScreen(window->screen());
+  context_->create();
+  DLOG("QHybrisBackingStore::QHybrisBackingStore (this=%p, window=%p)", this, window);
 }
 
 QHybrisBackingStore::~QHybrisBackingStore() {
-  delete m_context;
-  DLOG("destroyed QHybrisBackingStore");
-}
-
-QPaintDevice *QHybrisBackingStore::paintDevice() {
-  return m_device;
+  DLOG("QHybrisBackingStore::~QHybrisBackingStore");
+  delete context_;
 }
 
 void QHybrisBackingStore::flush(QWindow* window, const QRegion& region, const QPoint& offset) {
   Q_UNUSED(region);
   Q_UNUSED(offset);
   DLOG("QHybrisBackingStore::flush (this=%p, window=%p)", this, window);
-  m_context->swapBuffers(window);
+  context_->swapBuffers(window);
 }
 
-void QHybrisBackingStore::beginPaint(const QRegion&) {
+void QHybrisBackingStore::beginPaint(const QRegion& region) {
+  Q_UNUSED(region);
   DLOG("QHybrisBackingStore::beginPaint (this=%p)", this);
   window()->setSurfaceType(QSurface::OpenGLSurface);
-  m_context->makeCurrent(window());
-  m_device = new QOpenGLPaintDevice(window()->size());
+  context_->makeCurrent(window());
+  device_ = new QOpenGLPaintDevice(window()->size());
 }
 
 void QHybrisBackingStore::endPaint() {
   DLOG("QHybrisBackingStore::endPaint (this=%p)", this);
-  delete m_device;
+  delete device_;
 }
 
 void QHybrisBackingStore::resize(const QSize& size, const QRegion& staticContents) {

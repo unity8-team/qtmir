@@ -12,9 +12,10 @@
 class QHybrisWindow : public QPlatformWindow {
  public:
   QHybrisWindow(QWindow* w);
+  ~QHybrisWindow();
 
   void setGeometry(const QRect&);
-  WId winId() const;
+  WId winId() const { return winId_; }
 
   // FIXME(loicm) Add opacity and stacking support.
   // void setOpacity(qreal level);
@@ -22,7 +23,7 @@ class QHybrisWindow : public QPlatformWindow {
   // void lower();
 
  private:
-  WId m_winId;
+  WId winId_;
 };
 
 #endif  // QHYBRISWINDOW_H

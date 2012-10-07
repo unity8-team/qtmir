@@ -15,14 +15,14 @@ class QHybrisInput {
   QHybrisInput(QHybrisIntegration* integration);
   ~QHybrisInput();
 
-  QList<QWindowSystemInterface::TouchPoint> mTouchPoints;
-  QTouchDevice* mTouchDevice;
-  QHybrisIntegration* mIntegration;
-  QAtomicInt mStopping;
+  QList<QWindowSystemInterface::TouchPoint> touchPoints_;
+  QTouchDevice* touchDevice_;
+  QHybrisIntegration* integration_;
+  QAtomicInt stopping_;
 
  private:
-  InputStackConfiguration mConfig;
-  AndroidEventListener mListener;
+  InputStackConfiguration config_;
+  AndroidEventListener listener_;
 };
 
 #endif  // QHYBRISINPUT_H

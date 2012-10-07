@@ -53,7 +53,7 @@ Item {
         text: "1"
     }
 
-    // Key elements
+    // Key elements.
     Text {
         id: keyText
         font.family: "Ubuntu Mono"; font.weight: Font.Bold; font.pixelSize: 75; color: "#DFDFDF"
@@ -73,6 +73,4 @@ Item {
     Keys.onReleased: {
         keyText.visible = false;
     }
-
-    Component.onCompleted: console.debug("onCompleted");
 }
