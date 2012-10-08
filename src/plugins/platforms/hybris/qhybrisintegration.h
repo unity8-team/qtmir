@@ -17,24 +17,24 @@ class QHybrisIntegration : public QPlatformIntegration {
   ~QHybrisIntegration();
 
   bool hasCapability(QPlatformIntegration::Capability cap) const;
-  QAbstractEventDispatcher* guiThreadEventDispatcher() const;
+  QAbstractEventDispatcher* guiThreadEventDispatcher() const { return eventDispatcher_; }
   QPlatformWindow* createPlatformWindow(QWindow* window) const;
   QPlatformWindow* createPlatformWindow(QWindow* window);
   QPlatformBackingStore* createPlatformBackingStore(QWindow* window) const;
   QPlatformOpenGLContext* createPlatformOpenGLContext(QOpenGLContext* context) const;
-  QPlatformFontDatabase* fontDatabase() const;
+  QPlatformFontDatabase* fontDatabase() const { return fontDb_; }
   QVariant styleHint(QPlatformIntegration::StyleHint hint) const;
 
   // FIXME(loicm) Only one window can be created for now, remove that function when adding support
   //     for multiple windows.
-  QPlatformWindow* platformWindow() const { return mWindow; }
+  QPlatformWindow* platformWindow() const { return window_; }
 
  private:
-  QAbstractEventDispatcher* mEventDispatcher;
-  QPlatformWindow* mWindow;
-  QPlatformFontDatabase* mFontDb;
-  QPlatformScreen* mScreen;
-  QHybrisInput* mInput;
+  QAbstractEventDispatcher* eventDispatcher_;
+  QPlatformWindow* window_;
+  QPlatformFontDatabase* fontDb_;
+  QPlatformScreen* screen_;
+  QHybrisInput* input_;
 };
 
 #endif  // QHYBRISINTEGRATION_H

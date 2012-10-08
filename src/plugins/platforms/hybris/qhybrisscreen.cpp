@@ -54,22 +54,20 @@ void printEglConfig(EGLDisplay display, EGLConfig config) {
 }  // Anonymous namespace.
 
 QHybrisScreen::QHybrisScreen()
-    : m_depth(32)
-    , m_format(QImage::Format_Invalid)
-    , m_sfClient(0)
-    , m_sfSurface(0)
-    , m_platformContext(0)
-    , m_surface(0) {
+    : depth_(32)
+    , format_(QImage::Format_Invalid)
+    , sfClient_(NULL)
+    , sfSurface_(NULL)
+    , platformContext_(NULL)
+    , eglSurface_(NULL) {
   // Initialize surface flinger compatibility library and EGL.
-  m_sfClient = sf_client_create_full(false);
-  ASSERT(m_sfClient != NULL);
-  bool eglBindApiResult = eglBindAPI(EGL_OPENGL_ES_API);
-  ASSERT(eglBindApiResult == true);
-  m_dpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-  ASSERT(m_dpy != EGL_NO_DISPLAY);
   EGLint major, minor;
-  bool eglInitializeResult = eglInitialize(m_dpy, &major, &minor);
-  ASSERT(eglInitializeResult == true);
+  sfClient_ = sf_client_create_full(false);
+  ASSERT(sfClient_ != NULL);
+  ASSERT(eglBindAPI(EGL_OPENGL_ES_API) == EGL_TRUE);
+  eglDisplay_ = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  ASSERT(eglDisplay_ != EGL_NO_DISPLAY);
+  ASSERT(eglInitialize(eglDisplay_, &major, &minor) == EGL_TRUE);
   DLOG("Initialized EGL version %d.%d", major, minor);
 
   // Set swap interval.
@@ -82,20 +80,20 @@ QHybrisScreen::QHybrisScreen()
       swapInterval = 1;
   }
   DLOG("setting swap interval to %d", swapInterval);
-  eglSwapInterval(m_dpy, swapInterval);
+  eglSwapInterval(eglDisplay_, swapInterval);
 
-  DLOG("created QEglScreen (this=%p)", this);
+  DLOG("QEglScreen::QEglScreen (this=%p)", this);
 }
 
 QHybrisScreen::~QHybrisScreen() {
-  if (m_surface)
-    eglDestroySurface(m_dpy, m_surface);
-  eglTerminate(m_dpy);
+  DLOG("QHybrisScreen::~QHybrisScreen");
+  if (eglSurface_)
+    eglDestroySurface(eglDisplay_, eglSurface_);
+  eglTerminate(eglDisplay_);
   // FIXME(loicm) These are invalid since the structs are forward declarated, we need a way to clean
   //     these handles correctly.
-  // delete m_sfSurface;
-  // delete m_sfClient;
-  DLOG("deleted QHybrisScreen (this=%p)", this);
+  // delete sfSurface_;
+  // delete sfClient_;
 }
 
 void QHybrisScreen::createAndSetPlatformContext() const {
@@ -115,58 +113,58 @@ void QHybrisScreen::createAndSetPlatformContext() {
   platformFormat.setRedBufferSize(8);
   platformFormat.setGreenBufferSize(8);
   platformFormat.setBlueBufferSize(8);
-  m_depth = 32;
-  m_format = QImage::Format_RGB32;
+  depth_ = 32;
+  format_ = QImage::Format_RGB32;
   if (!qEnvironmentVariableIsEmpty("QTHYBRIS_MULTISAMPLE")) {
     platformFormat.setSamples(4);
     DLOG("setting MSAA to 4 samples");
   }
 
-  EGLConfig config = q_configFromGLFormat(m_dpy, platformFormat);
+  EGLConfig config = q_configFromGLFormat(eglDisplay_, platformFormat);
 #if defined(QHYBRIS_DEBUG)
-  printEglConfig(m_dpy, config);
+  printEglConfig(eglDisplay_, config);
 #endif
   w = sf_get_display_width(SURFACE_FLINGER_DEFAULT_DISPLAY_ID);
   h = sf_get_display_height(SURFACE_FLINGER_DEFAULT_DISPLAY_ID);
   SfSurfaceCreationParameters parameters = { 0, 0, w, h, -1, INT_MAX, 1.0f, false, "qthybris" };
-  m_sfSurface = sf_surface_create(m_sfClient, &parameters);
-  ASSERT(m_sfSurface != NULL);
-  EGLNativeWindowType nativeWindow = sf_surface_get_egl_native_window(m_sfSurface);
-  m_surface = eglCreateWindowSurface(m_dpy, config, nativeWindow, NULL);
-  ASSERT(m_surface != EGL_NO_SURFACE);
-  DLOG("created EGL surface %p", m_surface);
+  sfSurface_ = sf_surface_create(sfClient_, &parameters);
+  ASSERT(sfSurface_ != NULL);
+  EGLNativeWindowType nativeWindow = sf_surface_get_egl_native_window(sfSurface_);
+  eglSurface_ = eglCreateWindowSurface(eglDisplay_, config, nativeWindow, NULL);
+  ASSERT(eglSurface_ != EGL_NO_SURFACE);
+  DLOG("created EGL surface %p", eglSurface_);
 
-  m_platformContext = new QHybrisContext(platformFormat, m_dpy);
+  platformContext_ = new QHybrisContext(platformFormat, eglDisplay_);
 
-  eglQuerySurface(m_dpy, m_surface, EGL_WIDTH, &w);
-  eglQuerySurface(m_dpy, m_surface, EGL_HEIGHT, &h);
-  m_geometry = QRect(0, 0, w, h);
+  eglQuerySurface(eglDisplay_, eglSurface_, EGL_WIDTH, &w);
+  eglQuerySurface(eglDisplay_, eglSurface_, EGL_HEIGHT, &h);
+  geometry_ = QRect(0, 0, w, h);
 }
 
 QRect QHybrisScreen::geometry() const {
   DLOG("QHybrisScreen::geometry (this=%p)", this);
-  if (m_geometry.isNull())
+  if (geometry_.isNull())
     createAndSetPlatformContext();
-  return m_geometry;
+  return geometry_;
 }
 
 int QHybrisScreen::depth() const {
   DLOG("QHybrisScreen::depth (this=%p)", this);
-  return m_depth;
+  return depth_;
 }
 
 QImage::Format QHybrisScreen::format() const {
   DLOG("QHybrisScreen::format (this=%p)", this);
-  if (m_format == QImage::Format_Invalid)
+  if (format_ == QImage::Format_Invalid)
     createAndSetPlatformContext();
-  return m_format;
+  return format_;
 }
 
 QPlatformOpenGLContext *QHybrisScreen::platformContext() const {
   DLOG("QHybrisScreen::platformContext (this=%p)", this);
-  if (!m_platformContext) {
+  if (!platformContext_) {
     QHybrisScreen* screen = const_cast<QHybrisScreen*>(this);
     screen->createAndSetPlatformContext();
   }
-  return m_platformContext;
+  return platformContext_;
 }

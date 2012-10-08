@@ -8,22 +8,22 @@
 QHybrisWindow::QHybrisWindow(QWindow* w)
     : QPlatformWindow(w) {
   static int serialNo = 0;
-  m_winId = ++serialNo;
+  winId_ = ++serialNo;
   QRect screenGeometry(screen()->availableGeometry());
   if (w->geometry() != screenGeometry)
     QWindowSystemInterface::handleGeometryChange(w, screenGeometry);
-  DLOG("created QHybrisWindow (this=%p)", this);
+  DLOG("QHybrisWindow::QHybrisWindow (this=%p)", this);
 }
 
-void QHybrisWindow::setGeometry(const QRect&) {
-  // We only support full-screen windows.
-  QRect rect(screen()->availableGeometry());
-  QWindowSystemInterface::handleGeometryChange(window(), rect);
-  QPlatformWindow::setGeometry(rect);
-  DLOG("deleted QHybrisWindow");
+QHybrisWindow::~QHybrisWindow() {
+  DLOG("QHybrisWindow::~QHybrisWindow");
 }
 
-WId QHybrisWindow::winId() const {
-  DLOG("QHybrisWindow::winId");
-  return m_winId;
+void QHybrisWindow::setGeometry(const QRect& rect) {
+  Q_UNUSED(rect);
+  DLOG("QHybrisWindow::setGeometry (this=%p)", this);
+  // We only support fullscreen windows.
+  QRect geometry(screen()->availableGeometry());
+  QWindowSystemInterface::handleGeometryChange(window(), geometry);
+  QPlatformWindow::setGeometry(geometry);
 }

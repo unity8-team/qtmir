@@ -5,7 +5,6 @@
 #define QHYBRISSCREEN_H
 
 #include <qpa/qplatformscreen.h>
-#include <QtCore/QTextStream>
 #include <EGL/egl.h>
 
 struct SfClient;
@@ -21,20 +20,20 @@ class QHybrisScreen : public QPlatformScreen {
   int depth() const;
   QImage::Format format() const;
   QPlatformOpenGLContext* platformContext() const;
-  EGLSurface surface() const { return m_surface; }
+  EGLSurface surface() const { return eglSurface_; }
 
  private:
   void createAndSetPlatformContext() const;
   void createAndSetPlatformContext();
 
-  QRect m_geometry;
-  int m_depth;
-  QImage::Format m_format;
-  SfClient* m_sfClient;
-  SfSurface* m_sfSurface;
-  QPlatformOpenGLContext* m_platformContext;
-  EGLDisplay m_dpy;
-  EGLSurface m_surface;
+  QRect geometry_;
+  int depth_;
+  QImage::Format format_;
+  SfClient* sfClient_;
+  SfSurface* sfSurface_;
+  QPlatformOpenGLContext* platformContext_;
+  EGLDisplay eglDisplay_;
+  EGLSurface eglSurface_;
 };
 
 #endif  // QHYBRISSCREEN_H

@@ -16,21 +16,21 @@
 #include <EGL/egl.h>
 
 QHybrisIntegration::QHybrisIntegration()
-    : mEventDispatcher(createUnixEventDispatcher())
-    , mWindow(NULL)
-    , mFontDb(new QGenericUnixFontDatabase())
-    , mScreen(new QHybrisScreen())
-    , mInput(NULL) {
-  QGuiApplicationPrivate::instance()->setEventDispatcher(mEventDispatcher);
-  screenAdded(mScreen);
-  DLOG("created QHybrisIntegration (this=%p)", this);
+    : eventDispatcher_(createUnixEventDispatcher())
+    , window_(NULL)
+    , fontDb_(new QGenericUnixFontDatabase())
+    , screen_(new QHybrisScreen())
+    , input_(NULL) {
+  QGuiApplicationPrivate::instance()->setEventDispatcher(eventDispatcher_);
+  screenAdded(screen_);
+  DLOG("QHybrisIntegration::QHybrisIntegration (this=%p)", this);
 }
 
 QHybrisIntegration::~QHybrisIntegration() {
-  delete mInput;
-  delete mScreen;
-  delete mFontDb;
-  DLOG("deleted QHybrisIntegration");
+  DLOG("QHybrisIntegration::~QHybrisIntegration");
+  delete input_;
+  delete screen_;
+  delete fontDb_;
 }
 
 bool QHybrisIntegration::hasCapability(QPlatformIntegration::Capability cap) const {
@@ -51,11 +51,6 @@ bool QHybrisIntegration::hasCapability(QPlatformIntegration::Capability cap) con
   }
 }
 
-QAbstractEventDispatcher *QHybrisIntegration::guiThreadEventDispatcher() const {
-  DLOG("QHybrisIntegration::guiThreadEventDispatcher (this=%p)", this);
-  return mEventDispatcher;
-}
-
 QPlatformWindow* QHybrisIntegration::createPlatformWindow(QWindow* window) const {
   DLOG("QHybrisIntegration::createPlatformWindow const (this=%p, window=%p)", this, window);
   return const_cast<QHybrisIntegration*>(this)->createPlatformWindow(window);
@@ -63,16 +58,17 @@ QPlatformWindow* QHybrisIntegration::createPlatformWindow(QWindow* window) const
 
 QPlatformWindow* QHybrisIntegration::createPlatformWindow(QWindow* window) {
   DLOG("QHybrisIntegration::createPlatformWindow (this=%p, window=%p)", this, window);
-  ASSERT(mWindow == NULL);  // FIXME(loicm) Multiple windows are not supported yet.
-  mWindow = new QHybrisWindow(window);
-  mWindow->requestActivateWindow();
+  ASSERT(window_ == NULL);  // FIXME(loicm) Multiple windows are not supported yet.
+  window_ = new QHybrisWindow(window);
+  window_->requestActivateWindow();
 
+  // FIXME(loicm) The deadlock still happens sometimes :/
   // Input initialization is delayed after the creation of the first window in order to avoid a
   // deadlock in the input stack.
-  if (mInput == NULL)
-    mInput = new QHybrisInput(this);
+  if (input_ == NULL)
+    input_ = new QHybrisInput(this);
 
-  return mWindow;
+  return window_;
 }
 
 QPlatformBackingStore* QHybrisIntegration::createPlatformBackingStore(QWindow* window) const {
@@ -84,11 +80,6 @@ QPlatformOpenGLContext* QHybrisIntegration::createPlatformOpenGLContext(
     QOpenGLContext* context) const {
   DLOG("QHybrisIntegration::createPlatformOpenGLContext (this=%p, context=%p)", this, context);
   return static_cast<QHybrisScreen*>(context->screen()->handle())->platformContext();
-}
-
-QPlatformFontDatabase* QHybrisIntegration::fontDatabase() const {
-  DLOG("QHybrisIntegration::fontDatabase (this=%p)", this);
-  return mFontDb;
 }
 
 QVariant QHybrisIntegration::styleHint(QPlatformIntegration::StyleHint hint) const {

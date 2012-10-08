@@ -6,7 +6,6 @@ TEMPLATE = app
 HEADERS += hybrisqmlscene.h
 SOURCES += hybrisqmlscene.cpp
 
-# FIXME(loicm) Remove hard-coded paths by adding pkg-config support to aal+.
 LIBS += -lhybris_ics -lrt
 
 OTHER_FILES += *.qml logo.png noise.png

@@ -14,15 +14,15 @@ class QHybrisBackingStore : public QPlatformBackingStore {
   QHybrisBackingStore(QWindow* window);
   ~QHybrisBackingStore();
 
-  QPaintDevice* paintDevice();
   void beginPaint(const QRegion&);
   void endPaint();
   void flush(QWindow* window, const QRegion& region, const QPoint& offset);
   void resize(const QSize& size, const QRegion& staticContents);
+  QPaintDevice* paintDevice() { return reinterpret_cast<QPaintDevice*>(device_); }
 
  private:
-  QOpenGLContext* m_context;
-  QOpenGLPaintDevice* m_device;
+  QOpenGLContext* context_;
+  QOpenGLPaintDevice* device_;
 };
 
 #endif  // QHYBRISBACKINGSTORE_H

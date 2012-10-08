@@ -13,14 +13,15 @@
 namespace {
 
 void handleMotionEvent(Event* event, QHybrisInput* input) {
+  DLOG("handleMotionEvent (event=%p, input=%p)", event, input);
   // FIXME(loicm) We need to be able to retrieve the window from an event in order to support
   //     multiple surfaces.
-  QPlatformWindow* window = input->mIntegration->platformWindow();
+  QPlatformWindow* window = input->integration_->platformWindow();
   if (!window)
     return;
 
   QRect geometry = window->geometry();
-  QList<QWindowSystemInterface::TouchPoint>& touchPoints = input->mTouchPoints;
+  QList<QWindowSystemInterface::TouchPoint>& touchPoints = input->touchPoints_;
   const unsigned int action = event->action;
   const float maxPressure = 1.28;
 
@@ -95,7 +96,7 @@ void handleMotionEvent(Event* event, QHybrisInput* input) {
   }
 
   QWindowSystemInterface::handleTouchEvent(
-      window->window(), event->details.motion.event_time, input->mTouchDevice, input->mTouchPoints);
+      window->window(), event->details.motion.event_time, input->touchDevice_, input->touchPoints_);
 
   DLOG("touch states: { %d, %d, %d, %d, %d, %d, %d, %d }", touchPoints[0].state,
        touchPoints[1].state, touchPoints[2].state, touchPoints[3].state, touchPoints[4].state,
@@ -103,9 +104,10 @@ void handleMotionEvent(Event* event, QHybrisInput* input) {
 }
 
 void handleKeyEvent(Event* event, QHybrisInput* input) {
+  DLOG("handleKeyEvent (event=%p, input=%p)", event, input);
   // FIXME(loicm) We need to be able to retrieve the window from an event in order to support
   //     multiple surfaces.
-  QPlatformWindow* window = input->mIntegration->platformWindow();
+  QPlatformWindow* window = input->integration_->platformWindow();
   if (!window)
     return;
 
@@ -156,7 +158,7 @@ void hybrisEventCallback(Event* event, void* context) {
   DLOG("hybrisEventCallback (event=%p, context=%p)", event, context);
   QHybrisInput* input = static_cast<QHybrisInput*>(context);
 
-  if (input->mStopping.testAndSetRelease(1, 1))
+  if (input->stopping_.testAndSetRelease(1, 1))
     return;
 
   switch (event->type) {
@@ -224,41 +226,43 @@ void hybrisEventCallback(Event* event, void* context) {
 }  // Anonymous namespace.
 
 QHybrisInput::QHybrisInput(QHybrisIntegration* integration)
-    : mTouchDevice(new QTouchDevice())
-    , mIntegration(integration)
-    , mStopping(0) {
+    : touchDevice_(new QTouchDevice())
+    , integration_(integration)
+    , stopping_(0) {
   // Initialize touch points.
-  mTouchPoints.reserve(MAX_POINTER_COUNT);
+  touchPoints_.reserve(MAX_POINTER_COUNT);
   for (unsigned int i = 0; i < MAX_POINTER_COUNT; i++) {
     QWindowSystemInterface::TouchPoint tp;
     tp.id = i;
     tp.state = Qt::TouchPointReleased;
-    mTouchPoints << tp;
+    touchPoints_ << tp;
   }
 
   // Initialize touch device.
-  mTouchDevice->setType(QTouchDevice::TouchScreen);
-  mTouchDevice->setCapabilities(
+  touchDevice_->setType(QTouchDevice::TouchScreen);
+  touchDevice_->setCapabilities(
       QTouchDevice::Position | QTouchDevice::Area | QTouchDevice::Pressure |
       QTouchDevice::NormalizedPosition);
-  QWindowSystemInterface::registerTouchDevice(mTouchDevice);
+  QWindowSystemInterface::registerTouchDevice(touchDevice_);
 
   // Initialize input stack.
-  mConfig.enable_touch_point_visualization = false;
-  mConfig.default_layer_for_touch_point_visualization = INT_MAX - 1;
-  mListener.on_new_event = hybrisEventCallback;
-  mListener.context = this;
+  config_.enable_touch_point_visualization = false;
+  config_.default_layer_for_touch_point_visualization = INT_MAX - 1;
+  listener_.on_new_event = hybrisEventCallback;
+  listener_.context = this;
   DLOG("initializing input stack");
-  android_input_stack_initialize(&mListener, &mConfig);
+  android_input_stack_initialize(&listener_, &config_);
   DLOG("starting input stack");
   android_input_stack_start();
 
-  DLOG("created QHybrisInput (this=%p)", this);
+  DLOG("QHybrisInput::QHybrisInput (this=%p)", this);
 }
 
 QHybrisInput::~QHybrisInput() {
+  DLOG("QHybrisInput::~QHybrisInput");
+
   // Stop input stack.
-  mStopping.fetchAndStoreRelease(1);
+  stopping_.fetchAndStoreRelease(1);
   DLOG("stopping input stack");
   android_input_stack_stop();
   DLOG("shutting down input stack");
@@ -266,8 +270,6 @@ QHybrisInput::~QHybrisInput() {
 
   // Clean up touch device and touch points.
   // FIXME(loicm) Generates a "Bus Error" assertion.
-  // delete mTouchDevice;
-  mTouchPoints.clear();
-
-  DLOG("deleted QHybrisInput");
+  // delete touchDevice_;
+  touchPoints_.clear();
 }
