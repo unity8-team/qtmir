@@ -355,8 +355,6 @@ void handleKeyEvent(Event* event, QHybrisInput* input) {
     modifiers |= Qt::AltModifier;
   if (kMetaState & ISCL_META_META_ON)
     modifiers |= Qt::MetaModifier;
-  if (kMetaState & ISCL_META_META_ON)
-    modifiers |= Qt::MetaModifier;
 
   QWindowSystemInterface::handleKeyEvent(
       window->window(), event->details.key.event_time, kEventType[event->action],
