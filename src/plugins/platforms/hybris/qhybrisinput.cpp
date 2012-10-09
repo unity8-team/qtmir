@@ -6,6 +6,7 @@
 #include "qhybrisintegration.h"
 #include "qhybrislogging.h"
 #include <QtCore/qglobal.h>
+#include <input/input_stack_compatibility_layer_flags_motion.h>
 #include <climits>
 
 #define LOG_EVENTS 0
@@ -20,87 +21,95 @@ void handleMotionEvent(Event* event, QHybrisInput* input) {
   if (!window)
     return;
 
-  QRect geometry = window->geometry();
+  // FIXME(loicm) Max pressure is device specific. That one is for the Samsung Galaxy Nexus. That
+  //     needs to be fixed as soon as the compat input lib adds query support.
+  const float kMaxPressure = 1.28;
+  const QRect kWindowGeometry = window->geometry();
   QList<QWindowSystemInterface::TouchPoint>& touchPoints = input->touchPoints_;
-  const unsigned int action = event->action;
-  const float maxPressure = 1.28;
 
-  if (action == 2) {
-    // Motion event.
-    int index = 0;
-    const int count = MAX_POINTER_COUNT;
-    for (int i = 0; i < count; i++) {
-      if (touchPoints[i].state != Qt::TouchPointReleased) {
-        const float x = event->details.motion.pointer_coordinates[index].x;
-        const float y = event->details.motion.pointer_coordinates[index].y;
-        if (touchPoints[i].area.center() != QPoint(x, y)) {
-          const float w = event->details.motion.pointer_coordinates[index].touch_major;
-          const float h = event->details.motion.pointer_coordinates[index].touch_minor;
-          const float p = event->details.motion.pointer_coordinates[index].pressure / maxPressure;
-          touchPoints[i].area = QRectF(x - (w / 2.0), y - (h / 2.0), w, h);
-          touchPoints[i].normalPosition = QPointF(x / geometry.width(), y / geometry.height());
-          touchPoints[i].pressure = p;
-          touchPoints[i].state = Qt::TouchPointMoved;
-        } else {
-          touchPoints[i].state = Qt::TouchPointStationary;
+  switch (event->action & ISCL_MOTION_EVENT_ACTION_MASK) {
+    case ISCL_MOTION_EVENT_ACTION_MOVE: {
+      int eventIndex = 0;
+      const int kPointerCount = event->details.motion.pointer_count;
+      for (int touchIndex = 0; eventIndex < kPointerCount; touchIndex++) {
+        if (touchPoints[touchIndex].state != Qt::TouchPointReleased) {
+          const float kX = event->details.motion.pointer_coordinates[eventIndex].x;
+          const float kY = event->details.motion.pointer_coordinates[eventIndex].y;
+          const float kW = event->details.motion.pointer_coordinates[eventIndex].touch_major;
+          const float kH = event->details.motion.pointer_coordinates[eventIndex].touch_minor;
+          const float kP = event->details.motion.pointer_coordinates[eventIndex].pressure;
+          touchPoints[touchIndex].area = QRectF(kX - (kW / 2.0), kY - (kH / 2.0), kW, kH);
+          touchPoints[touchIndex].normalPosition = QPointF(
+              kX / kWindowGeometry.width(), kY / kWindowGeometry.height());
+          touchPoints[touchIndex].pressure = kP / kMaxPressure;
+          touchPoints[touchIndex].state = Qt::TouchPointMoved;
+          eventIndex++;
         }
-        index++;
       }
+      break;
     }
 
-  } else if (~action & 0x4) {
-    // Single touch event.
-    const float x = event->details.motion.pointer_coordinates[0].x;
-    const float y = event->details.motion.pointer_coordinates[0].y;
-    const float w = event->details.motion.pointer_coordinates[0].touch_major;
-    const float h = event->details.motion.pointer_coordinates[0].touch_minor;
-    const float p = event->details.motion.pointer_coordinates[0].pressure / maxPressure;
-    if (action == 0) {
-      unsigned int index_ = 0;
-      while (touchPoints[index_].state != Qt::TouchPointReleased && index_ < MAX_POINTER_COUNT)
-        index_++;
-      touchPoints[index_].state = Qt::TouchPointPressed;
-      touchPoints[index_].area = QRectF(x - (w / 2.0), y - (h / 2.0), w, h);
-      touchPoints[index_].normalPosition = QPointF(x / geometry.width(), y / geometry.height());
-      touchPoints[index_].pressure = p;
-    } else if (action == 1) {
-      unsigned int index_ = 0;
-      while (touchPoints[index_].state == Qt::TouchPointReleased && index_ < MAX_POINTER_COUNT)
-        index_++;
-      touchPoints[index_].state = Qt::TouchPointReleased;
+    case ISCL_MOTION_EVENT_ACTION_DOWN: {
+      const int kTouchIndex = event->details.motion.pointer_coordinates[0].id;
+      const float kX = event->details.motion.pointer_coordinates[0].x;
+      const float kY = event->details.motion.pointer_coordinates[0].y;
+      const float kW = event->details.motion.pointer_coordinates[0].touch_major;
+      const float kH = event->details.motion.pointer_coordinates[0].touch_minor;
+      const float kP = event->details.motion.pointer_coordinates[0].pressure;
+      touchPoints[kTouchIndex].state = Qt::TouchPointPressed;
+      touchPoints[kTouchIndex].area = QRectF(kX - (kW / 2.0), kY - (kH / 2.0), kW, kH);
+      touchPoints[kTouchIndex].normalPosition = QPointF(
+          kX / kWindowGeometry.width(), kY / kWindowGeometry.height());
+      touchPoints[kTouchIndex].pressure = kP / kMaxPressure;
+      break;
     }
 
-  } else {
-    // Multi touch event.
-    const int index = (action >> 8) & 0xff;
-    const int pressed = action & 0x1;
-    if (pressed) {
-      unsigned int index_ = 0;
-      while (touchPoints[index_].state != Qt::TouchPointReleased && index_ < MAX_POINTER_COUNT)
-        index_++;
-      const float x = event->details.motion.pointer_coordinates[index].x;
-      const float y = event->details.motion.pointer_coordinates[index].y;
-      const float w = event->details.motion.pointer_coordinates[index].touch_major;
-      const float h = event->details.motion.pointer_coordinates[index].touch_minor;
-      const float p = event->details.motion.pointer_coordinates[index].pressure / maxPressure;
-      touchPoints[index_].state = Qt::TouchPointPressed;
-      touchPoints[index_].area = QRectF(x - (w / 2.0), y - (h / 2.0), w, h);
-      touchPoints[index_].normalPosition = QPointF(x / geometry.width(), y / geometry.height());
-      touchPoints[index_].pressure = p;
-    } else {
-      unsigned int index_ = index;
-      while (touchPoints[index_].state == Qt::TouchPointReleased && index_ < MAX_POINTER_COUNT)
-        index_++;
-      touchPoints[index_].state = Qt::TouchPointReleased;
+    case ISCL_MOTION_EVENT_ACTION_UP: {
+      const int kTouchIndex = event->details.motion.pointer_coordinates[0].id;
+      touchPoints[kTouchIndex].state = Qt::TouchPointReleased;
+      break;
+    }
+
+    case ISCL_MOTION_EVENT_ACTION_POINTER_DOWN: {
+      const int eventIndex = (event->action & ISCL_MOTION_EVENT_ACTION_POINTER_INDEX_MASK) >>
+          ISCL_MOTION_EVENT_ACTION_POINTER_INDEX_SHIFT;
+      const int kTouchIndex = event->details.motion.pointer_coordinates[eventIndex].id;
+      const float kX = event->details.motion.pointer_coordinates[eventIndex].x;
+      const float kY = event->details.motion.pointer_coordinates[eventIndex].y;
+      const float kW = event->details.motion.pointer_coordinates[eventIndex].touch_major;
+      const float kH = event->details.motion.pointer_coordinates[eventIndex].touch_minor;
+      const float kP = event->details.motion.pointer_coordinates[eventIndex].pressure;
+      touchPoints[kTouchIndex].state = Qt::TouchPointPressed;
+      touchPoints[kTouchIndex].area = QRectF(kX - (kW / 2.0), kY - (kH / 2.0), kW, kH);
+      touchPoints[kTouchIndex].normalPosition = QPointF(
+          kX / kWindowGeometry.width(), kY / kWindowGeometry.height());
+      touchPoints[kTouchIndex].pressure = kP / kMaxPressure;
+      break;
+    }
+
+    case ISCL_MOTION_EVENT_ACTION_POINTER_UP: {
+      const int kEventIndex = (event->action & ISCL_MOTION_EVENT_ACTION_POINTER_INDEX_MASK) >>
+          ISCL_MOTION_EVENT_ACTION_POINTER_INDEX_SHIFT;
+      const int kTouchIndex = event->details.motion.pointer_coordinates[kEventIndex].id;
+      touchPoints[kTouchIndex].state = Qt::TouchPointReleased;
+      break;
+    }
+
+    case ISCL_MOTION_EVENT_ACTION_CANCEL:
+    case ISCL_MOTION_EVENT_ACTION_OUTSIDE:
+    case ISCL_MOTION_EVENT_ACTION_HOVER_MOVE:
+    case ISCL_MOTION_EVENT_ACTION_SCROLL:
+    case ISCL_MOTION_EVENT_ACTION_HOVER_ENTER:
+    case ISCL_MOTION_EVENT_ACTION_HOVER_EXIT:
+    default: {
+      // FIXME(loicm) Never received such values yet. Let's see if people get these. Switch to
+      //     DNOT_REACHED() before releasing.
+      NOT_REACHED();
     }
   }
 
   QWindowSystemInterface::handleTouchEvent(
       window->window(), event->details.motion.event_time, input->touchDevice_, input->touchPoints_);
-
-  DLOG("touch states: { %d, %d, %d, %d, %d, %d, %d, %d }", touchPoints[0].state,
-       touchPoints[1].state, touchPoints[2].state, touchPoints[3].state, touchPoints[4].state,
-       touchPoints[5].state, touchPoints[6].state, touchPoints[7].state);
 }
 
 void handleKeyEvent(Event* event, QHybrisInput* input) {
@@ -174,7 +183,8 @@ void hybrisEventCallback(Event* event, void* context) {
           event->details.motion.down_time, event->details.motion.event_time,
           event->details.motion.pointer_count);
       for (size_t i = 0; i < event->details.motion.pointer_count; i++) {
-        LOG("  x:%.2f y:%.2f major:%.2f minor:%.2f size:%.2f pressure:%.2f",
+        LOG("  id:%d x:%.2f y:%.2f major:%.2f minor:%.2f size:%.2f pressure:%.2f",
+            event->details.motion.pointer_coordinates[i].id,
             event->details.motion.pointer_coordinates[i].x,
             event->details.motion.pointer_coordinates[i].y,
             // event->details.motion.pointer_coordinates[i].raw_x,
@@ -186,7 +196,7 @@ void hybrisEventCallback(Event* event, void* context) {
             // event->details.motion.pointer_coordinates[i].orientation  -> Always 0.0.
             );
       }
-      LOG("}\n");
+      LOG("}");
 #endif
       handleMotionEvent(event, input);
       break;
@@ -195,7 +205,7 @@ void hybrisEventCallback(Event* event, void* context) {
     case KEY_EVENT_TYPE: {
 #if (LOG_EVENTS == 1)
       LOG("KEY device_id:%d source_id:%d action:%d flags:%d meta_state:%d key_code:%d "
-          "scan_code:%d repeat_count:%d down_time:%lld event_time:%lld is_system_key:%d\n",
+          "scan_code:%d repeat_count:%d down_time:%lld event_time:%lld is_system_key:%d",
           event->device_id, event->source_id, event->action, event->flags, event->meta_state,
           event->details.key.key_code, event->details.key.scan_code,
           event->details.key.repeat_count, event->details.key.down_time,
@@ -208,7 +218,7 @@ void hybrisEventCallback(Event* event, void* context) {
     case HW_SWITCH_EVENT_TYPE: {
 #if (LOG_EVENTS == 1)
       LOG("HW_SWITCH device_id:%d source_id:%d action:%d flags:%d meta_state:%d event_time:%lld "
-          "policy_flags:%u switch_code:%d switch_value:%d\n", event->device_id, event->source_id,
+          "policy_flags:%u switch_code:%d switch_value:%d", event->device_id, event->source_id,
           event->action, event->flags, event->meta_state, event->details.hw_switch.event_time,
           event->details.hw_switch.policy_flags, event->details.hw_switch.switch_code,
           event->details.hw_switch.switch_value);
