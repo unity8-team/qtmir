@@ -6,5 +6,4 @@ To do
     - window resizing
     - window restacking
     - "-fullscreen" support
-  - Fix the multitouch tracking bug when using more than 2 fingers.
   - Add support for legacy mouse event apps (showshoe).
