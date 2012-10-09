@@ -13,3 +13,8 @@ Environment variables
 
   - QTHYBRIS_MULTISAMPLE: Enables multisampling with using 4 samples
                           per fragment.
+
+  - QTHYBRIS_NO_INPUT: Disables touchscreen and buttons.
+
+  - QTHYBRIS_INPUT_DELAY: Specifies a delay in milliseconds for input
+                          initialization.

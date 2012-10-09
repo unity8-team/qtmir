@@ -13,7 +13,10 @@
 #include <QtGui/QSurfaceFormat>
 #include <QtGui/QOpenGLContext>
 #include <QtGui/QScreen>
+#include <QTimer>
 #include <EGL/egl.h>
+
+static const int kInputDelay = 1;
 
 QHybrisIntegration::QHybrisIntegration()
     : eventDispatcher_(createUnixEventDispatcher())
@@ -23,6 +26,21 @@ QHybrisIntegration::QHybrisIntegration()
     , input_(NULL) {
   QGuiApplicationPrivate::instance()->setEventDispatcher(eventDispatcher_);
   screenAdded(screen_);
+
+  if (qEnvironmentVariableIsEmpty("QTHYBRIS_NO_INPUT")) {
+    // Input initialization needs to be delayed in order to avoid crashes in the input stack.
+    int delay = kInputDelay;
+    QByteArray swapIntervalString = qgetenv("QTHYBRIS_INPUT_DELAY");
+    if (!swapIntervalString.isEmpty()) {
+      bool valid;
+      delay = qMax(1, swapIntervalString.toInt(&valid));
+      if (!valid)
+        delay = kInputDelay;
+    }
+    DLOG("delaying input initialization for %d ms", delay);
+    QTimer::singleShot(delay, this, SLOT(initInput()));
+  }
+
   DLOG("QHybrisIntegration::QHybrisIntegration (this=%p)", this);
 }
 
@@ -31,6 +49,11 @@ QHybrisIntegration::~QHybrisIntegration() {
   delete input_;
   delete screen_;
   delete fontDb_;
+}
+
+void QHybrisIntegration::initInput() {
+  DLOG("QHybrisIntegration::initInput (this=%p)", this);
+  input_ = new QHybrisInput(this);
 }
 
 bool QHybrisIntegration::hasCapability(QPlatformIntegration::Capability cap) const {
@@ -61,13 +84,6 @@ QPlatformWindow* QHybrisIntegration::createPlatformWindow(QWindow* window) {
   ASSERT(window_ == NULL);  // FIXME(loicm) Multiple windows are not supported yet.
   window_ = new QHybrisWindow(window);
   window_->requestActivateWindow();
-
-  // FIXME(loicm) The deadlock still happens sometimes :/
-  // Input initialization is delayed after the creation of the first window in order to avoid a
-  // deadlock in the input stack.
-  if (input_ == NULL)
-    input_ = new QHybrisInput(this);
-
   return window_;
 }
 

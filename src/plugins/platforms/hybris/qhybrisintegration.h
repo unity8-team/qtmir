@@ -11,7 +11,9 @@
 class QAbstractEventDispatcher;
 class QHybrisInput;
 
-class QHybrisIntegration : public QPlatformIntegration {
+class QHybrisIntegration : public QObject, public QPlatformIntegration {
+  Q_OBJECT
+
  public:
   QHybrisIntegration();
   ~QHybrisIntegration();
@@ -28,6 +30,9 @@ class QHybrisIntegration : public QPlatformIntegration {
   // FIXME(loicm) Only one window can be created for now, remove that function when adding support
   //     for multiple windows.
   QPlatformWindow* platformWindow() const { return window_; }
+
+ private slots:
+  void initInput();
 
  private:
   QAbstractEventDispatcher* eventDispatcher_;
