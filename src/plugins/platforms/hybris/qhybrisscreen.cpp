@@ -12,7 +12,7 @@ namespace {
 
 #if defined(QHYBRIS_DEBUG)
 void printEglConfig(EGLDisplay display, EGLConfig config) {
-  static const struct { const EGLint attr; const char* name; } kAttribs[] = {
+  static const struct { const EGLint attrib; const char* name; } kAttribs[] = {
     { EGL_BUFFER_SIZE, "EGL_BUFFER_SIZE" },
     { EGL_ALPHA_SIZE, "EGL_ALPHA_SIZE" },
     { EGL_BLUE_SIZE, "EGL_BLUE_SIZE" },
@@ -43,9 +43,9 @@ void printEglConfig(EGLDisplay display, EGLConfig config) {
     {-1, 0}
   };
   LOG("EGL configuration attibutes:");
-  for (int index = 0; kAttribs[index].attr != -1; index++) {
+  for (int index = 0; kAttribs[index].attrib != -1; index++) {
     EGLint value;
-    if (eglGetConfigAttrib(display, config, kAttribs[index].attr, &value))
+    if (eglGetConfigAttrib(display, config, kAttribs[index].attrib, &value))
       LOG("  %s: %d", kAttribs[index].name, static_cast<int>(value));
   }
 }
