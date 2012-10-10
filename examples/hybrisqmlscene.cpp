@@ -3,6 +3,7 @@
 
 #include "hybrisqmlscene.h"
 #include <QtQuick>
+#include <QtQml/qqmlengine.h>
 #include <cstdio>
 #include <ctime>
 #include <csignal>
@@ -42,7 +43,11 @@ void Scene::getStats(int* frames, double* min, double* max, double* average) {
 }
 
 static void usage() {
-  fprintf(stdout, "Usage: hybris-qmlscene <filename>\n");
+  fprintf(stdout,
+          "Usage: hybris-qmlscene [options] <filename>\n\n"
+          "  Options:\n"
+          "    -i <path> ... Add <path> to the list of import paths\n"
+          "    -h        ... Show that help\n");
 }
 
 // static void logger(QtMsgType type, const char* msg) {
@@ -67,14 +72,17 @@ int main(int argc, char* argv[]) {
   QQuickView* view;
   int exit_code;
   QUrl url;
+  QStringList imports;
 
   for (int i = 1; i < argc; ++i) {
     if (QFileInfo(QFile::decodeName(argv[i])).exists()) {
       url = QUrl::fromLocalFile(argv[i]);
     } else {
       const QString arg = QString::fromLatin1(argv[i]).toLower();
-      if (arg == QLatin1String("--help") || arg == QLatin1String("-help") ||
-          arg == QLatin1String("--h") || arg == QLatin1String("-h")) {
+      if (arg == QLatin1String("-i") && i + 1 < argc) {
+        imports.append(QString::fromLatin1(argv[++i]));
+      } else if (arg == QLatin1String("--help") || arg == QLatin1String("-help") ||
+                 arg == QLatin1String("--h") || arg == QLatin1String("-h")) {
         usage();
         return 0;
       }
@@ -100,6 +108,11 @@ int main(int argc, char* argv[]) {
   app.setOrganizationDomain("canonical.com");
 
   view = new QQuickView();
+
+  QQmlEngine* engine = view->engine();
+  for (int i = 0; i < imports.size(); ++i)
+    engine->addImportPath(imports.at(i));
+
   view->setColor(Qt::black);
   view->setWindowTitle("Hybris QML Scene");
   view->setResizeMode(QQuickView::SizeRootObjectToView);
