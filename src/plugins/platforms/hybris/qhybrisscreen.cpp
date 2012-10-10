@@ -40,7 +40,7 @@ void printEglConfig(EGLDisplay display, EGLConfig config) {
     { EGL_BIND_TO_TEXTURE_RGBA, "EGL_BIND_TO_TEXTURE_RGBA" },
     { EGL_MIN_SWAP_INTERVAL, "EGL_MIN_SWAP_INTERVAL" },
     { EGL_MAX_SWAP_INTERVAL, "EGL_MAX_SWAP_INTERVAL" },
-    {-1, 0}
+    { -1, NULL }
   };
   LOG("EGL configuration attibutes:");
   for (int index = 0; kAttribs[index].attrib != -1; index++) {
