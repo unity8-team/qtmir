@@ -16,7 +16,8 @@
 #include <QTimer>
 #include <EGL/egl.h>
 
-static const int kInputDelay = 1;
+// That value seems to work on every systems and applications tested so far.
+static const int kInputDelay = 1000;
 
 QHybrisIntegration::QHybrisIntegration()
     : eventDispatcher_(createUnixEventDispatcher())
