@@ -72,9 +72,9 @@ int main(int argc, char* argv[]) {
     if (QFileInfo(QFile::decodeName(argv[i])).exists()) {
       url = QUrl::fromLocalFile(argv[i]);
     } else {
-      const QString arg = QString::fromLatin1(argv[i]).toLower();
-      if (arg == QLatin1String("--help") || arg == QLatin1String("-help") ||
-          arg == QLatin1String("--h") || arg == QLatin1String("-h")) {
+      const QString kArg = QString::fromLatin1(argv[i]).toLower();
+      if (kArg == QLatin1String("--help") || kArg == QLatin1String("-help") ||
+          kArg == QLatin1String("--h") || kArg == QLatin1String("-h")) {
         usage();
         return 0;
       }

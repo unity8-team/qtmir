@@ -12,7 +12,7 @@ namespace {
 
 #if defined(QHYBRIS_DEBUG)
 void printEglConfig(EGLDisplay display, EGLConfig config) {
-  static struct AttrInfo { EGLint attr; const char* name; } attrs[] = {
+  static const struct { const EGLint attrib; const char* name; } kAttribs[] = {
     { EGL_BUFFER_SIZE, "EGL_BUFFER_SIZE" },
     { EGL_ALPHA_SIZE, "EGL_ALPHA_SIZE" },
     { EGL_BLUE_SIZE, "EGL_BLUE_SIZE" },
@@ -40,13 +40,13 @@ void printEglConfig(EGLDisplay display, EGLConfig config) {
     { EGL_BIND_TO_TEXTURE_RGBA, "EGL_BIND_TO_TEXTURE_RGBA" },
     { EGL_MIN_SWAP_INTERVAL, "EGL_MIN_SWAP_INTERVAL" },
     { EGL_MAX_SWAP_INTERVAL, "EGL_MAX_SWAP_INTERVAL" },
-    {-1, 0}
+    { -1, NULL }
   };
   LOG("EGL configuration attibutes:");
-  for (int index = 0; attrs[index].attr != -1; index++) {
+  for (int index = 0; kAttribs[index].attrib != -1; index++) {
     EGLint value;
-    if (eglGetConfigAttrib(display, config, attrs[index].attr, &value))
-      LOG("  %s: %d", attrs[index].name, (int) value);
+    if (eglGetConfigAttrib(display, config, kAttribs[index].attrib, &value))
+      LOG("  %s: %d", kAttribs[index].name, static_cast<int>(value));
   }
 }
 #endif
@@ -120,17 +120,17 @@ void QHybrisScreen::createAndSetPlatformContext() {
     DLOG("setting MSAA to 4 samples");
   }
 
-  EGLConfig config = q_configFromGLFormat(eglDisplay_, platformFormat);
+  const EGLConfig kConfig = q_configFromGLFormat(eglDisplay_, platformFormat);
 #if defined(QHYBRIS_DEBUG)
-  printEglConfig(eglDisplay_, config);
+  printEglConfig(eglDisplay_, kConfig);
 #endif
   w = sf_get_display_width(SURFACE_FLINGER_DEFAULT_DISPLAY_ID);
   h = sf_get_display_height(SURFACE_FLINGER_DEFAULT_DISPLAY_ID);
   SfSurfaceCreationParameters parameters = { 0, 0, w, h, -1, INT_MAX, 1.0f, false, "qthybris" };
   sfSurface_ = sf_surface_create(sfClient_, &parameters);
   ASSERT(sfSurface_ != NULL);
-  EGLNativeWindowType nativeWindow = sf_surface_get_egl_native_window(sfSurface_);
-  eglSurface_ = eglCreateWindowSurface(eglDisplay_, config, nativeWindow, NULL);
+  const EGLNativeWindowType kNativeWindow = sf_surface_get_egl_native_window(sfSurface_);
+  eglSurface_ = eglCreateWindowSurface(eglDisplay_, kConfig, kNativeWindow, NULL);
   ASSERT(eglSurface_ != EGL_NO_SURFACE);
   DLOG("created EGL surface %p", eglSurface_);
 
