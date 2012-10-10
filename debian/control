@@ -17,7 +17,7 @@ Section: libs
 
 Package: qthybris
 Section: libs
-Architecture: armel
+Architecture: armel armhf
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: QPA Plugin for Hybris
  QtHybris is a Qt Platform Abstraction (QPA) plugin for Qt5 using
