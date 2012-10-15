@@ -6,7 +6,6 @@
 
 #include "qhybrisscreen.h"
 #include <qpa/qplatformintegration.h>
-#include <qpa/qplatformscreen.h>
 
 class QAbstractEventDispatcher;
 class QHybrisInput;
@@ -24,8 +23,8 @@ class QHybrisIntegration : public QObject, public QPlatformIntegration {
   QPlatformWindow* createPlatformWindow(QWindow* window);
   QPlatformBackingStore* createPlatformBackingStore(QWindow* window) const;
   QPlatformOpenGLContext* createPlatformOpenGLContext(QOpenGLContext* context) const;
+  QPlatformOpenGLContext* createPlatformOpenGLContext(QOpenGLContext* context);
   QPlatformFontDatabase* fontDatabase() const { return fontDb_; }
-  QVariant styleHint(QPlatformIntegration::StyleHint hint) const;
 
   // FIXME(loicm) Only one window can be created for now, remove that function when adding support
   //     for multiple windows.
@@ -39,6 +38,7 @@ class QHybrisIntegration : public QObject, public QPlatformIntegration {
   QPlatformWindow* window_;
   QPlatformFontDatabase* fontDb_;
   QPlatformScreen* screen_;
+  QPlatformOpenGLContext* context_;
   QHybrisInput* input_;
 };
 

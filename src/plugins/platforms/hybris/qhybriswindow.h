@@ -4,25 +4,37 @@
 #ifndef QHYBRISWINDOW_H
 #define QHYBRISWINDOW_H
 
-#include "qhybrisintegration.h"
-#include "qhybrisscreen.h"
 #include <qpa/qplatformwindow.h>
-#include <QtWidgets/QWidget>
+#include <EGL/egl.h>
+
+struct SfClient;
+struct SfSurface;
+class QHybrisScreen;
 
 class QHybrisWindow : public QPlatformWindow {
  public:
-  QHybrisWindow(QWindow* w);
+  QHybrisWindow(QWindow* w, QHybrisScreen* screen);
   ~QHybrisWindow();
 
-  void setGeometry(const QRect&);
   WId winId() const { return winId_; }
+  void setGeometry(const QRect&);
+  Qt::WindowFlags setWindowFlags(Qt::WindowFlags flags);
+  Qt::WindowState setWindowState(Qt::WindowState state);
+  void setOpacity(qreal level);
+  void raise();
+  void lower();
 
-  // FIXME(loicm) Add opacity and stacking support.
-  // void setOpacity(qreal level);
-  // void raise();
-  // void lower();
+  EGLSurface eglSurface() const { return eglSurface_; }
 
  private:
+  void moveResize(const QRect& rect);
+
+  QHybrisScreen* screen_;
+  SfSurface* sfSurface_;
+  EGLSurface eglSurface_;
+  Qt::WindowState state_;
+  QRect geometry_;
+  int layer_;
   WId winId_;
 };
 
