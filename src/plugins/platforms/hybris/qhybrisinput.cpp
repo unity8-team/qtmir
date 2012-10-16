@@ -12,8 +12,6 @@
 
 #define LOG_EVENTS 0
 
-namespace {
-
 // Lookup table for the key types.
 // FIXME(loicm) Not sure what to do with that multiple thing.
 static const QEvent::Type kEventType[] = {
@@ -237,7 +235,7 @@ static const int kKeyCode[] = {
   Qt::Key_Calculator       // ISCL_KEYCODE_CALCULATOR      = 210
 };
 
-void handleMotionEvent(Event* event, QHybrisInput* input) {
+static void handleMotionEvent(Event* event, QHybrisInput* input) {
   DLOG("handleMotionEvent (event=%p, input=%p)", event, input);
   // FIXME(loicm) We need to be able to retrieve the window from an event in order to support
   //     multiple surfaces.
@@ -336,7 +334,7 @@ void handleMotionEvent(Event* event, QHybrisInput* input) {
       window->window(), event->details.motion.event_time, input->touchDevice_, input->touchPoints_);
 }
 
-void handleKeyEvent(Event* event, QHybrisInput* input) {
+static void handleKeyEvent(Event* event, QHybrisInput* input) {
   DLOG("handleKeyEvent (event=%p, input=%p)", event, input);
   // FIXME(loicm) We need to be able to retrieve the window from an event in order to support
   //     multiple surfaces.
@@ -360,7 +358,7 @@ void handleKeyEvent(Event* event, QHybrisInput* input) {
       kKeyCode[event->details.key.key_code], modifiers);
 }
 
-void hybrisEventCallback(Event* event, void* context) {
+static void hybrisEventCallback(Event* event, void* context) {
   DLOG("hybrisEventCallback (event=%p, context=%p)", event, context);
   QHybrisInput* input = static_cast<QHybrisInput*>(context);
 
@@ -430,8 +428,6 @@ void hybrisEventCallback(Event* event, void* context) {
   }
 }
 
-}  // Anonymous namespace.
-
 QHybrisInput::QHybrisInput(QHybrisIntegration* integration)
     : touchDevice_(new QTouchDevice())
     , integration_(integration)
@@ -454,7 +450,7 @@ QHybrisInput::QHybrisInput(QHybrisIntegration* integration)
 
   // Initialize input stack.
   config_.enable_touch_point_visualization = false;
-  config_.default_layer_for_touch_point_visualization = INT_MAX - 1;
+  config_.default_layer_for_touch_point_visualization = 1;
   listener_.on_new_event = hybrisEventCallback;
   listener_.context = this;
   DLOG("initializing input stack");
