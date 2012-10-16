@@ -19,6 +19,7 @@ class QHybrisInput {
   QTouchDevice* touchDevice_;
   QHybrisIntegration* integration_;
   QAtomicInt stopping_;
+  const QByteArray eventFilterType_;
 
  private:
   InputStackConfiguration config_;

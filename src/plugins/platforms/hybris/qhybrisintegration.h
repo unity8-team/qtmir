@@ -20,6 +20,7 @@ class QHybrisIntegration : public QObject, public QPlatformIntegration {
 
   bool hasCapability(QPlatformIntegration::Capability cap) const;
   QAbstractEventDispatcher* guiThreadEventDispatcher() const { return eventDispatcher_; }
+  QPlatformNativeInterface* nativeInterface() const { return nativeInterface_; }
   QPlatformWindow* createPlatformWindow(QWindow* window) const;
   QPlatformWindow* createPlatformWindow(QWindow* window);
   QPlatformBackingStore* createPlatformBackingStore(QWindow* window) const;
@@ -36,6 +37,7 @@ class QHybrisIntegration : public QObject, public QPlatformIntegration {
 
  private:
   QAbstractEventDispatcher* eventDispatcher_;
+  QPlatformNativeInterface* nativeInterface_;
   QPlatformWindow* window_;
   QPlatformFontDatabase* fontDb_;
   QPlatformScreen* screen_;
