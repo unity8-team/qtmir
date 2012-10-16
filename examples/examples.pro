@@ -6,7 +6,7 @@ TEMPLATE = app
 HEADERS += hybrisqmlscene.h
 SOURCES += hybrisqmlscene.cpp
 
-LIBS += -lhybris_ics -lrt
+LIBS += -lrt
 
 OTHER_FILES += *.qml logo.png noise.png
 

@@ -9,8 +9,6 @@
 #include <csignal>
 #include <cfloat>
 
-extern "C" void init_hybris();
-
 Scene::Scene(QObject* parent)
     : QObject(parent)
     , frames_(0)
@@ -47,6 +45,7 @@ static void usage() {
           "Usage: hybris-qmlscene [options] <filename>\n\n"
           "  Options:\n"
           "    -i <path> ... Add <path> to the list of import paths\n"
+          "    -f        ... Show the window fullscreen\n"
           "    -h        ... Show that help\n");
 }
 
@@ -73,6 +72,7 @@ int main(int argc, char* argv[]) {
   int exit_code;
   QUrl url;
   QStringList imports;
+  bool fullscreen = false;
 
   for (int i = 1; i < argc; ++i) {
     if (QFileInfo(QFile::decodeName(argv[i])).exists()) {
@@ -81,6 +81,8 @@ int main(int argc, char* argv[]) {
       const QString kArg = QString::fromLatin1(argv[i]).toLower();
       if (kArg == QLatin1String("-i") && i + 1 < argc) {
         imports.append(QString::fromLatin1(argv[++i]));
+      } else if (kArg == QLatin1String("-f")) {
+        fullscreen = true;
       } else if (kArg == QLatin1String("--help") || kArg == QLatin1String("-help") ||
                  kArg == QLatin1String("--h") || kArg == QLatin1String("-h")) {
         usage();
@@ -95,9 +97,6 @@ int main(int argc, char* argv[]) {
 
   // Swallow all the messages to avoid cluttering the standard output.
   // qInstallMsgHandler(logger);
-
-  // Ensure the libs are loaded and threading is all setup.
-  init_hybris();
 
   signal(SIGINT, signalHandler);
   signal(SIGTERM, signalHandler);
@@ -117,7 +116,10 @@ int main(int argc, char* argv[]) {
   view->setWindowTitle("Hybris QML Scene");
   view->setResizeMode(QQuickView::SizeRootObjectToView);
   view->setSource(url);
-  view->show();
+  if (fullscreen)
+    view->showFullScreen();
+  else
+    view->show();
 
   Scene scene;
   QObject::connect(view, SIGNAL(beforeRendering()), &scene, SLOT(beforeRendering()));
