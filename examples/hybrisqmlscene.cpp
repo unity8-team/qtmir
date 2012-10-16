@@ -9,8 +9,6 @@
 #include <csignal>
 #include <cfloat>
 
-extern "C" void init_hybris();
-
 Scene::Scene(QObject* parent)
     : QObject(parent)
     , frames_(0)
@@ -95,9 +93,6 @@ int main(int argc, char* argv[]) {
 
   // Swallow all the messages to avoid cluttering the standard output.
   // qInstallMsgHandler(logger);
-
-  // Ensure the libs are loaded and threading is all setup.
-  init_hybris();
 
   signal(SIGINT, signalHandler);
   signal(SIGTERM, signalHandler);

@@ -30,7 +30,7 @@ HEADERS = qhybrislogging.h \
 CONFIG += egl qpa/genericunixfontdatabase
 
 INCLUDEPATH += /usr/include/hybris
-LIBS += -lsf -lis
+LIBS += -lsf -lis -lhybris_ics
 
 OTHER_FILES += hybris.json
 
