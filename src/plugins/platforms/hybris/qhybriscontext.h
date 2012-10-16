@@ -20,6 +20,7 @@ class QHybrisContext : public QPlatformOpenGLContext {
   void doneCurrent();
   bool isValid() const { return eglContext_ != EGL_NO_CONTEXT; }
   void (*getProcAddress(const QByteArray& procName)) ();
+  EGLContext eglContext() const { return eglContext_; }
 
  private:
   QHybrisScreen* screen_;

@@ -17,7 +17,8 @@ SOURCES = main.cpp \
           qhybriswindow.cpp \
           qhybrisbackingstore.cpp \
           qhybrisscreen.cpp \
-          qhybrisinput.cpp
+          qhybrisinput.cpp \
+          qhybrisnativeinterface.cpp
 
 HEADERS = qhybrislogging.h \
           qhybrisintegration.h \
@@ -25,7 +26,8 @@ HEADERS = qhybrislogging.h \
           qhybriswindow.h \
           qhybrisbackingstore.h \
           qhybrisscreen.h \
-          qhybrisinput.h
+          qhybrisinput.h \
+          qhybrisnativeinterface.h
 
 CONFIG += egl qpa/genericunixfontdatabase
 

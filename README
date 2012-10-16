@@ -18,3 +18,37 @@ Environment variables
 
   - QTHYBRIS_INPUT_DELAY: Specifies a delay in milliseconds for input
                           initialization.
+
+
+Native interface
+----------------
+
+  The QPA plugin exposes a native interface allowing to retrieve
+  native handles and to filter out native events. In order to retrieve
+  native handles, the following code can be used:
+
+    #include <QtGui/QGuiApplication>
+    #include <qpa/qplatformnativeinterface.h>
+    ...
+    QQuickView* view = new QQuickView();
+    ...
+    QPlatformNativeInterface* native = QGuiApplication::platformNativeInterface();
+    printf("app: eglcontext=%p egldisplay=%p sfclient=%p\n",
+           native->nativeResourceForContext("eglcontext", view->openglContext()),
+           native->nativeResourceForWindow("egldisplay", view),
+           native->nativeResourceForWindow("sfclient", view));
+
+  Note that handles aren't valid until the application mainloop is started. The
+  qmake .pro needs to add private gui include directories using
+
+    QT += gui-private
+
+  Some events exposed in the input compatibility layer can't be
+  directly mapped to Qt. In order to retrieve such events, a native
+  event filter needs to be installed. To do so, a
+  QAbstractNativeEventFilter [1] filtering out "Event" events needs to
+  be implemented and installed using
+  QCoreApplication::installNativeEventFilter [2].
+
+  [1] http://doc-snapshot.qt-project.org/5.0/qabstractnativeeventfilter.html
+  [2] http://doc-snapshot.qt-project.org/5.0/qcoreapplication.html#installNativeEventFilter

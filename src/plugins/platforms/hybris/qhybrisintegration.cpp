@@ -6,6 +6,7 @@
 #include "qhybriscontext.h"
 #include "qhybrisbackingstore.h"
 #include "qhybrisinput.h"
+#include "qhybrisnativeinterface.h"
 #include "qhybrislogging.h"
 #include <QtPlatformSupport/private/qgenericunixfontdatabase_p.h>
 #include <QtPlatformSupport/private/qgenericunixeventdispatcher_p.h>
@@ -20,6 +21,7 @@ static const int kInputDelay = 1000;
 
 QHybrisIntegration::QHybrisIntegration()
     : eventDispatcher_(createUnixEventDispatcher())
+    , nativeInterface_(new QHybrisNativeInterface())
     , window_(NULL)
     , fontDb_(new QGenericUnixFontDatabase())
     , screen_(new QHybrisScreen())
@@ -58,6 +60,7 @@ QHybrisIntegration::~QHybrisIntegration() {
   delete input_;
   delete fontDb_;
   delete screen_;
+  delete nativeInterface_;
 }
 
 void QHybrisIntegration::initInput() {

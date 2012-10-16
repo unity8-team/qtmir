@@ -4,6 +4,7 @@
 #include "qhybrisinput.h"
 #include "qhybriswindow.h"
 #include "qhybrisintegration.h"
+#include "qhybrisnativeinterface.h"
 #include "qhybrislogging.h"
 #include <QtCore/qglobal.h>
 #include <input/input_stack_compatibility_layer_flags_motion.h>
@@ -243,6 +244,14 @@ static void handleMotionEvent(Event* event, QHybrisInput* input) {
   if (!window)
     return;
 
+  // Touch event filtering.
+  long result;
+  if (QWindowSystemInterface::handleNativeEvent(
+          window->window(), input->eventFilterType_, event, &result) == true) {
+    DLOG("touch event filtered out");
+    return;
+  }
+
   // FIXME(loicm) Max pressure is device specific. That one is for the Samsung Galaxy Nexus. That
   //     needs to be fixed as soon as the compat input lib adds query support.
   const float kMaxPressure = 1.28;
@@ -330,6 +339,7 @@ static void handleMotionEvent(Event* event, QHybrisInput* input) {
     }
   }
 
+  // Touch event propagation.
   QWindowSystemInterface::handleTouchEvent(
       window->window(), event->details.motion.event_time, input->touchDevice_, input->touchPoints_);
 }
@@ -342,6 +352,15 @@ static void handleKeyEvent(Event* event, QHybrisInput* input) {
   if (!window)
     return;
 
+  // Key event filtering.
+  long result;
+  if (QWindowSystemInterface::handleNativeEvent(
+          window->window(), input->eventFilterType_, event, &result) == true) {
+    DLOG("key event filtered out");
+    return;
+  }
+
+  // Key event propagation.
   const int kMetaState = event->meta_state;
   Qt::KeyboardModifiers modifiers = Qt::NoModifier;
   if (kMetaState & ISCL_META_SHIFT_ON)
@@ -352,7 +371,6 @@ static void handleKeyEvent(Event* event, QHybrisInput* input) {
     modifiers |= Qt::AltModifier;
   if (kMetaState & ISCL_META_META_ON)
     modifiers |= Qt::MetaModifier;
-
   QWindowSystemInterface::handleKeyEvent(
       window->window(), event->details.key.event_time, kEventType[event->action],
       kKeyCode[event->details.key.key_code], modifiers);
@@ -431,7 +449,9 @@ static void hybrisEventCallback(Event* event, void* context) {
 QHybrisInput::QHybrisInput(QHybrisIntegration* integration)
     : touchDevice_(new QTouchDevice())
     , integration_(integration)
-    , stopping_(0) {
+    , stopping_(0)
+    , eventFilterType_(static_cast<QHybrisNativeInterface*>(
+        integration->nativeInterface())->genericEventFilterType()) {
   // Initialize touch points.
   touchPoints_.reserve(MAX_POINTER_COUNT);
   for (unsigned int i = 0; i < MAX_POINTER_COUNT; i++) {
