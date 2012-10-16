@@ -54,20 +54,20 @@ void* QHybrisNativeInterface::nativeResourceForWindow(
   const QByteArray kLowerCaseResource = resourceString.toLower();
   if (!hybrisResourceMap()->contains(kLowerCaseResource))
     return NULL;
-  // const ResourceType kResourceType = hybrisResourceMap()->value(kLowerCaseResource);
-  // if (kResourceType == QHybrisNativeInterface::SfClient) {
-  //   if (window) {
-  //     return static_cast<QHybrisScreen*>(window->screen()->handle())->sfClient();
-  //   } else {
-  //     return static_cast<QHybrisScreen*>(QGuiApplication::primaryScreen()->handle())->sfClient();
-  //   }
-  // } else if (kResourceType == QHybrisNativeInterface::EglDisplay) {
-  //   if (window) {
-  //     return static_cast<QHybrisScreen*>(window->screen()->handle())->eglDisplay();
-  //   } else {
-  //     return static_cast<QHybrisScreen*>(QGuiApplication::primaryScreen()->handle())->eglDisplay();
-  //   }
-  // } else {
+  const ResourceType kResourceType = hybrisResourceMap()->value(kLowerCaseResource);
+  if (kResourceType == QHybrisNativeInterface::SfClient) {
+    if (window) {
+      return static_cast<QHybrisScreen*>(window->screen()->handle())->sfClient();
+    } else {
+      return static_cast<QHybrisScreen*>(QGuiApplication::primaryScreen()->handle())->sfClient();
+    }
+  } else if (kResourceType == QHybrisNativeInterface::EglDisplay) {
+    if (window) {
+      return static_cast<QHybrisScreen*>(window->screen()->handle())->eglDisplay();
+    } else {
+      return static_cast<QHybrisScreen*>(QGuiApplication::primaryScreen()->handle())->eglDisplay();
+    }
+  } else {
     return NULL;
-  // }
+  }
 }
