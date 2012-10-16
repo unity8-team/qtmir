@@ -16,6 +16,8 @@
 #include <QTimer>
 #include <EGL/egl.h>
 
+extern "C" void init_hybris();
+
 // That value seems to work on every systems and applications tested so far.
 static const int kInputDelay = 1000;
 
@@ -25,6 +27,14 @@ QHybrisIntegration::QHybrisIntegration()
     , fontDb_(new QGenericUnixFontDatabase())
     , screen_(new QHybrisScreen())
     , input_(NULL) {
+  // Init libhybris ensuring the libs are loaded and threading is all setup.
+  static bool once = false;
+  if (!once) {
+    DLOG("initializing libhybris");
+    init_hybris();
+    once = true;
+  }
+
   QGuiApplicationPrivate::instance()->setEventDispatcher(eventDispatcher_);
   screenAdded(screen_);
 
