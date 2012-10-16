@@ -48,6 +48,7 @@ QHybrisWindow::~QHybrisWindow() {
 }
 
 Qt::WindowFlags QHybrisWindow::setWindowFlags(Qt::WindowFlags flags) {
+  Q_UNUSED(flags);
   DLOG("QHybrisWindow::setWindowFlags (this=%p, flags=0x%x)", this,
        static_cast<unsigned int>(flags));
   return Qt::Window;
