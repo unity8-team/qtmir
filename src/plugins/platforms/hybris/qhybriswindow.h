@@ -18,7 +18,6 @@ class QHybrisWindow : public QPlatformWindow {
 
   WId winId() const { return winId_; }
   void setGeometry(const QRect&);
-  Qt::WindowFlags setWindowFlags(Qt::WindowFlags flags);
   Qt::WindowState setWindowState(Qt::WindowState state);
   void setOpacity(qreal level);
   void raise();

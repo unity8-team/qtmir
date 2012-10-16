@@ -10,7 +10,7 @@
 QHybrisWindow::QHybrisWindow(QWindow* w, QHybrisScreen* screen)
     : QPlatformWindow(w)
     , screen_(screen)
-    , geometry_(w->geometry()) {
+    , geometry_(window()->geometry()) {
   DASSERT(screen != NULL);
   static int id = 0;
   layer_ = (INT_MAX / 2) + id;
@@ -21,8 +21,8 @@ QHybrisWindow::QHybrisWindow(QWindow* w, QHybrisScreen* screen)
   //     created fullscreen and never resized for now.
   QRect screenGeometry(screen->availableGeometry());
   SfSurfaceCreationParameters parameters = {
-    geometry_.x(), geometry_.y(), screenGeometry.width(), screenGeometry.height(), -1, layer_, 1.0f,
-    false, "QHybrisWindow"
+    screenGeometry.x(), screenGeometry.y(), screenGeometry.width(), screenGeometry.height(), -1,
+    layer_, 1.0f, false, "QHybrisWindow"
   };
   // SfSurfaceCreationParameters parameters = {
   //   geometry_.x(), geometry_.y(), geometry_.width(), geometry_.height(), -1, layer_, 1.0f, false,
@@ -33,8 +33,7 @@ QHybrisWindow::QHybrisWindow(QWindow* w, QHybrisScreen* screen)
       screen->eglDisplay(), screen->eglConfig(), sf_surface_get_egl_native_window(sfSurface_),
       NULL)) != EGL_NO_SURFACE);
 
-  setWindowFlags(w->windowFlags());
-  setWindowState(w->windowState());
+  setWindowState(window()->windowState());
 
   DLOG("QHybrisWindow::QHybrisWindow (this=%p)", this);
 }
@@ -47,23 +46,19 @@ QHybrisWindow::~QHybrisWindow() {
   // delete sfSurface_;
 }
 
-Qt::WindowFlags QHybrisWindow::setWindowFlags(Qt::WindowFlags flags) {
-  Q_UNUSED(flags);
-  DLOG("QHybrisWindow::setWindowFlags (this=%p, flags=0x%x)", this,
-       static_cast<unsigned int>(flags));
-  return Qt::Window;
-}
-
 Qt::WindowState QHybrisWindow::setWindowState(Qt::WindowState state) {
-  DLOG("QHybrisWindow::setWindowState (this=%p, state=0x%x)", this,
-       static_cast<unsigned int>(state));
+  if (state == state_)
+    return state;
+
   switch (state) {
     case Qt::WindowNoState: {
+      DLOG("QHybrisWindow::setWindowState (this=%p, state='NoState')", this);
       moveResize(geometry_);
       state_ = Qt::WindowNoState;
       return Qt::WindowNoState;
     }
     case Qt::WindowFullScreen: {
+      DLOG("QHybrisWindow::setWindowState (this=%p, state='FullScreen')", this);
       QRect screenGeometry(screen()->availableGeometry());
       moveResize(screenGeometry);
       state_ = Qt::WindowFullScreen;
@@ -73,6 +68,7 @@ Qt::WindowState QHybrisWindow::setWindowState(Qt::WindowState state) {
     case Qt::WindowMinimized:
     case Qt::WindowMaximized:
     default: {
+      DLOG("QHybrisWindow::setWindowState (this=%p, state='Active|Minimized|Maximized')", this);
       return state_;
     }
   }
@@ -81,7 +77,8 @@ Qt::WindowState QHybrisWindow::setWindowState(Qt::WindowState state) {
 void QHybrisWindow::setGeometry(const QRect& rect) {
   DLOG("QHybrisWindow::setGeometry (this=%p)", this);
   geometry_ = rect;
-  moveResize(rect);
+  if (state_ != Qt::WindowFullScreen)
+    moveResize(rect);
 }
 
 void QHybrisWindow::setOpacity(qreal level) {
@@ -110,12 +107,12 @@ void QHybrisWindow::lower() {
 void QHybrisWindow::moveResize(const QRect& rect) {
   DLOG("QHybrisWindow::moveResize (this=%p, x=%d, y=%d, w=%d, h=%d)", this, rect.x(), rect.y(),
        rect.width(), rect.height());
-  sf_client_begin_transaction(screen_->sfClient());
-  sf_surface_move_to(sfSurface_, rect.x(), rect.y());
   // FIXME(loicm) SF compat set_size() function doesn't seem to work as expected, surfaces are
-  //     created fullscreen and never resized for now.
+  //     created fullscreen and never moved nor resized for now.
+  // sf_client_begin_transaction(screen_->sfClient());
+  // sf_surface_move_to(sfSurface_, rect.x(), rect.y());
   // sf_surface_set_size(sfSurface_, rect.width(), rect.height());
-  sf_client_end_transaction(screen_->sfClient());
-  QPlatformWindow::setGeometry(rect);
+  // sf_client_end_transaction(screen_->sfClient());
   QWindowSystemInterface::handleGeometryChange(window(), rect);
+  QPlatformWindow::setGeometry(rect);
 }
