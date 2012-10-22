@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < imports.size(); ++i)
     engine->addImportPath(imports.at(i));
 
-  view->setColor(Qt::black);
+  view->setColor(Qt::transparent);
   view->setWindowTitle("Hybris QML Scene");
   view->setResizeMode(QQuickView::SizeRootObjectToView);
   view->setSource(url);
