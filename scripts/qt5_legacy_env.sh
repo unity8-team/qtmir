@@ -1,6 +1,6 @@
 #!/bin/bash -i
 
-NAME='Maguro'
+NAME='Qt5 legacy'
 
 export PATH=/opt/qt5/bin${PATH:+:$PATH}
 export LD_LIBRARY_PATH=/opt/qt5/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
@@ -8,9 +8,8 @@ export PKG_CONFIG_PATH=/opt/qt5/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PAT
 export CMAKE_MODULE_PATH=/opt/qt5/lib/cmake${CMAKE_MODULE_PATH:+:$CMAKE_MODULE_PATH}
 export QML_IMPORT_PATH=/opt/qt5/imports
 export QT_PLUGIN_PATH=/opt/qt5/plugins
-export QT_FONT_PATH=/opt/qt5/lib/fonts
 export QT_QPA_PLATFORM_PLUGIN_PATH=/home/ufa/qt5/platforms
-export QT_QPA_PLATFORM=hybris
+export QT_QPA_PLATFORM=hybrislegacy
 
 TMP=`mktemp -t bashrc.XXXXXXXX`
 echo PS1=\'[$NAME] $PS1\' >> $TMP

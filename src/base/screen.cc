@@ -1,15 +1,16 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-#include "qhybrisscreen.h"
-#include "qhybrislogging.h"
+#include "screen.h"
+#include "logging.h"
 #include <QtPlatformSupport/private/qeglconvenience_p.h>
-#include <surface_flinger/surface_flinger_compatibility_layer.h>
 
 static const int kSwapInterval = 1;
 
 #if defined(QHYBRIS_DEBUG)
-static void printEglConfig(EGLDisplay display, EGLConfig config) {
+static void QHybrisBaseScreen::printEglConfig() {
+  DASSERT(eglDisplay_ != EGL_NO_DISPLAY);
+  DASSERT(eglConfig_ != NULL);
   static const struct { const EGLint attrib; const char* name; } kAttribs[] = {
     { EGL_BUFFER_SIZE, "EGL_BUFFER_SIZE" },
     { EGL_ALPHA_SIZE, "EGL_ALPHA_SIZE" },
@@ -43,20 +44,18 @@ static void printEglConfig(EGLDisplay display, EGLConfig config) {
   LOG("EGL configuration attibutes:");
   for (int index = 0; kAttribs[index].attrib != -1; index++) {
     EGLint value;
-    if (eglGetConfigAttrib(display, config, kAttribs[index].attrib, &value))
+    if (eglGetConfigAttrib(eglDisplay_, eglConfig_, kAttribs[index].attrib, &value))
       LOG("  %s: %d", kAttribs[index].name, static_cast<int>(value));
   }
 }
 #endif
 
-QHybrisScreen::QHybrisScreen()
+QHybrisBaseScreen::QHybrisBaseScreen()
     : format_(QImage::Format_RGB32)
-    , depth_(32) {
-  // Initialize SF compat library and store the screen size.
-  ASSERT((sfClient_ = sf_client_create_full(false)) != NULL);
-  geometry_ = QRect(0, 0, sf_get_display_width(SURFACE_FLINGER_DEFAULT_DISPLAY_ID),
-                    sf_get_display_height(SURFACE_FLINGER_DEFAULT_DISPLAY_ID));
-
+    , depth_(32)
+    , surfaceFormat_()
+    , eglDisplay_(EGL_NO_DISPLAY)
+    , eglConfig_(NULL) {
   // Initialize EGL.
   EGLint major, minor;
   ASSERT(eglBindAPI(EGL_OPENGL_ES_API) == EGL_TRUE);
@@ -91,28 +90,10 @@ QHybrisScreen::QHybrisScreen()
   DLOG("setting swap interval to %d", swapInterval);
   eglSwapInterval(eglDisplay_, swapInterval);
 
-  DLOG("QHybrisScreen::QHybrisScreen (this=%p)", this);
+  DLOG("QHybrisBaseScreen::QHybrisBaseScreen (this=%p)", this);
 }
 
-QHybrisScreen::~QHybrisScreen() {
-  DLOG("QHybrisScreen::~QHybrisScreen");
+QHybrisBaseScreen::~QHybrisBaseScreen() {
   eglTerminate(eglDisplay_);
-  // FIXME(loicm) Invalid because the struct is forward declarated, we need a way to clean the
-  //     handle correctly.
-  // delete sfClient_;
-}
-
-QRect QHybrisScreen::geometry() const {
-  DLOG("QHybrisScreen::geometry (this=%p)", this);
-  return geometry_;
-}
-
-int QHybrisScreen::depth() const {
-  DLOG("QHybrisScreen::depth (this=%p)", this);
-  return depth_;
-}
-
-QImage::Format QHybrisScreen::format() const {
-  DLOG("QHybrisScreen::format (this=%p)", this);
-  return format_;
+  DLOG("QHybrisBaseScreen::~QHybrisBaseScreen");
 }

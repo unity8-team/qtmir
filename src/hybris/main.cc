@@ -2,7 +2,7 @@
 // FIXME(loicm) Add copyright notice here.
 
 #include <qpa/qplatformintegrationplugin.h>
-#include "qhybrisintegration.h"
+#include "integration.h"
 
 QT_BEGIN_NAMESPACE
 

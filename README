@@ -1,8 +1,9 @@
 QtHybris
 --------
 
-  QtHybris is a Qt Platform Abstraction (QPA) plugin for Qt5 using
-  libhybris and the compatibility layer from lp:aal+.
+  QtHybris is a Qt Platform Abstraction (QPA) plugin for Qt5 based on
+  libhybris and the Ubuntu session API. It also contains a legacy
+  plugin based on libhybris and the compatibility layers.
 
 
 Environment variables
@@ -33,10 +34,9 @@ Native interface
     QQuickView* view = new QQuickView();
     ...
     QPlatformNativeInterface* native = QGuiApplication::platformNativeInterface();
-    printf("app: eglcontext=%p egldisplay=%p sfclient=%p\n",
+    printf("app: eglcontext=%p egldisplay=%p\n",
            native->nativeResourceForContext("eglcontext", view->openglContext()),
-           native->nativeResourceForWindow("egldisplay", view),
-           native->nativeResourceForWindow("sfclient", view));
+           native->nativeResourceForWindow("egldisplay", view));
 
   Note that handles aren't valid until the application mainloop is started. The
   qmake .pro needs to add private gui include directories using

@@ -1,16 +1,14 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-#include "qhybriscontext.h"
-#include "qhybriswindow.h"
-#include "qhybrisscreen.h"
-#include "qhybrislogging.h"
+#include "context.h"
+#include "window.h"
+#include "screen.h"
+#include "logging.h"
 #include <QtPlatformSupport/private/qeglconvenience_p.h>
 
-namespace {
-
 #if defined(QHYBRIS_DEBUG)
-void printOpenglESConfig() {
+static void printOpenGLESConfig() {
   static bool once = true;
   if (once) {
     const char* string = (const char*) glGetString(GL_VENDOR);
@@ -28,9 +26,7 @@ void printOpenglESConfig() {
 }
 #endif
 
-}  // Anonymous namespace.
-
-QHybrisContext::QHybrisContext(QHybrisScreen* screen) {
+QHybrisBaseContext::QHybrisBaseContext(QHybrisBaseScreen* screen) {
   DASSERT(screen != NULL);
   eglDisplay_ = screen->eglDisplay();
   screen_ = screen;
@@ -41,35 +37,34 @@ QHybrisContext::QHybrisContext(QHybrisScreen* screen) {
   attribs.append(2);
   attribs.append(EGL_NONE);
   ASSERT(eglBindAPI(EGL_OPENGL_ES_API) == EGL_TRUE);
-  eglContext_ = eglCreateContext(
-      eglDisplay_, screen->eglConfig(), EGL_NO_CONTEXT, attribs.constData());
-  ASSERT(eglContext_ != EGL_NO_CONTEXT);
+  ASSERT((eglContext_ = eglCreateContext(
+      eglDisplay_, screen->eglConfig(), EGL_NO_CONTEXT, attribs.constData())) != EGL_NO_CONTEXT);
 
-  DLOG("QHybrisContext::QHybrisContext (this=%p)", this);
+  DLOG("QHybrisBaseContext::QHybrisBaseContext (this=%p)", this);
 }
 
-QHybrisContext::~QHybrisContext() {
-  DLOG("QHybrisContext::~QHybrisContext");
+QHybrisBaseContext::~QHybrisBaseContext() {
+  DLOG("QHybrisBaseContext::~QHybrisBaseContext");
   ASSERT(eglDestroyContext(eglDisplay_, eglContext_) == EGL_TRUE);
 }
 
-bool QHybrisContext::makeCurrent(QPlatformSurface* surface) {
-  // DLOG("QHybrisContext::makeCurrent (this=%p, surface=%p)", this, surface);
+bool QHybrisBaseContext::makeCurrent(QPlatformSurface* surface) {
+  // DLOG("QHybrisBaseContext::makeCurrent (this=%p, surface=%p)", this, surface);
   DASSERT(surface->surface()->surfaceType() == QSurface::OpenGLSurface);
-  EGLSurface eglSurface = static_cast<QHybrisWindow*>(surface)->eglSurface();
+  EGLSurface eglSurface = static_cast<QHybrisBaseWindow*>(surface)->eglSurface();
 #if !defined(QHYBRIS_DEBUG)
   eglBindAPI(EGL_OPENGL_ES_API);
   eglMakeCurrent(eglDisplay_, eglSurface, eglSurface, eglContext_);
 #else
   ASSERT(eglBindAPI(EGL_OPENGL_ES_API) == EGL_TRUE);
   ASSERT(eglMakeCurrent(eglDisplay_, eglSurface, eglSurface, eglContext_) == EGL_TRUE);
-  printOpenglESConfig();
+  printOpenGLESConfig();
 #endif
   return true;
 }
 
-void QHybrisContext::doneCurrent() {
-  DLOG("QHybrisContext::doneCurrent (this=%p)", this);
+void QHybrisBaseContext::doneCurrent() {
+  DLOG("QHybrisBaseContext::doneCurrent (this=%p)", this);
 #if !defined(QHYBRIS_DEBUG)
   eglBindAPI(EGL_OPENGL_ES_API);
   eglMakeCurrent(eglDisplay_, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
@@ -79,9 +74,9 @@ void QHybrisContext::doneCurrent() {
 #endif
 }
 
-void QHybrisContext::swapBuffers(QPlatformSurface* surface) {
-  // DLOG("QHybrisContext::swapBuffers (this=%p, surface=%p)", this, surface);
-  EGLSurface eglSurface = static_cast<QHybrisWindow*>(surface)->eglSurface();
+void QHybrisBaseContext::swapBuffers(QPlatformSurface* surface) {
+  // DLOG("QHybrisBaseContext::swapBuffers (this=%p, surface=%p)", this, surface);
+  EGLSurface eglSurface = static_cast<QHybrisBaseWindow*>(surface)->eglSurface();
 #if !defined(QHYBRIS_DEBUG)
   eglBindAPI(EGL_OPENGL_ES_API);
   eglSwapBuffers(eglDisplay_, eglSurface);
@@ -91,8 +86,8 @@ void QHybrisContext::swapBuffers(QPlatformSurface* surface) {
 #endif
 }
 
-void (*QHybrisContext::getProcAddress(const QByteArray& procName)) () {
-  DLOG("QHybrisContext::getProcAddress (this=%p, procName=%s)", this, procName.constData());
+void (*QHybrisBaseContext::getProcAddress(const QByteArray& procName)) () {
+  DLOG("QHybrisBaseContext::getProcAddress (this=%p, procName=%s)", this, procName.constData());
 #if !defined(QHYBRIS_DEBUG)
   eglBindAPI(EGL_OPENGL_ES_API);
 #else
@@ -101,8 +96,8 @@ void (*QHybrisContext::getProcAddress(const QByteArray& procName)) () {
   return eglGetProcAddress(procName.constData());
 }
 
-QSurfaceFormat QHybrisContext::format() const {
-  DLOG("QHybrisContext::format (this=%p)", this);
+QSurfaceFormat QHybrisBaseContext::format() const {
+  DLOG("QHybrisBaseContext::format (this=%p)", this);
   DASSERT(screen_ != NULL);
   return screen_->surfaceFormat();
 }

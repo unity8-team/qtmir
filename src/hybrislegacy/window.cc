@@ -1,22 +1,16 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-#include "qhybriswindow.h"
-#include "qhybrisscreen.h"
-#include "qhybrislogging.h"
+#include "window.h"
+#include "screen.h"
+#include "base/logging.h"
 #include <qpa/qwindowsysteminterface.h>
 #include <surface_flinger/surface_flinger_compatibility_layer.h>
 
 QHybrisWindow::QHybrisWindow(QWindow* w, QHybrisScreen* screen)
-    : QPlatformWindow(w)
-    , screen_(screen)
-    , geometry_(window()->geometry()) {
-  DASSERT(screen != NULL);
-  static int id = 0;
-  layer_ = (INT_MAX / 2) + id;
-  winId_ = ++id;
-
-  // Create the surface.
+    : QHybrisBaseWindow(w, screen)
+    , geometry_(window()->geometry())
+    , layer_((INT_MAX / 2) + winId()) {
   // FIXME(loicm) SF compat set_size() function doesn't seem to work as expected, surfaces are
   //     created fullscreen and never resized for now.
   QRect screenGeometry(screen->availableGeometry());
@@ -29,18 +23,13 @@ QHybrisWindow::QHybrisWindow(QWindow* w, QHybrisScreen* screen)
   //   "QHybrisWindow"
   // };
   ASSERT((sfSurface_ = sf_surface_create(screen->sfClient(), &parameters)) != NULL);
-  ASSERT((eglSurface_ = eglCreateWindowSurface(
-      screen->eglDisplay(), screen->eglConfig(), sf_surface_get_egl_native_window(sfSurface_),
-      NULL)) != EGL_NO_SURFACE);
-
+  createSurface(sf_surface_get_egl_native_window(sfSurface_));
   setWindowState(window()->windowState());
-
-  DLOG("QHybrisWindow::QHybrisWindow (this=%p)", this);
+  DLOG("QHybrisWindow::QHybrisWindow (this=%p, w=%p, screen=%p)", this, w, screen);
 }
 
 QHybrisWindow::~QHybrisWindow() {
   DLOG("QHybrisWindow::~QHybrisWindow");
-  eglDestroySurface(screen_->eglDisplay(), eglSurface_);
   // FIXME(loicm) Invalid because the struct is forward declarated, we need a way to clean the
   //     handle correctly.
   // delete sfSurface_;
@@ -49,7 +38,6 @@ QHybrisWindow::~QHybrisWindow() {
 Qt::WindowState QHybrisWindow::setWindowState(Qt::WindowState state) {
   if (state == state_)
     return state;
-
   switch (state) {
     case Qt::WindowNoState: {
       DLOG("QHybrisWindow::setWindowState (this=%p, state='NoState')", this);
