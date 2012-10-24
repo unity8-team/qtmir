@@ -19,6 +19,23 @@ Building
     $ qmake "CONFIG+=debug" && make
 
 
+Running
+-------
+
+  Considering the QPA plugin path is correctly set using either the
+  QT_QPA_PLATFORM_PLUGIN_PATH environment variable or the
+  "-platformpluginpath" command line switch, the following commands
+  can be used to run with the Hybris plugin:
+
+    $ qmlscene -platform hybris Foo.qml
+    $ QT_QPA_PLATFORM=hybris qmlscene Foo.qml
+
+  and the following ones to run with the Hybris legacy plugin:
+
+    $ qmlscene -platform hybrislegacy Foo.qml
+    $ QT_QPA_PLATFORM=hybrislegacy qmlscene Foo.qml
+
+
 Environment variables
 ---------------------
 
