@@ -41,4 +41,5 @@ QHybrisScreen::QHybrisScreen() {
 
 QHybrisScreen::~QHybrisScreen() {
   DLOG("QHybrisScreen::~QHybrisScreen");
+  delete [] argv_;
 }
