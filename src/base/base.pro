@@ -4,7 +4,7 @@ TEMPLATE = lib
 QT += core-private gui-private platformsupport-private
 
 DEFINES += MESA_EGL_NO_X11_HEADERS
-QMAKE_LFLAGS += -no-undefined
+QMAKE_LFLAGS += -Wl,-no-undefined
 
 CONFIG(debug) {
   QMAKE_CXXFLAGS_DEBUG += -Werror
