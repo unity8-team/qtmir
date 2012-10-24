@@ -335,7 +335,7 @@ void QHybrisBaseInput::handleMotionEvent(QWindow* window, const Event* event) {
   LOG("}");
 #endif
 
-    // FIXME(loicm) Max pressure is device specific. That one is for the Samsung Galaxy Nexus. That
+  // FIXME(loicm) Max pressure is device specific. That one is for the Samsung Galaxy Nexus. That
   //     needs to be fixed as soon as the compat input lib adds query support.
   const float kMaxPressure = 1.28;
   const QRect kWindowGeometry = window->geometry();
