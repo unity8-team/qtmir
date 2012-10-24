@@ -265,10 +265,8 @@ QHybrisBaseInput::QHybrisBaseInput(QHybrisBaseIntegration* integration, int maxP
 
 QHybrisBaseInput::~QHybrisBaseInput() {
   DLOG("QHybrisBaseInput::~QHybrisBaseInput");
-
-  // Clean up touch points and touch device.
+  // touchDevice_ isn't cleaned up on purpose as it crashes or asserts on "Bus Error".
   touchPoints_.clear();
-  delete touchDevice_;
 }
 
 void QHybrisBaseInput::handleEvent(QWindow* window, const Event* event) {
