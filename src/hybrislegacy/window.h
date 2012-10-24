@@ -1,19 +1,19 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-#ifndef QHYBRISWINDOW_H
-#define QHYBRISWINDOW_H
+#ifndef QHYBRISLEGACYWINDOW_H
+#define QHYBRISLEGACYWINDOW_H
 
 #include "base/window.h"
 
 struct SfClient;
 struct SfSurface;
-class QHybrisScreen;
+class QHybrisLegacyScreen;
 
-class QHybrisWindow : public QHybrisBaseWindow {
+class QHybrisLegacyWindow : public QHybrisBaseWindow {
  public:
-  QHybrisWindow(QWindow* w, QHybrisScreen* screen);
-  ~QHybrisWindow();
+  QHybrisLegacyWindow(QWindow* w, QHybrisLegacyScreen* screen);
+  ~QHybrisLegacyWindow();
 
   // QPlatformWindow methods.
   void setGeometry(const QRect&);
@@ -25,11 +25,11 @@ class QHybrisWindow : public QHybrisBaseWindow {
  private:
   void moveResize(const QRect& rect);
 
-  QHybrisScreen* screen_;
+  QHybrisLegacyScreen* screen_;
   SfSurface* sfSurface_;
   Qt::WindowState state_;
   QRect geometry_;
   int layer_;
 };
 
-#endif  // QHYBRISWINDOW_H
+#endif  // QHYBRISLEGACYWINDOW_H

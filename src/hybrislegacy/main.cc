@@ -6,7 +6,7 @@
 
 QT_BEGIN_NAMESPACE
 
-class QHybrisIntegrationPlugin : public QPlatformIntegrationPlugin {
+class QHybrisLegacyIntegrationPlugin : public QPlatformIntegrationPlugin {
   Q_OBJECT
   Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QPA.QPlatformIntegrationFactoryInterface.5.1"
                     FILE "hybrislegacy.json")
@@ -16,17 +16,17 @@ class QHybrisIntegrationPlugin : public QPlatformIntegrationPlugin {
   QPlatformIntegration* create(const QString&, const QStringList&);
 };
 
-QStringList QHybrisIntegrationPlugin::keys() const {
+QStringList QHybrisLegacyIntegrationPlugin::keys() const {
   QStringList list;
   list << "hybrislegacy";
   return list;
 }
 
-QPlatformIntegration* QHybrisIntegrationPlugin::create(
+QPlatformIntegration* QHybrisLegacyIntegrationPlugin::create(
     const QString& system, const QStringList& paramList) {
   Q_UNUSED(paramList);
   if (system.toLower() == "hybrislegacy")
-    return new QHybrisIntegration();
+    return new QHybrisLegacyIntegration();
   return 0;
 }
 

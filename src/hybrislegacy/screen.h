@@ -1,17 +1,17 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-#ifndef QHYBRISSCREEN_H
-#define QHYBRISSCREEN_H
+#ifndef QHYBRISLEGACYSCREEN_H
+#define QHYBRISLEGACYSCREEN_H
 
 #include "base/screen.h"
 
 struct SfClient;
 
-class QHybrisScreen : public QHybrisBaseScreen {
+class QHybrisLegacyScreen : public QHybrisBaseScreen {
  public:
-  QHybrisScreen();
-  ~QHybrisScreen();
+  QHybrisLegacyScreen();
+  ~QHybrisLegacyScreen();
 
   // QPlatformScreen methods.
   QRect geometry() const { return geometry_; }
@@ -24,4 +24,4 @@ class QHybrisScreen : public QHybrisBaseScreen {
   SfClient* sfClient_;
 };
 
-#endif  // QHYBRISSCREEN_H
+#endif  // QHYBRISLEGACYSCREEN_H

@@ -10,9 +10,9 @@
 // That value seems to work on every systems and applications tested so far.
 static const int kInputDelay = 1000;
 
-QHybrisIntegration::QHybrisIntegration()
+QHybrisLegacyIntegration::QHybrisLegacyIntegration()
     : window_(NULL)
-    , screen_(new QHybrisScreen())
+    , screen_(new QHybrisLegacyScreen())
     , input_(NULL) {
   screenAdded(screen_);
   if (qEnvironmentVariableIsEmpty("QTHYBRIS_NO_INPUT")) {
@@ -28,29 +28,29 @@ QHybrisIntegration::QHybrisIntegration()
     DLOG("delaying input initialization for %d ms", delay);
     QTimer::singleShot(delay, this, SLOT(initInput()));
   }
-  DLOG("QHybrisIntegration::QHybrisIntegration (this=%p)", this);
+  DLOG("QHybrisLegacyIntegration::QHybrisLegacyIntegration (this=%p)", this);
 }
 
-QHybrisIntegration::~QHybrisIntegration() {
-  DLOG("QHybrisIntegration::~QHybrisIntegration");
+QHybrisLegacyIntegration::~QHybrisLegacyIntegration() {
+  DLOG("QHybrisLegacyIntegration::~QHybrisLegacyIntegration");
   delete input_;
   delete screen_;
 }
 
-void QHybrisIntegration::initInput() {
-  DLOG("QHybrisIntegration::initInput (this=%p)", this);
-  input_ = new QHybrisInput(this);
+void QHybrisLegacyIntegration::initInput() {
+  DLOG("QHybrisLegacyIntegration::initInput (this=%p)", this);
+  input_ = new QHybrisLegacyInput(this);
 }
 
-QPlatformWindow* QHybrisIntegration::createPlatformWindow(QWindow* window) const {
-  DLOG("QHybrisIntegration::createPlatformWindow const (this=%p, window=%p)", this, window);
-  return const_cast<QHybrisIntegration*>(this)->createPlatformWindow(window);
+QPlatformWindow* QHybrisLegacyIntegration::createPlatformWindow(QWindow* window) const {
+  DLOG("QHybrisLegacyIntegration::createPlatformWindow const (this=%p, window=%p)", this, window);
+  return const_cast<QHybrisLegacyIntegration*>(this)->createPlatformWindow(window);
 }
 
-QPlatformWindow* QHybrisIntegration::createPlatformWindow(QWindow* window) {
-  DLOG("QHybrisIntegration::createPlatformWindow (this=%p, window=%p)", this, window);
+QPlatformWindow* QHybrisLegacyIntegration::createPlatformWindow(QWindow* window) {
+  DLOG("QHybrisLegacyIntegration::createPlatformWindow (this=%p, window=%p)", this, window);
   ASSERT(window_ == NULL);  // FIXME(loicm) Multiple windows are not supported yet.
-  window_ = new QHybrisWindow(window, static_cast<QHybrisScreen*>(screen_));
+  window_ = new QHybrisLegacyWindow(window, static_cast<QHybrisLegacyScreen*>(screen_));
   window_->requestActivateWindow();
   return window_;
 }
