@@ -3,11 +3,10 @@
 
 #include "context.h"
 #include "window.h"
-#include "screen.h"
 #include "logging.h"
 #include <QtPlatformSupport/private/qeglconvenience_p.h>
 
-#if defined(QHYBRIS_DEBUG)
+#if !defined(QT_NO_DEBUG)
 static void printOpenGLESConfig() {
   static bool once = true;
   if (once) {
@@ -40,7 +39,7 @@ QHybrisBaseContext::QHybrisBaseContext(QHybrisBaseScreen* screen) {
   ASSERT((eglContext_ = eglCreateContext(
       eglDisplay_, screen->eglConfig(), EGL_NO_CONTEXT, attribs.constData())) != EGL_NO_CONTEXT);
 
-  DLOG("QHybrisBaseContext::QHybrisBaseContext (this=%p)", this);
+  DLOG("QHybrisBaseContext::QHybrisBaseContext (this=%p, screen=%p)", this, screen);
 }
 
 QHybrisBaseContext::~QHybrisBaseContext() {
@@ -52,7 +51,7 @@ bool QHybrisBaseContext::makeCurrent(QPlatformSurface* surface) {
   // DLOG("QHybrisBaseContext::makeCurrent (this=%p, surface=%p)", this, surface);
   DASSERT(surface->surface()->surfaceType() == QSurface::OpenGLSurface);
   EGLSurface eglSurface = static_cast<QHybrisBaseWindow*>(surface)->eglSurface();
-#if !defined(QHYBRIS_DEBUG)
+#if defined(QT_NO_DEBUG)
   eglBindAPI(EGL_OPENGL_ES_API);
   eglMakeCurrent(eglDisplay_, eglSurface, eglSurface, eglContext_);
 #else
@@ -65,7 +64,7 @@ bool QHybrisBaseContext::makeCurrent(QPlatformSurface* surface) {
 
 void QHybrisBaseContext::doneCurrent() {
   DLOG("QHybrisBaseContext::doneCurrent (this=%p)", this);
-#if !defined(QHYBRIS_DEBUG)
+#if defined(QT_NO_DEBUG)
   eglBindAPI(EGL_OPENGL_ES_API);
   eglMakeCurrent(eglDisplay_, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 #else
@@ -77,7 +76,7 @@ void QHybrisBaseContext::doneCurrent() {
 void QHybrisBaseContext::swapBuffers(QPlatformSurface* surface) {
   // DLOG("QHybrisBaseContext::swapBuffers (this=%p, surface=%p)", this, surface);
   EGLSurface eglSurface = static_cast<QHybrisBaseWindow*>(surface)->eglSurface();
-#if !defined(QHYBRIS_DEBUG)
+#if defined(QT_NO_DEBUG)
   eglBindAPI(EGL_OPENGL_ES_API);
   eglSwapBuffers(eglDisplay_, eglSurface);
 #else
@@ -88,16 +87,10 @@ void QHybrisBaseContext::swapBuffers(QPlatformSurface* surface) {
 
 void (*QHybrisBaseContext::getProcAddress(const QByteArray& procName)) () {
   DLOG("QHybrisBaseContext::getProcAddress (this=%p, procName=%s)", this, procName.constData());
-#if !defined(QHYBRIS_DEBUG)
+#if defined(QT_NO_DEBUG)
   eglBindAPI(EGL_OPENGL_ES_API);
 #else
   ASSERT(eglBindAPI(EGL_OPENGL_ES_API) == EGL_TRUE);
 #endif
   return eglGetProcAddress(procName.constData());
-}
-
-QSurfaceFormat QHybrisBaseContext::format() const {
-  DLOG("QHybrisBaseContext::format (this=%p)", this);
-  DASSERT(screen_ != NULL);
-  return screen_->surfaceFormat();
 }

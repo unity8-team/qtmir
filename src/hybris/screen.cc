@@ -16,7 +16,7 @@ QHybrisScreen::QHybrisScreen() {
   argv_[size] = NULL;
   ubuntu_application_ui_init(size, argv_);
   ubuntu_application_ui_start_a_new_session("QtHybris");
-#if defined(QTHYBRIS_DEBUG)
+#if !defined(QT_NO_DEBUG)
   const char* const stageHintString[] = {
     "Main", "Integration", "Share", "Content picking", "Side", "Configuration",
   };

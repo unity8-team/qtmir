@@ -3,12 +3,14 @@ TEMPLATE = lib
 
 QT += core-private gui-private platformsupport-private
 
-# Uncomment for debugging logs.
-# DEFINES += QHYBRIS_DEBUG
-
 DESTDIR = ../../plugins/platforms
 
 DEFINES += MESA_EGL_NO_X11_HEADERS
+QMAKE_LFLAGS += -no-undefined
+
+CONFIG(debug) {
+  QMAKE_CXXFLAGS_DEBUG += -Werror
+}
 
 SOURCES = main.cc \
           integration.cc \

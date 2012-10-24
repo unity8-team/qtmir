@@ -33,7 +33,7 @@ QHybrisBaseNativeInterface::~QHybrisBaseNativeInterface() {
 void* QHybrisBaseNativeInterface::nativeResourceForContext(
     const QByteArray& resourceString, QOpenGLContext* context) {
   DLOG("QHybrisBaseNativeInterface::nativeResourceForContext (this=%p, resourceString=%s, "
-       "context=%p)", this, resourceString, context);
+       "context=%p)", this, resourceString.constData(), context);
   if (!context)
     return NULL;
   const QByteArray kLowerCaseResource = resourceString.toLower();
@@ -49,7 +49,7 @@ void* QHybrisBaseNativeInterface::nativeResourceForContext(
 void* QHybrisBaseNativeInterface::nativeResourceForWindow(
     const QByteArray& resourceString, QWindow* window) {
   DLOG("QHybrisBaseNativeInterface::nativeResourceForWindow (this=%p, resourceString=%s, "
-       "window=%p)", this, resourceString, window);
+       "window=%p)", this, resourceString.constData(), window);
   const QByteArray kLowerCaseResource = resourceString.toLower();
   if (!hybrisResourceMap()->contains(kLowerCaseResource))
     return NULL;

@@ -6,6 +6,19 @@ QtHybris
   plugin based on libhybris and the compatibility layers.
 
 
+Building
+--------
+
+  QtHybris can be built using that command:
+
+    $ qmake && make
+
+  By default, QtHybris compiles a release build. To compile a debug
+  build, the following command should be used:
+
+    $ qmake "CONFIG+=debug" && make
+
+
 Environment variables
 ---------------------
 
@@ -18,7 +31,7 @@ Environment variables
   - QTHYBRIS_NO_INPUT: Disables touchscreen and buttons.
 
   - QTHYBRIS_INPUT_DELAY: Specifies a delay in milliseconds for input
-                          initialization.
+                          initialization (hybrislegacy plugin only).
 
 
 Native interface

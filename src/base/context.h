@@ -5,9 +5,7 @@
 #define QHYBRISBASECONTEXT_H
 
 #include <qpa/qplatformopenglcontext.h>
-#include <EGL/egl.h>
-
-class QHybrisBaseScreen;
+#include "screen.h"
 
 class QHybrisBaseContext : public QPlatformOpenGLContext {
  public:
@@ -15,7 +13,7 @@ class QHybrisBaseContext : public QPlatformOpenGLContext {
   ~QHybrisBaseContext();
 
   // QPlatformOpenGLContext methods.
-  QSurfaceFormat format() const;
+  QSurfaceFormat format() const { return screen_->surfaceFormat(); }
   void swapBuffers(QPlatformSurface* surface);
   bool makeCurrent(QPlatformSurface* surface);
   void doneCurrent();

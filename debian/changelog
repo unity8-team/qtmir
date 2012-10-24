@@ -1,6 +1,6 @@
-qthybris (0.7) quantal; urgency=low
+qthybris (0.7) UNRELEASED; urgency=low
 
-  * Adapted to Ubuntu session API.
+  * Added Ubuntu application UI support.
 
  -- Loïc Molinari <loic.molinari@canonical.com>  Mon, 22 Oct 2012 17:50:41 +0200
 

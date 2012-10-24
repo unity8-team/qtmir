@@ -7,10 +7,10 @@
 
 static const int kSwapInterval = 1;
 
-#if defined(QHYBRIS_DEBUG)
-static void QHybrisBaseScreen::printEglConfig() {
-  DASSERT(eglDisplay_ != EGL_NO_DISPLAY);
-  DASSERT(eglConfig_ != NULL);
+#if !defined(QT_NO_DEBUG)
+static void printEglConfig(EGLDisplay display, EGLConfig config) {
+  DASSERT(display != EGL_NO_DISPLAY);
+  DASSERT(config != NULL);
   static const struct { const EGLint attrib; const char* name; } kAttribs[] = {
     { EGL_BUFFER_SIZE, "EGL_BUFFER_SIZE" },
     { EGL_ALPHA_SIZE, "EGL_ALPHA_SIZE" },
@@ -44,7 +44,7 @@ static void QHybrisBaseScreen::printEglConfig() {
   LOG("EGL configuration attibutes:");
   for (int index = 0; kAttribs[index].attrib != -1; index++) {
     EGLint value;
-    if (eglGetConfigAttrib(eglDisplay_, eglConfig_, kAttribs[index].attrib, &value))
+    if (eglGetConfigAttrib(display, config, kAttribs[index].attrib, &value))
       LOG("  %s: %d", kAttribs[index].name, static_cast<int>(value));
   }
 }
@@ -74,7 +74,7 @@ QHybrisBaseScreen::QHybrisBaseScreen()
     DLOG("setting MSAA to 4 samples");
   }
   eglConfig_ = q_configFromGLFormat(eglDisplay_, surfaceFormat_, true);
-#if defined(QHYBRIS_DEBUG)
+#if !defined(QT_NO_DEBUG)
   printEglConfig(eglDisplay_, eglConfig_);
 #endif
 

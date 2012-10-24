@@ -12,7 +12,7 @@ QHybrisBaseWindow::QHybrisBaseWindow(QWindow* w, QHybrisBaseScreen* screen)
   DASSERT(screen != NULL);
   static int id = 1;
   id_ = id++;
-  DLOG("QHybrisBaseWindow::QHybrisBaseWindow (this=%p)", this);
+  DLOG("QHybrisBaseWindow::QHybrisBaseWindow (this=%p, screen=%p)", this, screen);
 }
 
 QHybrisBaseWindow::~QHybrisBaseWindow() {
@@ -21,7 +21,7 @@ QHybrisBaseWindow::~QHybrisBaseWindow() {
 }
 
 void QHybrisBaseWindow::createSurface(EGLNativeWindowType nativeWindow) {
-  DLOG("QHybrisBaseWindow::createSurface (this=%p, nativeWindow=%p)", this, nativeWindow);
+  DLOG("QHybrisBaseWindow::createSurface (this=%p, nativeWindow=%u)", this, nativeWindow);
   ASSERT((eglSurface_ = eglCreateWindowSurface(
       screen_->eglDisplay(), screen_->eglConfig(), nativeWindow, NULL)) != EGL_NO_SURFACE);
 }

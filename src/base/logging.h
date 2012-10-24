@@ -11,7 +11,7 @@
 #define NOT_REACHED() qt_assert("Not reached!",__FILE__,__LINE__)
 
 // logging and asserrtion macros compiled out for non-debug builds (see hybris.pro).
-#if defined(QHYBRIS_DEBUG)
+#if !defined(QT_NO_DEBUG)
 #define DLOG(...) LOG(__VA_ARGS__)
 #define DLOG_IF(cond,...) LOG_IF((cond), __VA_ARGS__)
 #define DASSERT(cond) ASSERT((cond))
