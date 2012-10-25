@@ -7,10 +7,11 @@
 #include "base/logging.h"
 #include <qpa/qwindowsysteminterface.h>
 
-static void inputEventCallback(void* context, const Event* event) {
+static void eventCallback(void* context, const Event* event) {
+  DLOG("eventCallback (context=%p, event=%p)", context, event);
   DASSERT(context != NULL);
   QHybrisWindow* window = static_cast<QHybrisWindow*>(context);
-  window->input_->handleEvent(window->window(), event);
+  window->input_->postEvent(window->window(), event);
 }
 
 QHybrisWindow::QHybrisWindow(QWindow* w, QHybrisScreen* screen, QHybrisInput* input)
@@ -19,7 +20,7 @@ QHybrisWindow::QHybrisWindow(QWindow* w, QHybrisScreen* screen, QHybrisInput* in
     , geometry_(window()->geometry()) {
   ubuntu_application_ui_create_surface(
       &surface_, "QHybriswindow", geometry_.width(), geometry_.height(), MAIN_ACTOR_ROLE,
-      inputEventCallback, this);
+      eventCallback, this);
   ASSERT(surface_ != NULL);
   createSurface(ubuntu_application_ui_surface_to_native_window_type(surface_));
   setWindowState(window()->windowState());

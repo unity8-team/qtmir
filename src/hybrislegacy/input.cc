@@ -7,7 +7,7 @@
 #include <qpa/qplatformwindow.h>
 
 static void eventCallback(Event* event, void* context) {
-  DLOG("hybrisEventCallback (event=%p, context=%p)", event, context);
+  DLOG("eventCallback (event=%p, context=%p)", event, context);
   QHybrisLegacyInput* input = static_cast<QHybrisLegacyInput*>(context);
   if (!input->stopping_.testAndSetRelease(1, 1)) {
     // FIXME(loicm) We need to be able to retrieve the window from an event in order to support
@@ -15,7 +15,7 @@ static void eventCallback(Event* event, void* context) {
     QPlatformWindow* window = static_cast<QHybrisLegacyIntegration*>(
         input->integration())->platformWindow();
     if (window) {
-      input->handleEvent(window->window(), event);
+      input->postEvent(window->window(), event);
     }
   }
 }

@@ -9,12 +9,17 @@
 class QHybrisBaseIntegration;
 struct Event;
 
-class QHybrisBaseInput {
+class QHybrisBaseInput : public QObject {
+  Q_OBJECT
+
  public:
   QHybrisBaseInput(QHybrisBaseIntegration* integration, int maxPointCount);
   ~QHybrisBaseInput();
 
-  void handleEvent(QWindow* window, const Event* event);
+  // QObject methods.
+  void customEvent(QEvent* event);
+
+  void postEvent(QWindow* window, const Event* event);
   QHybrisBaseIntegration* integration() const { return integration_; }
 
  private:
@@ -26,6 +31,7 @@ class QHybrisBaseInput {
   QTouchDevice* touchDevice_;
   QList<QWindowSystemInterface::TouchPoint> touchPoints_;
   const QByteArray eventFilterType_;
+  const QEvent::Type eventType_;
 };
 
 #endif  // QHYBRISBASEINPUT_H

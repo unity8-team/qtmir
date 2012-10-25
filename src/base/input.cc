@@ -5,7 +5,11 @@
 #include "integration.h"
 #include "native_interface.h"
 #include "logging.h"
+#if !defined(QT_NO_DEBUG)
+#include <QtCore/QThread>
+#endif
 #include <QtCore/qglobal.h>
+#include <QtCore/QCoreApplication>
 #include <cstring>  // input_stack_compatibility_layer.h needs this for size_t.
 #include <input/input_stack_compatibility_layer.h>
 #include <input/input_stack_compatibility_layer_flags_motion.h>
@@ -236,10 +240,22 @@ static const int kKeyCode[] = {
   Qt::Key_Calculator       // ISCL_KEYCODE_CALCULATOR      = 210
 };
 
+class QHybrisBaseEvent : public QEvent {
+ public:
+  QHybrisBaseEvent(QWindow* window, const Event* event, QEvent::Type type)
+      : QEvent(type)
+      , window_(window) {
+    memcpy(&nativeEvent_, event, sizeof(Event));
+  }
+  QWindow* window_;
+  Event nativeEvent_;
+};
+
 QHybrisBaseInput::QHybrisBaseInput(QHybrisBaseIntegration* integration, int maxPointCount)
     : integration_(integration)
     , eventFilterType_(static_cast<QHybrisBaseNativeInterface*>(
-        integration->nativeInterface())->genericEventFilterType()) {
+        integration->nativeInterface())->genericEventFilterType())
+    , eventType_(static_cast<QEvent::Type>(QEvent::registerEventType())) {
   DASSERT(maxPointCount > 0);
 
   // Initialize touch device.
@@ -269,29 +285,31 @@ QHybrisBaseInput::~QHybrisBaseInput() {
   touchPoints_.clear();
 }
 
-void QHybrisBaseInput::handleEvent(QWindow* window, const Event* event) {
-  DLOG("QHybrisBaseInput::handleEvent (window=%p, event=%p)", window, event);
+void QHybrisBaseInput::customEvent(QEvent* event) {
+  DLOG("QHybrisBaseInput::customEvent (this=%p, event=%p)", this, event);
+  DASSERT(QThread::currentThread() == thread());
+  QHybrisBaseEvent* hybrisEvent = static_cast<QHybrisBaseEvent*>(event);
 
   // Event filtering.
   long result;
   if (QWindowSystemInterface::handleNativeEvent(
-          window, eventFilterType_, const_cast<Event*>(event), &result) == true) {
+          hybrisEvent->window_, eventFilterType_, &hybrisEvent->nativeEvent_, &result) == true) {
     DLOG("event filtered out");
     return;
   }
 
   // Event dispatching.
-  switch (event->type) {
+  switch (hybrisEvent->nativeEvent_.type) {
     case MOTION_EVENT_TYPE: {
-      handleMotionEvent(window, event);
+      handleMotionEvent(hybrisEvent->window_, &hybrisEvent->nativeEvent_);
       break;
     }
     case KEY_EVENT_TYPE: {
-      handleKeyEvent(window, event);
+      handleKeyEvent(hybrisEvent->window_, &hybrisEvent->nativeEvent_);
       break;
     }
     case HW_SWITCH_EVENT_TYPE: {
-      handleHWSwitchEvent(window, event);
+      handleHWSwitchEvent(hybrisEvent->window_, &hybrisEvent->nativeEvent_);
       break;
     }
     default: {
@@ -300,6 +318,11 @@ void QHybrisBaseInput::handleEvent(QWindow* window, const Event* event) {
       NOT_REACHED();
     }
   }
+}
+
+void QHybrisBaseInput::postEvent(QWindow* window, const Event* event) {
+  DLOG("QHybrisBaseInput::postEvent (window=%p, event=%p)", window, event);
+  QCoreApplication::postEvent(this, new QHybrisBaseEvent(window, event, eventType_));
 }
 
 void QHybrisBaseInput::handleMotionEvent(QWindow* window, const Event* event) {
