@@ -4,11 +4,13 @@
 plugins
 Makefile
 src/Makefile
+src/base/moc_*.cpp
+src/base/libhybrisbase.prl
 src/hybris/Makefile
 src/hybris/main.moc
 src/hybris/moc_*.cpp
 src/hybrislegacy/Makefile
 src/hybrislegacy/main.moc
 src/hybrislegacy/moc_*.cpp
-examples/hybris-qmlscene
 examples/moc_*.cpp
+examples/hybris-qmlscene
