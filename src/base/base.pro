@@ -1,4 +1,4 @@
-TARGET = HybrisBase
+TARGET = hybrisbase
 TEMPLATE = lib
 
 QT += core-private gui-private platformsupport-private
@@ -27,6 +27,6 @@ HEADERS = integration.h \
           input.h \
           logging.h
 
-CONFIG += static egl
+CONFIG += static egl create_prl
 
 INCLUDEPATH += /usr/include/hybris

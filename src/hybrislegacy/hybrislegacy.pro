@@ -23,10 +23,12 @@ HEADERS = integration.h \
           screen.h \
           input.h
 
-CONFIG += plugin egl
+CONFIG += plugin link_prl
+
+PRE_TARGETDEPS = ../base/libhybrisbase.a
 
 INCLUDEPATH += .. /usr/include/hybris
-LIBS += -L../base -lHybrisBase -lhybris_ics -lsf -lis
+LIBS += -L../base -lhybrisbase -lhybris_ics -lsf -lis
 
 OTHER_FILES += hybrislegacy.json
 

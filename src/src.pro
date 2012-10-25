@@ -1,3 +1,6 @@
 TEMPLATE = subdirs
-CONFIG += ordered
+
 SUBDIRS += base hybrislegacy hybris
+
+hybrislegacy.depends = base
+hybris.depends = base
