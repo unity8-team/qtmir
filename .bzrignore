@@ -13,4 +13,4 @@ src/hybrislegacy/Makefile
 src/hybrislegacy/main.moc
 src/hybrislegacy/moc_*.cpp
 examples/moc_*.cpp
-examples/hybris-qmlscene
+examples/qmlscene-hybris
