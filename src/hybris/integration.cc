@@ -7,8 +7,7 @@
 #include "base/logging.h"
 
 QHybrisIntegration::QHybrisIntegration()
-    : window_(NULL)
-    , screen_(new QHybrisScreen())
+    : screen_(new QHybrisScreen())
     , input_(NULL) {
   screenAdded(screen_);
   if (qEnvironmentVariableIsEmpty("QTHYBRIS_NO_INPUT"))
@@ -29,8 +28,7 @@ QPlatformWindow* QHybrisIntegration::createPlatformWindow(QWindow* window) const
 
 QPlatformWindow* QHybrisIntegration::createPlatformWindow(QWindow* window) {
   DLOG("QHybrisIntegration::createPlatformWindow (this=%p, window=%p)", this, window);
-  ASSERT(window_ == NULL);  // FIXME(loicm) Multiple windows are not supported yet.
-  window_ = new QHybrisWindow(window, static_cast<QHybrisScreen*>(screen_), input_);
-  window_->requestActivateWindow();
-  return window_;
+  QPlatformWindow* pWindow = new QHybrisWindow(window, static_cast<QHybrisScreen*>(screen_), input_);
+  pWindow->requestActivateWindow();
+  return pWindow;
 }

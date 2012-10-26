@@ -18,13 +18,7 @@ class QHybrisIntegration : public QHybrisBaseIntegration {
   QPlatformWindow* createPlatformWindow(QWindow* window) const;
   QPlatformWindow* createPlatformWindow(QWindow* window);
 
-  // New methods.
-  // FIXME(loicm) Only one window can be created for now, remove that function when adding support
-  //     for multiple windows.
-  QPlatformWindow* platformWindow() const { return window_; }
-
  private:
-  QPlatformWindow* window_;
   QPlatformScreen* screen_;
   QHybrisInput* input_;
 };
