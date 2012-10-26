@@ -1,6 +1,6 @@
 QT += core quick gui qml
 
-TARGET = hybris-qmlscene
+TARGET = qmlscene-hybris
 TEMPLATE = app
 
 HEADERS += hybrisqmlscene.h
