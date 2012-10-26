@@ -4,7 +4,7 @@ TARGET = hybris-qmlscene
 TEMPLATE = app
 
 HEADERS += hybrisqmlscene.h
-SOURCES += hybrisqmlscene.cpp
+SOURCES += hybrisqmlscene.cc
 
 LIBS += -lrt
 

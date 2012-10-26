@@ -1,8 +1,39 @@
 QtHybris
 --------
 
-  QtHybris is a Qt Platform Abstraction (QPA) plugin for Qt5 using
-  libhybris and the compatibility layer from lp:aal+.
+  QtHybris is a Qt Platform Abstraction (QPA) plugin for Qt5 based on
+  libhybris and the Ubuntu session API. It also contains a legacy
+  plugin based on libhybris and the compatibility layers.
+
+
+Building
+--------
+
+  QtHybris can be built using that command:
+
+    $ qmake && make
+
+  By default, QtHybris compiles a release build. To compile a debug
+  build, the following command should be used:
+
+    $ qmake "CONFIG+=debug" && make
+
+
+Running
+-------
+
+  Considering the QPA plugin path is correctly set using either the
+  QT_QPA_PLATFORM_PLUGIN_PATH environment variable or the
+  "-platformpluginpath" command line switch, the following commands
+  can be used to run with the Hybris plugin:
+
+    $ qmlscene -platform hybris Foo.qml
+    $ QT_QPA_PLATFORM=hybris qmlscene Foo.qml
+
+  and the following ones to run with the Hybris legacy plugin:
+
+    $ qmlscene -platform hybrislegacy Foo.qml
+    $ QT_QPA_PLATFORM=hybrislegacy qmlscene Foo.qml
 
 
 Environment variables
@@ -17,7 +48,7 @@ Environment variables
   - QTHYBRIS_NO_INPUT: Disables touchscreen and buttons.
 
   - QTHYBRIS_INPUT_DELAY: Specifies a delay in milliseconds for input
-                          initialization.
+                          initialization (hybrislegacy plugin only).
 
 
 Native interface
@@ -33,10 +64,9 @@ Native interface
     QQuickView* view = new QQuickView();
     ...
     QPlatformNativeInterface* native = QGuiApplication::platformNativeInterface();
-    printf("app: eglcontext=%p egldisplay=%p sfclient=%p\n",
+    printf("app: eglcontext=%p egldisplay=%p\n",
            native->nativeResourceForContext("eglcontext", view->openglContext()),
-           native->nativeResourceForWindow("egldisplay", view),
-           native->nativeResourceForWindow("sfclient", view));
+           native->nativeResourceForWindow("egldisplay", view));
 
   Note that handles aren't valid until the application mainloop is started. The
   qmake .pro needs to add private gui include directories using

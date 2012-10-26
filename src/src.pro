@@ -1,2 +1,6 @@
 TEMPLATE = subdirs
-SUBDIRS += plugins
+
+SUBDIRS += base hybrislegacy hybris
+
+hybrislegacy.depends = base
+hybris.depends = base
