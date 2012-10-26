@@ -3,7 +3,7 @@ TEMPLATE = lib
 
 QT += core-private gui-private platformsupport-private
 
-DEFINES += MESA_EGL_NO_X11_HEADERS QT_COMPILES_IN_HARFBUZZ
+DEFINES += MESA_EGL_NO_X11_HEADERS
 QMAKE_CXXFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden
 QMAKE_LFLAGS += -Wl,-no-undefined
 
@@ -28,6 +28,6 @@ HEADERS = integration.h \
           input.h \
           logging.h
 
-CONFIG += static egl create_prl
+CONFIG += static create_prl egl qpa/genericunixfontdatabase
 
 INCLUDEPATH += /usr/include/hybris
