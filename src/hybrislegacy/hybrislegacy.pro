@@ -5,7 +5,7 @@ QT += core-private gui-private platformsupport-private
 
 DESTDIR = ../../plugins/platforms
 
-DEFINES += MESA_EGL_NO_X11_HEADERS QT_COMPILES_IN_HARFBUZZ
+DEFINES += MESA_EGL_NO_X11_HEADERS
 QMAKE_CXXFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden
 QMAKE_LFLAGS += -Wl,-no-undefined
 
