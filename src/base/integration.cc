@@ -39,10 +39,17 @@ QHybrisBaseIntegration::~QHybrisBaseIntegration() {
 bool QHybrisBaseIntegration::hasCapability(QPlatformIntegration::Capability cap) const {
   DLOG("QHybrisBaseIntegration::hasCapability (this=%p)", this);
   switch (cap) {
-    case ThreadedPixmaps: return true;
-    case OpenGL: return true;
-    case ThreadedOpenGL: return true;
-    default: return QPlatformIntegration::hasCapability(cap);
+    case ThreadedPixmaps: {
+      return true;
+    } case OpenGL: {
+      return true;
+    }
+    case ThreadedOpenGL: {
+      qEnvironmentVariableIsEmpty("QTHYBRIS_NO_THREADED_OPENGL") ? return true : return false;
+    }
+    default: {
+      return QPlatformIntegration::hasCapability(cap);
+    }
   }
 }
 
