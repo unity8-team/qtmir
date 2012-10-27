@@ -45,8 +45,9 @@
 3. Building
 -----------
 
-  Here is a the process to follow in order to cross-compile for ARM
-  and deploy to the phone. First, install PBuilder on the chroot host:
+  Here is the process to follow in order to cross-compile the project
+  and deploy it to the phone. First, install PBuilder on the chroot
+  host:
 
     $ sudo apt-get install pbuilder
 
