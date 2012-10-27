@@ -45,7 +45,12 @@ bool QHybrisBaseIntegration::hasCapability(QPlatformIntegration::Capability cap)
       return true;
     }
     case ThreadedOpenGL: {
-      qEnvironmentVariableIsEmpty("QTHYBRIS_NO_THREADED_OPENGL") ? return true : return false;
+      if (qEnvironmentVariableIsEmpty("QTHYBRIS_NO_THREADED_OPENGL")) {
+        return true;
+      } else {
+        DLOG("disabled threaded OpenGL");
+        return false;
+      }
     }
     default: {
       return QPlatformIntegration::hasCapability(cap);
