@@ -1,26 +1,19 @@
-QtHybris
---------
+  1. Description
+  2. Running
+  3. Building
+  4. Native interface
+
+
+1. Description
+--------------
 
   QtHybris is a Qt Platform Abstraction (QPA) plugin for Qt5 based on
   libhybris and the Ubuntu session API. It also contains a legacy
   plugin based on libhybris and the compatibility layers.
 
 
-Building
---------
-
-  QtHybris can be built using that command:
-
-    $ qmake && make
-
-  By default, QtHybris compiles a release build. To compile a debug
-  build, the following command should be used:
-
-    $ qmake "CONFIG+=debug" && make
-
-
-Running
--------
+2 Running
+---------
 
   Considering the QPA plugin path is correctly set using either the
   QT_QPA_PLATFORM_PLUGIN_PATH environment variable or the
@@ -35,27 +28,98 @@ Running
     $ qmlscene -platform hybrislegacy Foo.qml
     $ QT_QPA_PLATFORM=hybrislegacy qmlscene Foo.qml
 
+  The plugins expose the following environment variables:
 
-Environment variables
----------------------
-
-  - QTHYBRIS_SWAPINTERVAL: Specifies the required swap interval as an
+    QTHYBRIS_SWAPINTERVAL: Specifies the required swap interval as an
                            integer. 1 by default.
 
-  - QTHYBRIS_MULTISAMPLE: Enables multisampling with using 4 samples
+    QTHYBRIS_MULTISAMPLE: Enables multisampling with using 4 samples
                           per fragment.
 
     QTHYBRIS_NO_THREADED_OPENGL: Disables QtQuick threaded OpenGL
                                  rendering.
 
-  - QTHYBRIS_NO_INPUT: Disables touchscreen and buttons.
+    QTHYBRIS_NO_INPUT: Disables touchscreen and buttons.
 
-  - QTHYBRIS_INPUT_DELAY: Specifies a delay in milliseconds for input
+    QTHYBRIS_INPUT_DELAY: Specifies a delay in milliseconds for input
                           initialization (hybrislegacy plugin only).
 
 
-Native interface
-----------------
+3. Building
+-----------
+
+  Here is the process to follow in order to cross-compile the project
+  and deploy it to the phone. First, install PBuilder on the chroot
+  host:
+
+    $ sudo apt-get install pbuilder
+
+  Get the pbuilder-scripts Ubuntu package hosted on Chinstrap
+  (https://chinstrap.canonical.com/~mfrey/newyork/pbuilder-scripts_14_all.deb),
+  and install it:
+
+    $ sudo dpkg -i pbuilder-scripts_14_all.deb
+
+  Create the chroot:
+
+    $ pcreate -a armel -d quantal -e "vim apt-transport-https ca-certificates libgles2-mesa-dev libegl1-mesa-dev libudev-dev libfontconfig1-dev libfreetype6-dev libglib2.0-dev" armel-quantal
+
+  Skip the sources.list entry edition pressing "ZZ", then login the
+  chroot using the save command:
+
+    $ ptest --save armel-quantal
+
+  Add Manhattan repositories to Apt. See the wiki for the credentials
+  (https://wiki.canonical.com/PES/Infrastructure/Repository/CustomerMirrors).
+
+    $ echo "deb https://USER:PASSWORD@cesg.canonical.com/canonical manhattan-quantal-devel public private" >> /etc/apt/sources.list
+    $ echo "deb-src https://USER:PASSWORD@cesg.canonical.com/canonical manhattan-quantal-devel public private" >> /etc/apt/sources.list
+    $ apt-get update
+
+  Then install Qt5 and the libhybris development files:
+
+    $ apt-get install -y qtdeclarative libhybris-dev
+
+  Exit the chroot saving the current session:
+
+    $ exit
+
+  Files created inside the chroot will be deleted once logging out. In
+  order to write files to a filesystem on the chroot host, edit
+  .pbuilderrc in your home directory and add the filesystem, for
+  example "/media/data", using the BINDMOUNTS option.
+
+    $ echo "BINDMOUNTS=\"/media/data\"" >> ~/.pbuilderrc
+
+  Log back to the chroot and set up some environment variables to use
+  the right Qt5 paths:
+
+    $ ptest armel-quantal
+    $ export PATH=/opt/qt5/bin${PATH:+:$PATH}
+    $ export LD_LIBRARY_PATH=/opt/qt5/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+
+  The build environment is now ready. In order to compile QtHybris, go
+  to the file system set up earlier, generate the makefiles and build:
+
+    $ cd /media/data/qthybris
+    $ qmake
+    $ make
+
+  By default, QtHybris compiles a release build. To compile a debug
+  build, the following command can be used:
+
+    $ qmake "CONFIG+=debug" && make
+
+  To deploy on the phone, open a new shell outside the chroot and push
+  the files to the phone using adb (in the android-tools-adb Quantal
+  package). The deploy.sh script at the root directory is meant to do
+  that:
+
+    $ ./deploy.sh
+
+
+4. Native interface
+-------------------
 
   The QPA plugin exposes a native interface allowing to retrieve
   native handles and to filter out native events. In order to retrieve
