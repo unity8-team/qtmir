@@ -1,4 +1,4 @@
-qthybris (0.9) UNRELEASED; urgency=low
+qthybris (0.9) quantal; urgency=low
 
   * Bumping
   * Adding new dependencies brought in by Qt5 updates
