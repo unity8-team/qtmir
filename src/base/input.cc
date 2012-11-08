@@ -444,7 +444,7 @@ void QHybrisBaseInput::handleMotionEvent(QWindow* window, const Event* event) {
 
   // Touch event propagation.
   QWindowSystemInterface::handleTouchEvent(
-      window, event->details.motion.event_time, touchDevice_, touchPoints_);
+      window, event->details.motion.event_time / 1000000, touchDevice_, touchPoints_);
 }
 
 void QHybrisBaseInput::handleKeyEvent(QWindow* window, const Event* event) {
@@ -474,7 +474,7 @@ void QHybrisBaseInput::handleKeyEvent(QWindow* window, const Event* event) {
 
   // Key event propagation.
   QWindowSystemInterface::handleKeyEvent(
-      window, event->details.key.event_time, kEventType[event->action],
+      window, event->details.key.event_time / 1000000, kEventType[event->action],
       kKeyCode[event->details.key.key_code], modifiers);
 }
 
