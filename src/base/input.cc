@@ -15,7 +15,7 @@
 #include <input/input_stack_compatibility_layer_flags_motion.h>
 #include <input/input_stack_compatibility_layer_flags_key.h>
 
-#define LOG_EVENTS 1
+#define LOG_EVENTS 0
 
 // Lookup table for the key types.
 // FIXME(loicm) Not sure what to do with that multiple thing.
