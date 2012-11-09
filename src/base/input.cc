@@ -10,6 +10,8 @@
 #endif
 #include <QtCore/qglobal.h>
 #include <QtCore/QCoreApplication>
+#include <private/qguiapplication_p.h>
+#include <qpa/qplatforminputcontext.h>
 #include <cstring>  // input_stack_compatibility_layer.h needs this for size_t.
 #include <input/input_stack_compatibility_layer.h>
 #include <input/input_stack_compatibility_layer_flags_motion.h>
@@ -297,7 +299,7 @@ void QHybrisBaseInput::customEvent(QEvent* event) {
   long result;
   if (QWindowSystemInterface::handleNativeEvent(
           hybrisEvent->window_, eventFilterType_, &hybrisEvent->nativeEvent_, &result) == true) {
-    DLOG("event filtered out");
+    DLOG("event filtered out by native interface");
     return;
   }
 
@@ -485,10 +487,20 @@ void QHybrisBaseInput::handleKeyEvent(QWindow* window, const Event* event) {
   }
 
   // Key event propagation.
-  QWindowSystemInterface::handleKeyEvent(
-      window, event->details.key.event_time / 1000000, kEventType[event->action],
-      kKeyCode[event->details.key.key_code].keycode, modifiers,
-      QString(kKeyCode[event->details.key.key_code].unicode[unicodeIndex]));
+  QEvent::Type keyType = kEventType[event->action];
+  quint32 keyCode = kKeyCode[event->details.key.key_code].keycode;
+  QString text(kKeyCode[event->details.key.key_code].unicode[unicodeIndex]);
+  ulong timestamp = event->details.key.event_time / 1000000;
+  QPlatformInputContext* context = QGuiApplicationPrivate::platformIntegration()->inputContext();
+  if (context) {
+    QKeyEvent qKeyEvent(keyType, keyCode, modifiers, text);
+    qKeyEvent.setTimestamp(timestamp);
+    if (context->filterEvent(&qKeyEvent)) {
+      DLOG("key event filtered out by input context");
+      return;
+    }
+  }
+  QWindowSystemInterface::handleKeyEvent(window, timestamp, keyType, keyCode, modifiers, text);
 }
 
 void QHybrisBaseInput::handleHWSwitchEvent(QWindow* window, const Event* event) {

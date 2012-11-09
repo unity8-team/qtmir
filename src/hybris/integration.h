@@ -17,10 +17,12 @@ class QHybrisIntegration : public QHybrisBaseIntegration {
   // QPlatformIntegration methods.
   QPlatformWindow* createPlatformWindow(QWindow* window) const;
   QPlatformWindow* createPlatformWindow(QWindow* window);
+  QPlatformInputContext* inputContext() const { return inputContext_; }
 
  private:
   QPlatformScreen* screen_;
   QHybrisInput* input_;
+  QPlatformInputContext* inputContext_;
 };
 
 #endif  // QHYBRISINTEGRATION_H

@@ -19,6 +19,7 @@ class QHybrisLegacyIntegration : public QObject, public QHybrisBaseIntegration {
   // QPlatformIntegration methods.
   QPlatformWindow* createPlatformWindow(QWindow* window) const;
   QPlatformWindow* createPlatformWindow(QWindow* window);
+  QPlatformInputContext* inputContext() const { return inputContext_; }
 
   // New methods.
   // FIXME(loicm) Only one window can be created for now, remove that function when adding support
@@ -32,6 +33,7 @@ class QHybrisLegacyIntegration : public QObject, public QHybrisBaseIntegration {
   QPlatformWindow* window_;
   QPlatformScreen* screen_;
   QHybrisLegacyInput* input_;
+  QPlatformInputContext* inputContext_;
 };
 
 #endif  // QHYBRISLEGACYINTEGRATION_H
