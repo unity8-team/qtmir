@@ -313,9 +313,7 @@ void QHybrisBaseInput::customEvent(QEvent* event) {
       break;
     }
     default: {
-      // FIXME(loicm) Never received such types yet. Let's see if people get these. Switch to
-      //     DNOT_REACHED() before releasing.
-      NOT_REACHED();
+      DLOG("unhandled event type %d", hybrisEvent->nativeEvent_.type);
     }
   }
 }
@@ -436,9 +434,7 @@ void QHybrisBaseInput::handleMotionEvent(QWindow* window, const Event* event) {
     case ISCL_MOTION_EVENT_ACTION_HOVER_ENTER:
     case ISCL_MOTION_EVENT_ACTION_HOVER_EXIT:
     default: {
-      // FIXME(loicm) Never received such values yet. Let's see if people get these. Switch to
-      //     DNOT_REACHED() before releasing.
-      NOT_REACHED();
+      DLOG("unhandled motion event action %d", event->action & ISCL_MOTION_EVENT_ACTION_MASK);
     }
   }
 
