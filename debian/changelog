@@ -1,3 +1,9 @@
+qthybris (0.10) quantal; urgency=low
+
+  * Fixed incorrect event time stamps. Makes kinetic scrolling work.
+
+ -- Michael Frey <michael.frey@canonical.com>  Thu, 08 Nov 2012 20:40:33 -0500
+
 qthybris (0.9) quantal; urgency=low
 
   * Bumping
