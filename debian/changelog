@@ -1,3 +1,11 @@
+qthybris (0.11) quantal; urgency=low
+
+  * Removed not reached asserts for unknown input events, closes: bug#1075185.
+  * Added support for key event's unicode representation, closes: bug#1074041.
+  * Added support for input context plugins.
+
+ -- Sergio Schvezov <sergio.schvezov@canonical.com>  Fri, 09 Nov 2012 17:11:34 -0300
+
 qthybris (0.10) quantal; urgency=low
 
   * Fixed incorrect event time stamps. Makes kinetic scrolling work.
