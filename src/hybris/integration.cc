@@ -5,19 +5,24 @@
 #include "window.h"
 #include "input.h"
 #include "base/logging.h"
+#include <qpa/qplatforminputcontextfactory_p.h>
+#include <qpa/qplatforminputcontext.h>
 
 QHybrisIntegration::QHybrisIntegration()
     : screen_(new QHybrisScreen())
     , input_(NULL) {
   screenAdded(screen_);
-  if (qEnvironmentVariableIsEmpty("QTHYBRIS_NO_INPUT"))
+  if (qEnvironmentVariableIsEmpty("QTHYBRIS_NO_INPUT")) {
     input_ = new QHybrisInput(this);
+    inputContext_ = QPlatformInputContextFactory::create();
+  }
   DLOG("QHybrisIntegration::QHybrisIntegration (this=%p)", this);
 }
 
 QHybrisIntegration::~QHybrisIntegration() {
   DLOG("QHybrisIntegration::~QHybrisIntegration");
   delete input_;
+  delete inputContext_;
   delete screen_;
 }
 

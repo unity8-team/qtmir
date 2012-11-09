@@ -5,6 +5,8 @@
 #include "window.h"
 #include "input.h"
 #include "base/logging.h"
+#include <qpa/qplatforminputcontextfactory_p.h>
+#include <qpa/qplatforminputcontext.h>
 #include <QTimer>
 
 // That value seems to work on every systems and applications tested so far.
@@ -34,12 +36,14 @@ QHybrisLegacyIntegration::QHybrisLegacyIntegration()
 QHybrisLegacyIntegration::~QHybrisLegacyIntegration() {
   DLOG("QHybrisLegacyIntegration::~QHybrisLegacyIntegration");
   delete input_;
+  delete inputContext_;
   delete screen_;
 }
 
 void QHybrisLegacyIntegration::initInput() {
   DLOG("QHybrisLegacyIntegration::initInput (this=%p)", this);
   input_ = new QHybrisLegacyInput(this);
+  inputContext_ = QPlatformInputContextFactory::create();
 }
 
 QPlatformWindow* QHybrisLegacyIntegration::createPlatformWindow(QWindow* window) const {
