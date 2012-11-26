@@ -101,11 +101,11 @@ QPlatformWindow* QHybrisIntegration::createPlatformWindow(QWindow* window) {
     LOG("ubuntu application form factor: '%s'",
         formFactorHintString[ubuntu_application_ui_setup_get_form_factor_hint()]);
 #endif
-    const SessionCredentials kCredentials = {
+    SessionCredentials credentials = {
       sessionType, APPLICATION_SUPPORTS_OVERLAYED_MENUBAR, "QtHybris", resumedCallback,
       suspendedCallback, focusedCallback, unfocusedCallback, this
     };
-    ubuntu_application_ui_start_a_new_session(&kCredentials);
+    ubuntu_application_ui_start_a_new_session(&credentials);
     once = true;
   }
 
