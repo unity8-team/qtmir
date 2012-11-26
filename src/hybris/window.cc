@@ -6,6 +6,7 @@
 #include "input.h"
 #include "base/logging.h"
 #include <qpa/qwindowsysteminterface.h>
+#include <ubuntu/application/ui/ubuntu_application_ui.h>
 
 static void eventCallback(void* context, const Event* event) {
   DLOG("eventCallback (context=%p, event=%p)", context, event);
@@ -18,19 +19,18 @@ QHybrisWindow::QHybrisWindow(QWindow* w, QHybrisScreen* screen, QHybrisInput* in
     : QHybrisBaseWindow(w, screen)
     , input_(input)
     , geometry_(window()->geometry()) {
-  uint role = w->property("UbuntuSurfaceRole").toUInt();
-  if (role > 7)
-    role = 0;
-  ubuntu_application_ui_create_surface(
-      &surface_, "QHybrisWindow", geometry_.width(), geometry_.height(),
-      static_cast<SurfaceRole>(role), eventCallback, this);
-  ASSERT(surface_ != NULL);
+  uint surfaceRole = w->property("UbuntuSurfaceRole").toUInt();
 #if !defined(QT_NO_DEBUG)
+  ASSERT(surfaceRole <= ON_SCREEN_KEYBOARD_ACTOR_ROLE);
   const char* const roleString[] = {
     "Main", "Tool", "Dialog", "Dash", "Launcher", "Indicator", "Menubar", "OSK"
   };
-  LOG("ubuntu surface role: '%s'", roleString[role]);
+  LOG("ubuntu surface role: '%s'", roleString[surfaceRole]);
 #endif
+  ubuntu_application_ui_create_surface(
+      &surface_, "QHybrisWindow", geometry_.width(), geometry_.height(),
+      static_cast<SurfaceRole>(surfaceRole), eventCallback, this);
+  ASSERT(surface_ != NULL);
   createSurface(ubuntu_application_ui_surface_to_native_window_type(surface_));
   setWindowState(window()->windowState());
   DLOG("QHybrisWindow::QHybrisWindow (this=%p, w=%p, screen=%p, input=%p)", this, w, screen, input);

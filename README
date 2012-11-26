@@ -162,6 +162,8 @@
   API. In order to request a system session type, the following code
   can be used:
 
+    #include <qpa/qplatformnativeinterface.h>
+    ...
     QPlatformNativeInterface* native = QGuiApplication::platformNativeInterface();
     native->setProperty("UbuntuSessionType", static_cast<int>(USER_SESSION_TYPE));
 

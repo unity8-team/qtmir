@@ -20,6 +20,7 @@ class QHybrisIntegration : public QHybrisBaseIntegration {
   QPlatformInputContext* inputContext() const { return inputContext_; }
 
  private:
+  char** argv_;
   QPlatformScreen* screen_;
   QHybrisInput* input_;
   QPlatformInputContext* inputContext_;
