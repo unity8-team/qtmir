@@ -8,7 +8,7 @@
 
 class QHybrisScreen : public QHybrisBaseScreen {
  public:
-  QHybrisScreen();
+  QHybrisScreen(QHybrisBaseNativeInterface* nativeInterface);
   ~QHybrisScreen();
 
   // QPlatformScreen methods.

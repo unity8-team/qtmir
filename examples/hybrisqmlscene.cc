@@ -73,6 +73,8 @@ int main(int argc, char* argv[]) {
   QUrl url;
   QStringList imports;
   bool fullscreen = false;
+  int session = 0;
+  int role = 0;
 
   for (int i = 1; i < argc; ++i) {
     if (QFileInfo(QFile::decodeName(argv[i])).exists()) {
@@ -83,6 +85,10 @@ int main(int argc, char* argv[]) {
         imports.append(QString::fromLatin1(argv[++i]));
       } else if (kArg == QLatin1String("-f")) {
         fullscreen = true;
+      } else if (kArg == QLatin1String("--session") && i + 1 < argc) {
+        session = atoi(++i);
+      } else if (kArg == QLatin1String("--role") && i + 1 < argc) {
+        role = atoi(++i);
       } else if (kArg == QLatin1String("--help") || kArg == QLatin1String("-help") ||
                  kArg == QLatin1String("--h") || kArg == QLatin1String("-h")) {
         usage();
@@ -107,6 +113,10 @@ int main(int argc, char* argv[]) {
   app.setOrganizationDomain("canonical.com");
 
   view = new QQuickView();
+
+  QPlatformNativeInterface* native = QGuiApplication::platformNativeInterface();
+  native->setProperty("UbuntuSessionType", session);
+  view->setProperty("UbuntuSurfaceRole", role);
 
   QQmlEngine* engine = view->engine();
   for (int i = 0; i < imports.size(); ++i)

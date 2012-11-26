@@ -9,7 +9,7 @@
 #include <qpa/qplatforminputcontext.h>
 
 QHybrisIntegration::QHybrisIntegration()
-    : screen_(new QHybrisScreen())
+    : screen_(new QHybrisScreen(static_cast<QHybrisBaseNativeInterface*>(platformIntegration())))
     , input_(NULL) {
   screenAdded(screen_);
   if (qEnvironmentVariableIsEmpty("QTHYBRIS_NO_INPUT")) {
