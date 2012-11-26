@@ -2,13 +2,14 @@
   2. Running
   3. Building
   4. Native interface
+  5. Properties
 
 
 1. Description
 --------------
 
   QtHybris is a Qt Platform Abstraction (QPA) plugin for Qt5 based on
-  libhybris and the Ubuntu session API. It also contains a legacy
+  libhybris and the Ubuntu Application API. It also contains a legacy
   plugin based on libhybris and the compatibility layers.
 
 
@@ -149,3 +150,18 @@
 
   [1] http://doc-snapshot.qt-project.org/5.0/qabstractnativeeventfilter.html
   [2] http://doc-snapshot.qt-project.org/5.0/qcoreapplication.html#installNativeEventFilter
+
+
+5. Properties
+-------------
+
+  The QPA plugin for Hybris looks for a specific property named
+  "UbuntuSurfaceRole" on the QWindow object in order to know the type
+  of surface role to request. That property can be set to an integer
+  representing the value of a SurfaceRole enumeration specified in the
+  Ubuntu Application API. In order to request a tool support role, the
+  following code can be used:
+
+  QQuickView* view = new QQuickView();
+  view->setProperty("UbuntuSurfaceRole", static_cast<int>(TOOL_SUPPORT_ACTOR_ROLE));
+  ...
