@@ -18,10 +18,19 @@ QHybrisWindow::QHybrisWindow(QWindow* w, QHybrisScreen* screen, QHybrisInput* in
     : QHybrisBaseWindow(w, screen)
     , input_(input)
     , geometry_(window()->geometry()) {
+  uint role = w->property("UbuntuSurfaceRole").toUInt();
+  if (role > 7)
+    role = 0;
   ubuntu_application_ui_create_surface(
-      &surface_, "QHybriswindow", geometry_.width(), geometry_.height(), MAIN_ACTOR_ROLE,
-      eventCallback, this);
+      &surface_, "QHybrisWindow", geometry_.width(), geometry_.height(),
+      static_cast<SurfaceRole>(role), eventCallback, this);
   ASSERT(surface_ != NULL);
+#if !defined(QT_NO_DEBUG)
+  const char* const roleString[] = {
+    "Main", "Tool", "Dialog", "Dash", "Launcher", "Indicator", "Menubar", "OSK"
+  };
+  LOG("ubuntu surface role: '%s'", roleString[role]);
+#endif
   createSurface(ubuntu_application_ui_surface_to_native_window_type(surface_));
   setWindowState(window()->windowState());
   DLOG("QHybrisWindow::QHybrisWindow (this=%p, w=%p, screen=%p, input=%p)", this, w, screen, input);

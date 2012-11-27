@@ -1,3 +1,9 @@
+qthybris (0.12) quantal; urgency=low
+
+  * Added support to specify surface roles.
+
+ -- Loïc Molinari <loic.molinari@canonical.com>  Mon, 26 Nov 2012 15:31:07 +0200
+
 qthybris (0.11) quantal; urgency=low
 
   * Removed not reached asserts for unknown input events, closes: LP: #1075185.
