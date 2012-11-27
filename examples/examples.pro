@@ -1,4 +1,4 @@
-QT += core quick gui qml
+QT += core quick qml gui-private
 
 TARGET = qmlscene-hybris
 TEMPLATE = app

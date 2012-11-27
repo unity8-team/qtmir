@@ -4,6 +4,7 @@
 #include "hybrisqmlscene.h"
 #include <QtQuick>
 #include <QtQml/qqmlengine.h>
+#include <qpa/qplatformnativeinterface.h>
 #include <cstdio>
 #include <ctime>
 #include <csignal>
@@ -44,9 +45,11 @@ static void usage() {
   fprintf(stdout,
           "Usage: hybris-qmlscene [options] <filename>\n\n"
           "  Options:\n"
-          "    -i <path> ... Add <path> to the list of import paths\n"
-          "    -f        ... Show the window fullscreen\n"
-          "    -h        ... Show that help\n");
+          "    -i <path>                  ... Add <path> to the list of import paths\n"
+          "    -f or --fullscreen         ... Show the window fullscreen\n"
+          "    -s or --session <session>  ... Set the Ubuntu session type\n"
+          "    -r or --role <role>        ... Set the Ubuntu surface role\n"
+          "    -h or --help               ... Show that help\n");
 }
 
 // static void logger(QtMsgType type, const char* msg) {
@@ -73,6 +76,8 @@ int main(int argc, char* argv[]) {
   QUrl url;
   QStringList imports;
   bool fullscreen = false;
+  int session = 0;
+  int role = 0;
 
   for (int i = 1; i < argc; ++i) {
     if (QFileInfo(QFile::decodeName(argv[i])).exists()) {
@@ -81,10 +86,15 @@ int main(int argc, char* argv[]) {
       const QString kArg = QString::fromLatin1(argv[i]).toLower();
       if (kArg == QLatin1String("-i") && i + 1 < argc) {
         imports.append(QString::fromLatin1(argv[++i]));
-      } else if (kArg == QLatin1String("-f")) {
+      } else if (kArg == QLatin1String("-f") || kArg == QLatin1String("--fullscreen")) {
         fullscreen = true;
-      } else if (kArg == QLatin1String("--help") || kArg == QLatin1String("-help") ||
-                 kArg == QLatin1String("--h") || kArg == QLatin1String("-h")) {
+      } else if ((kArg == QLatin1String("-s") || kArg == QLatin1String("--session"))
+                 && i + 1 < argc) {
+        session = atoi(argv[++i]);
+      } else if ((kArg == QLatin1String("-r") || kArg == QLatin1String("--role"))
+                 && i + 1 < argc) {
+        role = atoi(argv[++i]);
+      } else if (kArg == QLatin1String("-h") || kArg == QLatin1String("--help")) {
         usage();
         return 0;
       }
@@ -107,6 +117,10 @@ int main(int argc, char* argv[]) {
   app.setOrganizationDomain("canonical.com");
 
   view = new QQuickView();
+
+  QPlatformNativeInterface* native = QGuiApplication::platformNativeInterface();
+  native->setProperty("UbuntuSessionType", session);
+  view->setProperty("UbuntuSurfaceRole", role);
 
   QQmlEngine* engine = view->engine();
   for (int i = 0; i < imports.size(); ++i)

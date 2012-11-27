@@ -15,7 +15,6 @@ class QHybrisScreen : public QHybrisBaseScreen {
   QRect geometry() const { return geometry_; }
 
  private:
-  char** argv_;
   QRect geometry_;
 };
 
