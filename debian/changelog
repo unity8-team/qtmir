@@ -1,3 +1,9 @@
+qthybris (0.14) quantal; urgency=low
+
+  * Added support for window position.
+
+ -- Thomas Moenicke <thomas@pachamama>  Thu, 29 Nov 2012 15:10:38 +0100
+
 qthybris (0.13) quantal; urgency=low
 
   * Added support for the new credentials system.
