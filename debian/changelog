@@ -1,3 +1,10 @@
+qthybris (0.16) quantal; urgency=low
+
+  [ Thomas Voss ]
+  * Added support for hiding/showing native windows.
+
+ -- Michael Frey <michael.frey@canonical.com>  Thu, 29 Nov 2012 11:53:24 -0500
+
 qthybris (0.15) quantal; urgency=low
 
   * Ensured window states are set at creation.
