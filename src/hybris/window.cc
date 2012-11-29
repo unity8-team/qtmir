@@ -33,7 +33,10 @@ QHybrisWindow::QHybrisWindow(QWindow* w, QHybrisScreen* screen, QHybrisInput* in
   ASSERT(surface_ != NULL);
   createSurface(ubuntu_application_ui_surface_to_native_window_type(surface_));
   setWindowState(window()->windowState());
-  ubuntu_application_ui_move_surface_to(surface_, geometry_.x(), geometry_.y());
+
+  if (geometry_.x() != 0 || geometry_.y() != 0)
+    ubuntu_application_ui_move_surface_to(surface_, geometry_.x(), geometry_.y());
+
   DLOG("QHybrisWindow::QHybrisWindow (this=%p, w=%p, screen=%p, input=%p)", this, w, screen, input);
 }
 
