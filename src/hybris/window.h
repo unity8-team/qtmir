@@ -19,6 +19,8 @@ class QHybrisWindow : public QHybrisBaseWindow {
   void setGeometry(const QRect&);
   Qt::WindowState setWindowState(Qt::WindowState state);
 
+  void setVisible(bool visible);
+
   QHybrisInput* input_;
 
  private:
