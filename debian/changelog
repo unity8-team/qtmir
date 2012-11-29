@@ -1,4 +1,4 @@
-qthybris (0.13phablet1) quantal; urgency=low
+qthybris (0.14) quantal; urgency=low
 
   * Added support for window position.
 
