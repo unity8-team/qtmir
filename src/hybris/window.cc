@@ -32,11 +32,7 @@ QHybrisWindow::QHybrisWindow(QWindow* w, QHybrisScreen* screen, QHybrisInput* in
       static_cast<SurfaceRole>(surfaceRole), eventCallback, this);
   ASSERT(surface_ != NULL);
   createSurface(ubuntu_application_ui_surface_to_native_window_type(surface_));
-  setWindowState(window()->windowState());
-
-  if (geometry_.x() != 0 || geometry_.y() != 0)
-    ubuntu_application_ui_move_surface_to(surface_, geometry_.x(), geometry_.y());
-
+  setState(window()->windowState());
   DLOG("QHybrisWindow::QHybrisWindow (this=%p, w=%p, screen=%p, input=%p)", this, w, screen, input);
 }
 
@@ -45,18 +41,16 @@ QHybrisWindow::~QHybrisWindow() {
   ubuntu_application_ui_destroy_surface(surface_);
 }
 
-Qt::WindowState QHybrisWindow::setWindowState(Qt::WindowState state) {
-  if (state == state_)
-    return state;
+Qt::WindowState QHybrisWindow::setState(Qt::WindowState state) {
   switch (state) {
     case Qt::WindowNoState: {
-      DLOG("QHybrisWindow::setWindowState (this=%p, state='NoState')", this);
+      DLOG("QHybrisWindow::setState (this=%p, state='NoState')", this);
       moveResize(geometry_);
       state_ = Qt::WindowNoState;
       return Qt::WindowNoState;
     }
     case Qt::WindowFullScreen: {
-      DLOG("QHybrisWindow::setWindowState (this=%p, state='FullScreen')", this);
+      DLOG("QHybrisWindow::setState (this=%p, state='FullScreen')", this);
       QRect screenGeometry(screen()->availableGeometry());
       moveResize(screenGeometry);
       state_ = Qt::WindowFullScreen;
@@ -66,10 +60,17 @@ Qt::WindowState QHybrisWindow::setWindowState(Qt::WindowState state) {
     case Qt::WindowMinimized:
     case Qt::WindowMaximized:
     default: {
-      DLOG("QHybrisWindow::setWindowState (this=%p, state='Active|Minimized|Maximized')", this);
+      DLOG("QHybrisWindow::setState (this=%p, state='Active|Minimized|Maximized')", this);
       return state_;
     }
   }
+}
+
+Qt::WindowState QHybrisWindow::setWindowState(Qt::WindowState state) {
+  DLOG("QHybrisWindow::setWindowState (this=%p, state=%d)", this, state);
+  if (state == state_)
+    return state;
+  return setState(state);
 }
 
 void QHybrisWindow::setGeometry(const QRect& rect) {

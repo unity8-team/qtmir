@@ -22,6 +22,7 @@ class QHybrisWindow : public QHybrisBaseWindow {
   QHybrisInput* input_;
 
  private:
+  Qt::WindowState setState(Qt::WindowState state);
   void moveResize(const QRect& rect);
 
   QHybrisScreen* screen_;

@@ -1,3 +1,9 @@
+qthybris (0.15) quantal; urgency=low
+
+  * Ensured window states are set at creation.
+
+ -- Loïc Molinari <loic.molinari@canonical.com>  Thu, 29 Nov 2012 16:41:30 +0200
+
 qthybris (0.14) quantal; urgency=low
 
   * Added support for window position.
