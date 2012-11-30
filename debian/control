@@ -21,7 +21,8 @@ Package: qthybris
 Section: libs
 Architecture: armel armhf
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: QPA Plugins for Hybris
- QtHybris is a Qt Platform Abstraction (QPA) plugin for Qt5 based on
- libhybris and the Ubuntu session API. It also contains a legacy
- plugin based on libhybris and the compatibility layers.
+Description: Qt plugins for Ubuntu application API
+ QtHybris is a set of Qt5 plugins based on libhybris and the Ubuntu
+ application API. It contains Qt Platform Abstraction (QPA) plugins
+ based on AAL+ and the compatibility layers. It also contains a QML
+ plugin that can be used to access Ubuntu application API features.

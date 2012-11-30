@@ -1,0 +1,2 @@
+module Ubuntu.Application
+plugin ubuntuapplicationplugin

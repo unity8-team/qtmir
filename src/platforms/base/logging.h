@@ -10,7 +10,7 @@
 #define ASSERT(cond) ((!(cond)) ? qt_assert(#cond,__FILE__,__LINE__) : qt_noop())
 #define NOT_REACHED() qt_assert("Not reached!",__FILE__,__LINE__)
 
-// logging and asserrtion macros compiled out for non-debug builds (see hybris.pro).
+// Logging and assertion macros are compiled out for release builds.
 #if !defined(QT_NO_DEBUG)
 #define DLOG(...) LOG(__VA_ARGS__)
 #define DLOG_IF(cond,...) LOG_IF((cond), __VA_ARGS__)

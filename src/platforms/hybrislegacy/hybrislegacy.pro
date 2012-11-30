@@ -1,9 +1,7 @@
-TARGET = qhybris
+TARGET = qhybrislegacy
 TEMPLATE = lib
 
 QT += core-private gui-private platformsupport-private
-
-DESTDIR = ../../plugins/platforms
 
 DEFINES += MESA_EGL_NO_X11_HEADERS
 QMAKE_CXXFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden
@@ -29,9 +27,9 @@ CONFIG += plugin link_prl
 PRE_TARGETDEPS = ../base/libhybrisbase.a
 
 INCLUDEPATH += .. /usr/include/hybris
-LIBS += -L../base -lhybrisbase -lhybris_ics -lubuntu_application_api
+LIBS += -L../base -lhybrisbase -lhybris_ics -lsf -lis
 
-OTHER_FILES += hybris.json
+OTHER_FILES += hybrislegacy.json
 
 target.path += $$[QT_INSTALL_PLUGINS]/platforms
 INSTALLS += target
