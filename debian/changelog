@@ -1,3 +1,9 @@
+qthybris (0.18) quantal; urgency=low
+
+  * Added application module.
+
+ -- Loïc Molinari <loic.molinari@canonical.com>  Fri, 30 Nov 2012 17:35:08 +0200
+
 qthybris (0.17) quantal; urgency=low
 
   * Fixed show/hide crash.
