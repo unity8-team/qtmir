@@ -17,8 +17,7 @@ extern "C" void init_hybris();
 QHybrisBaseIntegration::QHybrisBaseIntegration()
     : eventDispatcher_(createUnixEventDispatcher())
     , nativeInterface_(new QHybrisBaseNativeInterface())
-    , fontDb_(new QGenericUnixFontDatabase())
-    , context_(NULL) {
+    , fontDb_(new QGenericUnixFontDatabase()) {
   static bool once = false;
   if (!once) {
     // Init libhybris ensuring the libs are loaded and threading is all setup.
@@ -73,7 +72,5 @@ QPlatformOpenGLContext* QHybrisBaseIntegration::createPlatformOpenGLContext(
 QPlatformOpenGLContext* QHybrisBaseIntegration::createPlatformOpenGLContext(
     QOpenGLContext* context) {
   DLOG("QHybrisBaseIntegration::createPlatformOpenGLContext (this=%p, context=%p)", this, context);
-  if (!context_)
-    context_ = new QHybrisBaseContext(static_cast<QHybrisBaseScreen*>(context->screen()->handle()));
-  return context_;
+  return new QHybrisBaseContext(static_cast<QHybrisBaseScreen*>(context->screen()->handle()));
 }

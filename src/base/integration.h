@@ -26,7 +26,6 @@ class QHybrisBaseIntegration : public QPlatformIntegration {
   QAbstractEventDispatcher* eventDispatcher_;
   QPlatformNativeInterface* nativeInterface_;
   QPlatformFontDatabase* fontDb_;
-  QPlatformOpenGLContext* context_;
 };
 
 #endif  // QHYBRISBASEINTEGRATION_H
