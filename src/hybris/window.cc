@@ -80,16 +80,13 @@ void QHybrisWindow::setGeometry(const QRect& rect) {
     moveResize(rect);
 }
 
-void QHybrisWindow::setVisible(bool visible)
-{
-  DLOG("%s: %s", __PRETTY_FUNCTION__, visible ? "true" : "false");
-  if (visible)
-  {    
-      ubuntu_application_ui_show_surface(surface_);
-      QWindowSystemInterface::handleSynchronousExposeEvent(window(), geometry_);
-  } else
-  {      
-      ubuntu_application_ui_hide_surface(surface_);
+void QHybrisWindow::setVisible(bool visible) {
+  DLOG("QHybrisWindow::setVisible (this=%p, visible=%s)", this, visible ? "true" : "false");
+  if (visible) {
+    ubuntu_application_ui_show_surface(surface_);
+    QWindowSystemInterface::handleSynchronousExposeEvent(window(), geometry_);
+  } else {
+    ubuntu_application_ui_hide_surface(surface_);
   }
 }
 
