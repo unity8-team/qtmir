@@ -1,3 +1,28 @@
+qthybris (0.17) quantal; urgency=low
+
+  * Fixed show/hide crash.
+
+ -- Loïc Molinari <loic.molinari@canonical.com>  Fri, 30 Nov 2012 13:44:39 +0200
+
+qthybris (0.16) quantal; urgency=low
+
+  [ Thomas Voss ]
+  * Added support for hiding/showing native windows.
+
+ -- Michael Frey <michael.frey@canonical.com>  Thu, 29 Nov 2012 11:53:24 -0500
+
+qthybris (0.15) quantal; urgency=low
+
+  * Ensured window states are set at creation.
+
+ -- Loïc Molinari <loic.molinari@canonical.com>  Thu, 29 Nov 2012 16:41:30 +0200
+
+qthybris (0.14) quantal; urgency=low
+
+  * Added support for window position.
+
+ -- Thomas Moenicke <thomas@pachamama>  Thu, 29 Nov 2012 15:10:38 +0100
+
 qthybris (0.13) quantal; urgency=low
 
   * Added support for the new credentials system.
