@@ -21,6 +21,6 @@ CONFIG += plugin
 INCLUDEPATH += /usr/include/hybris
 LIBS += -lubuntu_application_api
 
-target.files += qmldir
+target.files += libubuntuapplicationplugin.so qmldir
 target.path += $$[QT_INSTALL_IMPORTS]/Ubuntu/Application
 INSTALLS += target
