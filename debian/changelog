@@ -1,3 +1,9 @@
+qthybris (0.17) quantal; urgency=low
+
+  * Fixed show/hide crash.
+
+ -- Loïc Molinari <loic.molinari@canonical.com>  Fri, 30 Nov 2012 13:44:39 +0200
+
 qthybris (0.16) quantal; urgency=low
 
   [ Thomas Voss ]
