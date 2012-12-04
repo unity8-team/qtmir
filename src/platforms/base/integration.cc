@@ -78,7 +78,7 @@ QPlatformOpenGLContext* QHybrisBaseIntegration::createPlatformOpenGLContext(
 
 QStringList QHybrisBaseIntegration::themeNames() const {
   DLOG("QHybrisBaseIntegration::themeNames (this=%p)", this);
-  return QStringList() << QHybrisTheme::name();
+  return QStringList() << QHybrisTheme::name;
 }
 
 QPlatformTheme* QHybrisBaseIntegration::createPlatformTheme(const QString& name) const {
