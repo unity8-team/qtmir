@@ -10,6 +10,7 @@ class QHybrisTheme : public QGenericUnixTheme {
  public:
   static const char* name;
   QHybrisTheme();
+  ~QHybrisTheme();
 
   virtual QVariant themeHint(ThemeHint hint) const;
 };
