@@ -155,7 +155,7 @@
 5. Properties
 -------------
 
-  The QPA plugin for Hybris looks for a "UbuntuSessionType" dynamic
+  The QPA plugin for Hybris looks for a "ubuntuSessionType" dynamic
   property on the QPlatformNativeInterface object in order to know the
   session type to request. That property can be set to an integer
   representing a SessionType specified in the Ubuntu Application
@@ -165,13 +165,13 @@
     #include <qpa/qplatformnativeinterface.h>
     ...
     QPlatformNativeInterface* native = QGuiApplication::platformNativeInterface();
-    native->setProperty("UbuntuSessionType", static_cast<int>(USER_SESSION_TYPE));
+    native->setProperty("ubuntuSessionType", static_cast<int>(USER_SESSION_TYPE));
 
-  The plugin also looks for a "UbuntuSurfaceRole" property on the
+  The plugin also looks for a "ubuntuSurfaceRole" property on the
   QWindow object in order to know the surface role to request. That
   property can be set to an integer representing a SurfaceRole. In
   order to request a tool support role, the following code can be
   used:
 
     QQuickView* view = new QQuickView();
-    view->setProperty("UbuntuSurfaceRole", static_cast<int>(TOOL_SUPPORT_ACTOR_ROLE));
+    view->setProperty("ubuntuSurfaceRole", static_cast<int>(TOOL_SUPPORT_ACTOR_ROLE));
