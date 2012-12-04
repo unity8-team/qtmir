@@ -8,9 +8,9 @@
 
 class QHybrisTheme : public QGenericUnixTheme {
  public:
-  static const char* name;
   QHybrisTheme();
 
+  static const char* name();
   virtual QVariant themeHint(ThemeHint hint) const;
 };
 

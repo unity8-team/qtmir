@@ -5,9 +5,11 @@
 #include "logging.h"
 #include <QtCore/QVariant>
 
-const char *QHybrisTheme::name = "hybris";
-
 QHybrisTheme::QHybrisTheme() {
+}
+
+const char* QHybrisTheme::name() {
+  return "hybris";
 }
 
 QVariant QHybrisTheme::themeHint(ThemeHint hint) const {
