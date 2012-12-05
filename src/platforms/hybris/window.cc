@@ -19,7 +19,7 @@ QHybrisWindow::QHybrisWindow(QWindow* w, QHybrisScreen* screen, QHybrisInput* in
     : QHybrisBaseWindow(w, screen)
     , input_(input)
     , geometry_(window()->geometry()) {
-  uint surfaceRole = w->property("UbuntuSurfaceRole").toUInt();
+  uint surfaceRole = w->property("ubuntuSurfaceRole").toUInt();
 #if !defined(QT_NO_DEBUG)
   ASSERT(surfaceRole <= ON_SCREEN_KEYBOARD_ACTOR_ROLE);
   const char* const roleString[] = {

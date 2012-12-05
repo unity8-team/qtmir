@@ -119,8 +119,8 @@ int main(int argc, char* argv[]) {
   view = new QQuickView();
 
   QPlatformNativeInterface* native = QGuiApplication::platformNativeInterface();
-  native->setProperty("UbuntuSessionType", session);
-  view->setProperty("UbuntuSurfaceRole", role);
+  native->setProperty("ubuntuSessionType", session);
+  view->setProperty("ubuntuSurfaceRole", role);
 
   QQmlEngine* engine = view->engine();
   for (int i = 0; i < imports.size(); ++i)

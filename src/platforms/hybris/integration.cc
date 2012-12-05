@@ -83,7 +83,7 @@ QPlatformWindow* QHybrisIntegration::createPlatformWindow(QWindow* window) {
   // Start a session before creating the first window.
   static bool once = false;
   if (!once) {
-    uint sessionType = nativeInterface()->property("UbuntuSessionType").toUInt();
+    uint sessionType = nativeInterface()->property("ubuntuSessionType").toUInt();
 #if !defined(QT_NO_DEBUG)
     ASSERT(sessionType <= SYSTEM_SESSION_TYPE);
     const char* const sessionTypeString[] = {
