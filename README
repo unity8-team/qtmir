@@ -45,6 +45,8 @@
     QTHYBRIS_INPUT_DELAY: Specifies a delay in milliseconds for input
                           initialization (hybrislegacy plugin only).
 
+    QTHYBRIS_ICON_THEME: Specifies the default icon theme name.
+
 
 3. Building
 -----------

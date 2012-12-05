@@ -21,6 +21,8 @@ class QHybrisBaseIntegration : public QPlatformIntegration {
   QPlatformOpenGLContext* createPlatformOpenGLContext(QOpenGLContext* context) const;
   QPlatformOpenGLContext* createPlatformOpenGLContext(QOpenGLContext* context);
   QPlatformFontDatabase* fontDatabase() const { return fontDb_; }
+  QStringList themeNames() const;
+  QPlatformTheme* createPlatformTheme(const QString& name) const;
 
  private:
   QAbstractEventDispatcher* eventDispatcher_;

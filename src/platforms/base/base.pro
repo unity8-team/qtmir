@@ -17,7 +17,8 @@ SOURCES = integration.cc \
           context.cc \
           screen.cc \
           window.cc \
-          input.cc
+          input.cc \
+          theme.cc
 
 HEADERS = integration.h \
           backing_store.h \
@@ -26,7 +27,8 @@ HEADERS = integration.h \
           screen.h \
           window.h \
           input.h \
-          logging.h
+          logging.h \
+          theme.h
 
 CONFIG += static create_prl egl qpa/genericunixfontdatabase
 

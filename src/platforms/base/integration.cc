@@ -7,6 +7,7 @@
 #include "screen.h"
 #include "context.h"
 #include "logging.h"
+#include "theme.h"
 #include <QtPlatformSupport/private/qgenericunixfontdatabase_p.h>
 #include <QtPlatformSupport/private/qgenericunixeventdispatcher_p.h>
 #include <QtGui/private/qguiapplication_p.h>
@@ -73,4 +74,14 @@ QPlatformOpenGLContext* QHybrisBaseIntegration::createPlatformOpenGLContext(
     QOpenGLContext* context) {
   DLOG("QHybrisBaseIntegration::createPlatformOpenGLContext (this=%p, context=%p)", this, context);
   return new QHybrisBaseContext(static_cast<QHybrisBaseScreen*>(context->screen()->handle()));
+}
+
+QStringList QHybrisBaseIntegration::themeNames() const {
+  DLOG("QHybrisBaseIntegration::themeNames (this=%p)", this);
+  return QStringList(QHybrisTheme::name);
+}
+
+QPlatformTheme* QHybrisBaseIntegration::createPlatformTheme(const QString& name) const {
+  DLOG("QHybrisBaseIntegration::createPlatformTheme (this=%p)", this);
+  return new QHybrisTheme();
 }
