@@ -12,7 +12,7 @@ class QHybrisInput;
 
 class QHybrisWindow : public QHybrisBaseWindow {
  public:
-  QHybrisWindow(QWindow* w, QHybrisScreen* screen, QHybrisInput* input);
+  QHybrisWindow(QWindow* w, QHybrisScreen* screen, QHybrisInput* input, bool systemSession);
   ~QHybrisWindow();
 
   // QPlatformWindow methods.
@@ -23,13 +23,13 @@ class QHybrisWindow : public QHybrisBaseWindow {
   QHybrisInput* input_;
 
  private:
-  Qt::WindowState setState(Qt::WindowState state);
+  void createWindow();
   void moveResize(const QRect& rect);
 
-  QHybrisScreen* screen_;
   ubuntu_application_ui_surface surface_;
   Qt::WindowState state_;
   QRect geometry_;
+  bool systemSession_;
 };
 
 #endif  // QHYBRISWINDOW_H

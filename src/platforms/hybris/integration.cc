@@ -81,11 +81,12 @@ QPlatformWindow* QHybrisIntegration::createPlatformWindow(QWindow* window) const
 
 QPlatformWindow* QHybrisIntegration::createPlatformWindow(QWindow* window) {
   DLOG("QHybrisIntegration::createPlatformWindow (this=%p, window=%p)", this, window);
+  static uint sessionType;
 
   // Start a session before creating the first window.
   static bool once = false;
   if (!once) {
-    uint sessionType = nativeInterface()->property("ubuntuSessionType").toUInt();
+    sessionType = nativeInterface()->property("ubuntuSessionType").toUInt();
 #if !defined(QT_NO_DEBUG)
     ASSERT(sessionType <= SYSTEM_SESSION_TYPE);
     const char* const sessionTypeString[] = {
@@ -112,8 +113,8 @@ QPlatformWindow* QHybrisIntegration::createPlatformWindow(QWindow* window) {
   }
 
   // Create the window.
-  QPlatformWindow* platformWindow =
-      new QHybrisWindow(window, static_cast<QHybrisScreen*>(screen_), input_);
+  QPlatformWindow* platformWindow = new QHybrisWindow(
+      window, static_cast<QHybrisScreen*>(screen_), input_, static_cast<bool>(sessionType));
   platformWindow->requestActivateWindow();
   return platformWindow;
 }

@@ -47,6 +47,7 @@ static void usage() {
           "  Options:\n"
           "    -i <path>                  ... Add <path> to the list of import paths\n"
           "    -f or --fullscreen         ... Show the window fullscreen\n"
+          "    -m or --maximized          ... Show the window maximized\n"
           "    -s or --session <session>  ... Set the Ubuntu session type\n"
           "    -r or --role <role>        ... Set the Ubuntu surface role\n"
           "    -h or --help               ... Show that help\n");
@@ -76,6 +77,7 @@ int main(int argc, char* argv[]) {
   QUrl url;
   QStringList imports;
   bool fullscreen = false;
+  bool maximized = false;
   int session = 0;
   int role = 0;
 
@@ -88,6 +90,8 @@ int main(int argc, char* argv[]) {
         imports.append(QString::fromLatin1(argv[++i]));
       } else if (kArg == QLatin1String("-f") || kArg == QLatin1String("--fullscreen")) {
         fullscreen = true;
+      } else if (kArg == QLatin1String("-m") || kArg == QLatin1String("--maximized")) {
+        maximized = true;
       } else if ((kArg == QLatin1String("-s") || kArg == QLatin1String("--session"))
                  && i + 1 < argc) {
         session = atoi(argv[++i]);
@@ -132,6 +136,8 @@ int main(int argc, char* argv[]) {
   view->setSource(url);
   if (fullscreen)
     view->showFullScreen();
+  else if (maximized)
+    view->showMaximized();
   else
     view->show();
 

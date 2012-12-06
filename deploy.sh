@@ -5,6 +5,7 @@ adb push src/platforms/hybrislegacy/libqhybrislegacy.so /data/ubuntu/opt/qt5/plu
 adb push src/modules/application/libubuntuapplicationplugin.so /data/ubuntu/opt/qt5/imports/Ubuntu/Application
 adb push src/modules/application/qmldir /data/ubuntu/opt/qt5/imports/Ubuntu/Application
 adb push examples/qmlscene-hybris /data/ubuntu/opt/qt5/bin
+adb push examples/Logo.qml /data/ubuntu/opt/qt5/examples
 adb push examples/MovingLogo.qml /data/ubuntu/opt/qt5/examples
 adb push examples/WarpingLogo.qml /data/ubuntu/opt/qt5/examples
 adb push examples/Input.qml /data/ubuntu/opt/qt5/examples
