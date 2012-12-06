@@ -1,4 +1,4 @@
-qthybris (0.21) UNRELEASED; urgency=low
+qthybris (0.21) quantal; urgency=low
 
   * Added support for maximization and hard-coded strut for the phone.
 
