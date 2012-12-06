@@ -1,3 +1,9 @@
+qthybris (0.21) UNRELEASED; urgency=low
+
+  * Added support for maximization and hard-coded strut for the phone.
+
+ -- Loïc Molinari <loic.molinari@canonical.com>  Thu, 06 Dec 2012 13:32:27 +0100
+
 qthybris (0.20) UNRELEASED; urgency=low
 
   * Added support for application management.
@@ -6,7 +12,7 @@ qthybris (0.20) UNRELEASED; urgency=low
 
 qthybris (0.19) quantal; urgency=low
 
-  * Implemented support for a basic theme based on generic unix theme 
+  * Implemented support for a basic theme based on generic unix theme
 
  -- Renato Araujo Oliveira Filho <renato@renatoLenovo>  Wed, 05 Dec 2012 09:40:45 +0000
 
