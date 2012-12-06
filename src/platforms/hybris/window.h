@@ -23,13 +23,13 @@ class QHybrisWindow : public QHybrisBaseWindow {
   QHybrisInput* input_;
 
  private:
-  Qt::WindowState setState(Qt::WindowState state);
+  void createWindow();
   void moveResize(const QRect& rect);
-  QRect maximizedGeometry();
 
   ubuntu_application_ui_surface surface_;
   Qt::WindowState state_;
   QRect geometry_;
+  bool windowCreated_;
 };
 
 #endif  // QHYBRISWINDOW_H

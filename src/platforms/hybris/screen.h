@@ -13,9 +13,11 @@ class QHybrisScreen : public QHybrisBaseScreen {
 
   // QPlatformScreen methods.
   QRect geometry() const { return geometry_; }
+  QRect availableGeometry() const { return availableGeometry_; }
 
  private:
   QRect geometry_;
+  QRect availableGeometry_;
 };
 
 #endif  // QHYBRISSCREEN_H
