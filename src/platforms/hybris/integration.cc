@@ -41,12 +41,12 @@ static void unfocusedCallback(void* context) {
 QHybrisIntegration::QHybrisIntegration() {
   // Init ubuntu application UI.
   QStringList args = QCoreApplication::arguments();
-  const int size = args.size();
-  argv_ = new char*[size + 1];
-  for (int i = 0; i < size; i++)
-    argv_[i] = args.at(i).toLocal8Bit().data();
-  argv_[size] = NULL;
-  ubuntu_application_ui_init(size, argv_);
+  argc_ = args.size() + 1;
+  argv_ = new char*[argc_];
+  for (int i = 0; i < argc_ - 1; i++)
+    argv_[i] = qstrdup(args.at(i).toLocal8Bit());
+  argv_[argc_ - 1] = NULL;
+  ubuntu_application_ui_init(argc_ - 1, argv_);
 
   // Create default screen.
   screen_ = new QHybrisScreen();
@@ -69,6 +69,8 @@ QHybrisIntegration::~QHybrisIntegration() {
   delete input_;
   delete inputContext_;
   delete screen_;
+  for (int i = 0; i < argc_; i++)
+    delete [] argv_[i];
   delete [] argv_;
 }
 

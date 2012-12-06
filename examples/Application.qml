@@ -11,29 +11,41 @@ Item {
 
     Rectangle {
         id: rect
-        width: 500
-        height: 500
-        anchors.centerIn: parent
-        color: "yellow"
-        opacity: 0.8
+        anchors.fill: parent
+        color: "black"
+        opacity: 0.7
     }
 
     MouseArea {
         id: touchArea
         anchors.fill: rect
         onClicked: {
-            applicationManager.focusFavoriteApplication(ApplicationManager.Gallery);
+            ApplicationManager.focusFavoriteApplication(ApplicationManager.Gallery);
+        }
+    }
+
+    Column {
+        Repeater {
+            model: ApplicationManager.applications
+            delegate: Text {
+                font.family: "Ubuntu"; font.weight: Font.Bold; font.pixelSize: 30; color: "white"
+                text: " - " + application.name + " (" + application.comment + ")"
+            }
         }
     }
 
     Component.onCompleted: {
+        // Display form factor and stage hints.
         var formFactorHintStr = [
             'Desktop', 'Phone', 'Tablet'
         ];
         var stageHintStr = [
             'Main', 'Integration', 'Share', 'ContentPicking', 'Side', 'Configuration'
         ];
-        print('Form factor hint:', formFactorHintStr[applicationManager.formFactorHint]);
-        print('Stage hint:', stageHintStr[applicationManager.stageHint]);
+        print('Form factor hint:', formFactorHintStr[ApplicationManager.formFactorHint]);
+        print('Stage hint:', stageHintStr[ApplicationManager.stageHint]);
+
+        // Start the watcher so that the ApplicationManager applications model can be populated.
+        ApplicationManager.startWatcher();
     }
 }

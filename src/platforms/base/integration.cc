@@ -82,6 +82,7 @@ QStringList QHybrisBaseIntegration::themeNames() const {
 }
 
 QPlatformTheme* QHybrisBaseIntegration::createPlatformTheme(const QString& name) const {
+  Q_UNUSED(name);
   DLOG("QHybrisBaseIntegration::createPlatformTheme (this=%p)", this);
   return new QHybrisTheme();
 }
