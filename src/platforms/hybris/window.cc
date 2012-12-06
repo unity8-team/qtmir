@@ -8,6 +8,10 @@
 #include <qpa/qwindowsysteminterface.h>
 #include <ubuntu/application/ui/ubuntu_application_ui.h>
 
+// FIXME(loicm) There is no way to get the strut from a system session. Values are hard-coded for
+//     the phone right now.
+static const struct {int left; int right; int top; int bottom; } kStrut = { 0, 0, 54, 0 };
+
 static void eventCallback(void* context, const Event* event) {
   DLOG("eventCallback (context=%p, event=%p)", context, event);
   DASSERT(context != NULL);
@@ -18,7 +22,7 @@ static void eventCallback(void* context, const Event* event) {
 QHybrisWindow::QHybrisWindow(QWindow* w, QHybrisScreen* screen, QHybrisInput* input)
     : QHybrisBaseWindow(w, screen)
     , input_(input)
-    , geometry_(window()->geometry()) {
+    , geometry_(maximizedGeometry()) {
   uint surfaceRole = w->property("ubuntuSurfaceRole").toUInt();
 #if !defined(QT_NO_DEBUG)
   ASSERT(surfaceRole <= ON_SCREEN_KEYBOARD_ACTOR_ROLE);
@@ -56,11 +60,17 @@ Qt::WindowState QHybrisWindow::setState(Qt::WindowState state) {
       state_ = Qt::WindowFullScreen;
       return Qt::WindowFullScreen;
     }
+    case Qt::WindowMaximized: {
+      DLOG("QHybrisWindow::setState (this=%p, state='Maximized')", this);
+      moveResize(maximizedGeometry());
+      state_ = Qt::WindowMaximized;
+      return Qt::WindowMaximized;
+    }
     case Qt::WindowActive:
     case Qt::WindowMinimized:
-    case Qt::WindowMaximized:
     default: {
-      DLOG("QHybrisWindow::setState (this=%p, state='Active|Minimized|Maximized')", this);
+      DLOG("QHybrisWindow::setState (this=%p, state='Active|Minimized')", this);
+      DLOG("unsupported state");
       return state_;
     }
   }
@@ -76,7 +86,7 @@ Qt::WindowState QHybrisWindow::setWindowState(Qt::WindowState state) {
 void QHybrisWindow::setGeometry(const QRect& rect) {
   DLOG("QHybrisWindow::setGeometry (this=%p)", this);
   geometry_ = rect;
-  if (state_ != Qt::WindowFullScreen)
+  if (state_ != Qt::WindowFullScreen && state_ != Qt::WindowMaximized)
     moveResize(rect);
 }
 
@@ -97,4 +107,12 @@ void QHybrisWindow::moveResize(const QRect& rect) {
   ubuntu_application_ui_resize_surface_to(surface_, rect.width(), rect.height());
   QWindowSystemInterface::handleGeometryChange(window(), rect);
   QPlatformWindow::setGeometry(rect);
+}
+
+QRect QHybrisWindow::maximizedGeometry() {
+  DLOG("QHybrisWindow::maximizedGeometry (this=%p)", this);
+  const QRect kScreenGeometry(screen()->availableGeometry());
+  return QRect(kScreenGeometry.x() + kStrut.left, kScreenGeometry.y() + kStrut.top,
+               kScreenGeometry.width() - kStrut.left - kStrut.right,
+               kScreenGeometry.height() - kStrut.top - kStrut.bottom);
 }

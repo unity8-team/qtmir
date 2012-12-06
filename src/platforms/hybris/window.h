@@ -25,8 +25,8 @@ class QHybrisWindow : public QHybrisBaseWindow {
  private:
   Qt::WindowState setState(Qt::WindowState state);
   void moveResize(const QRect& rect);
+  QRect maximizedGeometry();
 
-  QHybrisScreen* screen_;
   ubuntu_application_ui_surface surface_;
   Qt::WindowState state_;
   QRect geometry_;
