@@ -11,9 +11,13 @@ CONFIG(debug) {
 }
 
 SOURCES = plugin.cc \
-          application_manager.cc
+          application_manager.cc \
+          application_list_model.cc \
+          application.cc
 
 HEADERS = application_manager.h \
+          application_list_model.h \
+          application.h \
           logging.h
 
 CONFIG += plugin

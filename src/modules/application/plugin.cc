@@ -2,36 +2,31 @@
 // FIXME(loicm) Add copyright notice here.
 
 #include <Qt/QtQml>
+#include "application.h"
 #include "application_manager.h"
+#include "application_list_model.h"
 #include "logging.h"
+
+static QObject* applicationManagerSingleton(QQmlEngine* engine, QJSEngine* scriptEngine) {
+  Q_UNUSED(engine);
+  Q_UNUSED(scriptEngine);
+  return new ApplicationManager();
+}
 
 class UbuntuApplicationPlugin : public QQmlExtensionPlugin {
   Q_OBJECT
   Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QQmlExtensionInterface/1.0")
 
- public:
-  ~UbuntuApplicationPlugin() {
-    delete applicationManager_;
-  }
-
   virtual void registerTypes(const char* uri) {
     DLOG("UbuntuApplicationPlugin::registerTypes (this=%p, uri='%s')", this, uri);
     ASSERT(QLatin1String(uri) == QLatin1String("Ubuntu.Application"));
-    qmlRegisterUncreatableType<ApplicationManager>(
-        uri, 0, 1, "ApplicationManager", "ApplicationManager can't be created as it's only meant "
-        "to expose enum values, use the applicationManager context property instead.");
+    qmlRegisterSingletonType<ApplicationManager>(
+        uri, 0, 1, "ApplicationManager", applicationManagerSingleton);
+    qmlRegisterUncreatableType<Application>(
+        uri, 0, 1, "Application", "Application can't be instantiated");
+    qmlRegisterUncreatableType<ApplicationListModel>(
+        uri, 0, 1, "ApplicationListModel", "ApplicationListModel can't be instantiated");
   }
-
-  virtual void initializeEngine(QQmlEngine* engine, const char* uri) {
-    DLOG("UbuntuApplicationPlugin::initializeEngine (this=%p, engine=%p, uri='%s')",
-         this, engine, uri);
-    ASSERT(QLatin1String(uri) == QLatin1String("Ubuntu.Application"));
-    applicationManager_ = new ApplicationManager();
-    engine->rootContext()->setContextProperty("applicationManager", applicationManager_);
-  }
-
- private:
-  ApplicationManager* applicationManager_;
 };
 
 #include "plugin.moc"
