@@ -12,7 +12,7 @@ class QHybrisInput;
 
 class QHybrisWindow : public QHybrisBaseWindow {
  public:
-  QHybrisWindow(QWindow* w, QHybrisScreen* screen, QHybrisInput* input);
+  QHybrisWindow(QWindow* w, QHybrisScreen* screen, QHybrisInput* input, bool systemSession);
   ~QHybrisWindow();
 
   // QPlatformWindow methods.

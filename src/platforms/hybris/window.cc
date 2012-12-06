@@ -15,15 +15,20 @@ static void eventCallback(void* context, const Event* event) {
   window->input_->postEvent(window->window(), event);
 }
 
-QHybrisWindow::QHybrisWindow(QWindow* w, QHybrisScreen* screen, QHybrisInput* input)
+QHybrisWindow::QHybrisWindow(
+    QWindow* w, QHybrisScreen* screen, QHybrisInput* input, bool systemSession)
     : QHybrisBaseWindow(w, screen)
     , input_(input)
-    , state_(window()->windowState()) {
-  // Get surface role.
-  uint surfaceRole = window()->property("ubuntuSurfaceRole").toUInt();
-  // Use client geometry if set explicitly, use available screen geometry otherwise.
-  geometry_ = window()->geometry() != screen->geometry() ?
-      window()->geometry() : screen->availableGeometry();
+    , state_(window()->windowState())
+    , systemSession_(systemSession) {
+  if (!systemSession) {
+    // Non-system sessions can't resize the window geometry.
+    geometry_ = screen->availableGeometry();
+  } else {
+    // Use client geometry if set explicitly, use available screen geometry otherwise.
+    geometry_ = window()->geometry() != screen->geometry() ?
+        window()->geometry() : screen->availableGeometry();
+  }
   createWindow();
   DLOG("QHybrisWindow::QHybrisWindow (this=%p, w=%p, screen=%p, input=%p)", this, w, screen, input);
 }
@@ -84,21 +89,22 @@ Qt::WindowState QHybrisWindow::setWindowState(Qt::WindowState state) {
   DLOG("QHybrisWindow::setWindowState (this=%p, state=%d)", this, state);
   if (state == state_)
     return state;
+
   switch (state) {
     case Qt::WindowNoState: {
-      DLOG("QHybrisWindow::setState (this=%p, state='NoState')", this);
+      DLOG("setting window state: 'NoState'");
       moveResize(geometry_);
       state_ = Qt::WindowNoState;
       return Qt::WindowNoState;
     }
     case Qt::WindowFullScreen: {
-      DLOG("QHybrisWindow::setState (this=%p, state='FullScreen')", this);
+      DLOG("setting window state: 'FullScreen'");
       moveResize(screen()->geometry());
       state_ = Qt::WindowFullScreen;
       return Qt::WindowFullScreen;
     }
     case Qt::WindowMaximized: {
-      DLOG("QHybrisWindow::setState (this=%p, state='Maximized')", this);
+      DLOG("setting window state: 'Maximized'");
       moveResize(screen()->availableGeometry());
       state_ = Qt::WindowMaximized;
       return Qt::WindowMaximized;
@@ -106,7 +112,7 @@ Qt::WindowState QHybrisWindow::setWindowState(Qt::WindowState state) {
     case Qt::WindowActive:
     case Qt::WindowMinimized:
     default: {
-      DLOG("QHybrisWindow::setState (this=%p, state='Active|Minimized')", this);
+      DLOG("setting window state: 'Active|Minimized'");
       return state_;
     }
   }
@@ -114,9 +120,12 @@ Qt::WindowState QHybrisWindow::setWindowState(Qt::WindowState state) {
 
 void QHybrisWindow::setGeometry(const QRect& rect) {
   DLOG("QHybrisWindow::setGeometry (this=%p)", this);
-  geometry_ = rect;
-  if (state_ != Qt::WindowFullScreen && state_ != Qt::WindowMaximized)
-    moveResize(rect);
+  if (systemSession_) {
+    // Non-system sessions can't resize the window geometry.
+    geometry_ = rect;
+    if (state_ != Qt::WindowFullScreen && state_ != Qt::WindowMaximized)
+      moveResize(rect);
+  }
 }
 
 void QHybrisWindow::setVisible(bool visible) {
