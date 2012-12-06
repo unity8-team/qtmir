@@ -29,7 +29,7 @@ class QHybrisWindow : public QHybrisBaseWindow {
   ubuntu_application_ui_surface surface_;
   Qt::WindowState state_;
   QRect geometry_;
-  bool windowCreated_;
+  bool systemSession_;
 };
 
 #endif  // QHYBRISWINDOW_H
