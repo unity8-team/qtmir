@@ -4,17 +4,11 @@
 import QtQuick 2.0
 import Ubuntu.Application 0.1
 
-Item {
+Rectangle {
     id: surface
     width: 720
     height: 1280
-
-    Rectangle {
-        id: rect
-        anchors.fill: parent
-        color: "black"
-        opacity: 0.7
-    }
+    color: "blue"
 
     MouseArea {
         id: touchArea
@@ -24,12 +18,17 @@ Item {
         }
     }
 
-    Column {
+    Row {
         Repeater {
             model: ApplicationManager.applications
-            delegate: Text {
-                font.family: "Ubuntu"; font.weight: Font.Bold; font.pixelSize: 30; color: "white"
-                text: " - " + application.name + " (" + application.comment + ")"
+            delegate: ApplicationImage {
+                id: applicationImage
+                width: 720 / 4; height: 1280 / 4
+                source: application
+                Timer {
+                    running: true
+                    onTriggered: applicationImage.scheduleUpdate()
+                }
             }
         }
     }

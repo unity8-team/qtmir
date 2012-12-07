@@ -19,6 +19,7 @@ Application::~Application() {
 }
 
 void Application::setFocused(bool focused) {
+  DLOG("Application::setFocused (this=%p, focused=%d)", this, focused);
   if (focused_ != focused) {
     focused_ = focused;
     emit focusedChanged();
