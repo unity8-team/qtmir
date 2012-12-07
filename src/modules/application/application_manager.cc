@@ -158,8 +158,10 @@ void ApplicationManager::customEvent(QEvent* event) {
     }
     case TaskEvent::kRemove: {
       Application* application = idHash_.take(taskEvent->id_);
-      if (application != NULL)
+      if (application != NULL) {
         applications_->remove(application);
+        delete application;
+      }
       break;
     }
     default: {
