@@ -5,6 +5,7 @@
 #include "application.h"
 #include "application_manager.h"
 #include "application_list_model.h"
+#include "application_image.h"
 #include "logging.h"
 
 static QObject* applicationManagerSingleton(QQmlEngine* engine, QJSEngine* scriptEngine) {
@@ -26,6 +27,7 @@ class UbuntuApplicationPlugin : public QQmlExtensionPlugin {
         uri, 0, 1, "Application", "Application can't be instantiated");
     qmlRegisterUncreatableType<ApplicationListModel>(
         uri, 0, 1, "ApplicationListModel", "ApplicationListModel can't be instantiated");
+    qmlRegisterType<ApplicationImage>(uri, 0, 1, "ApplicationImage");
   }
 };
 
