@@ -63,15 +63,12 @@ void ApplicationListModel::remove(Application* application) {
   DASSERT(application != NULL);
   DLOG("ApplicationListModel::remove (this=%p, application='%s')", this,
        application->name().toLatin1().data());
-  const int kSize = applications_.size();
-  for (int i = 0; i < kSize; i++) {
-    if (applications_.at(i) == application) {
+  int i = applications_.indexOf(application);
+  if (i != -1) {
       beginRemoveRows(QModelIndex(), i, i);
       applications_.removeAt(i);
       endRemoveRows();
       Q_EMIT countChanged();
-      return;
-    }
   }
   DNOT_REACHED();
 }
