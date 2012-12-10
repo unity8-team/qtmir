@@ -49,6 +49,7 @@ void ApplicationListModel::add(Application* application) {
   beginInsertRows(QModelIndex(), applications_.size(), applications_.size());
   applications_.append(application);
   endInsertRows();
+  Q_EMIT countChanged();
 }
 
 void ApplicationListModel::remove(Application* application) {
@@ -61,6 +62,7 @@ void ApplicationListModel::remove(Application* application) {
       beginRemoveRows(QModelIndex(), i, i);
       applications_.remove(i);
       endRemoveRows();
+      Q_EMIT countChanged();
       return;
     }
   }

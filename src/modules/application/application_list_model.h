@@ -11,6 +11,8 @@ class Application;
 class ApplicationListModel : public QAbstractListModel {
   Q_OBJECT
 
+  Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
+
  public:
   explicit ApplicationListModel(QObject* parent = 0);
   ~ApplicationListModel();
@@ -20,6 +22,9 @@ class ApplicationListModel : public QAbstractListModel {
   QVariant data(const QModelIndex& index, int role) const;
   QHash<int,QByteArray> roleNames() const { return roleNames_; }
   Q_INVOKABLE QVariant get(int index) const;
+
+ Q_SIGNALS:
+  void countChanged();
 
  private:
   Q_DISABLE_COPY(ApplicationListModel)
