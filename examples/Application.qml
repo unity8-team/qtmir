@@ -12,7 +12,7 @@ Rectangle {
 
     MouseArea {
         id: touchArea
-        anchors.fill: rect
+        anchors.fill: parent 
         onClicked: {
             ApplicationManager.focusFavoriteApplication(ApplicationManager.Gallery);
         }
