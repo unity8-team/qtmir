@@ -70,5 +70,4 @@ void ApplicationListModel::remove(Application* application) {
       endRemoveRows();
       Q_EMIT countChanged();
   }
-  DNOT_REACHED();
 }
