@@ -14,11 +14,13 @@ SOURCES = plugin.cc \
           application_manager.cc \
           application_list_model.cc \
           application_image.cc \
+          application_window.cc \
           application.cc
 
 HEADERS = application_manager.h \
           application_list_model.h \
           application_image.h \
+          application_window.h \
           application.h \
           logging.h
 
