@@ -1,8 +1,8 @@
-qthybris (0.23) UNRELEASED; urgency=low
+qthybris (0.23) quantal; urgency=low
 
   * Changed hardcoded top strut from 54 to 59.
 
- -- Florian Boucault <florian.boucault@canonical.com>  Mon, 10 Dec 2012 19:40:05 +0000
+ -- Florian Boucault <florian.boucault@canonical.com>  Mon, 10 Dec 2012 19:40:24 +0000
 
 qthybris (0.22) quantal; urgency=low
 
