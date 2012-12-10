@@ -34,21 +34,21 @@ QVariant ApplicationListModel::data(const QModelIndex& index, int role) const {
 }
 
 QVariant ApplicationListModel::get(int row) const {
-    DLOG("ApplicationListModel::get (this=%p, row=%d)", this, row);
-    return data(index(row), 0);
+  DLOG("ApplicationListModel::get (this=%p, row=%d)", this, row);
+  return data(index(row), 0);
 }
 
 void ApplicationListModel::move(int from, int to) {
-    DLOG("ApplicationListModel::move (this=%p, from=%d, to=%d)", this, from, to);
-    if (from >= 0 && from < applications_.size() && to >= 0 && to < applications_.size()) {
-        QModelIndex parent;
-        /* When moving an item down, the destination index needs to be incremented
-           by one, as explained in the documentation:
-           http://qt-project.org/doc/qt-5.0/qtcore/qabstractitemmodel.html#beginMoveRows */
-        beginMoveRows(parent, from, from, parent, to + (to > from ? 1 : 0));
-        applications_.move(from, to);
-        endMoveRows();
-    }
+  DLOG("ApplicationListModel::move (this=%p, from=%d, to=%d)", this, from, to);
+  if (from >= 0 && from < applications_.size() && to >= 0 && to < applications_.size()) {
+      QModelIndex parent;
+    /* When moving an item down, the destination index needs to be incremented
+       by one, as explained in the documentation:
+       http://qt-project.org/doc/qt-5.0/qtcore/qabstractitemmodel.html#beginMoveRows */
+    beginMoveRows(parent, from, from, parent, to + (to > from ? 1 : 0));
+    applications_.move(from, to);
+    endMoveRows();
+  }
 }
 
 void ApplicationListModel::add(Application* application) {
@@ -71,9 +71,9 @@ void ApplicationListModel::remove(Application* application) {
        application->name().toLatin1().data());
   int i = applications_.indexOf(application);
   if (i != -1) {
-      beginRemoveRows(QModelIndex(), i, i);
-      applications_.removeAt(i);
-      endRemoveRows();
-      emit countChanged();
+    beginRemoveRows(QModelIndex(), i, i);
+    applications_.removeAt(i);
+    endRemoveRows();
+    emit countChanged();
   }
 }
