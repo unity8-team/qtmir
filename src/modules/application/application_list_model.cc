@@ -33,6 +33,24 @@ QVariant ApplicationListModel::data(const QModelIndex& index, int role) const {
     return QVariant();
 }
 
+QVariant ApplicationListModel::get(int row) const {
+  DLOG("ApplicationListModel::get (this=%p, row=%d)", this, row);
+  return data(index(row), 0);
+}
+
+void ApplicationListModel::move(int from, int to) {
+  DLOG("ApplicationListModel::move (this=%p, from=%d, to=%d)", this, from, to);
+  if (from >= 0 && from < applications_.size() && to >= 0 && to < applications_.size()) {
+      QModelIndex parent;
+    /* When moving an item down, the destination index needs to be incremented
+       by one, as explained in the documentation:
+       http://qt-project.org/doc/qt-5.0/qtcore/qabstractitemmodel.html#beginMoveRows */
+    beginMoveRows(parent, from, from, parent, to + (to > from ? 1 : 0));
+    applications_.move(from, to);
+    endMoveRows();
+  }
+}
+
 void ApplicationListModel::add(Application* application) {
   DASSERT(application != NULL);
   DLOG("ApplicationListModel::add (this=%p, application='%s')", this,
@@ -44,20 +62,18 @@ void ApplicationListModel::add(Application* application) {
   beginInsertRows(QModelIndex(), applications_.size(), applications_.size());
   applications_.append(application);
   endInsertRows();
+  emit countChanged();
 }
 
 void ApplicationListModel::remove(Application* application) {
   DASSERT(application != NULL);
   DLOG("ApplicationListModel::remove (this=%p, application='%s')", this,
        application->name().toLatin1().data());
-  const int kSize = applications_.size();
-  for (int i = 0; i < kSize; i++) {
-    if (applications_.at(i) == application) {
-      beginRemoveRows(QModelIndex(), i, i);
-      applications_.remove(i);
-      endRemoveRows();
-      return;
-    }
+  int i = applications_.indexOf(application);
+  if (i != -1) {
+    beginRemoveRows(QModelIndex(), i, i);
+    applications_.removeAt(i);
+    endRemoveRows();
+    emit countChanged();
   }
-  DNOT_REACHED();
 }
