@@ -5,6 +5,8 @@
 #define APPLICATION_MANAGER_H
 
 #include <Qt/QtCore>
+#include "ubuntu/application/ui/ubuntu_application_ui.h"
+#include "ubuntu/ui/ubuntu_ui_session_service.h"
 
 class Application;
 class ApplicationListModel;
@@ -22,9 +24,18 @@ class ApplicationManager : public QObject {
   ApplicationManager();
   ~ApplicationManager();
 
-  enum StageHint { Main = 0, Integration, Share, ContentPicking, Side, Configuration };
-  enum FormFactorHint { Desktop = 0, Phone, Tablet };
-  enum FavoriteApplication { Camera = 0, Gallery, Browser };
+  enum StageHint {
+    Main = MAIN_STAGE_HINT, Integration = INTEGRATION_STAGE_HINT, Share = SHARE_STAGE_HINT,
+    ContentPicking = CONTENT_PICKING_STAGE_HINT, Side = SIDE_STAGE_HINT,
+    Configuration = CONFIGURATION_STAGE_HINT
+  };
+  enum FormFactorHint {
+    Desktop = DESKTOP_FORM_FACTOR_HINT, Phone = PHONE_FORM_FACTOR_HINT,
+    Tablet = TABLET_FORM_FACTOR_HINT
+  };
+  enum FavoriteApplication {
+    Camera = CAMERA_APP, Gallery = GALLERY_APP, Browser = BROWSER_APP
+  };
 
   // QObject methods.
   void customEvent(QEvent* event);
