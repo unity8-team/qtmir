@@ -2,6 +2,7 @@ qthybris (0.22) UNRELEASED; urgency=low
 
   * Added ApplicationListModel::get method.
   * Added ApplicationListModel::count property. 
+  * Added ApplicationListModel::move method. 
 
  -- Florian Boucault <florian.boucault@canonical.com>  Mon, 10 Dec 2012 15:08:08 +0000
 

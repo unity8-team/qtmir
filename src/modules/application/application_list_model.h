@@ -22,6 +22,7 @@ class ApplicationListModel : public QAbstractListModel {
   QVariant data(const QModelIndex& index, int role) const;
   QHash<int,QByteArray> roleNames() const { return roleNames_; }
   Q_INVOKABLE QVariant get(int index) const;
+  Q_INVOKABLE void move(int from, int to);
 
  Q_SIGNALS:
   void countChanged();
@@ -33,7 +34,7 @@ class ApplicationListModel : public QAbstractListModel {
   void remove(Application* application);
 
   QHash<int,QByteArray> roleNames_;
-  QVector<Application*> applications_;
+  QList<Application*> applications_;
 
   friend class ApplicationManager;
 };

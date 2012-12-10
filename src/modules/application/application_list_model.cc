@@ -38,6 +38,13 @@ QVariant ApplicationListModel::get(int row) const {
     return data(index(row), 0);
 }
 
+void ApplicationListModel::move(int from, int to) {
+    DLOG("ApplicationListModel::move (this=%p, from=%d, to=%d)", this, from, to);
+    beginMoveRows(QModelIndex(), from, from, QModelIndex(), to);
+    applications_.move(from, to);
+    endMoveRows();
+}
+
 void ApplicationListModel::add(Application* application) {
   DASSERT(application != NULL);
   DLOG("ApplicationListModel::add (this=%p, application='%s')", this,
@@ -60,7 +67,7 @@ void ApplicationListModel::remove(Application* application) {
   for (int i = 0; i < kSize; i++) {
     if (applications_.at(i) == application) {
       beginRemoveRows(QModelIndex(), i, i);
-      applications_.remove(i);
+      applications_.removeAt(i);
       endRemoveRows();
       Q_EMIT countChanged();
       return;
