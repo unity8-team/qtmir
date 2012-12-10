@@ -59,7 +59,7 @@ Rectangle {
             }
             MouseArea {
                 anchors.fill: parent
-                onClicked: ApplicationManager.applications.move(0, 1)
+                onClicked: ApplicationManager.applications.move(1, 0)
             }
         }
     }
@@ -75,6 +75,16 @@ Rectangle {
                 id: applicationImage
                 width: 720 / 4; height: 1280 / 4
                 source: application
+                Text {
+                    font.family: "Ubuntu"; font.weight: Font.Bold; font.pixelSize: 30; color: "white"
+                    text: application.name
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: applicationImage.scheduleUpdate()
+                }
+
                 Timer {
                     running: true
                     onTriggered: applicationImage.scheduleUpdate()
