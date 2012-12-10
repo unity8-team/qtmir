@@ -18,7 +18,17 @@ Rectangle {
         }
     }
 
+    Text {
+        id: title
+        font.family: "Ubuntu"; font.weight: Font.Bold; font.pixelSize: 30; color: "white"
+        text: "Number of applications running: %1".arg(ApplicationManager.applications.count)
+    }
+
     Row {
+        anchors {
+            top: title.bottom
+            topMargin: 10
+        }
         Repeater {
             model: ApplicationManager.applications
             delegate: ApplicationImage {
