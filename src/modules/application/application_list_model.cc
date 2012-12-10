@@ -40,9 +40,15 @@ QVariant ApplicationListModel::get(int row) const {
 
 void ApplicationListModel::move(int from, int to) {
     DLOG("ApplicationListModel::move (this=%p, from=%d, to=%d)", this, from, to);
-    beginMoveRows(QModelIndex(), from, from, QModelIndex(), to);
-    applications_.move(from, to);
-    endMoveRows();
+    if (from >= 0 && from < applications_.size() && to >= 0 && to < applications_.size()) {
+        QModelIndex parent;
+        /* When moving an item down, the destination index needs to be incremented
+           by one, as explained in the documentation:
+           http://qt-project.org/doc/qt-5.0/qtcore/qabstractitemmodel.html#beginMoveRows */
+        beginMoveRows(parent, from, from, parent, to + (to > from ? 1 : 0));
+        applications_.move(from, to);
+        endMoveRows();
+    }
 }
 
 void ApplicationListModel::add(Application* application) {
