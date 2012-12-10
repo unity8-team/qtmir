@@ -42,11 +42,12 @@ void QHybrisWindow::createWindow() {
   DLOG("QHybrisWindow::createWindow (this=%p)", this);
 
   // Get surface role.
-  uint role = window()->property("role").toUInt();
+  QVariant roleVariant = window()->property("role");
+  int role = roleVariant.isValid() ? roleVariant.toUInt() : 1;  // 1 is the default role for apps.
 #if !defined(QT_NO_DEBUG)
   ASSERT(role <= ON_SCREEN_KEYBOARD_ACTOR_ROLE);
   const char* const roleString[] = {
-    "Dash", "Main", "Indicator", "Notifications", "Greeter", "Launcher", "OSK", "ShutdownDialog"
+    "Dash", "Default", "Indicator", "Notifications", "Greeter", "Launcher", "OSK", "ShutdownDialog"
   };
   LOG("role: '%s'", roleString[role]);
 #endif

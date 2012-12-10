@@ -1,6 +1,21 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
+// Shows the types added by the Ubuntu application plugin and how to use them.
+
+// Here is how to create a window with specific surface role (Greeter here) from QML.
+//
+// import QtQuick.Window 2.0
+//
+// Window {
+//     width: 400
+//     height: 400
+//     Component.onCompleted: {
+//         window.role = ApplicationManager.Greeter
+//         window.visible = true
+//     }
+// }
+
 import QtQuick 2.0
 import Ubuntu.Application 0.1
 

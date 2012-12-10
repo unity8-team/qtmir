@@ -13,6 +13,7 @@ class ApplicationListModel;
 
 class ApplicationManager : public QObject {
   Q_OBJECT
+  Q_ENUMS(Role)
   Q_ENUMS(StageHint)
   Q_ENUMS(FormFactorHint)
   Q_ENUMS(FavoriteApplication)
@@ -24,6 +25,12 @@ class ApplicationManager : public QObject {
   ApplicationManager();
   ~ApplicationManager();
 
+  enum Role {
+    Dash = DASH_ACTOR_ROLE, Default = MAIN_ACTOR_ROLE, Indicators = INDICATOR_ACTOR_ROLE,
+    Notifications = NOTIFICATIONS_ACTOR_ROLE, Greeter = GREETER_ACTOR_ROLE,
+    Launcher = LAUNCHER_ACTOR_ROLE, OnScreenKeyboard = ON_SCREEN_KEYBOARD_ACTOR_ROLE,
+    ShutdownDialog = SHUTDOWN_DIALOG_ACTOR_ROLE
+  };
   enum StageHint {
     Main = MAIN_STAGE_HINT, Integration = INTEGRATION_STAGE_HINT, Share = SHARE_STAGE_HINT,
     ContentPicking = CONTENT_PICKING_STAGE_HINT, Side = SIDE_STAGE_HINT,
