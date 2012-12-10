@@ -6,8 +6,8 @@
 #include <ubuntu/application/ui/ubuntu_application_ui.h>
 
 // FIXME(loicm) There is no way to get the strut from a system session. Values are hard-coded for
-//     the phone right now, 54 corresponds to 3 grid units.
-static const struct { int left; int right; int top; int bottom; } kStrut = { 0, 0, 54, 0 };
+//     the phone right now, 59 corresponds to 3 grid units minus 2 density independent pixels.
+static const struct { int left; int right; int top; int bottom; } kStrut = { 0, 0, 59, 0 };
 
 QHybrisScreen::QHybrisScreen() {
   // FIXME(loicm) Ubuntu application UI doesn't provide the screen size.
