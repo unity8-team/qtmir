@@ -42,13 +42,14 @@ void QHybrisWindow::createWindow() {
   DLOG("QHybrisWindow::createWindow (this=%p)", this);
 
   // Get surface role.
-  uint surfaceRole = window()->property("ubuntuSurfaceRole").toUInt();
+  QVariant roleVariant = window()->property("role");
+  int role = roleVariant.isValid() ? roleVariant.toUInt() : 1;  // 1 is the default role for apps.
 #if !defined(QT_NO_DEBUG)
-  ASSERT(surfaceRole <= ON_SCREEN_KEYBOARD_ACTOR_ROLE);
+  ASSERT(role <= ON_SCREEN_KEYBOARD_ACTOR_ROLE);
   const char* const roleString[] = {
-    "Main", "Tool", "Dialog", "Dash", "Launcher", "Indicator", "Menubar", "OSK"
+    "Dash", "Default", "Indicator", "Notifications", "Greeter", "Launcher", "OSK", "ShutdownDialog"
   };
-  LOG("ubuntu surface role: '%s'", roleString[surfaceRole]);
+  LOG("role: '%s'", roleString[role]);
 #endif
 
   // Get surface geometry.
@@ -65,7 +66,7 @@ void QHybrisWindow::createWindow() {
        geometry.width(), geometry.height());
   ubuntu_application_ui_create_surface(
       &surface_, "QHybrisWindow", geometry.width(), geometry.height(),
-      static_cast<SurfaceRole>(surfaceRole), eventCallback, this);
+      static_cast<SurfaceRole>(role), eventCallback, this);
   if (geometry.x() != 0 || geometry.y() != 0)
     ubuntu_application_ui_move_surface_to(surface_, geometry.x(), geometry.y());
   ASSERT(surface_ != NULL);

@@ -1,12 +1,10 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-#include "application.h"
 #include "application_manager.h"
 #include "application_list_model.h"
+#include "application.h"
 #include "logging.h"
-#include <ubuntu/ui/ubuntu_ui_session_service.h>
-#include <ubuntu/application/ui/ubuntu_application_ui.h>
 
 #define ARRAY_SIZE(a) \
     ((sizeof(a) / sizeof(*(a))) / static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))))
