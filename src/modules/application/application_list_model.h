@@ -19,6 +19,7 @@ class ApplicationListModel : public QAbstractListModel {
   int rowCount(const QModelIndex& parent = QModelIndex()) const;
   QVariant data(const QModelIndex& index, int role) const;
   QHash<int,QByteArray> roleNames() const { return roleNames_; }
+  Q_INVOKABLE QVariant get(int index) const;
 
  private:
   Q_DISABLE_COPY(ApplicationListModel)

@@ -33,6 +33,11 @@ QVariant ApplicationListModel::data(const QModelIndex& index, int role) const {
     return QVariant();
 }
 
+QVariant ApplicationListModel::get(int row) const {
+    DLOG("ApplicationListModel::get (this=%p, row=%d)", this, row);
+    return data(index(row), 0);
+}
+
 void ApplicationListModel::add(Application* application) {
   DASSERT(application != NULL);
   DLOG("ApplicationListModel::add (this=%p, application='%s')", this,
