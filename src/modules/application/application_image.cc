@@ -73,6 +73,8 @@ void ApplicationImage::scheduleUpdate() {
   DLOG("ApplicationImage::scheduleUpdate (this=%p)", this);
   if (source_ != NULL)
     ubuntu_ui_session_snapshot_running_session_with_id(source_->handle(), snapshotCallback, this);
+  else
+    update();
 }
 
 void ApplicationImage::paint(QPainter* painter) {
