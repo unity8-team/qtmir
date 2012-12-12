@@ -12,6 +12,15 @@ class QHybrisInput : public QHybrisBaseInput {
  public:
   QHybrisInput(QHybrisIntegration* integration);
   ~QHybrisInput();
+
+  // QHybrisBaseInput methods.
+  void handleTouchEvent(QWindow* window, ulong timestamp, QTouchDevice* device,
+                        const QList<struct QWindowSystemInterface::TouchPoint> &points);
+
+  void setSessionType(uint sessionType);
+
+ private:
+  uint sessionType_;
 };
 
 #endif  // QHYBRISINPUT_H

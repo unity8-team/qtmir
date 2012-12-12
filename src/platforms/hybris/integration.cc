@@ -109,6 +109,7 @@ QPlatformWindow* QHybrisIntegration::createPlatformWindow(QWindow* window) {
       resumedCallback, suspendedCallback, focusedCallback, unfocusedCallback, this
     };
     ubuntu_application_ui_start_a_new_session(&credentials);
+    input_->setSessionType(sessionType);
     once = true;
   }
 

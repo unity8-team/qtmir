@@ -306,15 +306,15 @@ void QHybrisBaseInput::customEvent(QEvent* event) {
   // Event dispatching.
   switch (hybrisEvent->nativeEvent_.type) {
     case MOTION_EVENT_TYPE: {
-      handleMotionEvent(hybrisEvent->window_, &hybrisEvent->nativeEvent_);
+      dispatchMotionEvent(hybrisEvent->window_, &hybrisEvent->nativeEvent_);
       break;
     }
     case KEY_EVENT_TYPE: {
-      handleKeyEvent(hybrisEvent->window_, &hybrisEvent->nativeEvent_);
+      dispatchKeyEvent(hybrisEvent->window_, &hybrisEvent->nativeEvent_);
       break;
     }
     case HW_SWITCH_EVENT_TYPE: {
-      handleHWSwitchEvent(hybrisEvent->window_, &hybrisEvent->nativeEvent_);
+      dispatchHWSwitchEvent(hybrisEvent->window_, &hybrisEvent->nativeEvent_);
       break;
     }
     default: {
@@ -324,12 +324,12 @@ void QHybrisBaseInput::customEvent(QEvent* event) {
 }
 
 void QHybrisBaseInput::postEvent(QWindow* window, const Event* event) {
-  DLOG("QHybrisBaseInput::postEvent (window=%p, event=%p)", window, event);
+  DLOG("QHybrisBaseInput::postEvent (this=%p, window=%p, event=%p)", this, window, event);
   QCoreApplication::postEvent(this, new QHybrisBaseEvent(window, event, eventType_));
 }
 
-void QHybrisBaseInput::handleMotionEvent(QWindow* window, const Event* event) {
-  DLOG("QHybrisBaseInput::handleMotionEvent (window=%p, event=%p)", window, event);
+void QHybrisBaseInput::dispatchMotionEvent(QWindow* window, const Event* event) {
+  DLOG("QHybrisBaseInput::dispatchMotionEvent (this=%p, window=%p, event=%p)", this, window, event);
 
 #if (LOG_EVENTS != 0)
   // Motion event logging.
@@ -444,12 +444,19 @@ void QHybrisBaseInput::handleMotionEvent(QWindow* window, const Event* event) {
   }
 
   // Touch event propagation.
-  QWindowSystemInterface::handleTouchEvent(
-      window, event->details.motion.event_time / 1000000, touchDevice_, touchPoints_);
+  handleTouchEvent(window, event->details.motion.event_time / 1000000, touchDevice_, touchPoints_);
 }
 
-void QHybrisBaseInput::handleKeyEvent(QWindow* window, const Event* event) {
-  DLOG("QHybrisBaseInput::handleKeyEvent (window=%p, event=%p)", window, event);
+void QHybrisBaseInput::handleTouchEvent(
+    QWindow* window, ulong timestamp, QTouchDevice* device,
+    const QList<struct QWindowSystemInterface::TouchPoint> &points) {
+  DLOG("QHybrisBaseInput::handleTouchEvent (this=%p, window=%p, timestamp=%lu, device=%p)",
+       this, window, timestamp, device);
+  QWindowSystemInterface::handleTouchEvent(window, timestamp, device, points);
+}
+
+void QHybrisBaseInput::dispatchKeyEvent(QWindow* window, const Event* event) {
+  DLOG("QHybrisBaseInput::dispatchKeyEvent (this=%p, window=%p, event=%p)", this, window, event);
 
 #if (LOG_EVENTS != 0)
   // Key event logging.
@@ -496,13 +503,22 @@ void QHybrisBaseInput::handleKeyEvent(QWindow* window, const Event* event) {
       return;
     }
   }
-  QWindowSystemInterface::handleKeyEvent(window, timestamp, keyType, keyCode, modifiers, text);
+  handleKeyEvent(window, timestamp, keyType, keyCode, modifiers, text);
 }
 
-void QHybrisBaseInput::handleHWSwitchEvent(QWindow* window, const Event* event) {
+void QHybrisBaseInput::handleKeyEvent(
+    QWindow* window, ulong timestamp, QEvent::Type type, int key, Qt::KeyboardModifiers modifiers,
+    const QString& text) {
+  DLOG("QHybrisBaseInput::handleKeyEvent (this=%p window=%p, timestamp=%lu, type=%d, key=%d, "
+       "modifiers=%d, text='%s')", this, window, timestamp, static_cast<int>(type), key,
+       static_cast<int>(modifiers), text.toUtf8().data());
+  QWindowSystemInterface::handleKeyEvent(window, timestamp, type, key, modifiers, text);
+}
+
+void QHybrisBaseInput::dispatchHWSwitchEvent(QWindow* window, const Event* event) {
   Q_UNUSED(window);
   Q_UNUSED(event);
-  DLOG("QHybrisBaseInput::handleSwitchEvent (window=%p, event=%p)", window, event);
+  DLOG("QHybrisBaseInput::dispatchSwitchEvent (this=%p, window=%p, event=%p)", this, window, event);
 
 #if (LOG_EVENTS != 0)
   // HW switch event logging.
