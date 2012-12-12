@@ -88,7 +88,7 @@ QPlatformWindow* QHybrisIntegration::createPlatformWindow(QWindow* window) {
   if (!once) {
     sessionType = nativeInterface()->property("session").toUInt();
     // FIXME(loicm) Remove that once all system applications have been ported to the new property.
-    if (session == 0) {
+    if (sessionType == 0) {
       sessionType = nativeInterface()->property("ubuntuSessionType").toUInt();
     }
 #if !defined(QT_NO_DEBUG)
