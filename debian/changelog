@@ -1,6 +1,6 @@
 qthybris (0.26) quantal; urgency=low
 
-  * Fixed touch input dispatching for system sessions..
+  * Fixed touch input dispatching for system sessions.
 
  -- Loïc Molinari <loic.molinari@canonical.com>  Wed, 12 Dec 2012 02:56:29 +0200
 
