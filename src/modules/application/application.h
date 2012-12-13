@@ -8,6 +8,7 @@
 
 class Application : public QObject {
   Q_OBJECT
+  Q_PROPERTY(QString desktopFile READ desktopFile NOTIFY desktopFileChanged)
   Q_PROPERTY(QString name READ name NOTIFY nameChanged)
   Q_PROPERTY(QString comment READ comment NOTIFY commentChanged)
   Q_PROPERTY(QString icon READ icon NOTIFY iconChanged)
@@ -16,9 +17,10 @@ class Application : public QObject {
 
  public:
   Application() {}
-  Application(const char* name, const char* comment, const char* icon, int handle);
+  Application(const char* desktopFile, const char* name, const char* comment, const char* icon, int handle);
   ~Application();
 
+  QString desktopFile() const { return desktopFile_; }
   QString name() const { return name_; }
   QString comment() const { return comment_; }
   QString icon() const { return icon_; }
@@ -26,6 +28,7 @@ class Application : public QObject {
   bool focused() const { return focused_; }
 
  Q_SIGNALS:
+  void desktopFileChanged();
   void nameChanged();
   void commentChanged();
   void iconChanged();
@@ -35,6 +38,7 @@ class Application : public QObject {
  private:
   void setFocused(bool focused);
 
+  QString desktopFile_;
   QString name_;
   QString comment_;
   QString icon_;
