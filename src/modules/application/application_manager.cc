@@ -63,7 +63,7 @@ static void sessionFocusedCallback(ubuntu_ui_session_properties session, void* c
 }
 
 static void sessionRequestedCallback(ubuntu_ui_session_properties session, void* context) {
-  DLOG("sessionDiedCallback (session=%p, context=%p)", session, context);
+  DLOG("sessionRequestedCallback (session=%p, context=%p)", session, context);
   DASSERT(context != NULL);
   // Post a task to be executed on the ApplicationManager thread (GUI thread).
   ApplicationManager* manager = static_cast<ApplicationManager*>(context);
@@ -108,7 +108,7 @@ bool DesktopData::loadDesktopFile(QString desktopFile) {
 
   // Open file.
   if (!file.open(QFile::ReadOnly | QIODevice::Text)) {
-    DLOG("can't open file: '%s'", file.errorString().toLatin1().data());
+    DLOG("can't open file: %s", file.errorString().toLatin1().data());
     return false;
   }
 
@@ -194,10 +194,9 @@ void ApplicationManager::customEvent(QEvent* event) {
   switch (taskEvent->task_) {
 
     case TaskEvent::kAddApplication: {
-      DLOG("adding new application to the data model");
+      DLOG("handling add application task");
       DesktopData* desktopData = NULL;
       QProcess* process = NULL;
-
       // Search for a matching process.
       const int kSize = unmatchedProcesses_.size();
       for (int i = 0; i < kSize; i++) {
@@ -209,14 +208,10 @@ void ApplicationManager::customEvent(QEvent* event) {
           killTimer(unmatchedProcesses_[i].timerId_);
           desktopData = unmatchedProcesses_[i].desktopData_;
           process = unmatchedProcesses_[i].process_;
-          unmatchedProcesses_[i].clear();
           unmatchedProcesses_.removeAt(i);
-          // FIXME: remove that log.
-          DLOG("removed a process from the list (%d)", unmatchedProcesses_.size());
           break;
         }
       }
-
       // Load the desktop file if no process matches.
       if (desktopData == NULL) {
         DLOG("didn't get a match in the unmatched processes, loading the desktop file");
@@ -226,7 +221,6 @@ void ApplicationManager::customEvent(QEvent* event) {
           break;
         }
       }
-
       // Create the application and store it in the data model.
       Application* application = new Application(desktopData, process, taskEvent->pid_);
       DASSERT(!pidHash_.contains(taskEvent->pid_));
@@ -236,7 +230,7 @@ void ApplicationManager::customEvent(QEvent* event) {
     }
 
     case TaskEvent::kRemoveApplication: {
-      DLOG("removing application from the data model");
+      DLOG("handling remove application task");
       // Remove the application from the data model.
       Application* application = pidHash_.take(taskEvent->pid_);
       if (application != NULL) {
@@ -247,8 +241,8 @@ void ApplicationManager::customEvent(QEvent* event) {
     }
 
     case TaskEvent::kStartProcess: {
-      DLOG("starting process");
-      startProcess(taskEvent->desktopFile_, QStringList());
+      DLOG("handling start process task");
+      startProcess(taskEvent->desktopFile_);
       break;
     }
 
@@ -264,11 +258,16 @@ void ApplicationManager::timerEvent(QTimerEvent* event) {
   const int timerId = event->timerId();
   for (int i = 0; i < kSize; i++) {
     if (unmatchedProcesses_[i].timerId_ == timerId) {
-      unmatchedProcesses_.removeAt(i);
-      DLOG("removed process '%s' as it's not been matched by a new session",
+      DASSERT(unmatchedProcesses_[i].desktopData_ != NULL);
+      DASSERT(unmatchedProcesses_[i].process_ != NULL);
+      DLOG("closing process '%s' as it's not been matched by a new session",
            unmatchedProcesses_[i].desktopData_->name().toLatin1().data());
+      delete unmatchedProcesses_[i].desktopData_;
+      delete unmatchedProcesses_[i].process_;
+      unmatchedProcesses_.removeAt(i);
     }
   }
+  killTimer(event->timerId());
 }
 
 ApplicationManager::StageHint ApplicationManager::stageHint() const {
@@ -310,10 +309,16 @@ void ApplicationManager::startProcess(QString desktopFile, QStringList arguments
   DLOG("ApplicationManager::startProcess (this=%p)", this);
   DesktopData* desktopData = new DesktopData(desktopFile);
   if (desktopData->loaded()) {
-    unmatchedProcesses_.prepend(ApplicationManager::Process(
-        desktopData, arguments, startTimer(kTimeBeforeClosingProcess)));
-    // FIXME: remove that log.
-    DLOG("added a processes in the list (%d)", unmatchedProcesses_.size());
+    QProcess* process = new QProcess();
+    arguments.append(QString("--desktop_file_hint=") + desktopData->file());
+#if !defined(QT_NO_DEBUG)
+    LOG("starting process '%s' with arguments:", desktopData->exec().toLatin1().data());
+    for (int i = 0; i < arguments.size(); i++)
+      LOG("  '%s'", arguments[i].toLatin1().data());
+#endif
+    process->start(desktopData->exec(), arguments);
+    int timerId = startTimer(kTimeBeforeClosingProcess);
+    unmatchedProcesses_.prepend(ApplicationManager::Process(desktopData, process, timerId));
   } else {
     delete desktopData;
   }
@@ -324,32 +329,12 @@ void ApplicationManager::stopProcess(Application* application) {
   if (application != NULL) {
     QProcess* process = application->process();
     DLOG_IF(process == NULL, "can't stop process not started by the application manager");
-    if (process != NULL && process->state() != QProcess::NotRunning) {
+    // FIXME(loicm) Should we add support to stop process using the pid if not started by the
+    //     application manager?
+    if (process != NULL && process->state()) {
+      DLOG("stopping process '%s' with pid %d", application->exec().toLatin1().data(),
+           application->handle());
       process->close();
     }
   }
-}
-
-ApplicationManager::Process::Process(DesktopData* desktopData, QStringList arguments, int timerId)
-    : desktopData_(desktopData)
-    , process_(new QProcess())
-    , timerId_(timerId) {
-  DLOG("ApplicationManager::Process::Process (this=%p)", this);
-  DASSERT(desktopData != NULL);
-  DASSERT(desktopData->loaded());
-  arguments.append(QString("--desktop_file_hint=") + desktopData->file());
-  process_->start(desktopData->exec(), arguments);
-};
-
-ApplicationManager::Process::~Process() {
-  DLOG("ApplicationManager::Process::~Process()");
-  delete desktopData_;
-  delete process_;
-}
-
-void ApplicationManager::Process::clear() {
-  DLOG("ApplicationManager::Process::clear()");
-  desktopData_ = NULL;
-  process_ = NULL;
-  timerId_ = 0;
 }

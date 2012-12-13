@@ -14,6 +14,7 @@ class Application : public QObject {
   Q_PROPERTY(QString name READ name NOTIFY nameChanged)
   Q_PROPERTY(QString comment READ comment NOTIFY commentChanged)
   Q_PROPERTY(QString icon READ icon NOTIFY iconChanged)
+  Q_PROPERTY(QString exec READ icon NOTIFY execChanged)
   Q_PROPERTY(int handle READ handle NOTIFY handleChanged)
   Q_PROPERTY(bool focused READ focused NOTIFY focusedChanged)
 
@@ -24,6 +25,7 @@ class Application : public QObject {
   QString name() const;
   QString comment() const;
   QString icon() const;
+  QString exec() const;
   int handle() const;
   bool focused() const;
 
@@ -31,6 +33,7 @@ class Application : public QObject {
   void nameChanged();
   void commentChanged();
   void iconChanged();
+  void execChanged();
   void handleChanged();
   void focusedChanged();
 

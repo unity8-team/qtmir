@@ -82,7 +82,7 @@ class ApplicationManager : public QObject {
   Q_INVOKABLE void focusApplication(Application* application);
   Q_INVOKABLE void focusFavoriteApplication(FavoriteApplication application);
   Q_INVOKABLE void unfocusCurrentApplication();
-  Q_INVOKABLE void startProcess(QString desktopFile, QStringList arguments);
+  Q_INVOKABLE void startProcess(QString desktopFile, QStringList arguments = QStringList());
   Q_INVOKABLE void stopProcess(Application* application);
 
   QEvent::Type eventType() { return eventType_; }
@@ -92,9 +92,8 @@ class ApplicationManager : public QObject {
 
  private:
   struct Process {
-    Process(DesktopData* desktopData, QStringList arguments, int timerId);
-    ~Process();
-    void clear();
+    Process(DesktopData* desktopData, QProcess* process, int timerId)
+        : desktopData_(desktopData), process_(process), timerId_(timerId) {}
     DesktopData* desktopData_;
     QProcess* process_;
     int timerId_;

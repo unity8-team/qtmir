@@ -21,27 +21,26 @@ Application::~Application() {
 }
 
 QString Application::name() const {
-  DLOG("Application::name (this=%p)", this);
   return desktopData_->name();
 }
 
 QString Application::comment() const {
-  DLOG("Application::comment (this=%p)", this);
   return desktopData_->comment();
 }
 
 QString Application::icon() const {
-  DLOG("Application::icon (this=%p)", this);
   return desktopData_->icon();
 }
 
+QString Application::exec() const {
+  return desktopData_->exec();
+}
+
 int Application::handle() const {
-  DLOG("Application::handle (this=%p)", this);
   return handle_;
 }
 
 bool Application::focused() const {
-  DLOG("Application::focused (this=%p)", this);
   return focused_;
 }
 
