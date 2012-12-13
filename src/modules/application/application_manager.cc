@@ -130,6 +130,15 @@ Application* ApplicationManager::createApplication(const char* desktopFile, int 
 ApplicationManager::ApplicationManager()
     : applications_(new ApplicationListModel())
     , eventType_(static_cast<QEvent::Type>(QEvent::registerEventType())) {
+  static int once = false;
+  if (!once) {
+    DLOG("starting application watcher");
+    static ubuntu_ui_session_lifecycle_observer watcher = {
+      sessionBornCallback, sessionFocusedCallback, sessionDiedCallback, this
+    };
+    ubuntu_ui_session_install_session_lifecycle_observer(&watcher);
+    once = true;
+  }
   DLOG("ApplicationManager::ApplicationManager (this=%p)", this);
 }
 
@@ -195,17 +204,4 @@ void ApplicationManager::focusFavoriteApplication(
        this, static_cast<int>(application));
   ubuntu_ui_session_trigger_switch_to_well_known_application(
      static_cast<ubuntu_ui_well_known_application>(application));
-}
-
-void ApplicationManager::startWatcher() {
-  DLOG("ApplicationManager::startWatcher (this=%p)", this);
-  static int once = false;
-  if (!once) {
-    DLOG("starting watcher for once");
-    static ubuntu_ui_session_lifecycle_observer watcher = {
-      sessionBornCallback, sessionFocusedCallback, sessionDiedCallback, this
-    };
-    ubuntu_ui_session_install_session_lifecycle_observer(&watcher);
-    once = true;
-  }
 }

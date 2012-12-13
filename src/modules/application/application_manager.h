@@ -53,7 +53,6 @@ class ApplicationManager : public QObject {
 
   Q_INVOKABLE void focusApplication(int applicationId);
   Q_INVOKABLE void focusFavoriteApplication(FavoriteApplication application);
-  Q_INVOKABLE void startWatcher();
 
   QEvent::Type eventType() { return eventType_; }
 

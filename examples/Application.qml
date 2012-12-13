@@ -118,8 +118,5 @@ Rectangle {
         ];
         print('Form factor hint:', formFactorHintStr[ApplicationManager.formFactorHint]);
         print('Stage hint:', stageHintStr[ApplicationManager.stageHint]);
-
-        // Start the watcher so that the ApplicationManager applications model can be populated.
-        ApplicationManager.startWatcher();
     }
 }
