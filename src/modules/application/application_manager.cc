@@ -197,6 +197,11 @@ void ApplicationManager::focusFavoriteApplication(
      static_cast<ubuntu_ui_well_known_application>(application));
 }
 
+void ApplicationManager::unfocusCurrentApplication() {
+  DLOG("ApplicationManager::unfocusCurrentApplication (this=%p)", this);
+  ubuntu_ui_session_unfocus_running_sessions();
+}
+
 void ApplicationManager::startWatcher() {
   DLOG("ApplicationManager::startWatcher (this=%p)", this);
   static int once = false;
