@@ -1,3 +1,4 @@
+
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
@@ -5,6 +6,8 @@
 #define APPLICATION_H
 
 #include <Qt/QtCore>
+
+class DesktopData;
 
 class Application : public QObject {
   Q_OBJECT
@@ -15,15 +18,14 @@ class Application : public QObject {
   Q_PROPERTY(bool focused READ focused NOTIFY focusedChanged)
 
  public:
-  Application() {}
-  Application(const char* name, const char* comment, const char* icon, int handle);
+  Application(DesktopData* desktopData, QProcess* process, int handle);
   ~Application();
 
-  QString name() const { return name_; }
-  QString comment() const { return comment_; }
-  QString icon() const { return icon_; }
-  int handle() const { return handle_; }
-  bool focused() const { return focused_; }
+  QString name() const;
+  QString comment() const;
+  QString icon() const;
+  int handle() const;
+  bool focused() const;
 
  Q_SIGNALS:
   void nameChanged();
@@ -33,11 +35,11 @@ class Application : public QObject {
   void focusedChanged();
 
  private:
+  QProcess* process() const { return process_; }
   void setFocused(bool focused);
 
-  QString name_;
-  QString comment_;
-  QString icon_;
+  DesktopData* desktopData_;
+  QProcess* process_;
   int handle_;
   bool focused_;
 

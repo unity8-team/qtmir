@@ -11,6 +11,32 @@
 class Application;
 class ApplicationListModel;
 
+class DesktopData {
+ public:
+  DesktopData(QString desktopFile);
+  ~DesktopData();
+
+  QString file() const { return file_; }
+  QString name() const { return entries_[kNameIndex]; }
+  QString comment() const { return entries_[kCommentIndex]; }
+  QString icon() const { return entries_[kIconIndex]; }
+  QString exec() const { return entries_[kExecIndex]; }
+  bool loaded() const { return loaded_; }
+
+ private:
+  static const int kNameIndex = 0,
+    kCommentIndex = 1,
+    kIconIndex = 2,
+    kExecIndex = 3,
+    kNumberOfEntries = 4;
+
+  bool loadDesktopFile(QString desktopFile);
+
+  QString file_;
+  QVector<QString> entries_;
+  bool loaded_;
+};
+
 class ApplicationManager : public QObject {
   Q_OBJECT
   Q_ENUMS(Role)
@@ -25,6 +51,7 @@ class ApplicationManager : public QObject {
   ApplicationManager();
   ~ApplicationManager();
 
+  // Mapping enums to Ubuntu application API enums.
   enum Role {
     Dash = DASH_ACTOR_ROLE, Default = MAIN_ACTOR_ROLE, Indicators = INDICATOR_ACTOR_ROLE,
     Notifications = NOTIFICATIONS_ACTOR_ROLE, Greeter = GREETER_ACTOR_ROLE,
@@ -46,13 +73,16 @@ class ApplicationManager : public QObject {
 
   // QObject methods.
   void customEvent(QEvent* event);
+  void timerEvent(QTimerEvent* event);
 
   StageHint stageHint() const;
   FormFactorHint formFactorHint() const;
   ApplicationListModel* applications() const;
 
-  Q_INVOKABLE void focusApplication(int applicationId);
+  Q_INVOKABLE void focusApplication(Application* application);
   Q_INVOKABLE void focusFavoriteApplication(FavoriteApplication application);
+  Q_INVOKABLE void startProcess(QString desktopFile, QStringList arguments);
+  Q_INVOKABLE void stopProcess(Application* application);
 
   QEvent::Type eventType() { return eventType_; }
 
@@ -60,10 +90,18 @@ class ApplicationManager : public QObject {
   void applicationsChanged();
 
  private:
-  Application* createApplication(const char* desktopFile, int id);
+  struct Process {
+    Process(DesktopData* desktopData, QStringList arguments, int timerId);
+    ~Process();
+    void clear();
+    DesktopData* desktopData_;
+    QProcess* process_;
+    int timerId_;
+  };
 
   ApplicationListModel* applications_;
-  QHash<int,Application*> idHash_;
+  QHash<int,Application*> pidHash_;
+  QList<Process> unmatchedProcesses_;
   QEvent::Type eventType_;
 };
 
