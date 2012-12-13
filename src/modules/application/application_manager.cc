@@ -301,6 +301,11 @@ void ApplicationManager::focusFavoriteApplication(
       static_cast<ubuntu_ui_well_known_application>(application));
 }
 
+void ApplicationManager::unfocusCurrentApplication() {
+  DLOG("ApplicationManager::unfocusCurrentApplication (this=%p)", this);
+  ubuntu_ui_session_unfocus_running_sessions();
+}
+
 void ApplicationManager::startProcess(QString desktopFile, QStringList arguments) {
   DLOG("ApplicationManager::startProcess (this=%p)", this);
   DesktopData* desktopData = new DesktopData(desktopFile);

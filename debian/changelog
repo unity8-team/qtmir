@@ -1,3 +1,27 @@
+qthybris (0.28) quantal; urgency=low
+
+  * Added ubuntu_ui_session_unfocus_running_sessions binding.
+
+ -- Loïc Molinari <loic.molinari@canonical.com>  Wed, 12 Dec 2012 23:15:05 +0100
+
+qthybris (0.27) quantal; urgency=low
+
+  * Added support NULL sources in ApplicationImage. 
+
+ -- Loïc Molinari <loic.molinari@canonical.com>  Wed, 12 Dec 2012 10:36:21 +0000
+
+qthybris (0.26) quantal; urgency=low
+
+  * Fixed touch input dispatching for system sessions.
+
+ -- Loïc Molinari <loic.molinari@canonical.com>  Wed, 12 Dec 2012 02:56:29 +0200
+
+qthybris (0.25) quantal; urgency=low
+
+  * Adapted to Ubuntu application API API change.
+
+ -- Loïc Molinari <loic.molinari@canonical.com>  Tue, 11 Dec 2012 19:54:02 +0200
+
 qthybris (0.24) quantal; urgency=low
 
   * Changed hardcoded top strut from 54 to 59.
@@ -7,8 +31,8 @@ qthybris (0.24) quantal; urgency=low
 qthybris (0.23) quantal; urgency=low
 
   * Added ApplicationListModel::get method.
-  * Added ApplicationListModel::count property. 
-  * Added ApplicationListModel::move method. 
+  * Added ApplicationListModel::count property.
+  * Added ApplicationListModel::move method.
 
  -- Florian Boucault <florian.boucault@canonical.com>  Mon, 10 Dec 2012 17:58:33 +0000
 

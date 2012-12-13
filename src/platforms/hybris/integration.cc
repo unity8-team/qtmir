@@ -86,7 +86,11 @@ QPlatformWindow* QHybrisIntegration::createPlatformWindow(QWindow* window) {
   // Start a session before creating the first window.
   static bool once = false;
   if (!once) {
-    sessionType = nativeInterface()->property("ubuntuSessionType").toUInt();
+    sessionType = nativeInterface()->property("session").toUInt();
+    // FIXME(loicm) Remove that once all system applications have been ported to the new property.
+    if (sessionType == 0) {
+      sessionType = nativeInterface()->property("ubuntuSessionType").toUInt();
+    }
 #if !defined(QT_NO_DEBUG)
     ASSERT(sessionType <= SYSTEM_SESSION_TYPE);
     const char* const sessionTypeString[] = {
@@ -109,6 +113,7 @@ QPlatformWindow* QHybrisIntegration::createPlatformWindow(QWindow* window) {
       resumedCallback, suspendedCallback, focusedCallback, unfocusedCallback, this
     };
     ubuntu_application_ui_start_a_new_session(&credentials);
+    input_->setSessionType(sessionType);
     once = true;
   }
 

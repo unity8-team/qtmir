@@ -81,6 +81,7 @@ class ApplicationManager : public QObject {
 
   Q_INVOKABLE void focusApplication(Application* application);
   Q_INVOKABLE void focusFavoriteApplication(FavoriteApplication application);
+  Q_INVOKABLE void unfocusCurrentApplication();
   Q_INVOKABLE void startProcess(QString desktopFile, QStringList arguments);
   Q_INVOKABLE void stopProcess(Application* application);
 

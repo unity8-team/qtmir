@@ -19,13 +19,18 @@ class QHybrisBaseInput : public QObject {
   // QObject methods.
   void customEvent(QEvent* event);
 
+  virtual void handleTouchEvent(QWindow* window, ulong timestamp, QTouchDevice* device,
+                                 const QList<struct QWindowSystemInterface::TouchPoint> &points);
+  virtual void handleKeyEvent(QWindow* window, ulong timestamp, QEvent::Type type, int key,
+                              Qt::KeyboardModifiers modifiers, const QString& text);
+
   void postEvent(QWindow* window, const Event* event);
   QHybrisBaseIntegration* integration() const { return integration_; }
 
  private:
-  void handleMotionEvent(QWindow* window, const Event* event);
-  void handleKeyEvent(QWindow* window, const Event* event);
-  void handleHWSwitchEvent(QWindow* window, const Event* event);
+  void dispatchMotionEvent(QWindow* window, const Event* event);
+  void dispatchKeyEvent(QWindow* window, const Event* event);
+  void dispatchHWSwitchEvent(QWindow* window, const Event* event);
 
   QHybrisBaseIntegration* integration_;
   QTouchDevice* touchDevice_;
