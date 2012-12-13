@@ -120,7 +120,7 @@ Application* ApplicationManager::createApplication(const char* desktopFile, int 
 
   // Check that at least the Name and Icon entries are set.
   if (matches & (kEntryNames[0].flag | kEntryNames[2].flag)) {
-    return new Application(entries[0], entries[1], entries[2], id);
+    return new Application(desktopFile, entries[0], entries[1], entries[2], id);
   } else {
     DLOG("not a valid desktop file, missing entries in the standard group header");
     return NULL;

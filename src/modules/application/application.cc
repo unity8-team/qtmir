@@ -4,14 +4,15 @@
 #include "application.h"
 #include "logging.h"
 
-Application::Application(const char* name, const char* comment, const char* icon, int handle)
-    : name_(name)
+Application::Application(const char* desktopFile, const char* name, const char* comment, const char* icon, int handle)
+    : desktopFile_(desktopFile)
+    , name_(name)
     , comment_(comment)
     , icon_(icon)
     , handle_(handle)
     , focused_(false) {
-  DLOG("Application::Application (this=%p, name='%s', comment='%s', icon='%s', handle=%d)",
-       this, name, comment, icon, handle);
+  DLOG("Application::Application (this=%p, desktopFile='%s', name='%s', comment='%s', icon='%s', handle=%d)",
+       this, desktopFile, name, comment, icon, handle);
 }
 
 Application::~Application() {
