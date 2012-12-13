@@ -46,6 +46,8 @@ ApplicationImage::ApplicationImage(QQuickPaintedItem* parent)
     : QQuickPaintedItem(parent)
     , source_(NULL) {
   DLOG("ApplicationImage::ApplicationImage (this=%p, parent=%p)", this, parent);
+  setFillColor(QColor(0, 0, 0, 255));
+  setOpaquePainting(true);
 }
 
 ApplicationImage::~ApplicationImage() {
