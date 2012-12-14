@@ -27,7 +27,7 @@
 //     ApplicationManager.stopProcess(application)
 //
 // In order to focus or start a favorite application, that function can be used:
-//     ApplicationManager.focusFavoriteApplication(ApplicationManager.Gallery);
+//     ApplicationManager.focusFavoriteApplication(ApplicationManager.GalleryApplication);
 
 import QtQuick 2.0
 import Ubuntu.Application 0.1
@@ -42,7 +42,7 @@ Rectangle {
         id: touchArea
         anchors.fill: parent
         onClicked: {
-            ApplicationManager.focusFavoriteApplication(ApplicationManager.Browser);
+            ApplicationManager.focusFavoriteApplication(ApplicationManager.BrowserApplication);
         }
     }
 

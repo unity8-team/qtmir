@@ -286,10 +286,9 @@ ApplicationListModel* ApplicationManager::applications() const {
   return applications_;
 }
 
-void ApplicationManager::focusApplication(Application* application) {
-  DLOG("ApplicationManager::focusApplication (this=%p, application=%p)", this, application);
-  if (application != NULL)
-    ubuntu_ui_session_focus_running_session_with_id(application->handle());
+void ApplicationManager::focusApplication(int handle) {
+  DLOG("ApplicationManager::focusApplication (this=%p, handle=%%)", this, handle);
+  ubuntu_ui_session_focus_running_session_with_id(handle);
 }
 
 void ApplicationManager::focusFavoriteApplication(
@@ -305,7 +304,7 @@ void ApplicationManager::unfocusCurrentApplication() {
   ubuntu_ui_session_unfocus_running_sessions();
 }
 
-void ApplicationManager::startProcess(QString desktopFile, QStringList arguments) {
+int ApplicationManager::startProcess(QString desktopFile, QStringList arguments) {
   DLOG("ApplicationManager::startProcess (this=%p)", this);
   DesktopData* desktopData = new DesktopData(desktopFile);
   if (desktopData->loaded()) {
@@ -322,6 +321,7 @@ void ApplicationManager::startProcess(QString desktopFile, QStringList arguments
   } else {
     delete desktopData;
   }
+  return 0;
 }
 
 void ApplicationManager::stopProcess(Application* application) {

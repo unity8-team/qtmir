@@ -59,16 +59,17 @@ class ApplicationManager : public QObject {
     ShutdownDialog = SHUTDOWN_DIALOG_ACTOR_ROLE
   };
   enum StageHint {
-    Main = MAIN_STAGE_HINT, Integration = INTEGRATION_STAGE_HINT, Share = SHARE_STAGE_HINT,
-    ContentPicking = CONTENT_PICKING_STAGE_HINT, Side = SIDE_STAGE_HINT,
-    Configuration = CONFIGURATION_STAGE_HINT
+    MainStage = MAIN_STAGE_HINT, IntegrationStage = INTEGRATION_STAGE_HINT,
+    ShareStage = SHARE_STAGE_HINT, ContentPickingStage = CONTENT_PICKING_STAGE_HINT,
+    SideStage = SIDE_STAGE_HINT, ConfigurationStage = CONFIGURATION_STAGE_HINT
   };
   enum FormFactorHint {
-    Desktop = DESKTOP_FORM_FACTOR_HINT, Phone = PHONE_FORM_FACTOR_HINT,
-    Tablet = TABLET_FORM_FACTOR_HINT
+    DesktopFormFactor = DESKTOP_FORM_FACTOR_HINT, PhoneFormFactor = PHONE_FORM_FACTOR_HINT,
+    TabletFormFactor = TABLET_FORM_FACTOR_HINT
   };
   enum FavoriteApplication {
-    Camera = CAMERA_APP, Gallery = GALLERY_APP, Browser = BROWSER_APP
+    CameraApplication = CAMERA_APP, GalleryApplication = GALLERY_APP,
+    BrowserApplication = BROWSER_APP, ShareApplication = SHARE_APP
   };
 
   // QObject methods.
@@ -79,10 +80,10 @@ class ApplicationManager : public QObject {
   FormFactorHint formFactorHint() const;
   ApplicationListModel* applications() const;
 
-  Q_INVOKABLE void focusApplication(Application* application);
+  Q_INVOKABLE void focusApplication(int handle);
   Q_INVOKABLE void focusFavoriteApplication(FavoriteApplication application);
   Q_INVOKABLE void unfocusCurrentApplication();
-  Q_INVOKABLE void startProcess(QString desktopFile, QStringList arguments = QStringList());
+  Q_INVOKABLE int startProcess(QString desktopFile, QStringList arguments = QStringList());
   Q_INVOKABLE void stopProcess(Application* application);
 
   QEvent::Type eventType() { return eventType_; }
