@@ -66,7 +66,7 @@ void QHybrisWindow::createWindow() {
        geometry.width(), geometry.height());
   ubuntu_application_ui_create_surface(
       &surface_, "QHybrisWindow", geometry.width(), geometry.height(),
-      static_cast<SurfaceRole>(role), eventCallback, this);
+      static_cast<SurfaceRole>(role), 0, eventCallback, this);
   if (geometry.x() != 0 || geometry.y() != 0)
     ubuntu_application_ui_move_surface_to(surface_, geometry.x(), geometry.y());
   ASSERT(surface_ != NULL);
