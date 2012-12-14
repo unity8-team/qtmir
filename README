@@ -172,11 +172,14 @@
     QPlatformNativeInterface* native = QGuiApplication::platformNativeInterface();
     native->setProperty("session", static_cast<int>(USER_SESSION_TYPE));
 
-  The plugin also looks for a "role" dynamic property on the QWindow
-  object in order to know the surface role to request. That property
-  can be set to an integer representing a SurfaceRole before the
-  window is shown. In order to request a launcher role, the following
-  code can be used:
+  The plugin also looks for "role" and "opaque" dynamic properties on
+  the QWindow object. The "role" property can be set to an integer
+  representing a SurfaceRole and the "opaque" property can be set to 0
+  or 1 to specify whether or not the surface shoud be considered
+  opaque by the compositor. Note that these properties must be set
+  before the window is shown. In order to request a launcher role and
+  an opaque window, the following code can be used:
 
     QQuickView* view = new QQuickView();
     view->setProperty("role", static_cast<int>(LAUNCHER_ACTOR_ROLE));
+    view->setProperty("opaque", 1);
