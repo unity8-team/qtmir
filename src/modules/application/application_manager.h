@@ -85,6 +85,7 @@ class ApplicationManager : public QObject {
   Q_INVOKABLE void unfocusCurrentApplication();
   Q_INVOKABLE int startProcess(QString desktopFile, QStringList arguments = QStringList());
   Q_INVOKABLE void stopProcess(Application* application);
+  Q_INVOKABLE void startWatcher() {}
 
   QEvent::Type eventType() { return eventType_; }
 
