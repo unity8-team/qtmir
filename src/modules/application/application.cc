@@ -20,6 +20,10 @@ Application::~Application() {
   delete process_;
 }
 
+QString Application::desktopFile() const {
+  return desktopData_->file();
+}
+
 QString Application::name() const {
   return desktopData_->name();
 }

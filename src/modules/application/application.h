@@ -11,6 +11,7 @@ class DesktopData;
 
 class Application : public QObject {
   Q_OBJECT
+  Q_PROPERTY(QString desktopFile READ desktopFile NOTIFY desktopFileChanged)
   Q_PROPERTY(QString name READ name NOTIFY nameChanged)
   Q_PROPERTY(QString comment READ comment NOTIFY commentChanged)
   Q_PROPERTY(QString icon READ icon NOTIFY iconChanged)
@@ -22,6 +23,7 @@ class Application : public QObject {
   Application(DesktopData* desktopData, QProcess* process, int handle);
   ~Application();
 
+  QString desktopFile() const;
   QString name() const;
   QString comment() const;
   QString icon() const;
@@ -30,6 +32,7 @@ class Application : public QObject {
   bool focused() const;
 
  Q_SIGNALS:
+  void desktopFileChanged();
   void nameChanged();
   void commentChanged();
   void iconChanged();
