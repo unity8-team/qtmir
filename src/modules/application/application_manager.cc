@@ -208,7 +208,7 @@ void ApplicationManager::startWatcher() {
   if (!once) {
     DLOG("starting watcher for once");
     static ubuntu_ui_session_lifecycle_observer watcher = {
-      NULL, sessionBornCallback, sessionFocusedCallback, sessionDiedCallback, this
+      NULL, sessionBornCallback, NULL, sessionFocusedCallback, sessionDiedCallback, this
     };
     ubuntu_ui_session_install_session_lifecycle_observer(&watcher);
     once = true;
