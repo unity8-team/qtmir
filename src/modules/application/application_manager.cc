@@ -304,7 +304,7 @@ void ApplicationManager::unfocusCurrentApplication() {
   ubuntu_ui_session_unfocus_running_sessions();
 }
 
-int ApplicationManager::startProcess(QString desktopFile, QStringList arguments) {
+Application* ApplicationManager::startProcess(QString desktopFile, QStringList arguments) {
   DLOG("ApplicationManager::startProcess (this=%p)", this);
   DesktopData* desktopData = new DesktopData(desktopFile);
   if (desktopData->loaded()) {
@@ -338,7 +338,7 @@ int ApplicationManager::startProcess(QString desktopFile, QStringList arguments)
   } else {
     delete desktopData;
   }
-  return 0;
+  return NULL;
 }
 
 void ApplicationManager::stopProcess(Application* application) {
