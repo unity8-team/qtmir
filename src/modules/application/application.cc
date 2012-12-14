@@ -8,8 +8,7 @@
 Application::Application(DesktopData* desktopData, QProcess* process, int handle)
     : desktopData_(desktopData)
     , process_(process)
-    , handle_(handle)
-    , focused_(false) {
+    , handle_(handle) {
   DASSERT(desktopData != NULL);
   DLOG("Application::Application (this=%p, desktopData=%p, handle=%d)", this, desktopData, handle);
 }
@@ -42,16 +41,4 @@ QString Application::exec() const {
 
 int Application::handle() const {
   return handle_;
-}
-
-bool Application::focused() const {
-  return focused_;
-}
-
-void Application::setFocused(bool focused) {
-  DLOG("Application::setFocused (this=%p, focused=%d)", this, focused);
-  if (focused_ != focused) {
-    focused_ = focused;
-    emit focusedChanged();
-  }
 }
