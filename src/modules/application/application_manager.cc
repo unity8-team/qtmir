@@ -287,7 +287,7 @@ ApplicationListModel* ApplicationManager::applications() const {
 }
 
 void ApplicationManager::focusApplication(int handle) {
-  DLOG("ApplicationManager::focusApplication (this=%p, handle=%%)", this, handle);
+  DLOG("ApplicationManager::focusApplication (this=%p, handle=%d)", this, handle);
   ubuntu_ui_session_focus_running_session_with_id(handle);
 }
 
@@ -308,14 +308,31 @@ int ApplicationManager::startProcess(QString desktopFile, QStringList arguments)
   DLOG("ApplicationManager::startProcess (this=%p)", this);
   DesktopData* desktopData = new DesktopData(desktopFile);
   if (desktopData->loaded()) {
-    QProcess* process = new QProcess();
+    // FIXME(loicm) Special field codes are simply ignored for now.
+    //     http://standards.freedesktop.org/desktop-entry-spec/latest/ar01s06.html
+    QStringList execArguments = desktopData->exec().split(" ", QString::SkipEmptyParts);
+    DASSERT(execArguments.size() > 0);
+    QString exec(execArguments[0]);
+    const int kSize = execArguments.size();
+    for (int i = 1; i < kSize; i++) {
+      if ((execArguments[i].size() == 2) && (execArguments[i][0].toLatin1() == '%')) {
+        const char kChar = execArguments[i][1].toLatin1();
+        if  (kChar == 'F' || kChar == 'u' || kChar == 'U' || kChar == 'd' || kChar == 'D'
+             || kChar == 'n' || kChar == 'N' || kChar == 'i' || kChar == 'c' || kChar == 'k'
+             || kChar == 'v' || kChar == 'm') {
+          continue;
+        }
+      }
+      arguments.prepend(execArguments[i]);
+    }
     arguments.append(QString("--desktop_file_hint=") + desktopData->file());
 #if !defined(QT_NO_DEBUG)
-    LOG("starting process '%s' with arguments:", desktopData->exec().toLatin1().data());
+    LOG("starting process '%s' with arguments:", exec.toLatin1().data());
     for (int i = 0; i < arguments.size(); i++)
       LOG("  '%s'", arguments[i].toLatin1().data());
 #endif
-    process->start(desktopData->exec(), arguments);
+    QProcess* process = new QProcess();
+    process->start(exec, arguments);
     int timerId = startTimer(kTimeBeforeClosingProcess);
     unmatchedProcesses_.prepend(ApplicationManager::Process(desktopData, process, timerId));
   } else {
