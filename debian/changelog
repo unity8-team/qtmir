@@ -1,3 +1,9 @@
+qthybris (0.32) quantal; urgency=low
+
+  * Force the build to generate debug symbols, so we can have -dbgsym packages
+
+ -- Ricardo Salveti de Araujo <ricardo.salveti@canonical.com>  Mon, 17 Dec 2012 18:25:53 -0200
+
 qthybris (0.31) quantal; urgency=low
 
   * Added support for starting/stopping processes.
