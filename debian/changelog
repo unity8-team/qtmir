@@ -1,4 +1,4 @@
-qthybris (0.32) UNRELEASED; urgency=low
+qthybris (0.32) quantal; urgency=low
 
   * Force the build to generate debug symbols, so we can have -dbgsym packages
 
