@@ -50,6 +50,7 @@ static void usage() {
           "    -m or --maximized          ... Show the window maximized\n"
           "    -s or --session <session>  ... Set the Ubuntu session type\n"
           "    -r or --role <role>        ... Set the Ubuntu surface role\n"
+          "    -o or --opaque             ... Set the Ubuntu opaque surface flag\n"
           "    -h or --help               ... Show that help\n");
 }
 
@@ -80,6 +81,7 @@ int main(int argc, char* argv[]) {
   bool maximized = false;
   int session = 0;
   int role = 0;
+  int opaque = 0;
 
   for (int i = 1; i < argc; ++i) {
     if (QFileInfo(QFile::decodeName(argv[i])).exists()) {
@@ -98,6 +100,9 @@ int main(int argc, char* argv[]) {
       } else if ((kArg == QLatin1String("-r") || kArg == QLatin1String("--role"))
                  && i + 1 < argc) {
         role = atoi(argv[++i]);
+      } else if ((kArg == QLatin1String("-o") || kArg == QLatin1String("--opaque"))
+                 && i + 1 < argc) {
+        opaque = atoi(argv[++i]);
       } else if (kArg == QLatin1String("-h") || kArg == QLatin1String("--help")) {
         usage();
         return 0;
@@ -123,8 +128,9 @@ int main(int argc, char* argv[]) {
   view = new QQuickView();
 
   QPlatformNativeInterface* native = QGuiApplication::platformNativeInterface();
-  native->setProperty("ubuntuSessionType", session);
-  view->setProperty("ubuntuSurfaceRole", role);
+  native->setProperty("session", session);
+  view->setProperty("role", role);
+  view->setProperty("opaque", opaque);
 
   QQmlEngine* engine = view->engine();
   for (int i = 0; i < imports.size(); ++i)
