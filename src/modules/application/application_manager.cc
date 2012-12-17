@@ -179,6 +179,7 @@ bool DesktopData::loadDesktopFile(QString desktopFile) {
 
 ApplicationManager::ApplicationManager()
     : applications_(new ApplicationListModel())
+    , focusedApplication_(NULL)
     , pidHash_()
     , unmatchedProcesses_()
     , eventType_(static_cast<QEvent::Type>(QEvent::registerEventType())) {
@@ -260,20 +261,21 @@ void ApplicationManager::customEvent(QEvent* event) {
       // Reset the currently focused application.
       Application* application = pidHash_.value(taskEvent->pid_);
       if (application != NULL) {
-        DASSERT(focusedApplication == application);
-        focusedApplication = NULL;
-        emit focusedApplicationChanged();
+        if (focusedApplication_ == application) {
+          focusedApplication_ = NULL;
+          emit focusedApplicationChanged();
+        }
       }
       break;
     }
 
-    case TaskEvent::kUnfocusApplication: {
-      DLOG("handling unfocus application task");
+    case TaskEvent::kFocusApplication: {
+      DLOG("handling focus application task");
       // Update the currently focused application.
       Application* application = pidHash_.value(taskEvent->pid_);
       if (application != NULL) {
-        if (application != focusedApplication) {
-          focusedApplication = application;
+        if (focusedApplication_ != application) {
+          focusedApplication_ = application;
           emit focusedApplicationChanged();
         }
       }
@@ -326,7 +328,7 @@ ApplicationListModel* ApplicationManager::applications() const {
   return applications_;
 }
 
-ApplicationListModel* ApplicationManager::focusedApplication() const {
+Application* ApplicationManager::focusedApplication() const {
   DLOG("ApplicationManager::focusedApplication (this=%p)", this);
   return focusedApplication_;
 }

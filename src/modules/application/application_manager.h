@@ -46,7 +46,8 @@ class ApplicationManager : public QObject {
   Q_PROPERTY(StageHint stageHint READ stageHint)
   Q_PROPERTY(FormFactorHint formFactorHint READ formFactorHint)
   Q_PROPERTY(ApplicationListModel* applications READ applications NOTIFY applicationsChanged)
-  Q_PROPERTY(Application* focusedApplication READ applications NOTIFY focusedApplicationChanged)
+  Q_PROPERTY(Application* focusedApplication READ focusedApplication
+             NOTIFY focusedApplicationChanged)
 
  public:
   ApplicationManager();
@@ -105,6 +106,7 @@ class ApplicationManager : public QObject {
   };
 
   ApplicationListModel* applications_;
+  Application* focusedApplication_;
   QHash<int,Application*> pidHash_;
   QList<Process> unmatchedProcesses_;
   QEvent::Type eventType_;
