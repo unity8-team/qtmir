@@ -17,7 +17,7 @@ const int kTimeBeforeClosingProcess = 30000;
 
 class TaskEvent : public QEvent {
  public:
-  enum Task { kAddApplication = 0, kRemoveApplication, kStartProcess };
+  enum Task { kAddApplication = 0, kRemoveApplication, kRequestFocus };
   TaskEvent(char* desktopFile, int pid, int task, QEvent::Type type)
       : QEvent(type)
       , desktopFile_(desktopFile)
@@ -65,11 +65,11 @@ static void sessionFocusedCallback(ubuntu_ui_session_properties session, void* c
 static void sessionRequestedCallback(ubuntu_ui_session_properties session, void* context) {
   DLOG("sessionRequestedCallback (session=%p, context=%p)", session, context);
   DASSERT(context != NULL);
-  // Post a task to be executed on the ApplicationManager thread (GUI thread).
+  // Post a task to be executed on the ApplicationManager thread (GUI thread). The favorite
+  // application is stored in the PID field.
   ApplicationManager* manager = static_cast<ApplicationManager*>(context);
   QCoreApplication::postEvent(manager, new TaskEvent(
-      qstrdup(ubuntu_ui_session_properties_get_desktop_file_hint(session)), 0,
-      TaskEvent::kStartProcess, manager->eventType()));
+      NULL, reinterpret_cast<int>(session), TaskEvent::kRequestFocus, manager->eventType()));
 }
 
 DesktopData::DesktopData(QString desktopFile)
@@ -240,13 +240,15 @@ void ApplicationManager::customEvent(QEvent* event) {
       break;
     }
 
-    case TaskEvent::kStartProcess: {
-      DLOG("handling start process task");
-      startProcess(taskEvent->desktopFile_);
+    case TaskEvent::kRequestFocus: {
+      DLOG("handling request focus task");
+      // The favorite application is stored in the PID field.
+      emit focusRequested(static_cast<FavoriteApplication>(taskEvent->pid_));
       break;
     }
 
     default: {
+      DNOT_REACHED();
       break;
     }
   }
