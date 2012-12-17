@@ -6,4 +6,4 @@
 export PATH=/opt/qt5/bin/:/usr/lib/ccache/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 %:
-	dh $@
+	dh $@ --parallel
