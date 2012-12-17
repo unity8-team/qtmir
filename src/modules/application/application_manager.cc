@@ -171,7 +171,7 @@ ApplicationManager::ApplicationManager()
   if (!once) {
     DLOG("starting application watcher");
     static ubuntu_ui_session_lifecycle_observer watcher = {
-      sessionRequestedCallback, sessionBornCallback, sessionFocusedCallback,
+      sessionRequestedCallback, sessionBornCallback, NULL, sessionFocusedCallback,
       sessionDiedCallback, this
     };
     ubuntu_ui_session_install_session_lifecycle_observer(&watcher);
