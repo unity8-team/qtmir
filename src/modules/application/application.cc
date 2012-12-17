@@ -2,21 +2,50 @@
 // FIXME(loicm) Add copyright notice here.
 
 #include "application.h"
+#include "application_manager.h"
 #include "logging.h"
 
-Application::Application(const char* desktopFile, const char* name, const char* comment, const char* icon, int handle)
-    : desktopFile_(desktopFile)
-    , name_(name)
-    , comment_(comment)
-    , icon_(icon)
+Application::Application(DesktopData* desktopData, QProcess* process, int handle)
+    : desktopData_(desktopData)
+    , process_(process)
     , handle_(handle)
     , focused_(false) {
-  DLOG("Application::Application (this=%p, desktopFile='%s', name='%s', comment='%s', icon='%s', handle=%d)",
-       this, desktopFile, name, comment, icon, handle);
+  DASSERT(desktopData != NULL);
+  DLOG("Application::Application (this=%p, desktopData=%p, handle=%d)", this, desktopData, handle);
 }
 
 Application::~Application() {
   DLOG("Application::~Application");
+  delete desktopData_;
+  delete process_;
+}
+
+QString Application::desktopFile() const {
+  return desktopData_->file();
+}
+
+QString Application::name() const {
+  return desktopData_->name();
+}
+
+QString Application::comment() const {
+  return desktopData_->comment();
+}
+
+QString Application::icon() const {
+  return desktopData_->icon();
+}
+
+QString Application::exec() const {
+  return desktopData_->exec();
+}
+
+int Application::handle() const {
+  return handle_;
+}
+
+bool Application::focused() const {
+  return focused_;
 }
 
 void Application::setFocused(bool focused) {

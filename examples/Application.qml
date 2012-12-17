@@ -1,20 +1,33 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-// Shows the types added by the Ubuntu application plugin and how to use them.
+// That example demonstrates the types added by the Ubuntu application plugin and how to use them.
 
 // Here is how to create a window with specific surface role (Greeter here) from QML.
 //
-// import QtQuick.Window 2.0
+//    import QtQuick.Window 2.0
 //
-// Window {
-//     width: 400
-//     height: 400
-//     Component.onCompleted: {
-//         window.role = ApplicationManager.Greeter
-//         window.visible = true
-//     }
-// }
+//    Window {
+//        width: 400
+//        height: 400
+//        Component.onCompleted: {
+//            window.role = ApplicationManager.Greeter
+//            window.visible = true
+//        }
+//    }
+
+// Here is how to start a new process:
+//    ApplicationManager.startProcess("/usr/share/applications/snowshoe.desktop")
+//
+// In order to pass additional arguments, a second optional argument can be used:
+//    ApplicationManager.startProcess("/usr/share/applications/snowshoe.desktop",
+//                                    [ "http://www.ubuntu.com" ])
+//
+// An application can be stopped by using:
+//     ApplicationManager.stopProcess(application)
+//
+// In order to focus or start a favorite application, that function can be used:
+//     ApplicationManager.focusFavoriteApplication(ApplicationManager.GalleryApplication);
 
 import QtQuick 2.0
 import Ubuntu.Application 0.1
@@ -27,9 +40,9 @@ Rectangle {
 
     MouseArea {
         id: touchArea
-        anchors.fill: parent 
+        anchors.fill: parent
         onClicked: {
-            ApplicationManager.focusFavoriteApplication(ApplicationManager.Gallery);
+            ApplicationManager.focusFavoriteApplication(ApplicationManager.BrowserApplication);
         }
     }
 
@@ -118,8 +131,5 @@ Rectangle {
         ];
         print('Form factor hint:', formFactorHintStr[ApplicationManager.formFactorHint]);
         print('Stage hint:', stageHintStr[ApplicationManager.stageHint]);
-
-        // Start the watcher so that the ApplicationManager applications model can be populated.
-        ApplicationManager.startWatcher();
     }
 }

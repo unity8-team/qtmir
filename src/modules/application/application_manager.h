@@ -11,6 +11,32 @@
 class Application;
 class ApplicationListModel;
 
+class DesktopData {
+ public:
+  DesktopData(QString desktopFile);
+  ~DesktopData();
+
+  QString file() const { return file_; }
+  QString name() const { return entries_[kNameIndex]; }
+  QString comment() const { return entries_[kCommentIndex]; }
+  QString icon() const { return entries_[kIconIndex]; }
+  QString exec() const { return entries_[kExecIndex]; }
+  bool loaded() const { return loaded_; }
+
+ private:
+  static const int kNameIndex = 0,
+    kCommentIndex = 1,
+    kIconIndex = 2,
+    kExecIndex = 3,
+    kNumberOfEntries = 4;
+
+  bool loadDesktopFile(QString desktopFile);
+
+  QString file_;
+  QVector<QString> entries_;
+  bool loaded_;
+};
+
 class ApplicationManager : public QObject {
   Q_OBJECT
   Q_ENUMS(Role)
@@ -25,6 +51,7 @@ class ApplicationManager : public QObject {
   ApplicationManager();
   ~ApplicationManager();
 
+  // Mapping enums to Ubuntu application API enums.
   enum Role {
     Dash = DASH_ACTOR_ROLE, Default = MAIN_ACTOR_ROLE, Indicators = INDICATOR_ACTOR_ROLE,
     Notifications = NOTIFICATIONS_ACTOR_ROLE, Greeter = GREETER_ACTOR_ROLE,
@@ -32,29 +59,33 @@ class ApplicationManager : public QObject {
     ShutdownDialog = SHUTDOWN_DIALOG_ACTOR_ROLE
   };
   enum StageHint {
-    Main = MAIN_STAGE_HINT, Integration = INTEGRATION_STAGE_HINT, Share = SHARE_STAGE_HINT,
-    ContentPicking = CONTENT_PICKING_STAGE_HINT, Side = SIDE_STAGE_HINT,
-    Configuration = CONFIGURATION_STAGE_HINT
+    MainStage = MAIN_STAGE_HINT, IntegrationStage = INTEGRATION_STAGE_HINT,
+    ShareStage = SHARE_STAGE_HINT, ContentPickingStage = CONTENT_PICKING_STAGE_HINT,
+    SideStage = SIDE_STAGE_HINT, ConfigurationStage = CONFIGURATION_STAGE_HINT
   };
   enum FormFactorHint {
-    Desktop = DESKTOP_FORM_FACTOR_HINT, Phone = PHONE_FORM_FACTOR_HINT,
-    Tablet = TABLET_FORM_FACTOR_HINT
+    DesktopFormFactor = DESKTOP_FORM_FACTOR_HINT, PhoneFormFactor = PHONE_FORM_FACTOR_HINT,
+    TabletFormFactor = TABLET_FORM_FACTOR_HINT
   };
   enum FavoriteApplication {
-    Camera = CAMERA_APP, Gallery = GALLERY_APP, Browser = BROWSER_APP
+    CameraApplication = CAMERA_APP, GalleryApplication = GALLERY_APP,
+    BrowserApplication = BROWSER_APP, ShareApplication = SHARE_APP
   };
 
   // QObject methods.
   void customEvent(QEvent* event);
+  void timerEvent(QTimerEvent* event);
 
   StageHint stageHint() const;
   FormFactorHint formFactorHint() const;
   ApplicationListModel* applications() const;
 
-  Q_INVOKABLE void focusApplication(int applicationId);
+  Q_INVOKABLE void focusApplication(int handle);
   Q_INVOKABLE void focusFavoriteApplication(FavoriteApplication application);
   Q_INVOKABLE void unfocusCurrentApplication();
-  Q_INVOKABLE void startWatcher();
+  Q_INVOKABLE Application* startProcess(QString desktopFile, QStringList arguments = QStringList());
+  Q_INVOKABLE void stopProcess(Application* application);
+  Q_INVOKABLE void startWatcher() {}
 
   QEvent::Type eventType() { return eventType_; }
 
@@ -62,10 +93,17 @@ class ApplicationManager : public QObject {
   void applicationsChanged();
 
  private:
-  Application* createApplication(const char* desktopFile, int id);
+  struct Process {
+    Process(DesktopData* desktopData, QProcess* process, int timerId)
+        : desktopData_(desktopData), process_(process), timerId_(timerId) {}
+    DesktopData* desktopData_;
+    QProcess* process_;
+    int timerId_;
+  };
 
   ApplicationListModel* applications_;
-  QHash<int,Application*> idHash_;
+  QHash<int,Application*> pidHash_;
+  QList<Process> unmatchedProcesses_;
   QEvent::Type eventType_;
 };
 
