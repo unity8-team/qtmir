@@ -68,7 +68,7 @@ static void sessionRequestedCallback(ubuntu_ui_well_known_application applicatio
   // Post a task to be executed on the ApplicationManager thread (GUI thread).
   ApplicationManager* manager = static_cast<ApplicationManager*>(context);
   QCoreApplication::postEvent(manager, new TaskEvent(
-      NULL, static_cast<int>(session), TaskEvent::kRequestFocus, manager->eventType()));
+      NULL, static_cast<int>(application), TaskEvent::kRequestFocus, manager->eventType()));
 }
 
 DesktopData::DesktopData(QString desktopFile)
