@@ -17,21 +17,21 @@ const int kTimeBeforeClosingProcess = 30000;
 
 class TaskEvent : public QEvent {
  public:
-  enum Task { kAddApplication = 0, kRemoveApplication, kStartProcess };
-  TaskEvent(char* desktopFile, int pid, int task, QEvent::Type type)
+  enum Task { kAddApplication = 0, kRemoveApplication, kRequestFocus };
+  TaskEvent(char* desktopFile, int id, int task, QEvent::Type type)
       : QEvent(type)
       , desktopFile_(desktopFile)
-      , pid_(pid)
+      , id_(id)
       , task_(task) {
     DLOG("TaskEvent::TaskEvent (this=%p, desktopFile='%s', id=%d, task=%d, type=%d)",
-         this, desktopFile, pid, task, type);
+         this, desktopFile, id, task, type);
   }
   ~TaskEvent() {
     DLOG("TaskEvent::~TaskEvent");
     delete [] desktopFile_;
   }
   char* desktopFile_;
-  int pid_;
+  int id_;
   int task_;
 };
 
@@ -62,14 +62,13 @@ static void sessionFocusedCallback(ubuntu_ui_session_properties session, void* c
   // FIXME(loicm) Set focused app once Ubuntu application API has support for unfocused signal.
 }
 
-static void sessionRequestedCallback(ubuntu_ui_session_properties session, void* context) {
-  DLOG("sessionRequestedCallback (session=%p, context=%p)", session, context);
+static void sessionRequestedCallback(ubuntu_ui_well_known_application application, void* context) {
+  DLOG("sessionRequestedCallback (application=%d, context=%p)", application, context);
   DASSERT(context != NULL);
   // Post a task to be executed on the ApplicationManager thread (GUI thread).
   ApplicationManager* manager = static_cast<ApplicationManager*>(context);
   QCoreApplication::postEvent(manager, new TaskEvent(
-      qstrdup(ubuntu_ui_session_properties_get_desktop_file_hint(session)), 0,
-      TaskEvent::kStartProcess, manager->eventType()));
+      NULL, static_cast<int>(application), TaskEvent::kRequestFocus, manager->eventType()));
 }
 
 DesktopData::DesktopData(QString desktopFile)
@@ -202,7 +201,7 @@ void ApplicationManager::customEvent(QEvent* event) {
       for (int i = 0; i < kSize; i++) {
         DASSERT(unmatchedProcesses_[i].process_ != NULL);
         DASSERT(unmatchedProcesses_[i].desktopData_ != NULL);
-        if (unmatchedProcesses_[i].process_->pid() == taskEvent->pid_) {
+        if (unmatchedProcesses_[i].process_->pid() == taskEvent->id_) {
           DLOG("got a match with '%s' in the unmatched processes",
                unmatchedProcesses_[i].desktopData_->name().toLatin1().data());
           killTimer(unmatchedProcesses_[i].timerId_);
@@ -222,9 +221,9 @@ void ApplicationManager::customEvent(QEvent* event) {
         }
       }
       // Create the application and store it in the data model.
-      Application* application = new Application(desktopData, process, taskEvent->pid_);
-      DASSERT(!pidHash_.contains(taskEvent->pid_));
-      pidHash_.insert(taskEvent->pid_, application);
+      Application* application = new Application(desktopData, process, taskEvent->id_);
+      DASSERT(!pidHash_.contains(taskEvent->id_));
+      pidHash_.insert(taskEvent->id_, application);
       applications_->add(application);
       break;
     }
@@ -232,7 +231,7 @@ void ApplicationManager::customEvent(QEvent* event) {
     case TaskEvent::kRemoveApplication: {
       DLOG("handling remove application task");
       // Remove the application from the data model.
-      Application* application = pidHash_.take(taskEvent->pid_);
+      Application* application = pidHash_.take(taskEvent->id_);
       if (application != NULL) {
         applications_->remove(application);
         delete application;
@@ -240,13 +239,14 @@ void ApplicationManager::customEvent(QEvent* event) {
       break;
     }
 
-    case TaskEvent::kStartProcess: {
-      DLOG("handling start process task");
-      startProcess(taskEvent->desktopFile_);
+    case TaskEvent::kRequestFocus: {
+      DLOG("handling request focus task");
+      emit focusRequested(static_cast<FavoriteApplication>(taskEvent->id_));
       break;
     }
 
     default: {
+      DNOT_REACHED();
       break;
     }
   }

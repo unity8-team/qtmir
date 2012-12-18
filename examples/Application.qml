@@ -38,6 +38,16 @@ Rectangle {
     height: 1280
     color: "blue"
 
+    Connections {
+        target: ApplicationManager
+        onFocusRequested: {
+            var favoriteApplicationStr = [
+                'CameraApplication', 'GalleryApplication', 'BrowserApplication', 'ShareApplication'
+            ];
+            print("focus request:", favoriteApplicationStr[favoriteApplication])
+        }
+    }
+
     MouseArea {
         id: touchArea
         anchors.fill: parent
