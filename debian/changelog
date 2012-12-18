@@ -1,3 +1,9 @@
+qthybris (0.32) quantal; urgency=low
+
+  * Added support for focusRequested callback.
+
+ -- Loïc Molinari <loic.molinari@canonical.com>  Tue, 18 Dec 2012 02:59:35 +0100
+
 qthybris (0.31) quantal; urgency=low
 
   * Added support for starting/stopping processes.
