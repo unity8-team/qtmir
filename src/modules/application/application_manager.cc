@@ -62,14 +62,14 @@ static void sessionFocusedCallback(ubuntu_ui_session_properties session, void* c
   // FIXME(loicm) Set focused app once Ubuntu application API has support for unfocused signal.
 }
 
-static void sessionRequestedCallback(ubuntu_ui_session_properties session, void* context) {
-  DLOG("sessionRequestedCallback (session=%p, context=%p)", session, context);
+static void sessionRequestedCallback(ubuntu_ui_well_known_application application, void* context) {
+  DLOG("sessionRequestedCallback (application=%d, context=%p)", application, context);
   DASSERT(context != NULL);
   // Post a task to be executed on the ApplicationManager thread (GUI thread). The favorite
   // application is stored in the PID field.
   ApplicationManager* manager = static_cast<ApplicationManager*>(context);
   QCoreApplication::postEvent(manager, new TaskEvent(
-      NULL, reinterpret_cast<int>(session), TaskEvent::kRequestFocus, manager->eventType()));
+      NULL, static_cast<int>(session), TaskEvent::kRequestFocus, manager->eventType()));
 }
 
 DesktopData::DesktopData(QString desktopFile)
