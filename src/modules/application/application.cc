@@ -13,8 +13,7 @@ Application::Application(
     : desktopData_(desktopData)
     , pid_(pid)
     , state_(state)
-    , timerId_(timerId)
-    , focused_(false) {
+    , timerId_(timerId) {
   DASSERT(desktopData != NULL);
   DLOG("Application::Application (this=%p, desktopData=%p, pid=%lld, state=%d, timerId=%d)",
        this, desktopData, pid, static_cast<int>(state), timerId);
@@ -53,22 +52,10 @@ Application::State Application::state() const {
   return state_;
 }
 
-bool Application::focused() const {
-  return focused_;
-}
-
 void Application::setState(Application::State state) {
   DLOG("Application::setState (this=%p, state=%d)", this, static_cast<int>(state));
   if (state_ != state) {
     state_ = state;
     emit stateChanged();
-  }
-}
-
-void Application::setFocused(bool focused) {
-  DLOG("Application::setFocused (this=%p, focused=%d)", this, focused);
-  if (focused_ != focused) {
-    focused_ = focused;
-    emit focusedChanged();
   }
 }

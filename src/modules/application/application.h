@@ -19,7 +19,6 @@ class Application : public QObject {
   Q_PROPERTY(QString exec READ exec NOTIFY execChanged)
   Q_PROPERTY(qint64 handle READ handle NOTIFY handleChanged)
   Q_PROPERTY(State state READ state NOTIFY stateChanged)
-  Q_PROPERTY(bool focused READ focused NOTIFY focusedChanged)
 
  public:
   enum State { Starting, Running };
@@ -34,7 +33,6 @@ class Application : public QObject {
   QString exec() const;
   qint64 handle() const;
   State state() const;
-  bool focused() const;
 
  Q_SIGNALS:
   void desktopFileChanged();
@@ -44,18 +42,15 @@ class Application : public QObject {
   void execChanged();
   void handleChanged();
   void stateChanged();
-  void focusedChanged();
 
  private:
   void setState(State state);
-  void setFocused(bool focused);
   int timerId() const { return timerId_; }
 
   DesktopData* desktopData_;
   qint64 pid_;
   State state_;
   int timerId_;
-  bool focused_;
 
   friend class ApplicationManager;
   friend class ApplicationListModel;

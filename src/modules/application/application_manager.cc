@@ -22,7 +22,8 @@ const int kTimeBeforeClosingProcess = 10000;
 
 class TaskEvent : public QEvent {
  public:
-  enum Task { kAddApplication = 0, kRemoveApplication, kRequestFocus };
+  enum Task { kAddApplication = 0, kRemoveApplication, kUnfocusApplication, kFocusApplication,
+              kRequestFocus };
   TaskEvent(char* desktopFile, int id, int task, QEvent::Type type)
       : QEvent(type)
       , desktopFile_(desktopFile)
@@ -61,10 +62,24 @@ static void sessionDiedCallback(ubuntu_ui_session_properties session, void* cont
       TaskEvent::kRemoveApplication, manager->eventType()));
 }
 
+static void sessionUnfocusedCallback(ubuntu_ui_session_properties session, void* context) {
+  DLOG("sessionUnfocusedCallback (session=%p, context=%p)", session, context);
+  DASSERT(context != NULL);
+  // Post a task to be executed on the ApplicationManager thread (GUI thread).
+  ApplicationManager* manager = static_cast<ApplicationManager*>(context);
+  QCoreApplication::postEvent(manager, new TaskEvent(
+      NULL, ubuntu_ui_session_properties_get_application_instance_id(session),
+      TaskEvent::kUnfocusApplication, manager->eventType()));
+}
+
 static void sessionFocusedCallback(ubuntu_ui_session_properties session, void* context) {
-  Q_UNUSED(session);
-  Q_UNUSED(context);
-  // FIXME(loicm) Set focused app once Ubuntu application API has support for unfocused signal.
+  DLOG("sessionFocusedCallback (session=%p, context=%p)", session, context);
+  DASSERT(context != NULL);
+  // Post a task to be executed on the ApplicationManager thread (GUI thread).
+  ApplicationManager* manager = static_cast<ApplicationManager*>(context);
+  QCoreApplication::postEvent(manager, new TaskEvent(
+      NULL, ubuntu_ui_session_properties_get_application_instance_id(session),
+      TaskEvent::kFocusApplication, manager->eventType()));
 }
 
 static void sessionRequestedCallback(ubuntu_ui_well_known_application application, void* context) {
@@ -168,14 +183,15 @@ bool DesktopData::loadDesktopFile(QString desktopFile) {
 
 ApplicationManager::ApplicationManager()
     : applications_(new ApplicationListModel())
+    , focusedApplication_(NULL)
     , pidHash_()
     , eventType_(static_cast<QEvent::Type>(QEvent::registerEventType())) {
   static int once = false;
   if (!once) {
     DLOG("starting application watcher");
     static ubuntu_ui_session_lifecycle_observer watcher = {
-      sessionRequestedCallback, sessionBornCallback, NULL, sessionFocusedCallback,
-      sessionDiedCallback, this
+      sessionRequestedCallback, sessionBornCallback, sessionUnfocusedCallback,
+      sessionFocusedCallback, sessionDiedCallback, this
     };
     ubuntu_ui_session_install_session_lifecycle_observer(&watcher);
     once = true;
@@ -242,12 +258,43 @@ void ApplicationManager::customEvent(QEvent* event) {
       if (application != NULL) {
         DLOG("removing application '%s' (%d) from the application list",
              application->name().toLatin1().data(), kPid);
-        if (application->state() == Application::Starting)
+        if (application->state() == Application::Starting) {
           killTimer(application->timerId());
+        }
+        if (focusedApplication_ == application) {
+          focusedApplication_ = NULL;
+          emit focusedApplicationChanged();
+        }
         applications_->remove(application);
         delete application;
       } else {
         DLOG("Unknown application, not stored in the application list");
+      }
+      break;
+    }
+
+    case TaskEvent::kUnfocusApplication: {
+      DLOG("handling unfocus application task");
+      // Reset the currently focused application.
+      Application* application = pidHash_.value(taskEvent->id_);
+      if (application != NULL) {
+        if (focusedApplication_ == application) {
+          focusedApplication_ = NULL;
+          emit focusedApplicationChanged();
+        }
+      }
+      break;
+    }
+
+    case TaskEvent::kFocusApplication: {
+      DLOG("handling focus application task");
+      // Update the currently focused application.
+      Application* application = pidHash_.value(taskEvent->id_);
+      if (application != NULL) {
+        if (focusedApplication_ != application) {
+          focusedApplication_ = application;
+          emit focusedApplicationChanged();
+        }
       }
       break;
     }
@@ -296,6 +343,11 @@ ApplicationManager::FormFactorHint ApplicationManager::formFactorHint() const {
 ApplicationListModel* ApplicationManager::applications() const {
   DLOG("ApplicationManager::applications (this=%p)", this);
   return applications_;
+}
+
+Application* ApplicationManager::focusedApplication() const {
+  DLOG("ApplicationManager::focusedApplication (this=%p)", this);
+  return focusedApplication_;
 }
 
 void ApplicationManager::focusApplication(int handle) {
