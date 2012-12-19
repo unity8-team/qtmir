@@ -4,9 +4,6 @@
 #include "application.h"
 #include "application_manager.h"
 #include "logging.h"
-#include <sys/types.h>
-#include <signal.h>
-#include <errno.h>
 
 Application::Application(
     DesktopData* desktopData, qint64 pid, Application::State state, int timerId)
