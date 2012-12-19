@@ -95,6 +95,7 @@ class ApplicationManager : public QObject {
  Q_SIGNALS:
   void applicationsChanged();
   void focusedApplicationChanged();
+  void focusRequested(FavoriteApplication favoriteApplication);
 
  private:
   struct Process {
