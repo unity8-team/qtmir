@@ -95,12 +95,14 @@ class ApplicationManager : public QObject {
 
  private:
   struct Process {
-    Process(DesktopData* desktopData, QProcess* process, int timerId)
-        : desktopData_(desktopData), process_(process), timerId_(timerId) {}
+    Process(DesktopData* desktopData, qint64 pid, int timerId)
+        : desktopData_(desktopData), pid_(pid), timerId_(timerId) {}
     DesktopData* desktopData_;
-    QProcess* process_;
+    qint64 pid_;
     int timerId_;
   };
+
+  void killProcess(qint64 pid);
 
   ApplicationListModel* applications_;
   QHash<int,Application*> pidHash_;

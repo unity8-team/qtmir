@@ -4,20 +4,21 @@
 #include "application.h"
 #include "application_manager.h"
 #include "logging.h"
+#include <sys/types.h>
+#include <signal.h>
+#include <errno.h>
 
-Application::Application(DesktopData* desktopData, QProcess* process, int handle)
+Application::Application(DesktopData* desktopData, qint64 pid)
     : desktopData_(desktopData)
-    , process_(process)
-    , handle_(handle)
+    , pid_(pid)
     , focused_(false) {
   DASSERT(desktopData != NULL);
-  DLOG("Application::Application (this=%p, desktopData=%p, handle=%d)", this, desktopData, handle);
+  DLOG("Application::Application (this=%p, desktopData=%p, pid=%lld)", this, desktopData, pid);
 }
 
 Application::~Application() {
   DLOG("Application::~Application");
   delete desktopData_;
-  delete process_;
 }
 
 QString Application::desktopFile() const {
@@ -40,8 +41,8 @@ QString Application::exec() const {
   return desktopData_->exec();
 }
 
-int Application::handle() const {
-  return handle_;
+qint64 Application::handle() const {
+  return pid_;
 }
 
 bool Application::focused() const {

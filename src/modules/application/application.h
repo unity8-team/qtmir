@@ -16,11 +16,11 @@ class Application : public QObject {
   Q_PROPERTY(QString comment READ comment NOTIFY commentChanged)
   Q_PROPERTY(QString icon READ icon NOTIFY iconChanged)
   Q_PROPERTY(QString exec READ exec NOTIFY execChanged)
-  Q_PROPERTY(int handle READ handle NOTIFY handleChanged)
+  Q_PROPERTY(qint64 handle READ handle NOTIFY handleChanged)
   Q_PROPERTY(bool focused READ focused NOTIFY focusedChanged)
 
  public:
-  Application(DesktopData* desktopData, QProcess* process, int handle);
+  Application(DesktopData* desktopData, qint64 pid);
   ~Application();
 
   QString desktopFile() const;
@@ -28,7 +28,7 @@ class Application : public QObject {
   QString comment() const;
   QString icon() const;
   QString exec() const;
-  int handle() const;
+  qint64 handle() const;
   bool focused() const;
 
  Q_SIGNALS:
@@ -41,12 +41,10 @@ class Application : public QObject {
   void focusedChanged();
 
  private:
-  QProcess* process() const { return process_; }
   void setFocused(bool focused);
 
   DesktopData* desktopData_;
-  QProcess* process_;
-  int handle_;
+  qint64 pid_;
   bool focused_;
 
   friend class ApplicationManager;
