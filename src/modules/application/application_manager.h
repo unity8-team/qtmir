@@ -46,6 +46,8 @@ class ApplicationManager : public QObject {
   Q_PROPERTY(StageHint stageHint READ stageHint)
   Q_PROPERTY(FormFactorHint formFactorHint READ formFactorHint)
   Q_PROPERTY(ApplicationListModel* applications READ applications NOTIFY applicationsChanged)
+  Q_PROPERTY(Application* focusedApplication READ focusedApplication
+             NOTIFY focusedApplicationChanged)
 
  public:
   ApplicationManager();
@@ -79,6 +81,7 @@ class ApplicationManager : public QObject {
   StageHint stageHint() const;
   FormFactorHint formFactorHint() const;
   ApplicationListModel* applications() const;
+  Application* focusedApplication() const;
 
   Q_INVOKABLE void focusApplication(int handle);
   Q_INVOKABLE void focusFavoriteApplication(FavoriteApplication application);
@@ -91,6 +94,7 @@ class ApplicationManager : public QObject {
 
  Q_SIGNALS:
   void applicationsChanged();
+  void focusedApplicationChanged();
   void focusRequested(FavoriteApplication favoriteApplication);
 
  private:
@@ -103,6 +107,7 @@ class ApplicationManager : public QObject {
   };
 
   ApplicationListModel* applications_;
+  Application* focusedApplication_;
   QHash<int,Application*> pidHash_;
   QList<Process> unmatchedProcesses_;
   QEvent::Type eventType_;
