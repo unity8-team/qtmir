@@ -249,6 +249,10 @@ void ApplicationManager::customEvent(QEvent* event) {
       // Remove the application from the data model.
       Application* application = pidHash_.take(taskEvent->id_);
       if (application != NULL) {
+        if (focusedApplication_ == application) {
+          focusedApplication_ = NULL;
+          emit focusedApplicationChanged();
+        }
         applications_->remove(application);
         delete application;
       }
