@@ -8,12 +8,16 @@
 #include <signal.h>
 #include <errno.h>
 
-Application::Application(DesktopData* desktopData, qint64 pid)
+Application::Application(
+    DesktopData* desktopData, qint64 pid, Application::State state, int timerId)
     : desktopData_(desktopData)
     , pid_(pid)
+    , state_(state)
+    , timerId_(timerId)
     , focused_(false) {
   DASSERT(desktopData != NULL);
-  DLOG("Application::Application (this=%p, desktopData=%p, pid=%lld)", this, desktopData, pid);
+  DLOG("Application::Application (this=%p, desktopData=%p, pid=%lld, state=%d, timerId=%d)",
+       this, desktopData, pid, static_cast<int>(state), timerId);
 }
 
 Application::~Application() {
@@ -45,8 +49,20 @@ qint64 Application::handle() const {
   return pid_;
 }
 
+Application::State Application::state() const {
+  return state_;
+}
+
 bool Application::focused() const {
   return focused_;
+}
+
+void Application::setState(Application::State state) {
+  DLOG("Application::setState (this=%p, state=%d)", this, static_cast<int>(state));
+  if (state_ != state) {
+    state_ = state;
+    emit stateChanged();
+  }
 }
 
 void Application::setFocused(bool focused) {

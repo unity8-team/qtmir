@@ -18,7 +18,7 @@
     ((sizeof(a) / sizeof(*(a))) / static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))))
 
 // The time (in ms) to wait before closing a process that's not been matched by a new session.
-const int kTimeBeforeClosingProcess = 30000;
+const int kTimeBeforeClosingProcess = 10000;
 
 class TaskEvent : public QEvent {
  public:
@@ -169,7 +169,6 @@ bool DesktopData::loadDesktopFile(QString desktopFile) {
 ApplicationManager::ApplicationManager()
     : applications_(new ApplicationListModel())
     , pidHash_()
-    , unmatchedProcesses_()
     , eventType_(static_cast<QEvent::Type>(QEvent::registerEventType())) {
   static int once = false;
   if (!once) {
@@ -187,7 +186,6 @@ ApplicationManager::ApplicationManager()
 ApplicationManager::~ApplicationManager() {
   DLOG("ApplicationManager::~ApplicationManager");
   pidHash_.clear();
-  unmatchedProcesses_.clear();
   delete applications_;
 }
 
@@ -213,45 +211,43 @@ void ApplicationManager::customEvent(QEvent* event) {
 
     case TaskEvent::kAddApplication: {
       DLOG("handling add application task");
-      DesktopData* desktopData = NULL;
-      // Search for a matching process.
-      const int kSize = unmatchedProcesses_.size();
-      for (int i = 0; i < kSize; i++) {
-        DASSERT(unmatchedProcesses_[i].desktopData_ != NULL);
-        if (unmatchedProcesses_[i].pid_ == taskEvent->id_) {
-          DLOG("got a match with '%s' (%d) in the unmatched processes",
-               unmatchedProcesses_[i].desktopData_->name().toLatin1().data(), taskEvent->id_);
-          killTimer(unmatchedProcesses_[i].timerId_);
-          desktopData = unmatchedProcesses_[i].desktopData_;
-          unmatchedProcesses_.removeAt(i);
-          break;  // Get out of the loop.
-        }
-      }
-      // Load the desktop file if no process matches, which means the application hasn't been
-      // started by the application manager but from a console.
-      if (desktopData == NULL) {
-        DLOG("didn't get a match in the unmatched processes, loading the desktop file");
-        desktopData = new DesktopData(taskEvent->desktopFile_);
-        if (!desktopData->loaded()) {
+      const int kPid = taskEvent->id_;
+      Application* application = pidHash_.value(kPid, NULL);
+      if (application) {
+        DLOG("got a match in the application list, setting '%s' (%d) to running",
+             application->name().toLatin1().data(), kPid);
+        application->setState(Application::Running);
+        killTimer(application->timerId());
+      } else {
+        DLOG("didn't get a match in the application list, loading the desktop file");
+        DesktopData* desktopData = new DesktopData(taskEvent->desktopFile_);
+        if (desktopData->loaded()) {
+          DLOG("desktopFile loaded, storing '%s' (%d) in the application list",
+               desktopData->name().toLatin1().data(), kPid);
+          Application* application = new Application(desktopData, kPid, Application::Running, -1);
+          pidHash_.insert(kPid, application);
+          applications_->add(application);
+        } else {
+          DLOG("unknown application, not storing in the application list");
           delete desktopData;
-          break;  // Leave the switch.
         }
       }
-      // Create the application and store it in the data model.
-      Application* application = new Application(desktopData, taskEvent->id_);
-      DASSERT(!pidHash_.contains(taskEvent->id_));
-      pidHash_.insert(taskEvent->id_, application);
-      applications_->add(application);
       break;
     }
 
     case TaskEvent::kRemoveApplication: {
       DLOG("handling remove application task");
-      // Remove the application from the data model.
-      Application* application = pidHash_.take(taskEvent->id_);
+      const int kPid = taskEvent->id_;
+      Application* application = pidHash_.take(kPid);
       if (application != NULL) {
+        DLOG("removing application '%s' (%d) from the application list",
+             application->name().toLatin1().data(), kPid);
+        if (application->state() == Application::Starting)
+          killTimer(application->timerId());
         applications_->remove(application);
         delete application;
+      } else {
+        DLOG("Unknown application, not stored in the application list");
       }
       break;
     }
@@ -271,20 +267,19 @@ void ApplicationManager::customEvent(QEvent* event) {
 
 void ApplicationManager::timerEvent(QTimerEvent* event) {
   DLOG("ApplicationManager::timerEvent (this=%p, event=%p)", this, event);
-  const int kSize = unmatchedProcesses_.size();
-  const int timerId = event->timerId();
-  for (int i = 0; i < kSize; i++) {
-    if (unmatchedProcesses_[i].timerId_ == timerId) {
-      DLOG("closing process '%s' as it's not been matched by a new session",
-          unmatchedProcesses_[i].desktopData_->name().toLatin1().data());
-      DASSERT(unmatchedProcesses_[i].desktopData_ != NULL);
-      delete unmatchedProcesses_[i].desktopData_;
-      killProcess(unmatchedProcesses_[i].pid_);
-      unmatchedProcesses_.removeAt(i);
-      break;
-    }
+  const int kTimerId = event->timerId();
+  Application* application = applications_->findFromTimerId(kTimerId);
+  if (application != NULL) {
+    const qint64 kPid = application->handle();
+    DLOG("application '%s' (%lld) hasn't been matched, killing it",
+         application->name().toLatin1().data(), kPid);
+    DASSERT(pidHash_.contains(kPid));
+    pidHash_.remove(kPid);
+    applications_->remove(application);
+    delete application;
+    killProcess(kPid);
   }
-  killTimer(event->timerId());
+  killTimer(kTimerId);
 }
 
 ApplicationManager::StageHint ApplicationManager::stageHint() const {
@@ -340,9 +335,9 @@ Application* ApplicationManager::startProcess(QString desktopFile, QStringList a
   for (int i = 1; i < kSize; i++) {
     if ((execArguments[i].size() == 2) && (execArguments[i][0].toLatin1() == '%')) {
       const char kChar = execArguments[i][1].toLatin1();
-      if  (kChar == 'F' || kChar == 'u' || kChar == 'U' || kChar == 'd' || kChar == 'D'
-           || kChar == 'n' || kChar == 'N' || kChar == 'i' || kChar == 'c' || kChar == 'k'
-           || kChar == 'v' || kChar == 'm') {
+      if (kChar == 'F' || kChar == 'u' || kChar == 'U' || kChar == 'd' || kChar == 'D'
+          || kChar == 'n' || kChar == 'N' || kChar == 'i' || kChar == 'c' || kChar == 'k'
+          || kChar == 'v' || kChar == 'm') {
         continue;
       }
     }
@@ -363,16 +358,26 @@ Application* ApplicationManager::startProcess(QString desktopFile, QStringList a
   result = QProcess::startDetached(exec, arguments, QString(passwd ? passwd->pw_dir : "/"), &pid);
   DLOG_IF(result == false, "process failed to start");
   if (result == true) {
-    DLOG("started process with pid %lld", pid);
-    unmatchedProcesses_.prepend(ApplicationManager::Process(
-        desktopData, pid, startTimer(kTimeBeforeClosingProcess)));
+    DLOG("started process with pid %lld, adding '%s' to application list",
+         pid, desktopData->name().toLatin1().data());
+    Application* application = new Application(
+        desktopData, pid, Application::Starting, startTimer(kTimeBeforeClosingProcess));
+    pidHash_.insert(pid, application);
+    applications_->add(application);
+    return application;
+  } else {
+    return NULL;
   }
-  return NULL;
 }
 
 void ApplicationManager::stopProcess(Application* application) {
   DLOG("ApplicationManager::stopProcess (this=%p, application=%p)", this, application);
   if (application != NULL) {
-    killProcess(application->handle());
+    const qint64 kPid = application->handle();
+    if (pidHash_.remove(kPid) > 0) {
+      applications_->remove(application);
+      delete application;
+      killProcess(kPid);
+    }
   }
 }

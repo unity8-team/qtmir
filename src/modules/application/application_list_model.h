@@ -32,6 +32,7 @@ class ApplicationListModel : public QAbstractListModel {
 
   void add(Application* application);
   void remove(Application* application);
+  Application* findFromTimerId(int timerId);
 
   QHash<int,QByteArray> roleNames_;
   QList<Application*> applications_;
