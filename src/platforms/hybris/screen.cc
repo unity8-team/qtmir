@@ -16,6 +16,7 @@ QHybrisScreen::QHybrisScreen() {
   const int kScreenWidth = ubuntu_application_ui_query_horizontal_resolution(info);
   const int kScreenHeight = ubuntu_application_ui_query_vertical_resolution(info);
   ASSERT(kScreenWidth > 0 && kScreenHeight > 0);
+  DLOG("screen resolution: %dx%d", kScreenWidth, kScreenHeight);
   ubuntu_application_ui_destroy_display_info(info);
 
   // Store geometries.
