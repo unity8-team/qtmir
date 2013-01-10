@@ -1,3 +1,9 @@
+qthybris (0.35) quantal; urgency=low
+
+  * fix for hardcoded screen size lp:1097798 
+
+ -- Bill Filler <bill.filler@canonical.com>  Thu, 10 Jan 2013 16:23:41 -0500
+
 qthybris (0.34) quantal; urgency=low
 
   * Bumped version.
