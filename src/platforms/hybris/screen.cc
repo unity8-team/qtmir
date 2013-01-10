@@ -10,14 +10,21 @@
 static const struct { int left; int right; int top; int bottom; } kStrut = { 0, 0, 59, 0 };
 
 QHybrisScreen::QHybrisScreen() {
-  // FIXME(loicm) Ubuntu application UI doesn't provide the screen size.
-  const int kScreenWidth = 720;
-  const int kScreenHeight = 1280;
+  // Get screen resolution.
+  ubuntu_application_ui_physical_display_info info;
+  ubuntu_application_ui_create_display_info(&info, 0);
+  const int kScreenWidth = ubuntu_application_ui_query_horizontal_resolution(info);
+  const int kScreenHeight = ubuntu_application_ui_query_vertical_resolution(info);
   ASSERT(kScreenWidth > 0 && kScreenHeight > 0);
+  DLOG("screen resolution: %dx%d", kScreenWidth, kScreenHeight);
+  ubuntu_application_ui_destroy_display_info(info);
+
+  // Store geometries.
   geometry_ = QRect(0, 0, kScreenWidth, kScreenHeight);
   availableGeometry_ = QRect(
       kStrut.left, kStrut.top, kScreenWidth - kStrut.left - kStrut.right,
       kScreenHeight - kStrut.top - kStrut.bottom);
+
   DLOG("QHybrisScreen::QHybrisScreen (this=%p)", this);
 }
 
