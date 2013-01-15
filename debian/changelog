@@ -1,3 +1,9 @@
+qthybris (0.36) quantal; urgency=low
+
+  * Make sure to request alpha support for the surfaceFormat
+
+ -- Ricardo Salveti de Araujo <ricardo.salveti@canonical.com>  Tue, 15 Jan 2013 18:44:39 -0200
+
 qthybris (0.35) quantal; urgency=low
 
   * fix for hardcoded screen size lp:1097798 
