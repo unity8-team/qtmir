@@ -1,4 +1,4 @@
-qthybris (0.36) UNRELEASED; urgency=low
+qthybris (0.36) quantal; urgency=low
 
   * Make sure to request alpha support for the surfaceFormat
 
