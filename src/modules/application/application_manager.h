@@ -4,7 +4,7 @@
 #ifndef APPLICATION_MANAGER_H
 #define APPLICATION_MANAGER_H
 
-#include <Qt/QtCore>
+#include <QtCore/QtCore>
 #include "ubuntu/application/ui/ubuntu_application_ui.h"
 #include "ubuntu/ui/ubuntu_ui_session_service.h"
 
