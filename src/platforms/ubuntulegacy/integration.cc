@@ -12,15 +12,15 @@
 // That value seems to work on every systems and applications tested so far.
 static const int kInputDelay = 1000;
 
-QHybrisLegacyIntegration::QHybrisLegacyIntegration()
+QUbuntuLegacyIntegration::QUbuntuLegacyIntegration()
     : window_(NULL)
-    , screen_(new QHybrisLegacyScreen())
+    , screen_(new QUbuntuLegacyScreen())
     , input_(NULL) {
   screenAdded(screen_);
-  if (qEnvironmentVariableIsEmpty("QTHYBRIS_NO_INPUT")) {
+  if (qEnvironmentVariableIsEmpty("QTUBUNTU_NO_INPUT")) {
     // Input initialization needs to be delayed in order to avoid crashes in the input stack.
     int delay = kInputDelay;
-    QByteArray swapIntervalString = qgetenv("QTHYBRIS_INPUT_DELAY");
+    QByteArray swapIntervalString = qgetenv("QTUBUNTU_INPUT_DELAY");
     if (!swapIntervalString.isEmpty()) {
       bool valid;
       delay = qMax(1, swapIntervalString.toInt(&valid));
@@ -30,31 +30,31 @@ QHybrisLegacyIntegration::QHybrisLegacyIntegration()
     DLOG("delaying input initialization for %d ms", delay);
     QTimer::singleShot(delay, this, SLOT(initInput()));
   }
-  DLOG("QHybrisLegacyIntegration::QHybrisLegacyIntegration (this=%p)", this);
+  DLOG("QUbuntuLegacyIntegration::QUbuntuLegacyIntegration (this=%p)", this);
 }
 
-QHybrisLegacyIntegration::~QHybrisLegacyIntegration() {
-  DLOG("QHybrisLegacyIntegration::~QHybrisLegacyIntegration");
+QUbuntuLegacyIntegration::~QUbuntuLegacyIntegration() {
+  DLOG("QUbuntuLegacyIntegration::~QUbuntuLegacyIntegration");
   delete input_;
   delete inputContext_;
   delete screen_;
 }
 
-void QHybrisLegacyIntegration::initInput() {
-  DLOG("QHybrisLegacyIntegration::initInput (this=%p)", this);
-  input_ = new QHybrisLegacyInput(this);
+void QUbuntuLegacyIntegration::initInput() {
+  DLOG("QUbuntuLegacyIntegration::initInput (this=%p)", this);
+  input_ = new QUbuntuLegacyInput(this);
   inputContext_ = QPlatformInputContextFactory::create();
 }
 
-QPlatformWindow* QHybrisLegacyIntegration::createPlatformWindow(QWindow* window) const {
-  DLOG("QHybrisLegacyIntegration::createPlatformWindow const (this=%p, window=%p)", this, window);
-  return const_cast<QHybrisLegacyIntegration*>(this)->createPlatformWindow(window);
+QPlatformWindow* QUbuntuLegacyIntegration::createPlatformWindow(QWindow* window) const {
+  DLOG("QUbuntuLegacyIntegration::createPlatformWindow const (this=%p, window=%p)", this, window);
+  return const_cast<QUbuntuLegacyIntegration*>(this)->createPlatformWindow(window);
 }
 
-QPlatformWindow* QHybrisLegacyIntegration::createPlatformWindow(QWindow* window) {
-  DLOG("QHybrisLegacyIntegration::createPlatformWindow (this=%p, window=%p)", this, window);
+QPlatformWindow* QUbuntuLegacyIntegration::createPlatformWindow(QWindow* window) {
+  DLOG("QUbuntuLegacyIntegration::createPlatformWindow (this=%p, window=%p)", this, window);
   ASSERT(window_ == NULL);  // FIXME(loicm) Multiple windows are not supported yet.
-  window_ = new QHybrisLegacyWindow(window, static_cast<QHybrisLegacyScreen*>(screen_));
+  window_ = new QUbuntuLegacyWindow(window, static_cast<QUbuntuLegacyScreen*>(screen_));
   window_->requestActivateWindow();
   return window_;
 }

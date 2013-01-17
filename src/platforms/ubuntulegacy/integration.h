@@ -1,20 +1,20 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-#ifndef QHYBRISLEGACYINTEGRATION_H
-#define QHYBRISLEGACYINTEGRATION_H
+#ifndef QUBUNTULEGACYINTEGRATION_H
+#define QUBUNTULEGACYINTEGRATION_H
 
 #include "base/integration.h"
 #include "screen.h"
 
-class QHybrisLegacyInput;
+class QUbuntuLegacyInput;
 
-class QHybrisLegacyIntegration : public QObject, public QHybrisBaseIntegration {
+class QUbuntuLegacyIntegration : public QObject, public QUbuntuBaseIntegration {
   Q_OBJECT
 
  public:
-  QHybrisLegacyIntegration();
-  ~QHybrisLegacyIntegration();
+  QUbuntuLegacyIntegration();
+  ~QUbuntuLegacyIntegration();
 
   // QPlatformIntegration methods.
   QPlatformWindow* createPlatformWindow(QWindow* window) const;
@@ -32,8 +32,8 @@ class QHybrisLegacyIntegration : public QObject, public QHybrisBaseIntegration {
  private:
   QPlatformWindow* window_;
   QPlatformScreen* screen_;
-  QHybrisLegacyInput* input_;
+  QUbuntuLegacyInput* input_;
   QPlatformInputContext* inputContext_;
 };
 
-#endif  // QHYBRISLEGACYINTEGRATION_H
+#endif  // QUBUNTULEGACYINTEGRATION_H

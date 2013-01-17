@@ -1,18 +1,18 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME Add copyright notice here.
 
-#ifndef QHYBRISTHEME_H
-#define QHYBRISTHEME_H
+#ifndef QUBUNTUTHEME_H
+#define QUBUNTUTHEME_H
 
 #include <QtPlatformSupport/private/qgenericunixthemes_p.h>
 
-class QHybrisTheme : public QGenericUnixTheme {
+class QUbuntuTheme : public QGenericUnixTheme {
  public:
   static const char* name;
-  QHybrisTheme();
-  ~QHybrisTheme();
+  QUbuntuTheme();
+  ~QUbuntuTheme();
 
   virtual QVariant themeHint(ThemeHint hint) const;
 };
 
-#endif  //QHYBRISBASECONTEXT_H
+#endif  //QUBUNTUBASECONTEXT_H

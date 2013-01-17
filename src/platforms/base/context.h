@@ -1,16 +1,16 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-#ifndef QHYBRISBASECONTEXT_H
-#define QHYBRISBASECONTEXT_H
+#ifndef QUBUNTUBASECONTEXT_H
+#define QUBUNTUBASECONTEXT_H
 
 #include <qpa/qplatformopenglcontext.h>
 #include "screen.h"
 
-class QHybrisBaseContext : public QPlatformOpenGLContext {
+class QUbuntuBaseContext : public QPlatformOpenGLContext {
  public:
-  QHybrisBaseContext(QHybrisBaseScreen* screen);
-  ~QHybrisBaseContext();
+  QUbuntuBaseContext(QUbuntuBaseScreen* screen);
+  ~QUbuntuBaseContext();
 
   // QPlatformOpenGLContext methods.
   QSurfaceFormat format() const { return screen_->surfaceFormat(); }
@@ -22,9 +22,9 @@ class QHybrisBaseContext : public QPlatformOpenGLContext {
   EGLContext eglContext() const { return eglContext_; }
 
  private:
-  QHybrisBaseScreen* screen_;
+  QUbuntuBaseScreen* screen_;
   EGLContext eglContext_;
   EGLDisplay eglDisplay_;
 };
 
-#endif  //QHYBRISBASECONTEXT_H
+#endif  //QUBUNTUBASECONTEXT_H

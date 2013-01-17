@@ -1,7 +1,7 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-#include "hybrisqmlscene.h"
+#include "qmlscene_ubuntu.h"
 #include <QtQuick>
 #include <QtQml/qqmlengine.h>
 #include <qpa/qplatformnativeinterface.h>
@@ -43,7 +43,7 @@ void Scene::getStats(int* frames, double* min, double* max, double* average) {
 
 static void usage() {
   fprintf(stdout,
-          "Usage: hybris-qmlscene [options] <filename>\n\n"
+          "Usage: qmlscene-ubuntu [options] <filename>\n\n"
           "  Options:\n"
           "    -i <path>                  ... Add <path> to the list of import paths\n"
           "    -f or --fullscreen         ... Show the window fullscreen\n"
@@ -121,7 +121,7 @@ int main(int argc, char* argv[]) {
   signal(SIGTERM, signalHandler);
 
   QGuiApplication app(argc, argv);
-  app.setApplicationName("HybrisQmlScene");
+  app.setApplicationName("QmlSceneUbuntu");
   app.setOrganizationName("Canonical");
   app.setOrganizationDomain("canonical.com");
 
@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
     engine->addImportPath(imports.at(i));
 
   view->setColor(Qt::transparent);
-  view->setWindowTitle("Hybris QML Scene");
+  view->setWindowTitle("QML Scene Ubuntu");
   view->setResizeMode(QQuickView::SizeRootObjectToView);
   view->setSource(url);
   if (fullscreen)

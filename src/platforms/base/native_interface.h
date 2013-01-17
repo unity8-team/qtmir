@@ -1,17 +1,17 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-#ifndef QHYBRISBASENATIVEINTERFACE_H
-#define QHYBRISBASENATIVEINTERFACE_H
+#ifndef QUBUNTUBASENATIVEINTERFACE_H
+#define QUBUNTUBASENATIVEINTERFACE_H
 
 #include <qpa/qplatformnativeinterface.h>
 
-class QHybrisBaseNativeInterface : public QPlatformNativeInterface {
+class QUbuntuBaseNativeInterface : public QPlatformNativeInterface {
  public:
   enum ResourceType { EglDisplay, EglContext };
 
-  QHybrisBaseNativeInterface();
-  ~QHybrisBaseNativeInterface();
+  QUbuntuBaseNativeInterface();
+  ~QUbuntuBaseNativeInterface();
 
   // QPlatformNativeInterface methods.
   void* nativeResourceForContext(const QByteArray& resourceString, QOpenGLContext* context);
@@ -24,4 +24,4 @@ class QHybrisBaseNativeInterface : public QPlatformNativeInterface {
   const QByteArray genericEventFilterType_;
 };
 
-#endif  // QHYBRISNATIVEINTERFACE_H
+#endif  // QUBUNTUNATIVEINTERFACE_H

@@ -9,7 +9,7 @@
 //     the phone right now, 59 corresponds to 3 grid units minus 2 density independent pixels.
 static const struct { int left; int right; int top; int bottom; } kStrut = { 0, 0, 59, 0 };
 
-QHybrisScreen::QHybrisScreen() {
+QUbuntuScreen::QUbuntuScreen() {
   // Get screen resolution.
   ubuntu_application_ui_physical_display_info info;
   ubuntu_application_ui_create_display_info(&info, 0);
@@ -25,9 +25,9 @@ QHybrisScreen::QHybrisScreen() {
       kStrut.left, kStrut.top, kScreenWidth - kStrut.left - kStrut.right,
       kScreenHeight - kStrut.top - kStrut.bottom);
 
-  DLOG("QHybrisScreen::QHybrisScreen (this=%p)", this);
+  DLOG("QUbuntuScreen::QUbuntuScreen (this=%p)", this);
 }
 
-QHybrisScreen::~QHybrisScreen() {
-  DLOG("QHybrisScreen::~QHybrisScreen");
+QUbuntuScreen::~QUbuntuScreen() {
+  DLOG("QUbuntuScreen::~QUbuntuScreen");
 }

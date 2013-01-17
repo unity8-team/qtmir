@@ -6,42 +6,42 @@
 #include <QtGui/QOpenGLContext>
 #include <QtGui/QOpenGLPaintDevice>
 
-QHybrisBaseBackingStore::QHybrisBaseBackingStore(QWindow* window)
+QUbuntuBaseBackingStore::QUbuntuBaseBackingStore(QWindow* window)
     : QPlatformBackingStore(window)
     , context_(new QOpenGLContext) {
   context_->setFormat(window->requestedFormat());
   context_->setScreen(window->screen());
   context_->create();
-  DLOG("QHybrisBaseBackingStore::QHybrisBaseBackingStore (this=%p, window=%p)", this, window);
+  DLOG("QUbuntuBaseBackingStore::QUbuntuBaseBackingStore (this=%p, window=%p)", this, window);
 }
 
-QHybrisBaseBackingStore::~QHybrisBaseBackingStore() {
-  DLOG("QHybrisBaseBackingStore::~QHybrisBaseBackingStore");
+QUbuntuBaseBackingStore::~QUbuntuBaseBackingStore() {
+  DLOG("QUbuntuBaseBackingStore::~QUbuntuBaseBackingStore");
   delete context_;
 }
 
-void QHybrisBaseBackingStore::flush(QWindow* window, const QRegion& region, const QPoint& offset) {
+void QUbuntuBaseBackingStore::flush(QWindow* window, const QRegion& region, const QPoint& offset) {
   Q_UNUSED(region);
   Q_UNUSED(offset);
-  DLOG("QHybrisBaseBackingStore::flush (this=%p, window=%p)", this, window);
+  DLOG("QUbuntuBaseBackingStore::flush (this=%p, window=%p)", this, window);
   context_->swapBuffers(window);
 }
 
-void QHybrisBaseBackingStore::beginPaint(const QRegion& region) {
+void QUbuntuBaseBackingStore::beginPaint(const QRegion& region) {
   Q_UNUSED(region);
-  DLOG("QHybrisBaseBackingStore::beginPaint (this=%p)", this);
+  DLOG("QUbuntuBaseBackingStore::beginPaint (this=%p)", this);
   window()->setSurfaceType(QSurface::OpenGLSurface);
   context_->makeCurrent(window());
   device_ = new QOpenGLPaintDevice(window()->size());
 }
 
-void QHybrisBaseBackingStore::endPaint() {
-  DLOG("QHybrisBaseBackingStore::endPaint (this=%p)", this);
+void QUbuntuBaseBackingStore::endPaint() {
+  DLOG("QUbuntuBaseBackingStore::endPaint (this=%p)", this);
   delete device_;
 }
 
-void QHybrisBaseBackingStore::resize(const QSize& size, const QRegion& staticContents) {
+void QUbuntuBaseBackingStore::resize(const QSize& size, const QRegion& staticContents) {
   Q_UNUSED(size);
   Q_UNUSED(staticContents);
-  DLOG("QHybrisBaseBackingStore::resize (this=%p)", this);
+  DLOG("QUbuntuBaseBackingStore::resize (this=%p)", this);
 }

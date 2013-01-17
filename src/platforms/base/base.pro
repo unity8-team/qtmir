@@ -1,4 +1,4 @@
-TARGET = hybrisbase
+TARGET = ubuntubase
 TEMPLATE = lib
 
 QT += core-private gui-private platformsupport-private

@@ -15,9 +15,9 @@
 
 extern "C" void init_hybris();
 
-QHybrisBaseIntegration::QHybrisBaseIntegration()
+QUbuntuBaseIntegration::QUbuntuBaseIntegration()
     : eventDispatcher_(createUnixEventDispatcher())
-    , nativeInterface_(new QHybrisBaseNativeInterface())
+    , nativeInterface_(new QUbuntuBaseNativeInterface())
     , fontDb_(new QGenericUnixFontDatabase()) {
   static bool once = false;
   if (!once) {
@@ -27,17 +27,17 @@ QHybrisBaseIntegration::QHybrisBaseIntegration()
     once = true;
   }
   QGuiApplicationPrivate::instance()->setEventDispatcher(eventDispatcher_);
-  DLOG("QHybrisBaseIntegration::QHybrisBaseIntegration (this=%p)", this);
+  DLOG("QUbuntuBaseIntegration::QUbuntuBaseIntegration (this=%p)", this);
 }
 
-QHybrisBaseIntegration::~QHybrisBaseIntegration() {
-  DLOG("QHybrisBaseIntegration::~QHybrisBaseIntegration");
+QUbuntuBaseIntegration::~QUbuntuBaseIntegration() {
+  DLOG("QUbuntuBaseIntegration::~QUbuntuBaseIntegration");
   delete fontDb_;
   delete nativeInterface_;
 }
 
-bool QHybrisBaseIntegration::hasCapability(QPlatformIntegration::Capability cap) const {
-  DLOG("QHybrisBaseIntegration::hasCapability (this=%p)", this);
+bool QUbuntuBaseIntegration::hasCapability(QPlatformIntegration::Capability cap) const {
+  DLOG("QUbuntuBaseIntegration::hasCapability (this=%p)", this);
   switch (cap) {
     case ThreadedPixmaps: {
       return true;
@@ -45,7 +45,7 @@ bool QHybrisBaseIntegration::hasCapability(QPlatformIntegration::Capability cap)
       return true;
     }
     case ThreadedOpenGL: {
-      if (qEnvironmentVariableIsEmpty("QTHYBRIS_NO_THREADED_OPENGL")) {
+      if (qEnvironmentVariableIsEmpty("QTUBUNTU_NO_THREADED_OPENGL")) {
         return true;
       } else {
         DLOG("disabled threaded OpenGL");
@@ -58,31 +58,31 @@ bool QHybrisBaseIntegration::hasCapability(QPlatformIntegration::Capability cap)
   }
 }
 
-QPlatformBackingStore* QHybrisBaseIntegration::createPlatformBackingStore(QWindow* window) const {
-  DLOG("QHybrisBaseIntegration::createPlatformBackingStore (this=%p, window=%p)", this, window);
-  return new QHybrisBaseBackingStore(window);
+QPlatformBackingStore* QUbuntuBaseIntegration::createPlatformBackingStore(QWindow* window) const {
+  DLOG("QUbuntuBaseIntegration::createPlatformBackingStore (this=%p, window=%p)", this, window);
+  return new QUbuntuBaseBackingStore(window);
 }
 
-QPlatformOpenGLContext* QHybrisBaseIntegration::createPlatformOpenGLContext(
+QPlatformOpenGLContext* QUbuntuBaseIntegration::createPlatformOpenGLContext(
     QOpenGLContext* context) const {
-  DLOG("QHybrisBaseIntegration::createPlatformOpenGLContext const (this=%p, context=%p)", this,
+  DLOG("QUbuntuBaseIntegration::createPlatformOpenGLContext const (this=%p, context=%p)", this,
        context);
-  return const_cast<QHybrisBaseIntegration*>(this)->createPlatformOpenGLContext(context);
+  return const_cast<QUbuntuBaseIntegration*>(this)->createPlatformOpenGLContext(context);
 }
 
-QPlatformOpenGLContext* QHybrisBaseIntegration::createPlatformOpenGLContext(
+QPlatformOpenGLContext* QUbuntuBaseIntegration::createPlatformOpenGLContext(
     QOpenGLContext* context) {
-  DLOG("QHybrisBaseIntegration::createPlatformOpenGLContext (this=%p, context=%p)", this, context);
-  return new QHybrisBaseContext(static_cast<QHybrisBaseScreen*>(context->screen()->handle()));
+  DLOG("QUbuntuBaseIntegration::createPlatformOpenGLContext (this=%p, context=%p)", this, context);
+  return new QUbuntuBaseContext(static_cast<QUbuntuBaseScreen*>(context->screen()->handle()));
 }
 
-QStringList QHybrisBaseIntegration::themeNames() const {
-  DLOG("QHybrisBaseIntegration::themeNames (this=%p)", this);
-  return QStringList(QHybrisTheme::name);
+QStringList QUbuntuBaseIntegration::themeNames() const {
+  DLOG("QUbuntuBaseIntegration::themeNames (this=%p)", this);
+  return QStringList(QUbuntuTheme::name);
 }
 
-QPlatformTheme* QHybrisBaseIntegration::createPlatformTheme(const QString& name) const {
+QPlatformTheme* QUbuntuBaseIntegration::createPlatformTheme(const QString& name) const {
   Q_UNUSED(name);
-  DLOG("QHybrisBaseIntegration::createPlatformTheme (this=%p)", this);
-  return new QHybrisTheme();
+  DLOG("QUbuntuBaseIntegration::createPlatformTheme (this=%p)", this);
+  return new QUbuntuTheme();
 }

@@ -1,17 +1,17 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-#ifndef QHYBRISBASEINTEGRATION_H
-#define QHYBRISBASEINTEGRATION_H
+#ifndef QUBUNTUBASEINTEGRATION_H
+#define QUBUNTUBASEINTEGRATION_H
 
 #include <qpa/qplatformintegration.h>
 
 class QAbstractEventDispatcher;
 
-class QHybrisBaseIntegration : public QPlatformIntegration {
+class QUbuntuBaseIntegration : public QPlatformIntegration {
  public:
-  QHybrisBaseIntegration();
-  ~QHybrisBaseIntegration();
+  QUbuntuBaseIntegration();
+  ~QUbuntuBaseIntegration();
 
   // QPlatformIntegration methods.
   bool hasCapability(QPlatformIntegration::Capability cap) const;
@@ -30,4 +30,4 @@ class QHybrisBaseIntegration : public QPlatformIntegration {
   QPlatformFontDatabase* fontDb_;
 };
 
-#endif  // QHYBRISBASEINTEGRATION_H
+#endif  // QUBUNTUBASEINTEGRATION_H

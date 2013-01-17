@@ -1,4 +1,4 @@
-TARGET = qhybrislegacy
+TARGET = qubuntu
 TEMPLATE = lib
 
 QT += core-private gui-private platformsupport-private
@@ -24,12 +24,12 @@ HEADERS = integration.h \
 
 CONFIG += plugin link_prl
 
-PRE_TARGETDEPS = ../base/libhybrisbase.a
+PRE_TARGETDEPS = ../base/libubuntubase.a
 
 INCLUDEPATH += .. /usr/include/hybris
-LIBS += -L../base -lhybrisbase -lhybris_ics -lsf -lis
+LIBS += -L../base -lubuntubase -lhybris_ics -lubuntu_application_api
 
-OTHER_FILES += hybrislegacy.json
+OTHER_FILES += ubuntu.json
 
 target.path += $$[QT_INSTALL_PLUGINS]/platforms
 INSTALLS += target
