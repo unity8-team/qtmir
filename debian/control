@@ -2,10 +2,9 @@ Source: qthybris
 Priority: extra
 Maintainer: Ricardo Mendoza <ricardo.mendoza@canonical.com>
 Build-Depends:  debhelper (>= 8.0.0),
-                qtbase5-dev
-                qtbase5-dev-tools
-                qtdeclarative5-dev
-                qtdeclarative5-private-dev 
+                qt5-default,
+                qtbase5-private-dev,
+                qtdeclarative5-private-dev,
                 libudev-dev,
                 libgles2-mesa-dev,
                 libegl1-mesa-dev,
