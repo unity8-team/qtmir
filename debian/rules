@@ -3,7 +3,7 @@
 
 # Uncomment this to turn on verbose mode.
 
-export PATH=/opt/qt5/bin/:/usr/lib/ccache/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PATH=/usr/lib/ccache/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 # Force the build to generate debug symbols, so we can have -dbgsym packages
 override_dh_auto_configure:

@@ -97,12 +97,9 @@
 
     $ echo "BINDMOUNTS=\"/media/data\"" >> ~/.pbuilderrc
 
-  Log back to the chroot and set up some environment variables to use
-  the right Qt5 paths:
+  Log back to the chroot:
 
     $ ptest armel-quantal
-    $ export PATH=/opt/qt5/bin${PATH:+:$PATH}
-    $ export LD_LIBRARY_PATH=/opt/qt5/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 
   The build environment is now ready. In order to compile QtHybris, go
   to the file system set up earlier, generate the makefiles and build:
