@@ -1,3 +1,15 @@
+qthybris (0.37) quantal; urgency=low
+
+  * bump version to supercede what's in oem-archive:manhattan 
+
+ -- Bill Filler <bill.filler@canonical.com>  Wed, 23 Jan 2013 12:43:21 -0500
+
+qthybris (0.35) quantal; urgency=low
+
+  * test against Qt5 final 
+
+ -- Bill Filler <bill.filler@canonical.com>  Fri, 18 Jan 2013 14:25:01 -0800
+
 qthybris (0.34) quantal; urgency=low
 
   * Bumped version.
