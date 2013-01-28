@@ -80,11 +80,12 @@
 
     $ echo "deb https://USER:PASSWORD@cesg.canonical.com/canonical manhattan-quantal-devel public private" >> /etc/apt/sources.list
     $ echo "deb-src https://USER:PASSWORD@cesg.canonical.com/canonical manhattan-quantal-devel public private" >> /etc/apt/sources.list
+    $ echo "deb http://ppa.launchpad.net/canonical-qt5-edgers/qt5-proper/ubuntu quantal main" >> /etc/apt/sources.list
     $ apt-get update
 
   Then install Qt5 and the libhybris development files:
 
-    $ apt-get install -y qtdeclarative libhybris-dev
+    $ apt-get install -y qt5-default libqt5qml5 libqt5quick5 qtdeclarative5-qtquick2-plugin libhybris-dev
 
   Exit the chroot saving the current session:
 
