@@ -523,10 +523,10 @@ void QHybrisBaseInput::dispatchHWSwitchEvent(QWindow* window, const Event* event
 #if (LOG_EVENTS != 0)
   // HW switch event logging.
   LOG("HWSWITCH device_id:%d source_id:%d action:%d flags:%d meta_state:%d event_time:%lld "
-      "policy_flags:%u switch_code:%d switch_value:%d", event->device_id, event->source_id,
+      "policy_flags:%u switch_values:%d switch_mask:%d", event->device_id, event->source_id,
       event->action, event->flags, event->meta_state, event->details.hw_switch.event_time,
-      event->details.hw_switch.policy_flags, event->details.hw_switch.switch_code,
-      event->details.hw_switch.switch_value);
+      event->details.hw_switch.policy_flags, event->details.hw_switch.switch_values,
+      event->details.hw_switch.switch_mask);
 #endif
 
   // FIXME(loicm) Not sure how to interpret that kind of event.
