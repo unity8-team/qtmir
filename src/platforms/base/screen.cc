@@ -67,6 +67,7 @@ QHybrisBaseScreen::QHybrisBaseScreen()
   surfaceFormat_.setRedBufferSize(8);
   surfaceFormat_.setGreenBufferSize(8);
   surfaceFormat_.setBlueBufferSize(8);
+  surfaceFormat_.setAlphaBufferSize(8);
   surfaceFormat_.setDepthBufferSize(24);
   surfaceFormat_.setStencilBufferSize(8);
   if (!qEnvironmentVariableIsEmpty("QTHYBRIS_MULTISAMPLE")) {
