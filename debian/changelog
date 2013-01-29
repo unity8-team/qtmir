@@ -1,3 +1,27 @@
+qthybris (0.38) quantal; urgency=low
+
+  * remerge from trunk, new release 
+
+ -- Bill Filler <bill.filler@canonical.com>  Tue, 29 Jan 2013 14:09:58 -0500
+
+qthybris (0.37) quantal; urgency=low
+
+  * bump version to supercede what's in oem-archive:manhattan 
+
+ -- Bill Filler <bill.filler@canonical.com>  Wed, 23 Jan 2013 12:43:21 -0500
+
+qthybris (0.36) quantal; urgency=low
+
+  * Make sure to request alpha support for the surfaceFormat
+
+ -- Ricardo Salveti de Araujo <ricardo.salveti@canonical.com>  Tue, 15 Jan 2013 18:44:39 -0200
+
+qthybris (0.35) quantal; urgency=low
+
+  * fix for hardcoded screen size lp:1097798 
+ 
+-- Bill Filler <bill.filler@canonical.com>  Fri, 18 Jan 2013 14:25:01 -0800
+
 qthybris (0.34) quantal; urgency=low
 
   * Bumped version.
