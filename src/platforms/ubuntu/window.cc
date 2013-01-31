@@ -90,7 +90,7 @@ void QUbuntuWindow::moveResize(const QRect& rect) {
   QPlatformWindow::setGeometry(rect);
 }
 
-void QHybrisWindow::setWindowState(Qt::WindowState state) {
+void QUbuntuWindow::setWindowState(Qt::WindowState state) {
   DLOG("QUbuntuWindow::setWindowState (this=%p, state=%d)", this, state);
   if (state == state_)
     return;
