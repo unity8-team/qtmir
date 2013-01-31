@@ -18,6 +18,8 @@ Standards-Version: 3.9.3
 Section: libs
 
 Package: qtubuntu
+Replaces: qthybris (<< 0.37)
+Breaks: qthybris (<< 0.37)
 Section: libs
 Architecture: armel armhf
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -28,3 +30,11 @@ Description: Qt plugins for Ubuntu application API
  compatibility layers. It also provides Qt bindings for Ubuntu
  Application API features that are not exposed through the QPA
  plugins.
+
+Package: qthybris
+Depends: qtubuntu, ${misc:Depends}
+Architecture: all
+Section: oldlibs
+Description: transitional dummy package
+ This is a transitional dummy package for the qthybris -> qtubuntu
+ transition.
