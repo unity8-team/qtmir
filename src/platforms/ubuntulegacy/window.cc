@@ -47,29 +47,30 @@ QUbuntuLegacyWindow::~QUbuntuLegacyWindow() {
   // delete sfSurface_;
 }
 
-Qt::WindowState QUbuntuLegacyWindow::setWindowState(Qt::WindowState state) {
+void QUbuntuLegacyWindow::setWindowState(Qt::WindowState state) {
   if (state == state_)
-    return state;
+    return;
+
   switch (state) {
     case Qt::WindowNoState: {
       DLOG("QUbuntuLegacyWindow::setWindowState (this=%p, state='NoState')", this);
       moveResize(geometry_);
       state_ = Qt::WindowNoState;
-      return Qt::WindowNoState;
+      break;
     }
     case Qt::WindowFullScreen: {
       DLOG("QUbuntuLegacyWindow::setWindowState (this=%p, state='FullScreen')", this);
       QRect screenGeometry(screen()->availableGeometry());
       moveResize(screenGeometry);
       state_ = Qt::WindowFullScreen;
-      return Qt::WindowFullScreen;
+      break;
     }
     case Qt::WindowActive:
     case Qt::WindowMinimized:
     case Qt::WindowMaximized:
     default: {
       DLOG("QUbuntuLegacyWindow::setWindowState (this=%p, state='Active|Minimized|Maximized')", this);
-      return state_;
+      break;
     }
   }
 }

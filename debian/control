@@ -2,8 +2,9 @@ Source: qtubuntu
 Priority: extra
 Maintainer: Ricardo Mendoza <ricardo.mendoza@canonical.com>
 Build-Depends:  debhelper (>= 8.0.0),
-                qtdeclarative,
-                qtbase,
+                qt5-default,
+                qtbase5-private-dev,
+                qtdeclarative5-private-dev,
                 libudev-dev,
                 libgles2-mesa-dev,
                 libegl1-mesa-dev,
@@ -18,6 +19,8 @@ Standards-Version: 3.9.3
 Section: libs
 
 Package: qtubuntu
+Replaces: qthybris (<< 0.37)
+Breaks: qthybris (<< 0.37)
 Section: libs
 Architecture: armel armhf
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -28,3 +31,11 @@ Description: Qt plugins for Ubuntu application API
  compatibility layers. It also provides Qt bindings for Ubuntu
  Application API features that are not exposed through the QPA
  plugins.
+
+Package: qthybris
+Depends: qtubuntu, ${misc:Depends}
+Architecture: all
+Section: oldlibs
+Description: transitional dummy package
+ This is a transitional dummy package for the qthybris -> qtubuntu
+ transition.

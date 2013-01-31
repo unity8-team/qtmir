@@ -16,7 +16,7 @@
 #ifndef APPLICATION_WINDOW_H
 #define APPLICATION_WINDOW_H
 
-#include <Qt/QtCore>
+#include <QtCore/QtCore>
 
 class ApplicationWindow : public QObject {
   Q_OBJECT
