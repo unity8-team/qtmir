@@ -1,8 +1,8 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-#ifndef QHYBRISLOGGING_H
-#define QHYBRISLOGGING_H
+#ifndef QUBUNTULOGGING_H
+#define QUBUNTULOGGING_H
 
 // Logging and assertion macros.
 #define LOG(...) qDebug(__VA_ARGS__)
@@ -23,4 +23,4 @@
 #define DNOT_REACHED() qt_noop()
 #endif
 
-#endif  // QHYBRISLOGGING_H
+#endif  // QUBUNTULOGGING_H

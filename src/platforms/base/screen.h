@@ -1,17 +1,17 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-#ifndef QHYBRISBASESCREEN_H
-#define QHYBRISBASESCREEN_H
+#ifndef QUBUNTUBASESCREEN_H
+#define QUBUNTUBASESCREEN_H
 
 #include <qpa/qplatformscreen.h>
 #include <QSurfaceFormat>
 #include <EGL/egl.h>
 
-class QHybrisBaseScreen : public QPlatformScreen {
+class QUbuntuBaseScreen : public QPlatformScreen {
  public:
-  QHybrisBaseScreen();
-  ~QHybrisBaseScreen();
+  QUbuntuBaseScreen();
+  ~QUbuntuBaseScreen();
 
   // QPlatformScreen methods.
   QImage::Format format() const { return format_; }
@@ -30,4 +30,4 @@ class QHybrisBaseScreen : public QPlatformScreen {
   EGLConfig eglConfig_;
 };
 
-#endif  // QHYBRISBASESCREEN_H
+#endif  // QUBUNTUBASESCREEN_H

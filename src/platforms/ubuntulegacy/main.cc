@@ -6,27 +6,27 @@
 
 QT_BEGIN_NAMESPACE
 
-class QHybrisLegacyIntegrationPlugin : public QPlatformIntegrationPlugin {
+class QUbuntuLegacyIntegrationPlugin : public QPlatformIntegrationPlugin {
   Q_OBJECT
   Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QPA.QPlatformIntegrationFactoryInterface.5.1"
-                    FILE "hybrislegacy.json")
+                    FILE "ubuntulegacy.json")
 
  public:
   QStringList keys() const;
   QPlatformIntegration* create(const QString&, const QStringList&);
 };
 
-QStringList QHybrisLegacyIntegrationPlugin::keys() const {
+QStringList QUbuntuLegacyIntegrationPlugin::keys() const {
   QStringList list;
-  list << "hybrislegacy";
+  list << "ubuntulegacy";
   return list;
 }
 
-QPlatformIntegration* QHybrisLegacyIntegrationPlugin::create(
+QPlatformIntegration* QUbuntuLegacyIntegrationPlugin::create(
     const QString& system, const QStringList& paramList) {
   Q_UNUSED(paramList);
-  if (system.toLower() == "hybrislegacy")
-    return new QHybrisLegacyIntegration();
+  if (system.toLower() == "ubuntulegacy")
+    return new QUbuntuLegacyIntegration();
   return 0;
 }
 

@@ -6,27 +6,27 @@
 
 QT_BEGIN_NAMESPACE
 
-class QHybrisIntegrationPlugin : public QPlatformIntegrationPlugin {
+class QUbuntuIntegrationPlugin : public QPlatformIntegrationPlugin {
   Q_OBJECT
   Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QPA.QPlatformIntegrationFactoryInterface.5.1"
-                    FILE "hybris.json")
+                    FILE "ubuntu.json")
 
  public:
   QStringList keys() const;
   QPlatformIntegration* create(const QString&, const QStringList&);
 };
 
-QStringList QHybrisIntegrationPlugin::keys() const {
+QStringList QUbuntuIntegrationPlugin::keys() const {
   QStringList list;
-  list << "hybris";
+  list << "ubuntu";
   return list;
 }
 
-QPlatformIntegration* QHybrisIntegrationPlugin::create(
+QPlatformIntegration* QUbuntuIntegrationPlugin::create(
     const QString& system, const QStringList& paramList) {
   Q_UNUSED(paramList);
-  if (system.toLower() == "hybris")
-    return new QHybrisIntegration();
+  if (system.toLower() == "ubuntu")
+    return new QUbuntuIntegration();
   return 0;
 }
 

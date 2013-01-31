@@ -1,18 +1,18 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-#ifndef QHYBRISBASEBACKINGSTORE_H
-#define QHYBRISBASEBACKINGSTORE_H
+#ifndef QUBUNTUBASEBACKINGSTORE_H
+#define QUBUNTUBASEBACKINGSTORE_H
 
 #include <qpa/qplatformbackingstore.h>
 
 class QOpenGLContext;
 class QOpenGLPaintDevice;
 
-class QHybrisBaseBackingStore : public QPlatformBackingStore {
+class QUbuntuBaseBackingStore : public QPlatformBackingStore {
  public:
-  QHybrisBaseBackingStore(QWindow* window);
-  ~QHybrisBaseBackingStore();
+  QUbuntuBaseBackingStore(QWindow* window);
+  ~QUbuntuBaseBackingStore();
 
   // QPlatformBackingStore methods.
   void beginPaint(const QRegion&);
@@ -26,4 +26,4 @@ class QHybrisBaseBackingStore : public QPlatformBackingStore {
   QOpenGLPaintDevice* device_;
 };
 
-#endif  // QHYBRISBASEBACKINGSTORE_H
+#endif  // QUBUNTUBASEBACKINGSTORE_H

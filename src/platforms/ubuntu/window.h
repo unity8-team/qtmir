@@ -1,26 +1,26 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-#ifndef QHYBRISWINDOW_H
-#define QHYBRISWINDOW_H
+#ifndef QUBUNTUWINDOW_H
+#define QUBUNTUWINDOW_H
 
 #include "base/window.h"
 #include <ubuntu/application/ui/ubuntu_application_ui.h>
 
-class QHybrisScreen;
-class QHybrisInput;
+class QUbuntuScreen;
+class QUbuntuInput;
 
-class QHybrisWindow : public QHybrisBaseWindow {
+class QUbuntuWindow : public QUbuntuBaseWindow {
  public:
-  QHybrisWindow(QWindow* w, QHybrisScreen* screen, QHybrisInput* input, bool systemSession);
-  ~QHybrisWindow();
+  QUbuntuWindow(QWindow* w, QUbuntuScreen* screen, QUbuntuInput* input, bool systemSession);
+  ~QUbuntuWindow();
 
   // QPlatformWindow methods.
   void setGeometry(const QRect&);
-  Qt::WindowState setWindowState(Qt::WindowState state);
+  void setWindowState(Qt::WindowState state);
   void setVisible(bool visible);
 
-  QHybrisInput* input_;
+  QUbuntuInput* input_;
 
  private:
   void createWindow();
@@ -32,4 +32,4 @@ class QHybrisWindow : public QHybrisBaseWindow {
   bool systemSession_;
 };
 
-#endif  // QHYBRISWINDOW_H
+#endif  // QUBUNTUWINDOW_H

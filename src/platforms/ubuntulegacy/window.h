@@ -1,23 +1,23 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-#ifndef QHYBRISLEGACYWINDOW_H
-#define QHYBRISLEGACYWINDOW_H
+#ifndef QUBUNTULEGACYWINDOW_H
+#define QUBUNTULEGACYWINDOW_H
 
 #include "base/window.h"
 
 struct SfClient;
 struct SfSurface;
-class QHybrisLegacyScreen;
+class QUbuntuLegacyScreen;
 
-class QHybrisLegacyWindow : public QHybrisBaseWindow {
+class QUbuntuLegacyWindow : public QUbuntuBaseWindow {
  public:
-  QHybrisLegacyWindow(QWindow* w, QHybrisLegacyScreen* screen);
-  ~QHybrisLegacyWindow();
+  QUbuntuLegacyWindow(QWindow* w, QUbuntuLegacyScreen* screen);
+  ~QUbuntuLegacyWindow();
 
   // QPlatformWindow methods.
   void setGeometry(const QRect&);
-  Qt::WindowState setWindowState(Qt::WindowState state);
+  void setWindowState(Qt::WindowState state);
   void setOpacity(qreal level);
   void raise();
   void lower();
@@ -25,11 +25,11 @@ class QHybrisLegacyWindow : public QHybrisBaseWindow {
  private:
   void moveResize(const QRect& rect);
 
-  QHybrisLegacyScreen* screen_;
+  QUbuntuLegacyScreen* screen_;
   SfSurface* sfSurface_;
   Qt::WindowState state_;
   QRect geometry_;
   int layer_;
 };
 
-#endif  // QHYBRISLEGACYWINDOW_H
+#endif  // QUBUNTULEGACYWINDOW_H

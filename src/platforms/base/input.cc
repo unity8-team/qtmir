@@ -245,9 +245,9 @@ static const struct {
   { Qt::Key_Calculator, { 0xffff, 0xffff, 0xffff } }       // ISCL_KEYCODE_CALCULATOR      = 210
 };
 
-class QHybrisBaseEvent : public QEvent {
+class QUbuntuBaseEvent : public QEvent {
  public:
-  QHybrisBaseEvent(QWindow* window, const Event* event, QEvent::Type type)
+  QUbuntuBaseEvent(QWindow* window, const Event* event, QEvent::Type type)
       : QEvent(type)
       , window_(window) {
     memcpy(&nativeEvent_, event, sizeof(Event));
@@ -256,9 +256,9 @@ class QHybrisBaseEvent : public QEvent {
   Event nativeEvent_;
 };
 
-QHybrisBaseInput::QHybrisBaseInput(QHybrisBaseIntegration* integration, int maxPointCount)
+QUbuntuBaseInput::QUbuntuBaseInput(QUbuntuBaseIntegration* integration, int maxPointCount)
     : integration_(integration)
-    , eventFilterType_(static_cast<QHybrisBaseNativeInterface*>(
+    , eventFilterType_(static_cast<QUbuntuBaseNativeInterface*>(
         integration->nativeInterface())->genericEventFilterType())
     , eventType_(static_cast<QEvent::Type>(QEvent::registerEventType())) {
   DASSERT(maxPointCount > 0);
@@ -280,56 +280,56 @@ QHybrisBaseInput::QHybrisBaseInput(QHybrisBaseIntegration* integration, int maxP
     touchPoints_ << tp;
   }
 
-  DLOG("QHybrisBaseInput::QHybrisBaseInput (this=%p, integration=%p, maxPointCount=%d)", this,
+  DLOG("QUbuntuBaseInput::QUbuntuBaseInput (this=%p, integration=%p, maxPointCount=%d)", this,
        integration, maxPointCount);
 }
 
-QHybrisBaseInput::~QHybrisBaseInput() {
-  DLOG("QHybrisBaseInput::~QHybrisBaseInput");
+QUbuntuBaseInput::~QUbuntuBaseInput() {
+  DLOG("QUbuntuBaseInput::~QUbuntuBaseInput");
   // touchDevice_ isn't cleaned up on purpose as it crashes or asserts on "Bus Error".
   touchPoints_.clear();
 }
 
-void QHybrisBaseInput::customEvent(QEvent* event) {
-  DLOG("QHybrisBaseInput::customEvent (this=%p, event=%p)", this, event);
+void QUbuntuBaseInput::customEvent(QEvent* event) {
+  DLOG("QUbuntuBaseInput::customEvent (this=%p, event=%p)", this, event);
   DASSERT(QThread::currentThread() == thread());
-  QHybrisBaseEvent* hybrisEvent = static_cast<QHybrisBaseEvent*>(event);
+  QUbuntuBaseEvent* ubuntuEvent = static_cast<QUbuntuBaseEvent*>(event);
 
   // Event filtering.
   long result;
   if (QWindowSystemInterface::handleNativeEvent(
-          hybrisEvent->window_, eventFilterType_, &hybrisEvent->nativeEvent_, &result) == true) {
+          ubuntuEvent->window_, eventFilterType_, &ubuntuEvent->nativeEvent_, &result) == true) {
     DLOG("event filtered out by native interface");
     return;
   }
 
   // Event dispatching.
-  switch (hybrisEvent->nativeEvent_.type) {
+  switch (ubuntuEvent->nativeEvent_.type) {
     case MOTION_EVENT_TYPE: {
-      dispatchMotionEvent(hybrisEvent->window_, &hybrisEvent->nativeEvent_);
+      dispatchMotionEvent(ubuntuEvent->window_, &ubuntuEvent->nativeEvent_);
       break;
     }
     case KEY_EVENT_TYPE: {
-      dispatchKeyEvent(hybrisEvent->window_, &hybrisEvent->nativeEvent_);
+      dispatchKeyEvent(ubuntuEvent->window_, &ubuntuEvent->nativeEvent_);
       break;
     }
     case HW_SWITCH_EVENT_TYPE: {
-      dispatchHWSwitchEvent(hybrisEvent->window_, &hybrisEvent->nativeEvent_);
+      dispatchHWSwitchEvent(ubuntuEvent->window_, &ubuntuEvent->nativeEvent_);
       break;
     }
     default: {
-      DLOG("unhandled event type %d", hybrisEvent->nativeEvent_.type);
+      DLOG("unhandled event type %d", ubuntuEvent->nativeEvent_.type);
     }
   }
 }
 
-void QHybrisBaseInput::postEvent(QWindow* window, const Event* event) {
-  DLOG("QHybrisBaseInput::postEvent (this=%p, window=%p, event=%p)", this, window, event);
-  QCoreApplication::postEvent(this, new QHybrisBaseEvent(window, event, eventType_));
+void QUbuntuBaseInput::postEvent(QWindow* window, const Event* event) {
+  DLOG("QUbuntuBaseInput::postEvent (this=%p, window=%p, event=%p)", this, window, event);
+  QCoreApplication::postEvent(this, new QUbuntuBaseEvent(window, event, eventType_));
 }
 
-void QHybrisBaseInput::dispatchMotionEvent(QWindow* window, const Event* event) {
-  DLOG("QHybrisBaseInput::dispatchMotionEvent (this=%p, window=%p, event=%p)", this, window, event);
+void QUbuntuBaseInput::dispatchMotionEvent(QWindow* window, const Event* event) {
+  DLOG("QUbuntuBaseInput::dispatchMotionEvent (this=%p, window=%p, event=%p)", this, window, event);
 
 #if (LOG_EVENTS != 0)
   // Motion event logging.
@@ -447,16 +447,16 @@ void QHybrisBaseInput::dispatchMotionEvent(QWindow* window, const Event* event) 
   handleTouchEvent(window, event->details.motion.event_time / 1000000, touchDevice_, touchPoints_);
 }
 
-void QHybrisBaseInput::handleTouchEvent(
+void QUbuntuBaseInput::handleTouchEvent(
     QWindow* window, ulong timestamp, QTouchDevice* device,
     const QList<struct QWindowSystemInterface::TouchPoint> &points) {
-  DLOG("QHybrisBaseInput::handleTouchEvent (this=%p, window=%p, timestamp=%lu, device=%p)",
+  DLOG("QUbuntuBaseInput::handleTouchEvent (this=%p, window=%p, timestamp=%lu, device=%p)",
        this, window, timestamp, device);
   QWindowSystemInterface::handleTouchEvent(window, timestamp, device, points);
 }
 
-void QHybrisBaseInput::dispatchKeyEvent(QWindow* window, const Event* event) {
-  DLOG("QHybrisBaseInput::dispatchKeyEvent (this=%p, window=%p, event=%p)", this, window, event);
+void QUbuntuBaseInput::dispatchKeyEvent(QWindow* window, const Event* event) {
+  DLOG("QUbuntuBaseInput::dispatchKeyEvent (this=%p, window=%p, event=%p)", this, window, event);
 
 #if (LOG_EVENTS != 0)
   // Key event logging.
@@ -506,27 +506,27 @@ void QHybrisBaseInput::dispatchKeyEvent(QWindow* window, const Event* event) {
   handleKeyEvent(window, timestamp, keyType, keyCode, modifiers, text);
 }
 
-void QHybrisBaseInput::handleKeyEvent(
+void QUbuntuBaseInput::handleKeyEvent(
     QWindow* window, ulong timestamp, QEvent::Type type, int key, Qt::KeyboardModifiers modifiers,
     const QString& text) {
-  DLOG("QHybrisBaseInput::handleKeyEvent (this=%p window=%p, timestamp=%lu, type=%d, key=%d, "
+  DLOG("QUbuntuBaseInput::handleKeyEvent (this=%p window=%p, timestamp=%lu, type=%d, key=%d, "
        "modifiers=%d, text='%s')", this, window, timestamp, static_cast<int>(type), key,
        static_cast<int>(modifiers), text.toUtf8().data());
   QWindowSystemInterface::handleKeyEvent(window, timestamp, type, key, modifiers, text);
 }
 
-void QHybrisBaseInput::dispatchHWSwitchEvent(QWindow* window, const Event* event) {
+void QUbuntuBaseInput::dispatchHWSwitchEvent(QWindow* window, const Event* event) {
   Q_UNUSED(window);
   Q_UNUSED(event);
-  DLOG("QHybrisBaseInput::dispatchSwitchEvent (this=%p, window=%p, event=%p)", this, window, event);
+  DLOG("QUbuntuBaseInput::dispatchSwitchEvent (this=%p, window=%p, event=%p)", this, window, event);
 
 #if (LOG_EVENTS != 0)
   // HW switch event logging.
   LOG("HWSWITCH device_id:%d source_id:%d action:%d flags:%d meta_state:%d event_time:%lld "
-      "policy_flags:%u switch_code:%d switch_value:%d", event->device_id, event->source_id,
+      "policy_flags:%u switch_values:%d switch_mask:%d", event->device_id, event->source_id,
       event->action, event->flags, event->meta_state, event->details.hw_switch.event_time,
-      event->details.hw_switch.policy_flags, event->details.hw_switch.switch_code,
-      event->details.hw_switch.switch_value);
+      event->details.hw_switch.policy_flags, event->details.hw_switch.switch_values,
+      event->details.hw_switch.switch_mask);
 #endif
 
   // FIXME(loicm) Not sure how to interpret that kind of event.

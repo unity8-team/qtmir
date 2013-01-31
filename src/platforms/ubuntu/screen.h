@@ -1,15 +1,15 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-#ifndef QHYBRISSCREEN_H
-#define QHYBRISSCREEN_H
+#ifndef QUBUNTUSCREEN_H
+#define QUBUNTUSCREEN_H
 
 #include "base/screen.h"
 
-class QHybrisScreen : public QHybrisBaseScreen {
+class QUbuntuScreen : public QUbuntuBaseScreen {
  public:
-  QHybrisScreen();
-  ~QHybrisScreen();
+  QUbuntuScreen();
+  ~QUbuntuScreen();
 
   // QPlatformScreen methods.
   QRect geometry() const { return geometry_; }
@@ -20,4 +20,4 @@ class QHybrisScreen : public QHybrisBaseScreen {
   QRect availableGeometry_;
 };
 
-#endif  // QHYBRISSCREEN_H
+#endif  // QUBUNTUSCREEN_H

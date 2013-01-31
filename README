@@ -8,7 +8,7 @@
 1. Description
 --------------
 
-  QtHybris is a set of Qt5 components for the Ubuntu Application
+  QtUbuntu is a set of Qt5 components for the Ubuntu Application
   API. It contains a QPA (Qt Platform Abstraction) plugin based on the
   Ubuntu Application API and a legacy QPA plugin based on the
   compatibility layers. It also provides Qt bindings for Ubuntu
@@ -22,33 +22,33 @@
   Considering the QPA plugin path is correctly set using either the
   QT_QPA_PLATFORM_PLUGIN_PATH environment variable or the
   "-platformpluginpath" command line switch, the following commands
-  can be used to run with the Hybris QPA plugin:
+  can be used to run with the Ubuntu QPA plugin:
 
-    $ qmlscene -platform hybris Foo.qml
-    $ QT_QPA_PLATFORM=hybris qmlscene Foo.qml
+    $ qmlscene -platform ubuntu Foo.qml
+    $ QT_QPA_PLATFORM=ubuntu qmlscene Foo.qml
 
-  and the following ones to run with the Hybris legacy QPA plugin:
+  and the following ones to run with the Ubuntu legacy QPA plugin:
 
-    $ qmlscene -platform hybrislegacy Foo.qml
-    $ QT_QPA_PLATFORM=hybrislegacy qmlscene Foo.qml
+    $ qmlscene -platform ubuntulegacy Foo.qml
+    $ QT_QPA_PLATFORM=ubuntulegacy qmlscene Foo.qml
 
   The QPA plugins expose the following environment variables:
 
-    QTHYBRIS_SWAPINTERVAL: Specifies the required swap interval as an
+    QTUBUNTU_SWAPINTERVAL: Specifies the required swap interval as an
                            integer. 1 by default.
 
-    QTHYBRIS_MULTISAMPLE: Enables multisampling with using 4 samples
+    QTUBUNTU_MULTISAMPLE: Enables multisampling with using 4 samples
                           per fragment.
 
-    QTHYBRIS_NO_THREADED_OPENGL: Disables QtQuick threaded OpenGL
+    QTUBUNTU_NO_THREADED_OPENGL: Disables QtQuick threaded OpenGL
                                  rendering.
 
-    QTHYBRIS_NO_INPUT: Disables touchscreen and buttons.
+    QTUBUNTU_NO_INPUT: Disables touchscreen and buttons.
 
-    QTHYBRIS_INPUT_DELAY: Specifies a delay in milliseconds for input
-                          initialization (hybrislegacy plugin only).
+    QTUBUNTU_INPUT_DELAY: Specifies a delay in milliseconds for input
+                          initialization (ubuntulegacy plugin only).
 
-    QTHYBRIS_ICON_THEME: Specifies the default icon theme name.
+    QTUBUNTU_ICON_THEME: Specifies the default icon theme name.
 
 
 3. Building
@@ -80,11 +80,12 @@
 
     $ echo "deb https://USER:PASSWORD@cesg.canonical.com/canonical manhattan-quantal-devel public private" >> /etc/apt/sources.list
     $ echo "deb-src https://USER:PASSWORD@cesg.canonical.com/canonical manhattan-quantal-devel public private" >> /etc/apt/sources.list
+    $ echo "deb http://ppa.launchpad.net/canonical-qt5-edgers/qt5-proper/ubuntu quantal main" >> /etc/apt/sources.list
     $ apt-get update
 
   Then install Qt5 and the libhybris development files:
 
-    $ apt-get install -y qtdeclarative libhybris-dev
+    $ apt-get install -y qt5-default libqt5qml5 libqt5quick5 qtdeclarative5-qtquick2-plugin libhybris-dev
 
   Exit the chroot saving the current session:
 
@@ -97,21 +98,18 @@
 
     $ echo "BINDMOUNTS=\"/media/data\"" >> ~/.pbuilderrc
 
-  Log back to the chroot and set up some environment variables to use
-  the right Qt5 paths:
+  Log back to the chroot:
 
     $ ptest armel-quantal
-    $ export PATH=/opt/qt5/bin${PATH:+:$PATH}
-    $ export LD_LIBRARY_PATH=/opt/qt5/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 
-  The build environment is now ready. In order to compile QtHybris, go
+  The build environment is now ready. In order to compile QtUbuntu, go
   to the file system set up earlier, generate the makefiles and build:
 
-    $ cd /media/data/qthybris
+    $ cd /media/data/qtubuntu
     $ qmake
     $ make
 
-  By default, QtHybris compiles a release build. To compile a debug
+  By default, QtUbuntu compiles a release build. To compile a debug
   build, the following command can be used:
 
     $ qmake "CONFIG+=debug" && make
@@ -160,7 +158,7 @@
 5. QPA properties
 -----------------
 
-  The QPA plugin for Hybris looks for a "session" dynamic property on
+  The QPA plugin for Ubuntu looks for a "session" dynamic property on
   the QPlatformNativeInterface object in order to know the session
   type to request. That property can be set to an integer representing
   a SessionType specified in the Ubuntu Application API before the

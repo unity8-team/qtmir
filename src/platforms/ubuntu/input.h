@@ -1,19 +1,19 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-#ifndef QHYBRISINPUT_H
-#define QHYBRISINPUT_H
+#ifndef QUBUNTUINPUT_H
+#define QUBUNTUINPUT_H
 
 #include "base/input.h"
 
-class QHybrisIntegration;
+class QUbuntuIntegration;
 
-class QHybrisInput : public QHybrisBaseInput {
+class QUbuntuInput : public QUbuntuBaseInput {
  public:
-  QHybrisInput(QHybrisIntegration* integration);
-  ~QHybrisInput();
+  QUbuntuInput(QUbuntuIntegration* integration);
+  ~QUbuntuInput();
 
-  // QHybrisBaseInput methods.
+  // QUbuntuBaseInput methods.
   void handleTouchEvent(QWindow* window, ulong timestamp, QTouchDevice* device,
                         const QList<struct QWindowSystemInterface::TouchPoint> &points);
 
@@ -23,4 +23,4 @@ class QHybrisInput : public QHybrisBaseInput {
   uint sessionType_;
 };
 
-#endif  // QHYBRISINPUT_H
+#endif  // QUBUNTUINPUT_H

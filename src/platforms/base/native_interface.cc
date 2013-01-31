@@ -10,55 +10,55 @@
 #include <QtGui/qscreen.h>
 #include <QtCore/QMap>
 
-class QHybrisBaseResourceMap : public QMap<QByteArray, QHybrisBaseNativeInterface::ResourceType> {
+class QUbuntuBaseResourceMap : public QMap<QByteArray, QUbuntuBaseNativeInterface::ResourceType> {
  public:
-  QHybrisBaseResourceMap()
-      : QMap<QByteArray, QHybrisBaseNativeInterface::ResourceType>() {
-    insert("egldisplay", QHybrisBaseNativeInterface::EglDisplay);
-    insert("eglcontext", QHybrisBaseNativeInterface::EglContext);
+  QUbuntuBaseResourceMap()
+      : QMap<QByteArray, QUbuntuBaseNativeInterface::ResourceType>() {
+    insert("egldisplay", QUbuntuBaseNativeInterface::EglDisplay);
+    insert("eglcontext", QUbuntuBaseNativeInterface::EglContext);
   }
 };
 
-Q_GLOBAL_STATIC(QHybrisBaseResourceMap, hybrisResourceMap)
+Q_GLOBAL_STATIC(QUbuntuBaseResourceMap, ubuntuResourceMap)
 
-QHybrisBaseNativeInterface::QHybrisBaseNativeInterface()
+QUbuntuBaseNativeInterface::QUbuntuBaseNativeInterface()
     : genericEventFilterType_(QByteArrayLiteral("Event")) {
-  DLOG("QHybrisBaseNativeInterface::QHybrisBaseNativeInterface (this=%p)", this);
+  DLOG("QUbuntuBaseNativeInterface::QUbuntuBaseNativeInterface (this=%p)", this);
 }
 
-QHybrisBaseNativeInterface::~QHybrisBaseNativeInterface() {
-  DLOG("QHybrisBaseNativeInterface::~QHybrisBaseNativeInterface");
+QUbuntuBaseNativeInterface::~QUbuntuBaseNativeInterface() {
+  DLOG("QUbuntuBaseNativeInterface::~QUbuntuBaseNativeInterface");
 }
 
-void* QHybrisBaseNativeInterface::nativeResourceForContext(
+void* QUbuntuBaseNativeInterface::nativeResourceForContext(
     const QByteArray& resourceString, QOpenGLContext* context) {
-  DLOG("QHybrisBaseNativeInterface::nativeResourceForContext (this=%p, resourceString=%s, "
+  DLOG("QUbuntuBaseNativeInterface::nativeResourceForContext (this=%p, resourceString=%s, "
        "context=%p)", this, resourceString.constData(), context);
   if (!context)
     return NULL;
   const QByteArray kLowerCaseResource = resourceString.toLower();
-  if (!hybrisResourceMap()->contains(kLowerCaseResource))
+  if (!ubuntuResourceMap()->contains(kLowerCaseResource))
     return NULL;
-  const ResourceType kResourceType = hybrisResourceMap()->value(kLowerCaseResource);
-  if (kResourceType == QHybrisBaseNativeInterface::EglContext)
-    return static_cast<QHybrisBaseContext*>(context->handle())->eglContext();
+  const ResourceType kResourceType = ubuntuResourceMap()->value(kLowerCaseResource);
+  if (kResourceType == QUbuntuBaseNativeInterface::EglContext)
+    return static_cast<QUbuntuBaseContext*>(context->handle())->eglContext();
   else
     return NULL;
 }
 
-void* QHybrisBaseNativeInterface::nativeResourceForWindow(
+void* QUbuntuBaseNativeInterface::nativeResourceForWindow(
     const QByteArray& resourceString, QWindow* window) {
-  DLOG("QHybrisBaseNativeInterface::nativeResourceForWindow (this=%p, resourceString=%s, "
+  DLOG("QUbuntuBaseNativeInterface::nativeResourceForWindow (this=%p, resourceString=%s, "
        "window=%p)", this, resourceString.constData(), window);
   const QByteArray kLowerCaseResource = resourceString.toLower();
-  if (!hybrisResourceMap()->contains(kLowerCaseResource))
+  if (!ubuntuResourceMap()->contains(kLowerCaseResource))
     return NULL;
-  const ResourceType kResourceType = hybrisResourceMap()->value(kLowerCaseResource);
-  if (kResourceType == QHybrisBaseNativeInterface::EglDisplay) {
+  const ResourceType kResourceType = ubuntuResourceMap()->value(kLowerCaseResource);
+  if (kResourceType == QUbuntuBaseNativeInterface::EglDisplay) {
     if (window) {
-      return static_cast<QHybrisBaseScreen*>(window->screen()->handle())->eglDisplay();
+      return static_cast<QUbuntuBaseScreen*>(window->screen()->handle())->eglDisplay();
     } else {
-      return static_cast<QHybrisBaseScreen*>(
+      return static_cast<QUbuntuBaseScreen*>(
           QGuiApplication::primaryScreen()->handle())->eglDisplay();
     }
   } else {

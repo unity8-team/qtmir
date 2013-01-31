@@ -5,20 +5,20 @@
 #include "logging.h"
 #include <QtCore/QVariant>
 
-const char *QHybrisTheme::name = "hybris";
+const char *QUbuntuTheme::name = "ubuntu";
 
-QHybrisTheme::QHybrisTheme() {
-  DLOG("QHybrisTheme::QHybrisTheme()");
+QUbuntuTheme::QUbuntuTheme() {
+  DLOG("QUbuntuTheme::QUbuntuTheme()");
 }
 
-QHybrisTheme::~QHybrisTheme() {
-  DLOG("QHybrisTheme::~QHybrisTheme");
+QUbuntuTheme::~QUbuntuTheme() {
+  DLOG("QUbuntuTheme::~QUbuntuTheme");
 }
 
-QVariant QHybrisTheme::themeHint(ThemeHint hint) const {
-  DLOG("QHybrisTheme::themehint (this=%p, hint=%d)", this, hint);
+QVariant QUbuntuTheme::themeHint(ThemeHint hint) const {
+  DLOG("QUbuntuTheme::themehint (this=%p, hint=%d)", this, hint);
   if (hint == QPlatformTheme::SystemIconThemeName) {
-    QByteArray iconTheme = qgetenv("QTHYBRIS_ICON_THEME");
+    QByteArray iconTheme = qgetenv("QTUBUNTU_ICON_THEME");
     if (iconTheme.isEmpty()) {
       return QVariant(QStringLiteral("ubuntu-mobile"));
     } else {

@@ -1,6 +1,6 @@
 TEMPLATE = subdirs
 
-SUBDIRS += base hybrislegacy hybris
+SUBDIRS += base ubuntulegacy ubuntu
 
-hybrislegacy.depends = base
-hybris.depends = base
+ubuntulegacy.depends = base
+ubuntu.depends = base

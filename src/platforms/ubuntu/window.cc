@@ -11,13 +11,13 @@
 static void eventCallback(void* context, const Event* event) {
   DLOG("eventCallback (context=%p, event=%p)", context, event);
   DASSERT(context != NULL);
-  QHybrisWindow* window = static_cast<QHybrisWindow*>(context);
+  QUbuntuWindow* window = static_cast<QUbuntuWindow*>(context);
   window->input_->postEvent(window->window(), event);
 }
 
-QHybrisWindow::QHybrisWindow(
-    QWindow* w, QHybrisScreen* screen, QHybrisInput* input, bool systemSession)
-    : QHybrisBaseWindow(w, screen)
+QUbuntuWindow::QUbuntuWindow(
+    QWindow* w, QUbuntuScreen* screen, QUbuntuInput* input, bool systemSession)
+    : QUbuntuBaseWindow(w, screen)
     , input_(input)
     , state_(window()->windowState())
     , systemSession_(systemSession) {
@@ -30,16 +30,16 @@ QHybrisWindow::QHybrisWindow(
         window()->geometry() : screen->availableGeometry();
   }
   createWindow();
-  DLOG("QHybrisWindow::QHybrisWindow (this=%p, w=%p, screen=%p, input=%p)", this, w, screen, input);
+  DLOG("QUbuntuWindow::QUbuntuWindow (this=%p, w=%p, screen=%p, input=%p)", this, w, screen, input);
 }
 
-QHybrisWindow::~QHybrisWindow() {
-  DLOG("QHybrisWindow::~QHybrisWindow");
+QUbuntuWindow::~QUbuntuWindow() {
+  DLOG("QUbuntuWindow::~QUbuntuWindow");
   ubuntu_application_ui_destroy_surface(surface_);
 }
 
-void QHybrisWindow::createWindow() {
-  DLOG("QHybrisWindow::createWindow (this=%p)", this);
+void QUbuntuWindow::createWindow() {
+  DLOG("QUbuntuWindow::createWindow (this=%p)", this);
 
   // Get surface role and flags.
   QVariant roleVariant = window()->property("role");
@@ -69,7 +69,7 @@ void QHybrisWindow::createWindow() {
   DLOG("creating surface at (%d, %d) with size (%d, %d)", geometry.x(), geometry.y(),
        geometry.width(), geometry.height());
   ubuntu_application_ui_create_surface(
-      &surface_, "QHybrisWindow", geometry.width(), geometry.height(),
+      &surface_, "QUbuntuWindow", geometry.width(), geometry.height(),
       static_cast<SurfaceRole>(role), flags, eventCallback, this);
   if (geometry.x() != 0 || geometry.y() != 0)
     ubuntu_application_ui_move_surface_to(surface_, geometry.x(), geometry.y());
@@ -81,8 +81,8 @@ void QHybrisWindow::createWindow() {
   QPlatformWindow::setGeometry(geometry);
 }
 
-void QHybrisWindow::moveResize(const QRect& rect) {
-  DLOG("QHybrisWindow::moveResize (this=%p, x=%d, y=%d, w=%d, h=%d)", this, rect.x(), rect.y(),
+void QUbuntuWindow::moveResize(const QRect& rect) {
+  DLOG("QUbuntuWindow::moveResize (this=%p, x=%d, y=%d, w=%d, h=%d)", this, rect.x(), rect.y(),
        rect.width(), rect.height());
   ubuntu_application_ui_move_surface_to(surface_, rect.x(), rect.y());
   ubuntu_application_ui_resize_surface_to(surface_, rect.width(), rect.height());
@@ -90,41 +90,41 @@ void QHybrisWindow::moveResize(const QRect& rect) {
   QPlatformWindow::setGeometry(rect);
 }
 
-Qt::WindowState QHybrisWindow::setWindowState(Qt::WindowState state) {
-  DLOG("QHybrisWindow::setWindowState (this=%p, state=%d)", this, state);
+void QUbuntuWindow::setWindowState(Qt::WindowState state) {
+  DLOG("QUbuntuWindow::setWindowState (this=%p, state=%d)", this, state);
   if (state == state_)
-    return state;
+    return;
 
   switch (state) {
     case Qt::WindowNoState: {
       DLOG("setting window state: 'NoState'");
       moveResize(geometry_);
       state_ = Qt::WindowNoState;
-      return Qt::WindowNoState;
+      break;
     }
     case Qt::WindowFullScreen: {
       DLOG("setting window state: 'FullScreen'");
       moveResize(screen()->geometry());
       state_ = Qt::WindowFullScreen;
-      return Qt::WindowFullScreen;
+      break;
     }
     case Qt::WindowMaximized: {
       DLOG("setting window state: 'Maximized'");
       moveResize(screen()->availableGeometry());
       state_ = Qt::WindowMaximized;
-      return Qt::WindowMaximized;
+      break;
     }
     case Qt::WindowActive:
     case Qt::WindowMinimized:
     default: {
       DLOG("setting window state: 'Active|Minimized'");
-      return state_;
+      break;
     }
   }
 }
 
-void QHybrisWindow::setGeometry(const QRect& rect) {
-  DLOG("QHybrisWindow::setGeometry (this=%p)", this);
+void QUbuntuWindow::setGeometry(const QRect& rect) {
+  DLOG("QUbuntuWindow::setGeometry (this=%p)", this);
   if (systemSession_) {
     // Non-system sessions can't resize the window geometry.
     geometry_ = rect;
@@ -133,11 +133,11 @@ void QHybrisWindow::setGeometry(const QRect& rect) {
   }
 }
 
-void QHybrisWindow::setVisible(bool visible) {
-  DLOG("QHybrisWindow::setVisible (this=%p, visible=%s)", this, visible ? "true" : "false");
+void QUbuntuWindow::setVisible(bool visible) {
+  DLOG("QUbuntuWindow::setVisible (this=%p, visible=%s)", this, visible ? "true" : "false");
   if (visible) {
     ubuntu_application_ui_show_surface(surface_);
-    QWindowSystemInterface::handleSynchronousExposeEvent(window(), QRect());
+    QWindowSystemInterface::handleExposeEvent(window(), QRect());
   } else {
     ubuntu_application_ui_hide_surface(surface_);
   }

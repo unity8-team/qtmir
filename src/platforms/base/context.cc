@@ -25,7 +25,7 @@ static void printOpenGLESConfig() {
 }
 #endif
 
-QHybrisBaseContext::QHybrisBaseContext(QHybrisBaseScreen* screen) {
+QUbuntuBaseContext::QUbuntuBaseContext(QUbuntuBaseScreen* screen) {
   DASSERT(screen != NULL);
   eglDisplay_ = screen->eglDisplay();
   screen_ = screen;
@@ -39,18 +39,18 @@ QHybrisBaseContext::QHybrisBaseContext(QHybrisBaseScreen* screen) {
   ASSERT((eglContext_ = eglCreateContext(
       eglDisplay_, screen->eglConfig(), EGL_NO_CONTEXT, attribs.constData())) != EGL_NO_CONTEXT);
 
-  DLOG("QHybrisBaseContext::QHybrisBaseContext (this=%p, screen=%p)", this, screen);
+  DLOG("QUbuntuBaseContext::QUbuntuBaseContext (this=%p, screen=%p)", this, screen);
 }
 
-QHybrisBaseContext::~QHybrisBaseContext() {
-  DLOG("QHybrisBaseContext::~QHybrisBaseContext");
+QUbuntuBaseContext::~QUbuntuBaseContext() {
+  DLOG("QUbuntuBaseContext::~QUbuntuBaseContext");
   ASSERT(eglDestroyContext(eglDisplay_, eglContext_) == EGL_TRUE);
 }
 
-bool QHybrisBaseContext::makeCurrent(QPlatformSurface* surface) {
-  // DLOG("QHybrisBaseContext::makeCurrent (this=%p, surface=%p)", this, surface);
+bool QUbuntuBaseContext::makeCurrent(QPlatformSurface* surface) {
+  // DLOG("QUbuntuBaseContext::makeCurrent (this=%p, surface=%p)", this, surface);
   DASSERT(surface->surface()->surfaceType() == QSurface::OpenGLSurface);
-  EGLSurface eglSurface = static_cast<QHybrisBaseWindow*>(surface)->eglSurface();
+  EGLSurface eglSurface = static_cast<QUbuntuBaseWindow*>(surface)->eglSurface();
 #if defined(QT_NO_DEBUG)
   eglBindAPI(EGL_OPENGL_ES_API);
   eglMakeCurrent(eglDisplay_, eglSurface, eglSurface, eglContext_);
@@ -62,8 +62,8 @@ bool QHybrisBaseContext::makeCurrent(QPlatformSurface* surface) {
   return true;
 }
 
-void QHybrisBaseContext::doneCurrent() {
-  DLOG("QHybrisBaseContext::doneCurrent (this=%p)", this);
+void QUbuntuBaseContext::doneCurrent() {
+  DLOG("QUbuntuBaseContext::doneCurrent (this=%p)", this);
 #if defined(QT_NO_DEBUG)
   eglBindAPI(EGL_OPENGL_ES_API);
   eglMakeCurrent(eglDisplay_, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
@@ -73,9 +73,9 @@ void QHybrisBaseContext::doneCurrent() {
 #endif
 }
 
-void QHybrisBaseContext::swapBuffers(QPlatformSurface* surface) {
-  // DLOG("QHybrisBaseContext::swapBuffers (this=%p, surface=%p)", this, surface);
-  EGLSurface eglSurface = static_cast<QHybrisBaseWindow*>(surface)->eglSurface();
+void QUbuntuBaseContext::swapBuffers(QPlatformSurface* surface) {
+  // DLOG("QUbuntuBaseContext::swapBuffers (this=%p, surface=%p)", this, surface);
+  EGLSurface eglSurface = static_cast<QUbuntuBaseWindow*>(surface)->eglSurface();
 #if defined(QT_NO_DEBUG)
   eglBindAPI(EGL_OPENGL_ES_API);
   eglSwapBuffers(eglDisplay_, eglSurface);
@@ -85,8 +85,8 @@ void QHybrisBaseContext::swapBuffers(QPlatformSurface* surface) {
 #endif
 }
 
-void (*QHybrisBaseContext::getProcAddress(const QByteArray& procName)) () {
-  DLOG("QHybrisBaseContext::getProcAddress (this=%p, procName=%s)", this, procName.constData());
+void (*QUbuntuBaseContext::getProcAddress(const QByteArray& procName)) () {
+  DLOG("QUbuntuBaseContext::getProcAddress (this=%p, procName=%s)", this, procName.constData());
 #if defined(QT_NO_DEBUG)
   eglBindAPI(EGL_OPENGL_ES_API);
 #else

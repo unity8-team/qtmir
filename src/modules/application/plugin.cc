@@ -1,7 +1,7 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-#include <Qt/QtQml>
+#include <QtQml/QtQml>
 #include <QtQuick/QQuickWindow>
 #include "application.h"
 #include "application_manager.h"

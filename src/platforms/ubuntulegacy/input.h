@@ -1,19 +1,19 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-#ifndef QHYBRISLEGACYINPUT_H
-#define QHYBRISLEGACYINPUT_H
+#ifndef QUBUNTULEGACYINPUT_H
+#define QUBUNTULEGACYINPUT_H
 
 #include "base/input.h"
 #include <cstring>  // input_stack_compatibility_layer.h needs this for size_t.
 #include <input/input_stack_compatibility_layer.h>
 
-class QHybrisLegacyIntegration;
+class QUbuntuLegacyIntegration;
 
-class QHybrisLegacyInput : public QHybrisBaseInput {
+class QUbuntuLegacyInput : public QUbuntuBaseInput {
  public:
-  QHybrisLegacyInput(QHybrisLegacyIntegration* integration);
-  ~QHybrisLegacyInput();
+  QUbuntuLegacyInput(QUbuntuLegacyIntegration* integration);
+  ~QUbuntuLegacyInput();
 
   QAtomicInt stopping_;
 
@@ -22,4 +22,4 @@ class QHybrisLegacyInput : public QHybrisBaseInput {
   AndroidEventListener listener_;
 };
 
-#endif  // QHYBRISLEGACYINPUT_H
+#endif  // QUBUNTULEGACYINPUT_H

@@ -14,31 +14,31 @@ static void resumedCallback(void* context) {
   DLOG("resumedCallback (context=%p)", context);
   DASSERT(context != NULL);
   // FIXME(loicm) Add support for resumed callback.
-  // QHybrisScreen* screen = static_cast<QHybrisScreen*>(context);
+  // QUbuntuScreen* screen = static_cast<QUbuntuScreen*>(context);
 }
 
 static void suspendedCallback(void* context) {
   DLOG("suspendedCallback (context=%p)", context);
   DASSERT(context != NULL);
   // FIXME(loicm) Add support for suspended callback.
-  // QHybrisScreen* screen = static_cast<QHybrisScreen*>(context);
+  // QUbuntuScreen* screen = static_cast<QUbuntuScreen*>(context);
 }
 
 static void focusedCallback(void* context) {
   DLOG("focusedCallback (context=%p)", context);
   DASSERT(context != NULL);
   // FIXME(loicm) Add support for focused callback.
-  // QHybrisScreen* screen = static_cast<QHybrisScreen*>(context);
+  // QUbuntuScreen* screen = static_cast<QUbuntuScreen*>(context);
 }
 
 static void unfocusedCallback(void* context) {
   DLOG("unfocusedCallback (context=%p)", context);
   DASSERT(context != NULL);
   // FIXME(loicm) Add support for unfocused callback.
-  // QHybrisScreen* screen = static_cast<QHybrisScreen*>(context);
+  // QUbuntuScreen* screen = static_cast<QUbuntuScreen*>(context);
 }
 
-QHybrisIntegration::QHybrisIntegration() {
+QUbuntuIntegration::QUbuntuIntegration() {
   // Init ubuntu application UI.
   QStringList args = QCoreApplication::arguments();
   argc_ = args.size() + 1;
@@ -49,23 +49,23 @@ QHybrisIntegration::QHybrisIntegration() {
   ubuntu_application_ui_init(argc_ - 1, argv_);
 
   // Create default screen.
-  screen_ = new QHybrisScreen();
+  screen_ = new QUbuntuScreen();
   screenAdded(screen_);
 
   // Initialize input.
-  if (qEnvironmentVariableIsEmpty("QTHYBRIS_NO_INPUT")) {
-    input_ = new QHybrisInput(this);
+  if (qEnvironmentVariableIsEmpty("QTUBUNTU_NO_INPUT")) {
+    input_ = new QUbuntuInput(this);
     inputContext_ = QPlatformInputContextFactory::create();
   } else {
     input_ = NULL;
     inputContext_ = NULL;
   }
 
-  DLOG("QHybrisIntegration::QHybrisIntegration (this=%p)", this);
+  DLOG("QUbuntuIntegration::QUbuntuIntegration (this=%p)", this);
 }
 
-QHybrisIntegration::~QHybrisIntegration() {
-  DLOG("QHybrisIntegration::~QHybrisIntegration");
+QUbuntuIntegration::~QUbuntuIntegration() {
+  DLOG("QUbuntuIntegration::~QUbuntuIntegration");
   delete input_;
   delete inputContext_;
   delete screen_;
@@ -74,13 +74,13 @@ QHybrisIntegration::~QHybrisIntegration() {
   delete [] argv_;
 }
 
-QPlatformWindow* QHybrisIntegration::createPlatformWindow(QWindow* window) const {
-  DLOG("QHybrisIntegration::createPlatformWindow const (this=%p, window=%p)", this, window);
-  return const_cast<QHybrisIntegration*>(this)->createPlatformWindow(window);
+QPlatformWindow* QUbuntuIntegration::createPlatformWindow(QWindow* window) const {
+  DLOG("QUbuntuIntegration::createPlatformWindow const (this=%p, window=%p)", this, window);
+  return const_cast<QUbuntuIntegration*>(this)->createPlatformWindow(window);
 }
 
-QPlatformWindow* QHybrisIntegration::createPlatformWindow(QWindow* window) {
-  DLOG("QHybrisIntegration::createPlatformWindow (this=%p, window=%p)", this, window);
+QPlatformWindow* QUbuntuIntegration::createPlatformWindow(QWindow* window) {
+  DLOG("QUbuntuIntegration::createPlatformWindow (this=%p, window=%p)", this, window);
   static uint sessionType;
 
   // Start a session before creating the first window.
@@ -109,7 +109,7 @@ QPlatformWindow* QHybrisIntegration::createPlatformWindow(QWindow* window) {
         formFactorHintString[ubuntu_application_ui_setup_get_form_factor_hint()]);
 #endif
     SessionCredentials credentials = {
-      static_cast<SessionType>(sessionType), APPLICATION_SUPPORTS_OVERLAYED_MENUBAR, "QtHybris",
+      static_cast<SessionType>(sessionType), APPLICATION_SUPPORTS_OVERLAYED_MENUBAR, "QtUbuntu",
       resumedCallback, suspendedCallback, focusedCallback, unfocusedCallback, this
     };
     ubuntu_application_ui_start_a_new_session(&credentials);
@@ -118,8 +118,8 @@ QPlatformWindow* QHybrisIntegration::createPlatformWindow(QWindow* window) {
   }
 
   // Create the window.
-  QPlatformWindow* platformWindow = new QHybrisWindow(
-      window, static_cast<QHybrisScreen*>(screen_), input_, static_cast<bool>(sessionType));
+  QPlatformWindow* platformWindow = new QUbuntuWindow(
+      window, static_cast<QUbuntuScreen*>(screen_), input_, static_cast<bool>(sessionType));
   platformWindow->requestActivateWindow();
   return platformWindow;
 }

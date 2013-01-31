@@ -7,8 +7,8 @@
 #include <qpa/qwindowsysteminterface.h>
 #include <surface_flinger/surface_flinger_compatibility_layer.h>
 
-QHybrisLegacyWindow::QHybrisLegacyWindow(QWindow* w, QHybrisLegacyScreen* screen)
-    : QHybrisBaseWindow(w, screen)
+QUbuntuLegacyWindow::QUbuntuLegacyWindow(QWindow* w, QUbuntuLegacyScreen* screen)
+    : QUbuntuBaseWindow(w, screen)
     , geometry_(window()->geometry())
     , layer_((INT_MAX / 2) + winId()) {
   // FIXME(loicm) SF compat set_size() function doesn't seem to work as expected, surfaces are
@@ -16,84 +16,85 @@ QHybrisLegacyWindow::QHybrisLegacyWindow(QWindow* w, QHybrisLegacyScreen* screen
   QRect screenGeometry(screen->availableGeometry());
   SfSurfaceCreationParameters parameters = {
     screenGeometry.x(), screenGeometry.y(), screenGeometry.width(), screenGeometry.height(), -1,
-    layer_, 1.0f, false, "QHybrisLegacyWindow"
+    layer_, 1.0f, false, "QUbuntuLegacyWindow"
   };
   // SfSurfaceCreationParameters parameters = {
   //   geometry_.x(), geometry_.y(), geometry_.width(), geometry_.height(), -1, layer_, 1.0f, false,
-  //   "QHybrisLegacyWindow"
+  //   "QUbuntuLegacyWindow"
   // };
   ASSERT((sfSurface_ = sf_surface_create(screen->sfClient(), &parameters)) != NULL);
   createSurface(sf_surface_get_egl_native_window(sfSurface_));
   setWindowState(window()->windowState());
-  DLOG("QHybrisLegacyWindow::QHybrisLegacyWindow (this=%p, w=%p, screen=%p)", this, w, screen);
+  DLOG("QUbuntuLegacyWindow::QUbuntuLegacyWindow (this=%p, w=%p, screen=%p)", this, w, screen);
 }
 
-QHybrisLegacyWindow::~QHybrisLegacyWindow() {
-  DLOG("QHybrisLegacyWindow::~QHybrisLegacyWindow");
+QUbuntuLegacyWindow::~QUbuntuLegacyWindow() {
+  DLOG("QUbuntuLegacyWindow::~QUbuntuLegacyWindow");
   // FIXME(loicm) Invalid because the struct is forward declarated, we need a way to clean the
   //     handle correctly.
   // delete sfSurface_;
 }
 
-Qt::WindowState QHybrisLegacyWindow::setWindowState(Qt::WindowState state) {
+void QUbuntuLegacyWindow::setWindowState(Qt::WindowState state) {
   if (state == state_)
-    return state;
+    return;
+
   switch (state) {
     case Qt::WindowNoState: {
-      DLOG("QHybrisLegacyWindow::setWindowState (this=%p, state='NoState')", this);
+      DLOG("QUbuntuLegacyWindow::setWindowState (this=%p, state='NoState')", this);
       moveResize(geometry_);
       state_ = Qt::WindowNoState;
-      return Qt::WindowNoState;
+      break;
     }
     case Qt::WindowFullScreen: {
-      DLOG("QHybrisLegacyWindow::setWindowState (this=%p, state='FullScreen')", this);
+      DLOG("QUbuntuLegacyWindow::setWindowState (this=%p, state='FullScreen')", this);
       QRect screenGeometry(screen()->availableGeometry());
       moveResize(screenGeometry);
       state_ = Qt::WindowFullScreen;
-      return Qt::WindowFullScreen;
+      break;
     }
     case Qt::WindowActive:
     case Qt::WindowMinimized:
     case Qt::WindowMaximized:
     default: {
-      DLOG("QHybrisLegacyWindow::setWindowState (this=%p, state='Active|Minimized|Maximized')", this);
-      return state_;
+      DLOG("QUbuntuLegacyWindow::setWindowState (this=%p, state='Active|Minimized|Maximized')", this);
+      break;
     }
   }
 }
 
-void QHybrisLegacyWindow::setGeometry(const QRect& rect) {
-  DLOG("QHybrisLegacyWindow::setGeometry (this=%p)", this);
+void QUbuntuLegacyWindow::setGeometry(const QRect& rect) {
+  DLOG("QUbuntuLegacyWindow::setGeometry (this=%p)", this);
   geometry_ = rect;
   if (state_ != Qt::WindowFullScreen)
     moveResize(rect);
 }
 
-void QHybrisLegacyWindow::setOpacity(qreal level) {
-  DLOG("QHybrisLegacyWindow::setOpacity (this=%p, level=%.2f)", this, level);
+void QUbuntuLegacyWindow::setOpacity(qreal level) {
+  DLOG("QUbuntuLegacyWindow::setOpacity (this=%p, level=%.2f)", this, level);
   sf_client_begin_transaction(screen_->sfClient());
   sf_surface_set_alpha(sfSurface_, level);
   sf_client_end_transaction(screen_->sfClient());
 }
 
-void QHybrisLegacyWindow::raise() {
-  DLOG("QHybrisLegacyWindow::raise (this=%p)", this);
+void QUbuntuLegacyWindow::raise() {
+  DLOG("QUbuntuLegacyWindow::raise (this=%p)", this);
   layer_ = qMax(0, qMin(layer_ + 1, INT_MAX));
   sf_client_begin_transaction(screen_->sfClient());
   sf_surface_set_layer(sfSurface_, layer_);
   sf_client_end_transaction(screen_->sfClient());
 }
 
-void QHybrisLegacyWindow::lower() {
-  DLOG("QHybrisLegacyWindow::lower (this=%p)", this);
+void QUbuntuLegacyWindow::lower() {
+  DLOG("QUbuntuLegacyWindow::lower (this=%p)", this);
   layer_ = qMax(0, qMin(layer_ - 1, INT_MAX));
   sf_client_begin_transaction(screen_->sfClient());
   sf_surface_set_alpha(sfSurface_, layer_);
   sf_client_end_transaction(screen_->sfClient());
 }
 
-void QHybrisLegacyWindow::moveResize(const QRect& rect) {
-  DLOG("QHybrisLegacyWindow::moveResize (this=%p, x=%d, y=%d, w=%d, h=%d)", this, rect.x(),
+void QUbuntuLegacyWindow::moveResize(const QRect& rect) {
+  DLOG("QUbuntuLegacyWindow::moveResize (this=%p, x=%d, y=%d, w=%d, h=%d)", this, rect.x(),
        rect.y(), rect.width(), rect.height());
   // FIXME(loicm) SF compat set_size() function doesn't seem to work as expected, surfaces are
   //     created fullscreen and never moved nor resized for now.

@@ -1,20 +1,20 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-#ifndef QHYBRISBASEINPUT_H
-#define QHYBRISBASEINPUT_H
+#ifndef QUBUNTUBASEINPUT_H
+#define QUBUNTUBASEINPUT_H
 
 #include <qpa/qwindowsysteminterface.h>
 
-class QHybrisBaseIntegration;
+class QUbuntuBaseIntegration;
 struct Event;
 
-class QHybrisBaseInput : public QObject {
+class QUbuntuBaseInput : public QObject {
   Q_OBJECT
 
  public:
-  QHybrisBaseInput(QHybrisBaseIntegration* integration, int maxPointCount);
-  ~QHybrisBaseInput();
+  QUbuntuBaseInput(QUbuntuBaseIntegration* integration, int maxPointCount);
+  ~QUbuntuBaseInput();
 
   // QObject methods.
   void customEvent(QEvent* event);
@@ -25,18 +25,18 @@ class QHybrisBaseInput : public QObject {
                               Qt::KeyboardModifiers modifiers, const QString& text);
 
   void postEvent(QWindow* window, const Event* event);
-  QHybrisBaseIntegration* integration() const { return integration_; }
+  QUbuntuBaseIntegration* integration() const { return integration_; }
 
  private:
   void dispatchMotionEvent(QWindow* window, const Event* event);
   void dispatchKeyEvent(QWindow* window, const Event* event);
   void dispatchHWSwitchEvent(QWindow* window, const Event* event);
 
-  QHybrisBaseIntegration* integration_;
+  QUbuntuBaseIntegration* integration_;
   QTouchDevice* touchDevice_;
   QList<QWindowSystemInterface::TouchPoint> touchPoints_;
   const QByteArray eventFilterType_;
   const QEvent::Type eventType_;
 };
 
-#endif  // QHYBRISBASEINPUT_H
+#endif  // QUBUNTUBASEINPUT_H

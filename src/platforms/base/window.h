@@ -1,18 +1,18 @@
 // Copyright © 2012 Canonical Ltd
 // FIXME(loicm) Add copyright notice here.
 
-#ifndef QHYBRISBASEWINDOW_H
-#define QHYBRISBASEWINDOW_H
+#ifndef QUBUNTUBASEWINDOW_H
+#define QUBUNTUBASEWINDOW_H
 
 #include <qpa/qplatformwindow.h>
 #include <EGL/egl.h>
 
-class QHybrisBaseScreen;
+class QUbuntuBaseScreen;
 
-class QHybrisBaseWindow : public QPlatformWindow {
+class QUbuntuBaseWindow : public QPlatformWindow {
  public:
-  QHybrisBaseWindow(QWindow* w, QHybrisBaseScreen* screen);
-  ~QHybrisBaseWindow();
+  QUbuntuBaseWindow(QWindow* w, QUbuntuBaseScreen* screen);
+  ~QUbuntuBaseWindow();
 
   // QPlatformWindow methods.
   WId winId() const { return id_; }
@@ -22,9 +22,9 @@ class QHybrisBaseWindow : public QPlatformWindow {
   EGLSurface eglSurface() const { return eglSurface_; }
 
  private:
-  QHybrisBaseScreen* screen_;
+  QUbuntuBaseScreen* screen_;
   EGLSurface eglSurface_;
   WId id_;
 };
 
-#endif  // QHYBRISBASEWINDOW_H
+#endif  // QUBUNTUBASEWINDOW_H

@@ -50,7 +50,7 @@ static void printEglConfig(EGLDisplay display, EGLConfig config) {
 }
 #endif
 
-QHybrisBaseScreen::QHybrisBaseScreen()
+QUbuntuBaseScreen::QUbuntuBaseScreen()
     : format_(QImage::Format_RGB32)
     , depth_(32)
     , surfaceFormat_()
@@ -70,7 +70,7 @@ QHybrisBaseScreen::QHybrisBaseScreen()
   surfaceFormat_.setAlphaBufferSize(8);
   surfaceFormat_.setDepthBufferSize(24);
   surfaceFormat_.setStencilBufferSize(8);
-  if (!qEnvironmentVariableIsEmpty("QTHYBRIS_MULTISAMPLE")) {
+  if (!qEnvironmentVariableIsEmpty("QTUBUNTU_MULTISAMPLE")) {
     surfaceFormat_.setSamples(4);
     DLOG("setting MSAA to 4 samples");
   }
@@ -81,7 +81,7 @@ QHybrisBaseScreen::QHybrisBaseScreen()
 
   // Set vblank swap interval.
   int swapInterval = kSwapInterval;
-  QByteArray swapIntervalString = qgetenv("QTHYBRIS_SWAPINTERVAL");
+  QByteArray swapIntervalString = qgetenv("QTUBUNTU_SWAPINTERVAL");
   if (!swapIntervalString.isEmpty()) {
     bool ok;
     swapInterval = swapIntervalString.toInt(&ok);
@@ -91,10 +91,10 @@ QHybrisBaseScreen::QHybrisBaseScreen()
   DLOG("setting swap interval to %d", swapInterval);
   eglSwapInterval(eglDisplay_, swapInterval);
 
-  DLOG("QHybrisBaseScreen::QHybrisBaseScreen (this=%p)", this);
+  DLOG("QUbuntuBaseScreen::QUbuntuBaseScreen (this=%p)", this);
 }
 
-QHybrisBaseScreen::~QHybrisBaseScreen() {
+QUbuntuBaseScreen::~QUbuntuBaseScreen() {
   eglTerminate(eglDisplay_);
-  DLOG("QHybrisBaseScreen::~QHybrisBaseScreen");
+  DLOG("QUbuntuBaseScreen::~QUbuntuBaseScreen");
 }

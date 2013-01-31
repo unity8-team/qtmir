@@ -1,9 +1,10 @@
-Source: qthybris
+Source: qtubuntu
 Priority: extra
 Maintainer: Ricardo Mendoza <ricardo.mendoza@canonical.com>
 Build-Depends:  debhelper (>= 8.0.0),
-                qtdeclarative,
-                qtbase,
+                qt5-default,
+                qtbase5-private-dev,
+                qtdeclarative5-private-dev,
                 libudev-dev,
                 libgles2-mesa-dev,
                 libegl1-mesa-dev,
@@ -17,12 +18,24 @@ Build-Depends:  debhelper (>= 8.0.0),
 Standards-Version: 3.9.3
 Section: libs
 
-Package: qthybris
+Package: qtubuntu
+Replaces: qthybris (<< 0.37)
+Breaks: qthybris (<< 0.37)
 Section: libs
 Architecture: armel armhf
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Qt plugins for Ubuntu application API
- QtHybris is a set of Qt5 plugins based on libhybris and the Ubuntu
- application API. It contains Qt Platform Abstraction (QPA) plugins
- based on AAL+ and the compatibility layers. It also contains a QML
- plugin that can be used to access Ubuntu application API features.
+ QtUbuntu is a set of Qt5 components for the Ubuntu Application
+ API. It contains a QPA (Qt Platform Abstraction) plugin based on the
+ Ubuntu Application API and a legacy QPA plugin based on the
+ compatibility layers. It also provides Qt bindings for Ubuntu
+ Application API features that are not exposed through the QPA
+ plugins.
+
+Package: qthybris
+Depends: qtubuntu, ${misc:Depends}
+Architecture: all
+Section: oldlibs
+Description: transitional dummy package
+ This is a transitional dummy package for the qthybris -> qtubuntu
+ transition.
