@@ -90,35 +90,35 @@ void QUbuntuWindow::moveResize(const QRect& rect) {
   QPlatformWindow::setGeometry(rect);
 }
 
-Qt::WindowState QUbuntuWindow::setWindowState(Qt::WindowState state) {
+void QHybrisWindow::setWindowState(Qt::WindowState state) {
   DLOG("QUbuntuWindow::setWindowState (this=%p, state=%d)", this, state);
   if (state == state_)
-    return state;
+    return;
 
   switch (state) {
     case Qt::WindowNoState: {
       DLOG("setting window state: 'NoState'");
       moveResize(geometry_);
       state_ = Qt::WindowNoState;
-      return Qt::WindowNoState;
+      break;
     }
     case Qt::WindowFullScreen: {
       DLOG("setting window state: 'FullScreen'");
       moveResize(screen()->geometry());
       state_ = Qt::WindowFullScreen;
-      return Qt::WindowFullScreen;
+      break;
     }
     case Qt::WindowMaximized: {
       DLOG("setting window state: 'Maximized'");
       moveResize(screen()->availableGeometry());
       state_ = Qt::WindowMaximized;
-      return Qt::WindowMaximized;
+      break;
     }
     case Qt::WindowActive:
     case Qt::WindowMinimized:
     default: {
       DLOG("setting window state: 'Active|Minimized'");
-      return state_;
+      break;
     }
   }
 }
@@ -137,7 +137,7 @@ void QUbuntuWindow::setVisible(bool visible) {
   DLOG("QUbuntuWindow::setVisible (this=%p, visible=%s)", this, visible ? "true" : "false");
   if (visible) {
     ubuntu_application_ui_show_surface(surface_);
-    QWindowSystemInterface::handleSynchronousExposeEvent(window(), QRect());
+    QWindowSystemInterface::handleExposeEvent(window(), QRect());
   } else {
     ubuntu_application_ui_hide_surface(surface_);
   }

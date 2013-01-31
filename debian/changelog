@@ -1,3 +1,9 @@
+qtubuntu (0.38) quantal; urgency=low
+
+  * remerge from trunk, new release
+
+ -- Bill Filler <bill.filler@canonical.com>  Thu, 31 Jan 2013 09:02:32 -0500
+
 qtubuntu (0.37) quantal; urgency=low
 
   * Renaming package from qthybris
@@ -13,9 +19,6 @@ qthybris (0.36) quantal; urgency=low
 qthybris (0.35) quantal; urgency=low
 
   * fix for hardcoded screen size lp:1097798 
-
- -- Bill Filler <bill.filler@canonical.com>  Thu, 10 Jan 2013 16:23:41 -0500
-
 qthybris (0.34) quantal; urgency=low
 
   * Bumped version.

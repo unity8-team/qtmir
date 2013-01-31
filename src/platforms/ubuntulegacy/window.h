@@ -17,7 +17,7 @@ class QUbuntuLegacyWindow : public QUbuntuBaseWindow {
 
   // QPlatformWindow methods.
   void setGeometry(const QRect&);
-  Qt::WindowState setWindowState(Qt::WindowState state);
+  void setWindowState(Qt::WindowState state);
   void setOpacity(qreal level);
   void raise();
   void lower();

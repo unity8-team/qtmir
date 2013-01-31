@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
     engine->addImportPath(imports.at(i));
 
   view->setColor(Qt::transparent);
-  view->setWindowTitle("QML Scene Ubuntu");
+  view->setTitle("QML Scene Ubuntu");
   view->setResizeMode(QQuickView::SizeRootObjectToView);
   view->setSource(url);
   if (fullscreen)
