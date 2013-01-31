@@ -57,13 +57,8 @@ void QUbuntuLegacyWindow::setWindowState(Qt::WindowState state) {
     case Qt::WindowMinimized:
     case Qt::WindowMaximized:
     default: {
-<<<<<<< TREE
       DLOG("QUbuntuLegacyWindow::setWindowState (this=%p, state='Active|Minimized|Maximized')", this);
-      return state_;
-=======
-      DLOG("QHybrisLegacyWindow::setWindowState (this=%p, state='Active|Minimized|Maximized')", this);
       break;
->>>>>>> MERGE-SOURCE
     }
   }
 }
