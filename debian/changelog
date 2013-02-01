@@ -1,3 +1,10 @@
+qtubuntu (0.39) quantal; urgency=low
+
+  * Adding qtubuntu files to the qtubuntu package (since the install was
+    empty)
+
+ -- Ricardo Salveti de Araujo <ricardo.salveti@canonical.com>  Thu, 31 Jan 2013 20:59:03 -0500
+
 qtubuntu (0.38) quantal; urgency=low
 
   * remerge from trunk, new release
