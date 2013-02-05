@@ -34,7 +34,7 @@ Description: Qt plugins for Ubuntu application API
 
 Package: qthybris
 Depends: qtubuntu, ${misc:Depends}
-Architecture: all
+Architecture: armel armhf
 Section: oldlibs
 Description: transitional dummy package
  This is a transitional dummy package for the qthybris -> qtubuntu
