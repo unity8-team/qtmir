@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <QtWidgets/QApplication>
+#include <QtGui/QGuiApplication>
 #include <QtGui/QClipboard>
 #include <cstdio>
 
@@ -25,7 +25,7 @@ static void usage() {
           "  Options:\n"
           "    -c or --copy \"text\"     ... Copy text to clipboard\n"
           "    -p or --paste           ... Paste text from clipboard\n"
-          "    -p or --paste           ... Show that help\n");
+          "    -h or --help            ... Show that help\n");
 }
 
 int main(int argc, char* argv[]) {
@@ -49,13 +49,12 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  QApplication app(argc, argv);
+  QGuiApplication app(argc, argv);
   if (operation == kCopy) {
-    QApplication::clipboard()->clear();
-    QApplication::clipboard()->setText(text);
+    QGuiApplication::clipboard()->setText(text);
     fprintf(stdout, "Copied: \"%s\"\n", text.toLatin1().data());
   } else {
-    fprintf(stdout, "Pasted: \"%s\"\n", QApplication::clipboard()->text().toLatin1().data());
+    fprintf(stdout, "Pasted: \"%s\"\n", QGuiApplication::clipboard()->text().toLatin1().data());
   }
 
   return 0;

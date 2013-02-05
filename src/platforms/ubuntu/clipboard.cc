@@ -96,7 +96,8 @@ void QUbuntuClipboard::setMimeData(QMimeData* mimeData, QClipboard::Mode mode) {
   // formats and the non NULL-terminated data.
   for (int i = 0; i < count; i++)
     bufferSize += formats[i].size() + 1 + mimeData->data(formats[i]).size();
-  // FIXME(loicm) Implement max buffer size limitation. Remove ASSERT() before release.
+  // FIXME(loicm) Implement max buffer size limitation.
+  // FIXME(loicm) Remove ASSERT before release.
   ASSERT(bufferSize <= maxBufferSize);
 
   // Serialize data.
