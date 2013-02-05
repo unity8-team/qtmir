@@ -59,7 +59,8 @@ QMimeData* QUbuntuClipboard::mimeData(QClipboard::Mode mode) {
   // Deserialize, update and return mime data taking care of incorrectly
   // formatted input.
   mimeData_->clear();
-  if (static_cast<size_t>(size) > sizeof(int)) {  // Should be at least that big to read the count.
+  if (static_cast<size_t>(size) > sizeof(int)  // Should be at least that big to read the count.
+      && data != NULL) {
     const char* const buffer = reinterpret_cast<char*>(data);
     const int* const header = reinterpret_cast<int*>(data);
     const int count = qMin(header[0], maxFormatsCount);
