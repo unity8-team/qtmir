@@ -54,7 +54,7 @@ QMimeData* QUbuntuClipboard::mimeData(QClipboard::Mode mode) {
   // Get clipboard data.
   void* data = NULL;
   int size = 0;
-  ubuntu_application_ui_get_clipboard_content(&data, &static_cast<size_t>(size));
+  ubuntu_application_ui_get_clipboard_content(&data, static_cast<size_t*>(&size));
 
   // Deserialize, update and return mime data taking care of incorrectly
   // formatted input.
