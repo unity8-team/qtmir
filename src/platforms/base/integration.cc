@@ -6,6 +6,7 @@
 #include "backing_store.h"
 #include "screen.h"
 #include "context.h"
+#include "clipboard.h"
 #include "logging.h"
 #include "theme.h"
 #include <QtPlatformSupport/private/qgenericunixfontdatabase_p.h>
@@ -18,7 +19,8 @@ extern "C" void init_hybris();
 QUbuntuBaseIntegration::QUbuntuBaseIntegration()
     : eventDispatcher_(createUnixEventDispatcher())
     , nativeInterface_(new QUbuntuBaseNativeInterface())
-    , fontDb_(new QGenericUnixFontDatabase()) {
+    , fontDb_(new QGenericUnixFontDatabase())
+    , clipboard_(new QUbuntuBaseClipboard()) {
   static bool once = false;
   if (!once) {
     // Init libhybris ensuring the libs are loaded and threading is all setup.
@@ -32,6 +34,7 @@ QUbuntuBaseIntegration::QUbuntuBaseIntegration()
 
 QUbuntuBaseIntegration::~QUbuntuBaseIntegration() {
   DLOG("QUbuntuBaseIntegration::~QUbuntuBaseIntegration");
+  delete clipboard_;
   delete fontDb_;
   delete nativeInterface_;
 }

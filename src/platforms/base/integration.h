@@ -21,6 +21,7 @@ class QUbuntuBaseIntegration : public QPlatformIntegration {
   QPlatformOpenGLContext* createPlatformOpenGLContext(QOpenGLContext* context) const;
   QPlatformOpenGLContext* createPlatformOpenGLContext(QOpenGLContext* context);
   QPlatformFontDatabase* fontDatabase() const { return fontDb_; }
+  QPlatformClipboard* clipboard() const { return clipboard_; }
   QStringList themeNames() const;
   QPlatformTheme* createPlatformTheme(const QString& name) const;
 
@@ -28,6 +29,7 @@ class QUbuntuBaseIntegration : public QPlatformIntegration {
   QAbstractEventDispatcher* eventDispatcher_;
   QPlatformNativeInterface* nativeInterface_;
   QPlatformFontDatabase* fontDb_;
+  QPlatformClipboard* clipboard_;
 };
 
 #endif  // QUBUNTUBASEINTEGRATION_H
