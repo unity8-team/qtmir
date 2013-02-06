@@ -38,6 +38,9 @@ QUbuntuScreen::QUbuntuScreen() {
       kScreenHeight - kStrut.top - kStrut.bottom);
 
   DLOG("QUbuntuScreen::QUbuntuScreen (this=%p)", this);
+
+  // Set the default orientation based on the initial screen dimmensions.
+  nativeOrientation_ = kScreenWidth >= kScreenHeight ? Qt::LandscapeOrientation : Qt::PortraitOrientation;
 }
 
 QUbuntuScreen::~QUbuntuScreen() {
