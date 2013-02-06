@@ -70,7 +70,7 @@ QMimeData* QUbuntuClipboard::mimeData(QClipboard::Mode mode) {
       const int dataOffset = header[i*4+3];
       const int dataSize = header[i*4+4];
       if (formatOffset + formatSize <= size && dataOffset + dataSize <= size) {
-        mimeData_->setData(QLatin1String(&buffer[formatOffset], formatSize),
+        mimeData_->setData(QString(&buffer[formatOffset]),
                            QByteArray(&buffer[dataOffset], dataSize));
       }
     }
