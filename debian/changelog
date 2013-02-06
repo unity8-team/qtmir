@@ -1,3 +1,9 @@
+qtubuntu (0.40) UNRELEASED; urgency=low
+
+  * Updating build-dependency to use the new ubuntu-platform-api package
+
+ -- Ricardo Salveti de Araujo <ricardo.salveti@canonical.com>  Wed, 06 Feb 2013 15:40:59 -0200
+
 qtubuntu (0.39) quantal; urgency=low
 
   * Adding qtubuntu files to the qtubuntu package (since the install was

@@ -25,19 +25,10 @@
 #include <QtGui/private/qguiapplication_p.h>
 #include <QtGui/QOpenGLContext>
 
-extern "C" void init_hybris();
-
 QUbuntuBaseIntegration::QUbuntuBaseIntegration()
     : eventDispatcher_(createUnixEventDispatcher())
     , nativeInterface_(new QUbuntuBaseNativeInterface())
     , fontDb_(new QGenericUnixFontDatabase()) {
-  static bool once = false;
-  if (!once) {
-    // Init libhybris ensuring the libs are loaded and threading is all setup.
-    DLOG("initializing libhybris");
-    init_hybris();
-    once = true;
-  }
   QGuiApplicationPrivate::instance()->setEventDispatcher(eventDispatcher_);
   DLOG("QUbuntuBaseIntegration::QUbuntuBaseIntegration (this=%p)", this);
 }
