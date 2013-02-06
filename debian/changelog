@@ -1,3 +1,9 @@
+qtubuntu (0.40) quantal; urgency=low
+
+  * Bump version.
+
+ -- Jim Hodapp <jim.hodapp@canonical.com>  Wed, 06 Feb 2013 11:03:23 -0500
+
 qtubuntu (0.39) quantal; urgency=low
 
   * Adding qtubuntu files to the qtubuntu package (since the install was
