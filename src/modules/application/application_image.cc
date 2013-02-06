@@ -85,7 +85,7 @@ void ApplicationImage::setSource(Application* source) {
 
 void ApplicationImage::scheduleUpdate() {
   DLOG("ApplicationImage::scheduleUpdate (this=%p)", this);
-  if (source_ != NULL)
+  if (source_ != NULL && source_->state() == Application::Running)
     ubuntu_ui_session_snapshot_running_session_with_id(source_->handle(), snapshotCallback, this);
   else
     update();
@@ -93,7 +93,7 @@ void ApplicationImage::scheduleUpdate() {
 
 void ApplicationImage::paint(QPainter* painter) {
   DLOG("ApplicationImage::paint (this=%p, painter=%p)", this, painter);
-  if (source_ != NULL)
+  if (source_ != NULL && source_->state() == Application::Running)
     painter->drawImage(QRect(0, 0, width(), height()), image_, image_.rect());
 }
 

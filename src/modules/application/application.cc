@@ -17,18 +17,20 @@
 #include "application_manager.h"
 #include "logging.h"
 
-Application::Application(DesktopData* desktopData, QProcess* process, int handle)
+Application::Application(
+    DesktopData* desktopData, qint64 pid, Application::State state, int timerId)
     : desktopData_(desktopData)
-    , process_(process)
-    , handle_(handle) {
+    , pid_(pid)
+    , state_(state)
+    , timerId_(timerId) {
   DASSERT(desktopData != NULL);
-  DLOG("Application::Application (this=%p, desktopData=%p, handle=%d)", this, desktopData, handle);
+  DLOG("Application::Application (this=%p, desktopData=%p, pid=%lld, state=%d, timerId=%d)",
+       this, desktopData, pid, static_cast<int>(state), timerId);
 }
 
 Application::~Application() {
   DLOG("Application::~Application");
   delete desktopData_;
-  delete process_;
 }
 
 QString Application::desktopFile() const {
@@ -51,6 +53,18 @@ QString Application::exec() const {
   return desktopData_->exec();
 }
 
-int Application::handle() const {
-  return handle_;
+qint64 Application::handle() const {
+  return pid_;
+}
+
+Application::State Application::state() const {
+  return state_;
+}
+
+void Application::setState(Application::State state) {
+  DLOG("Application::setState (this=%p, state=%d)", this, static_cast<int>(state));
+  if (state_ != state) {
+    state_ = state;
+    emit stateChanged();
+  }
 }
