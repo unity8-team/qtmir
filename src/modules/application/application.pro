@@ -26,7 +26,6 @@ HEADERS = application_manager.h \
 
 CONFIG += plugin
 
-INCLUDEPATH += /usr/include/hybris
 LIBS += -lubuntu_application_api
 
 target.files += libubuntuapplicationplugin.so qmldir
