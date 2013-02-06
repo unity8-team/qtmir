@@ -1,4 +1,4 @@
-qtubuntu (0.40) UNRELEASED; urgency=low
+qtubuntu (0.40) quantal; urgency=low
 
   * Updating build-dependency to use the new ubuntu-platform-api package
 
