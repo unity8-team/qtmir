@@ -15,12 +15,14 @@ SOURCES = main.cc \
           integration.cc \
           window.cc \
           screen.cc \
-          input.cc
+          input.cc \
+          clipboard.cc
 
 HEADERS = integration.h \
           window.h \
           screen.h \
-          input.h
+          input.h \
+          clipboard.h
 
 CONFIG += plugin link_prl
 

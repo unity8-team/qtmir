@@ -16,6 +16,7 @@
 #include "integration.h"
 #include "window.h"
 #include "input.h"
+#include "base/clipboard.h"
 #include "base/logging.h"
 #include <qpa/qplatforminputcontextfactory_p.h>
 #include <qpa/qplatforminputcontext.h>
@@ -27,7 +28,8 @@ static const int kInputDelay = 1000;
 QUbuntuLegacyIntegration::QUbuntuLegacyIntegration()
     : window_(NULL)
     , screen_(new QUbuntuLegacyScreen())
-    , input_(NULL) {
+    , input_(NULL)
+    , clipboard_(new QUbuntuBaseClipboard()) {
   screenAdded(screen_);
   if (qEnvironmentVariableIsEmpty("QTUBUNTU_NO_INPUT")) {
     // Input initialization needs to be delayed in order to avoid crashes in the input stack.
@@ -47,6 +49,7 @@ QUbuntuLegacyIntegration::QUbuntuLegacyIntegration()
 
 QUbuntuLegacyIntegration::~QUbuntuLegacyIntegration() {
   DLOG("QUbuntuLegacyIntegration::~QUbuntuLegacyIntegration");
+  delete clipboard_;
   delete input_;
   delete inputContext_;
   delete screen_;
