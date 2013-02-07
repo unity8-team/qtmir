@@ -26,8 +26,8 @@ CONFIG += plugin link_prl
 
 PRE_TARGETDEPS = ../base/libubuntubase.a
 
-INCLUDEPATH += .. /usr/include/hybris
-LIBS += -L../base -lubuntubase -lhybris_ics -lubuntu_application_api
+INCLUDEPATH += ..
+LIBS += -L../base -lubuntubase -lubuntu_application_api
 
 OTHER_FILES += ubuntu.json
 

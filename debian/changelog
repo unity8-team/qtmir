@@ -1,8 +1,15 @@
+qtubuntu (0.41) quantal; urgency=low
+
+  * Implemented native orientation for applications to query through
+    the native platform interface.
+
+ -- Ricardo Salveti de Araujo <ricardo.salveti@canonical.com>  Thu, 07 Feb 2013 00:39:39 -0200
+
 qtubuntu (0.40) quantal; urgency=low
 
-  * Bump version.
+  * Updating build-dependency to use the new ubuntu-platform-api package
 
- -- Jim Hodapp <jim.hodapp@canonical.com>  Wed, 06 Feb 2013 11:03:23 -0500
+ -- Ricardo Salveti de Araujo <ricardo.salveti@canonical.com>  Wed, 06 Feb 2013 15:40:59 -0200
 
 qtubuntu (0.39) quantal; urgency=low
 
