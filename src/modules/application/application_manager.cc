@@ -93,7 +93,7 @@ static void sessionRequestedFullscreenCallback(
     ubuntu_ui_session_properties session, void* context) {
   Q_UNUSED(session);
   Q_UNUSED(context);
-  DLOG("sessionFocusedCallback (session=%p, context=%p)", session, context);
+  DLOG("sessionRequestedFullscreenCallback (session=%p, context=%p)", session, context);
   DASSERT(context != NULL);
 }
 
