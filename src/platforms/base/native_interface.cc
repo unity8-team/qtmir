@@ -15,6 +15,7 @@
 
 #include "native_interface.h"
 #include "screen.h"
+#include "ubuntu/screen.h"
 #include "context.h"
 #include "logging.h"
 #include <private/qguiapplication_p.h>
@@ -28,6 +29,7 @@ class QUbuntuBaseResourceMap : public QMap<QByteArray, QUbuntuBaseNativeInterfac
       : QMap<QByteArray, QUbuntuBaseNativeInterface::ResourceType>() {
     insert("egldisplay", QUbuntuBaseNativeInterface::EglDisplay);
     insert("eglcontext", QUbuntuBaseNativeInterface::EglContext);
+    insert("nativeorientation", QUbuntuBaseNativeInterface::NativeOrientation);
   }
 };
 
@@ -40,6 +42,8 @@ QUbuntuBaseNativeInterface::QUbuntuBaseNativeInterface()
 
 QUbuntuBaseNativeInterface::~QUbuntuBaseNativeInterface() {
   DLOG("QUbuntuBaseNativeInterface::~QUbuntuBaseNativeInterface");
+  if (nativeOrientation_)
+    delete nativeOrientation_;
 }
 
 void* QUbuntuBaseNativeInterface::nativeResourceForContext(
@@ -73,6 +77,14 @@ void* QUbuntuBaseNativeInterface::nativeResourceForWindow(
       return static_cast<QUbuntuBaseScreen*>(
           QGuiApplication::primaryScreen()->handle())->eglDisplay();
     }
+  } else if (kResourceType == QUbuntuBaseNativeInterface::NativeOrientation) {
+    // Return the device's native screen orientation.
+    if (window) {
+      nativeOrientation_ = new Qt::ScreenOrientation(static_cast<QUbuntuScreen*>(window->screen()->handle())->nativeOrientation());
+    } else {
+      nativeOrientation_ = new Qt::ScreenOrientation(QGuiApplication::primaryScreen()->handle()->nativeOrientation());
+    }
+    return nativeOrientation_;
   } else {
     return NULL;
   }

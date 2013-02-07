@@ -20,7 +20,7 @@
 
 class QUbuntuBaseNativeInterface : public QPlatformNativeInterface {
  public:
-  enum ResourceType { EglDisplay, EglContext };
+  enum ResourceType { EglDisplay, EglContext, NativeOrientation };
 
   QUbuntuBaseNativeInterface();
   ~QUbuntuBaseNativeInterface();
@@ -34,6 +34,7 @@ class QUbuntuBaseNativeInterface : public QPlatformNativeInterface {
 
  private:
   const QByteArray genericEventFilterType_;
+  Qt::ScreenOrientation *nativeOrientation_;
 };
 
 #endif  // QUBUNTUNATIVEINTERFACE_H
