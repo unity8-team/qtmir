@@ -53,8 +53,8 @@ QMimeData* QUbuntuClipboard::mimeData(QClipboard::Mode mode) {
   DLOG("QUbuntuClipboard::mimeData (this=%p, mode=%d)", this, static_cast<int>(mode));
   // Get clipboard data.
   void* data = NULL;
-  int size = 0;
-  ubuntu_application_ui_get_clipboard_content(&data, static_cast<size_t*>(&size));
+  size_t size = 0;
+  ubuntu_application_ui_get_clipboard_content(&data, &size);
 
   // Deserialize, update and return mime data taking care of incorrectly
   // formatted input.
@@ -65,10 +65,10 @@ QMimeData* QUbuntuClipboard::mimeData(QClipboard::Mode mode) {
     const int* const header = reinterpret_cast<int*>(data);
     const int count = qMin(header[0], maxFormatsCount);
     for (int i = 0; i < count; i++) {
-      const int formatOffset = header[i*4+1];
-      const int formatSize = header[i*4+2];
-      const int dataOffset = header[i*4+3];
-      const int dataSize = header[i*4+4];
+      const unsigned int formatOffset = header[i*4+1];
+      const unsigned int formatSize = header[i*4+2];
+      const unsigned int dataOffset = header[i*4+3];
+      const unsigned int dataSize = header[i*4+4];
       if (formatOffset + formatSize <= size && dataOffset + dataSize <= size) {
         mimeData_->setData(QString(&buffer[formatOffset]),
                            QByteArray(&buffer[dataOffset], dataSize));
