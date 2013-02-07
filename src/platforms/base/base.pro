@@ -18,7 +18,8 @@ SOURCES = integration.cc \
           screen.cc \
           window.cc \
           input.cc \
-          theme.cc
+          theme.cc \
+          clipboard.cc
 
 HEADERS = integration.h \
           backing_store.h \
@@ -28,8 +29,9 @@ HEADERS = integration.h \
           window.h \
           input.h \
           logging.h \
-          theme.h
+          theme.h \
+          clipboard.h
 
 CONFIG += static create_prl egl qpa/genericunixfontdatabase
 
-INCLUDEPATH += /usr/include/hybris
+INCLUDEPATH += .. /usr/include/hybris

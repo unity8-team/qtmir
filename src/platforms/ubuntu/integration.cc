@@ -16,6 +16,7 @@
 #include "integration.h"
 #include "window.h"
 #include "input.h"
+#include "clipboard.h"
 #include "base/logging.h"
 #include <QtCore/QCoreApplication>
 #include <qpa/qplatformnativeinterface.h>
@@ -50,7 +51,8 @@ static void unfocusedCallback(void* context) {
   // QUbuntuScreen* screen = static_cast<QUbuntuScreen*>(context);
 }
 
-QUbuntuIntegration::QUbuntuIntegration() {
+QUbuntuIntegration::QUbuntuIntegration()
+    : clipboard_(new QUbuntuClipboard()) {
   // Init ubuntu application UI.
   QStringList args = QCoreApplication::arguments();
   argc_ = args.size() + 1;
@@ -78,6 +80,7 @@ QUbuntuIntegration::QUbuntuIntegration() {
 
 QUbuntuIntegration::~QUbuntuIntegration() {
   DLOG("QUbuntuIntegration::~QUbuntuIntegration");
+  delete clipboard_;
   delete input_;
   delete inputContext_;
   delete screen_;

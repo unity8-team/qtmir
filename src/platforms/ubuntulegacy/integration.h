@@ -32,6 +32,7 @@ class QUbuntuLegacyIntegration : public QObject, public QUbuntuBaseIntegration {
   QPlatformWindow* createPlatformWindow(QWindow* window) const;
   QPlatformWindow* createPlatformWindow(QWindow* window);
   QPlatformInputContext* inputContext() const { return inputContext_; }
+  QPlatformClipboard* clipboard() const { return clipboard_; }
 
   // New methods.
   // FIXME(loicm) Only one window can be created for now, remove that function when adding support
@@ -46,6 +47,7 @@ class QUbuntuLegacyIntegration : public QObject, public QUbuntuBaseIntegration {
   QPlatformScreen* screen_;
   QUbuntuLegacyInput* input_;
   QPlatformInputContext* inputContext_;
+  QPlatformClipboard* clipboard_;
 };
 
 #endif  // QUBUNTULEGACYINTEGRATION_H

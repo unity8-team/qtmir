@@ -27,9 +27,13 @@ class QUbuntuScreen : public QUbuntuBaseScreen {
   QRect geometry() const { return geometry_; }
   QRect availableGeometry() const { return availableGeometry_; }
 
+  Qt::ScreenOrientation nativeOrientation() const { return nativeOrientation_; }
+
  private:
   QRect geometry_;
   QRect availableGeometry_;
+
+  Qt::ScreenOrientation nativeOrientation_;
 };
 
 #endif  // QUBUNTUSCREEN_H

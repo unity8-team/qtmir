@@ -14,5 +14,6 @@ src/platforms/ubuntulegacy/moc_*.cpp
 src/modules/application/moc_*.cpp
 src/modules/application/moc_*.cpp
 src/modules/application/plugin.moc
-examples/moc_*.cpp
-examples/qmlscene-ubuntu
+tests/clipboard/clipboard
+tests/qmlscene_ubuntu/moc_*.cpp
+tests/qmlscene_ubuntu/qmlscene-ubuntu

@@ -1,6 +1,6 @@
 Source: qtubuntu
 Priority: extra
-Maintainer: Ricardo Mendoza <ricardo.mendoza@canonical.com>
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
 Build-Depends:  debhelper (>= 8.0.0),
                 qt5-default,
                 qtbase5-private-dev,
@@ -9,6 +9,7 @@ Build-Depends:  debhelper (>= 8.0.0),
                 libgles2-mesa-dev,
                 libegl1-mesa-dev,
                 libhybris-dev,
+                libubuntu-platform-api1-dev,
                 libglib2.0-dev,
                 zlib1g-dev,
                 libfontconfig1-dev,

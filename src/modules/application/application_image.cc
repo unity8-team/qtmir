@@ -58,6 +58,7 @@ ApplicationImage::ApplicationImage(QQuickPaintedItem* parent)
     : QQuickPaintedItem(parent)
     , source_(NULL) {
   DLOG("ApplicationImage::ApplicationImage (this=%p, parent=%p)", this, parent);
+  setRenderTarget(QQuickPaintedItem::FramebufferObject);
   setFillColor(QColor(0, 0, 0, 255));
   setOpaquePainting(true);
 }
@@ -93,8 +94,10 @@ void ApplicationImage::scheduleUpdate() {
 
 void ApplicationImage::paint(QPainter* painter) {
   DLOG("ApplicationImage::paint (this=%p, painter=%p)", this, painter);
-  if (source_ != NULL && source_->state() == Application::Running)
+  if (source_ != NULL && source_->state() == Application::Running) {
+    painter->setCompositionMode(QPainter::CompositionMode_Source);
     painter->drawImage(QRect(0, 0, width(), height()), image_, image_.rect());
+  }
 }
 
 void ApplicationImage::onSourceDestroyed() {
