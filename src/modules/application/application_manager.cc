@@ -29,6 +29,9 @@
 #define ARRAY_SIZE(a) \
     ((sizeof(a) / sizeof(*(a))) / static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))))
 
+// Size of the side stage in grid units.
+const int kSideStageWidth = 40;
+
 // The time (in ms) to wait before closing a process that's not been matched by a new session.
 const int kTimeBeforeClosingProcess = 10000;
 
@@ -347,6 +350,11 @@ void ApplicationManager::timerEvent(QTimerEvent* event) {
     killProcess(kPid);
   }
   killTimer(kTimerId);
+}
+
+int ApplicationManager::sideStageWidth() const {
+  DLOG("ApplicationManager::sideStageWidth (this=%p)", this);
+  return kSideStageWidth;
 }
 
 ApplicationManager::StageHint ApplicationManager::stageHint() const {
