@@ -89,6 +89,14 @@ static void sessionFocusedCallback(ubuntu_ui_session_properties session, void* c
       TaskEvent::kFocusApplication, manager->eventType()));
 }
 
+static void sessionRequestedFullscreenCallback(
+    ubuntu_ui_session_properties session, void* context) {
+  Q_UNUSED(session);
+  Q_UNUSED(context);
+  DLOG("sessionRequestedFullscreenCallback (session=%p, context=%p)", session, context);
+  DASSERT(context != NULL);
+}
+
 static void sessionRequestedCallback(ubuntu_ui_well_known_application application, void* context) {
   DLOG("sessionRequestedCallback (application=%d, context=%p)", application, context);
   DASSERT(context != NULL);
@@ -199,7 +207,7 @@ ApplicationManager::ApplicationManager()
     DLOG("starting application watcher");
     static ubuntu_ui_session_lifecycle_observer watcher = {
       sessionRequestedCallback, sessionBornCallback, sessionUnfocusedCallback,
-      sessionFocusedCallback, sessionDiedCallback, this
+      sessionFocusedCallback, sessionRequestedFullscreenCallback, sessionDiedCallback, this
     };
     ubuntu_ui_session_install_session_lifecycle_observer(&watcher);
     once = true;
