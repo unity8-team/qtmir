@@ -89,3 +89,12 @@ void ApplicationListModel::remove(Application* application) {
     emit countChanged();
   }
 }
+
+Application* ApplicationListModel::findFromTimerId(int timerId) {
+  DLOG("ApplicationListModel::findFromTimerId (this=%p, timerId=%d)", this, timerId);
+  const int kSize = applications_.size();
+  for (int i = 0; i < kSize; i++)
+    if (applications_[i]->timerId() == timerId)
+      return applications_[i];
+  return NULL;
+}
