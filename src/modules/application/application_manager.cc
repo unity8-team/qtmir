@@ -281,11 +281,11 @@ void ApplicationManager::customEvent(QEvent* event) {
         if (application->state() == Application::Starting) {
           killTimer(application->timerId());
         }
+        applications_->remove(application);
         if (focusedApplication_ == application) {
           focusedApplication_ = NULL;
           emit focusedApplicationChanged();
         }
-        applications_->remove(application);
         delete application;
       } else {
         DLOG("Unknown application, not stored in the application list");
