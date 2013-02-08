@@ -34,7 +34,7 @@ class QUbuntuBaseNativeInterface : public QPlatformNativeInterface {
 
  private:
   const QByteArray genericEventFilterType_;
-  Qt::ScreenOrientation *nativeOrientation_;
+  Qt::ScreenOrientation* nativeOrientation_;
 };
 
 #endif  // QUBUNTUNATIVEINTERFACE_H

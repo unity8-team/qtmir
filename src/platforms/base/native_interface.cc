@@ -13,6 +13,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+// FIXME(loicm) "nativeorientation" should be implemented in the Ubuntu plugin
+//     and not include headers from it, base isn't meant to know about plugins.
+// FIXME(loicm) Why return a pointer to the screen orientation enum? The enum
+//     can just fit in the returned pointer.
+
 #include "native_interface.h"
 #include "screen.h"
 #include "ubuntu/screen.h"
@@ -36,7 +41,8 @@ class QUbuntuBaseResourceMap : public QMap<QByteArray, QUbuntuBaseNativeInterfac
 Q_GLOBAL_STATIC(QUbuntuBaseResourceMap, ubuntuResourceMap)
 
 QUbuntuBaseNativeInterface::QUbuntuBaseNativeInterface()
-    : genericEventFilterType_(QByteArrayLiteral("Event")) {
+    : genericEventFilterType_(QByteArrayLiteral("Event"))
+    , nativeOrientation_(NULL) {
   DLOG("QUbuntuBaseNativeInterface::QUbuntuBaseNativeInterface (this=%p)", this);
 }
 
