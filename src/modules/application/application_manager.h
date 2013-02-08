@@ -110,18 +110,11 @@ class ApplicationManager : public QObject {
   void focusRequested(FavoriteApplication favoriteApplication);
 
  private:
-  struct Process {
-    Process(DesktopData* desktopData, QProcess* process, int timerId)
-        : desktopData_(desktopData), process_(process), timerId_(timerId) {}
-    DesktopData* desktopData_;
-    QProcess* process_;
-    int timerId_;
-  };
+  void killProcess(qint64 pid);
 
   ApplicationListModel* applications_;
   Application* focusedApplication_;
   QHash<int,Application*> pidHash_;
-  QList<Process> unmatchedProcesses_;
   QEvent::Type eventType_;
 };
 

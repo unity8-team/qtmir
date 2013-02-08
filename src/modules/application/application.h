@@ -22,15 +22,19 @@ class DesktopData;
 
 class Application : public QObject {
   Q_OBJECT
+  Q_ENUMS(State)
   Q_PROPERTY(QString desktopFile READ desktopFile NOTIFY desktopFileChanged)
   Q_PROPERTY(QString name READ name NOTIFY nameChanged)
   Q_PROPERTY(QString comment READ comment NOTIFY commentChanged)
   Q_PROPERTY(QString icon READ icon NOTIFY iconChanged)
   Q_PROPERTY(QString exec READ exec NOTIFY execChanged)
-  Q_PROPERTY(int handle READ handle NOTIFY handleChanged)
+  Q_PROPERTY(qint64 handle READ handle NOTIFY handleChanged)
+  Q_PROPERTY(State state READ state NOTIFY stateChanged)
 
  public:
-  Application(DesktopData* desktopData, QProcess* process, int handle);
+  enum State { Starting, Running };
+
+  Application(DesktopData* desktopData, qint64 pid, State state, int timerId);
   ~Application();
 
   QString desktopFile() const;
@@ -38,7 +42,8 @@ class Application : public QObject {
   QString comment() const;
   QString icon() const;
   QString exec() const;
-  int handle() const;
+  qint64 handle() const;
+  State state() const;
 
  Q_SIGNALS:
   void desktopFileChanged();
@@ -47,15 +52,19 @@ class Application : public QObject {
   void iconChanged();
   void execChanged();
   void handleChanged();
+  void stateChanged();
 
  private:
-  QProcess* process() const { return process_; }
+  void setState(State state);
+  int timerId() const { return timerId_; }
 
   DesktopData* desktopData_;
-  QProcess* process_;
-  int handle_;
+  qint64 pid_;
+  State state_;
+  int timerId_;
 
   friend class ApplicationManager;
+  friend class ApplicationListModel;
 };
 
 Q_DECLARE_METATYPE(Application*)

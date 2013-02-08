@@ -1,3 +1,10 @@
+qtubuntu (0.42) quantal; urgency=low
+
+  * Added start/stop process support to application module with direct
+    insertion/deletion in data models.
+
+ -- Loïc Molinari <loic.molinari@canonical.com>  Thu, 07 Feb 2013 23:59:03 +0100
+
 qtubuntu (0.41) quantal; urgency=low
 
   * Implemented native orientation for applications to query through
