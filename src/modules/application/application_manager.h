@@ -57,6 +57,7 @@ class ApplicationManager : public QObject {
   Q_ENUMS(StageHint)
   Q_ENUMS(FormFactorHint)
   Q_ENUMS(FavoriteApplication)
+  Q_PROPERTY(int sideStageWidth READ sideStageWidth)
   Q_PROPERTY(StageHint stageHint READ stageHint)
   Q_PROPERTY(FormFactorHint formFactorHint READ formFactorHint)
   Q_PROPERTY(ApplicationListModel* mainStageApplications READ mainStageApplications
@@ -97,6 +98,7 @@ class ApplicationManager : public QObject {
   void customEvent(QEvent* event);
   void timerEvent(QTimerEvent* event);
 
+  int sideStageWidth() const;
   StageHint stageHint() const;
   FormFactorHint formFactorHint() const;
   ApplicationListModel* mainStageApplications() const;
