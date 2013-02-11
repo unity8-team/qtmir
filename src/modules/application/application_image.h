@@ -49,6 +49,7 @@ class ApplicationImage : public QQuickPaintedItem {
  private:
   QImage image_;
   Application* source_;
+  QRect sourceRect_;
 };
 
 #endif  // APPLICATION_IMAGE_H

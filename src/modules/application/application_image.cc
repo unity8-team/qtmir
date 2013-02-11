@@ -23,9 +23,10 @@
 
 class ApplicationImageEvent : public QEvent {
  public:
-  ApplicationImageEvent(QEvent::Type type, QImage image)
+  ApplicationImageEvent(QEvent::Type type, QImage image, const QRect& sourceRect)
       : QEvent(type)
-      , image_(image) {
+      , image_(image)
+      , sourceRect_(sourceRect) {
     DLOG("ApplicationImageEvent::ApplicationImageEvent (this=%p, type=%d)", this, type);
   }
   ~ApplicationImageEvent() {
@@ -33,25 +34,31 @@ class ApplicationImageEvent : public QEvent {
   }
   static const QEvent::Type type_;
   QImage image_;
+  QRect sourceRect_;
 };
 
 const QEvent::Type ApplicationImageEvent::type_ =
     static_cast<QEvent::Type>(QEvent::registerEventType());
 
-static void snapshotCallback(const void* pixels, unsigned int width, unsigned int height,
+static void snapshotCallback(const void* pixels, unsigned int sourceWidth, unsigned int sourceHeight,
                              unsigned int stride, void* context) {
   // FIXME(loicm) stride from Ubuntu application API is wrong.
   Q_UNUSED(stride);
-  DLOG("snapshotCallback (pixels=%p, width=%u, height=%u, stride=%u, context=%p)",
-       pixels, width, height, stride, context);
+  DLOG("snapshotCallback (pixels=%p, sourceWidth=%u, sourceHeight=%u, stride=%u, context=%p)",
+       pixels, sourceHeight, sourceHeight, stride, context);
   DASSERT(context != NULL);
   // Copy the pixels and post an event to the GUI thread so that we can safely schedule an update.
   ApplicationImage* applicationImage = static_cast<ApplicationImage*>(context);
-  QImage image(static_cast<const uchar*>(pixels), width, height, width * 4,
+  // FIXME(fboucault) should receive these values from Ubuntu Application API
+  unsigned int bufferWidth = 2560;
+  unsigned int bufferHeight = 1600;
+  // FIXME(fboucault) assumes that the source is at the bottom right corner of the image
+  QRect sourceRect(bufferWidth - sourceWidth, bufferHeight - sourceHeight, sourceWidth, sourceHeight);
+  QImage image(static_cast<const uchar*>(pixels), bufferWidth, bufferHeight, bufferWidth * 4,
                QImage::Format_ARGB32_Premultiplied);
   QCoreApplication::postEvent(
       applicationImage, new ApplicationImageEvent(
-          ApplicationImageEvent::type_, image.rgbSwapped()));
+          ApplicationImageEvent::type_, image.rgbSwapped(), sourceRect));
 }
 
 ApplicationImage::ApplicationImage(QQuickPaintedItem* parent)
@@ -73,6 +80,7 @@ void ApplicationImage::customEvent(QEvent* event) {
   ApplicationImageEvent* imageEvent = static_cast<ApplicationImageEvent*>(event);
   // Store the new image and schedule an update.
   image_ = imageEvent->image_;
+  sourceRect_ = imageEvent->sourceRect_;
   update();
 }
 
@@ -96,7 +104,7 @@ void ApplicationImage::paint(QPainter* painter) {
   DLOG("ApplicationImage::paint (this=%p, painter=%p)", this, painter);
   if (source_ != NULL && source_->state() == Application::Running) {
     painter->setCompositionMode(QPainter::CompositionMode_Source);
-    painter->drawImage(QRect(0, 0, width(), height()), image_, image_.rect());
+    painter->drawImage(QRect(0, 0, width(), height()), image_, sourceRect_);
   }
 }
 
