@@ -17,7 +17,12 @@
 #include "base/logging.h"
 #include <ubuntu/application/ui/ubuntu_application_ui.h>
 
+// Grid unit used if GRID_UNIT_PX is not in the environment.
 const int kDefaultGridUnit = 18;
+
+// Size of the side stage in grid units.
+// FIXME(loicm) Hard-coded to 40 grid units for now.
+const int kSideStageWidth = 40;
 
 QUbuntuScreen::QUbuntuScreen() {
   // Retrieve units from the environment.
@@ -51,11 +56,22 @@ QUbuntuScreen::QUbuntuScreen() {
   DLOG("screen resolution: %dx%d", kScreenWidth, kScreenHeight);
   ubuntu_application_ui_destroy_display_info(info);
 
-  // Store geometries.
-  geometry_ = QRect(0, 0, kScreenWidth, kScreenHeight);
-  availableGeometry_ = QRect(
-      strut.left, strut.top, kScreenWidth - strut.left - strut.right,
-      kScreenHeight - strut.top - strut.bottom);
+  // Store geometries depending on the stage hint.
+  const StageHint kStageHint = ubuntu_application_ui_setup_get_stage_hint();
+  DASSERT(kStageHint == MAIN_STAGE_HINT || kStageHint == SIDE_STAGE_HINT);
+  if (kStageHint != SIDE_STAGE_HINT) {
+    geometry_ = QRect(0, 0, kScreenWidth, kScreenHeight);
+    availableGeometry_ = QRect(
+        strut.left, strut.top, kScreenWidth - strut.left - strut.right,
+        kScreenHeight - strut.top - strut.bottom);
+  } else {
+    const int kSideStageWidthPixels = toGridUnit(kSideStageWidth);
+    geometry_ = QRect(kScreenWidth - kSideStageWidthPixels, 0, kSideStageWidthPixels,
+                      kScreenHeight);
+    availableGeometry_ = QRect(
+        kScreenWidth - kSideStageWidthPixels + strut.left, strut.top,
+        kSideStageWidthPixels - strut.left - strut.right, kScreenHeight - strut.top - strut.bottom);
+  }
 
   DLOG("QUbuntuScreen::QUbuntuScreen (this=%p)", this);
 
