@@ -13,6 +13,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+// FIXME(loicm) The fullscreen API from Ubuntu Platform isn't good enough as we can't leave
+//     fullscreen. The current Ubuntu Platform fullscreen call allows the application manager to
+//     know the fullscreen state of an application, it's still the application responsibility to set
+//     the right surface geometry.
+
 #include "window.h"
 #include "screen.h"
 #include "input.h"
@@ -70,12 +75,14 @@ void QUbuntuWindow::createWindow() {
 
   // Get surface geometry.
   QRect geometry;
-  if (state_ == Qt::WindowFullScreen)
+  if (state_ == Qt::WindowFullScreen) {
+    ubuntu_application_ui_request_fullscreen_for_surface(surface_);
     geometry = screen()->geometry();
-  else if (state_ == Qt::WindowMaximized)
+  } else if (state_ == Qt::WindowMaximized) {
     geometry = screen()->availableGeometry();
-  else
+  } else {
     geometry = geometry_;
+  }
 
   // Create surface.
   DLOG("creating surface at (%d, %d) with size (%d, %d)", geometry.x(), geometry.y(),
@@ -116,6 +123,7 @@ void QUbuntuWindow::setWindowState(Qt::WindowState state) {
     }
     case Qt::WindowFullScreen: {
       DLOG("setting window state: 'FullScreen'");
+      ubuntu_application_ui_request_fullscreen_for_surface(surface_);
       moveResize(screen()->geometry());
       state_ = Qt::WindowFullScreen;
       break;

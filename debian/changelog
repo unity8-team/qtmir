@@ -1,3 +1,9 @@
+qtubuntu (0.43) quantal; urgency=low
+
+  * Update applications list in the right order to prevent missed updates
+
+ -- Ricardo Mendoza <ricardo.mendoza@canonical.com>  Fri, 08 Feb 2013 17:47:27 -0430
+
 qtubuntu (0.42) quantal; urgency=low
 
   * Added start/stop process support to application module with direct

@@ -22,6 +22,7 @@ Application::Application(
     : desktopData_(desktopData)
     , pid_(pid)
     , state_(state)
+    , fullscreen_(false)
     , timerId_(timerId) {
   DASSERT(desktopData != NULL);
   DLOG("Application::Application (this=%p, desktopData=%p, pid=%lld, state=%d, timerId=%d)",
@@ -61,10 +62,22 @@ Application::State Application::state() const {
   return state_;
 }
 
+bool Application::fullscreen() const {
+  return fullscreen_;
+}
+
 void Application::setState(Application::State state) {
   DLOG("Application::setState (this=%p, state=%d)", this, static_cast<int>(state));
   if (state_ != state) {
     state_ = state;
     emit stateChanged();
+  }
+}
+
+void Application::setFullscreen(bool fullscreen) {
+  DLOG("Application::setFullscreen (this=%p, fullscreen=%s)", this, fullscreen ? "yes" : "no");
+  if (fullscreen_ != fullscreen) {
+    fullscreen_ = fullscreen;
+    emit fullscreenChanged();
   }
 }
