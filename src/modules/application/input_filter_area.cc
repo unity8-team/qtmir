@@ -38,14 +38,14 @@ void InputFilterArea::setBlockInput(bool blockInput) {
 }
 
 void InputFilterArea::geometryChanged(const QRectF & newGeometry, const QRectF & oldGeometry) {
-  DLOG("InputFilterArea::geometryChanged (this=%p, newGeometry=%p)", this, newGeometry);
+  DLOG("InputFilterArea::geometryChanged (this=%p)", this);
   setInputTrap(newGeometry);
   QQuickItem::geometryChanged(newGeometry, oldGeometry);
 }
 
 
 void InputFilterArea::setInputTrap(const QRectF & geometry) {
-  DLOG("InputFilterArea::setInputTrap (this=%p, geometry=%p)", this, geometry);
+  DLOG("InputFilterArea::setInputTrap (this=%p)", this);
 
   if (trapHandle_ != 0) {
 //    unset_surface_trap(trapHandle_);
