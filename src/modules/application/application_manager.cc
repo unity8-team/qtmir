@@ -15,10 +15,6 @@
 
 // FIXME(loicm) Desktop file loading should be executed on a dedicated I/O thread.
 
-// FIXME(loicm) Would be better to store in which stage an app is stored to avoid parsing different
-//     lists when removing or searching for an app in the lists. Especially if we add support for
-//     more stages.
-
 #include "application_manager.h"
 #include "application_list_model.h"
 #include "application.h"
@@ -80,7 +76,8 @@ static void sessionDiedCallback(ubuntu_ui_session_properties session, void* cont
   // Post a task to be executed on the ApplicationManager thread (GUI thread).
   ApplicationManager* manager = static_cast<ApplicationManager*>(context);
   QCoreApplication::postEvent(manager, new TaskEvent(
-      NULL, ubuntu_ui_session_properties_get_application_instance_id(session), 0,
+      NULL, ubuntu_ui_session_properties_get_application_instance_id(session),
+      ubuntu_ui_session_properties_get_application_stage_hint(session),
       TaskEvent::kRemoveApplication, manager->eventType()));
 }
 
@@ -274,8 +271,10 @@ void ApplicationManager::customEvent(QEvent* event) {
         // Ensure we're in sync with Ubuntu Platform.
         if (taskEvent->stage_ == MAIN_STAGE_HINT) {
           ASSERT(mainStageApplications_->contains(application));
+          ASSERT(application->stage() == Application::MainStage);
         } else if (taskEvent->stage_ == SIDE_STAGE_HINT) {
           ASSERT(sideStageApplications_->contains(application));
+          ASSERT(application->stage() == Application::SideStage);
         } else {
           NOT_REACHED();
         }
@@ -286,7 +285,8 @@ void ApplicationManager::customEvent(QEvent* event) {
         DLOG("didn't get a match in the application lists, loading the desktop file");
         DesktopData* desktopData = new DesktopData(taskEvent->desktopFile_);
         if (desktopData->loaded()) {
-          Application* application = new Application(desktopData, kPid, Application::Running, -1);
+          Application* application = new Application(
+              desktopData, kPid, Application::MainStage, Application::Running, -1);
           pidHash_.insert(kPid, application);
           if (taskEvent->stage_ != SIDE_STAGE_HINT) {
             DLOG("desktopFile loaded, storing '%s' (%d) in the main stage application list",
@@ -295,6 +295,7 @@ void ApplicationManager::customEvent(QEvent* event) {
           } else {
             DLOG("desktopFile loaded, storing '%s' (%d) in the side stage application list",
                  desktopData->name().toLatin1().data(), kPid);
+            application->setStage(Application::SideStage);
             sideStageApplications_->add(application);
           }
         } else {
@@ -312,18 +313,24 @@ void ApplicationManager::customEvent(QEvent* event) {
       if (application != NULL) {
         DLOG("removing application '%s' (%d) from the application lists",
              application->name().toLatin1().data(), kPid);
+        DASSERT(static_cast<int>(application->stage()) == taskEvent->stage_);
         if (application->state() == Application::Starting) {
           killTimer(application->timerId());
         }
-        mainStageApplications_->remove(application);
-        sideStageApplications_->remove(application);
-        if (mainStageFocusedApplication_ == application) {
-          mainStageFocusedApplication_ = NULL;
-          emit mainStageFocusedApplicationChanged();
-        }
-        if (sideStageFocusedApplication_ == application) {
-          sideStageFocusedApplication_ = NULL;
-          emit sideStageFocusedApplicationChanged();
+        if (application->stage() == Application::MainStage) {
+          mainStageApplications_->remove(application);
+          DASSERT(sideStageFocusedApplication_ != application);
+          if (mainStageFocusedApplication_ == application) {
+            mainStageFocusedApplication_ = NULL;
+            emit mainStageFocusedApplicationChanged();
+          }
+        } else if (application->stage() == Application::SideStage) {
+          sideStageApplications_->remove(application);
+          DASSERT(mainStageFocusedApplication_ != application);
+          if (sideStageFocusedApplication_ == application) {
+            sideStageFocusedApplication_ = NULL;
+            emit sideStageFocusedApplicationChanged();
+          }
         }
         delete application;
       } else {
@@ -337,6 +344,7 @@ void ApplicationManager::customEvent(QEvent* event) {
       // Reset the currently focused application.
       Application* application = pidHash_.value(taskEvent->id_);
       if (application != NULL) {
+        DASSERT(static_cast<int>(application->stage()) == taskEvent->stage_);
         if (mainStageFocusedApplication_ == application) {
           DASSERT(taskEvent->stage_ == MAIN_STAGE_HINT);
           mainStageFocusedApplication_ = NULL;
@@ -356,12 +364,13 @@ void ApplicationManager::customEvent(QEvent* event) {
       // Update the currently focused application.
       Application* application = pidHash_.value(taskEvent->id_);
       if (application != NULL) {
-        if (taskEvent->stage_ == MAIN_STAGE_HINT) {
+        DASSERT(static_cast<int>(application->stage()) == taskEvent->stage_);
+        if (application->stage() == Application::MainStage) {
           if (mainStageFocusedApplication_ != application) {
             mainStageFocusedApplication_ = application;
             emit mainStageFocusedApplicationChanged();
           }
-        } else if (taskEvent->stage_ == SIDE_STAGE_HINT) {
+        } else if (application->stage() == Application::SideStage) {
           if (sideStageFocusedApplication_ != application) {
             sideStageFocusedApplication_ = application;
             emit sideStageFocusedApplicationChanged();
@@ -386,19 +395,29 @@ void ApplicationManager::customEvent(QEvent* event) {
 
 void ApplicationManager::timerEvent(QTimerEvent* event) {
   DLOG("ApplicationManager::timerEvent (this=%p, event=%p)", this, event);
+  Application* application;
+  ApplicationListModel* applications;
+
+  // Get the application with the time id and store the applications list it comes from.
   const int kTimerId = event->timerId();
-  Application* application = mainStageApplications_->findFromTimerId(kTimerId);
-  if (application == NULL) {
+  application = mainStageApplications_->findFromTimerId(kTimerId);
+  if (application != NULL) {
+    applications = mainStageApplications_;
+  } else {
     application = sideStageApplications_->findFromTimerId(kTimerId);
+    if (application != NULL) {
+      applications = sideStageApplications_;
+    }
   }
+
+  // Remove application from list and kill it.
   if (application != NULL) {
     const qint64 kPid = application->handle();
     DLOG("application '%s' (%lld) hasn't been matched, killing it",
          application->name().toLatin1().data(), kPid);
     DASSERT(pidHash_.contains(kPid));
     pidHash_.remove(kPid);
-    mainStageApplications_->remove(application);
-    sideStageApplications_->remove(application);
+    applications->remove(application);
     delete application;
     killProcess(kPid);
   }
@@ -509,11 +528,13 @@ Application* ApplicationManager::startProcess(QString desktopFile, QStringList a
     DLOG("started process with pid %lld, adding '%s' to application lists",
          pid, desktopData->name().toLatin1().data());
     Application* application = new Application(
-        desktopData, pid, Application::Starting, startTimer(kTimeBeforeClosingProcess));
+        desktopData, pid, Application::SideStage, Application::Starting,
+        startTimer(kTimeBeforeClosingProcess));
     pidHash_.insert(pid, application);
     if (desktopData->stageHint() != "SideStage") {
       mainStageApplications_->add(application);
     } else {
+      application->setStage(Application::SideStage);
       sideStageApplications_->add(application);
     }
     return application;
@@ -527,8 +548,13 @@ void ApplicationManager::stopProcess(Application* application) {
   if (application != NULL) {
     const qint64 kPid = application->handle();
     if (pidHash_.remove(kPid) > 0) {
-      mainStageApplications_->remove(application);
-      sideStageApplications_->remove(application);
+      if (application->stage() == Application::MainStage) {
+        mainStageApplications_->remove(application);
+      } else if (application->stage() == Application::SideStage) {
+        sideStageApplications_->remove(application);
+      } else {
+        DNOT_REACHED();
+      }
       delete application;
       killProcess(kPid);
     }

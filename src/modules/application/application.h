@@ -17,11 +17,13 @@
 #define APPLICATION_H
 
 #include <QtCore/QtCore>
+#include "ubuntu/application/ui/ubuntu_application_ui.h"
 
 class DesktopData;
 
 class Application : public QObject {
   Q_OBJECT
+  Q_ENUMS(Stage)
   Q_ENUMS(State)
   Q_PROPERTY(QString desktopFile READ desktopFile NOTIFY desktopFileChanged)
   Q_PROPERTY(QString name READ name NOTIFY nameChanged)
@@ -29,12 +31,18 @@ class Application : public QObject {
   Q_PROPERTY(QString icon READ icon NOTIFY iconChanged)
   Q_PROPERTY(QString exec READ exec NOTIFY execChanged)
   Q_PROPERTY(qint64 handle READ handle NOTIFY handleChanged)
+  Q_PROPERTY(Stage stage READ stage NOTIFY stageChanged)
   Q_PROPERTY(State state READ state NOTIFY stateChanged)
 
  public:
+  enum Stage {
+    MainStage = MAIN_STAGE_HINT, IntegrationStage = INTEGRATION_STAGE_HINT,
+    ShareStage = SHARE_STAGE_HINT, ContentPickingStage = CONTENT_PICKING_STAGE_HINT,
+    SideStage = SIDE_STAGE_HINT, ConfigurationStage = CONFIGURATION_STAGE_HINT
+  };
   enum State { Starting, Running };
 
-  Application(DesktopData* desktopData, qint64 pid, State state, int timerId);
+  Application(DesktopData* desktopData, qint64 pid, Stage stage, State state, int timerId);
   ~Application();
 
   QString desktopFile() const;
@@ -43,6 +51,7 @@ class Application : public QObject {
   QString icon() const;
   QString exec() const;
   qint64 handle() const;
+  Stage stage() const;
   State state() const;
 
  Q_SIGNALS:
@@ -52,14 +61,17 @@ class Application : public QObject {
   void iconChanged();
   void execChanged();
   void handleChanged();
+  void stageChanged();
   void stateChanged();
 
  private:
+  void setStage(Stage stage);
   void setState(State state);
   int timerId() const { return timerId_; }
 
   DesktopData* desktopData_;
   qint64 pid_;
+  Stage stage_;
   State state_;
   int timerId_;
 
