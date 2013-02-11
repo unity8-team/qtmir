@@ -291,12 +291,10 @@ void ApplicationManager::customEvent(QEvent* event) {
           if (taskEvent->stage_ != SIDE_STAGE_HINT) {
             DLOG("desktopFile loaded, storing '%s' (%d) in the main stage application list",
                  desktopData->name().toLatin1().data(), kPid);
-            DASSERT(desktopData->stageHint() != "SideStage");
             mainStageApplications_->add(application);
           } else {
             DLOG("desktopFile loaded, storing '%s' (%d) in the side stage application list",
                  desktopData->name().toLatin1().data(), kPid);
-            DASSERT(desktopData->stageHint() == "SideStage");
             sideStageApplications_->add(application);
           }
         } else {
