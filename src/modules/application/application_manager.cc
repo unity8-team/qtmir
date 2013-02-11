@@ -344,7 +344,7 @@ void ApplicationManager::customEvent(QEvent* event) {
           mainStageFocusedApplication_ = NULL;
           emit mainStageFocusedApplicationChanged();
         }
-        if (sideStageFocusedApplication_ == application) {
+        else if (sideStageFocusedApplication_ == application) {
           DASSERT(taskEvent->stage_ == SIDE_STAGE_HINT);
           sideStageFocusedApplication_ = NULL;
           emit sideStageFocusedApplicationChanged();
@@ -358,15 +358,16 @@ void ApplicationManager::customEvent(QEvent* event) {
       // Update the currently focused application.
       Application* application = pidHash_.value(taskEvent->id_);
       if (application != NULL) {
-        if (mainStageFocusedApplication_ != application) {
-          DASSERT(taskEvent->stage_ == MAIN_STAGE_HINT);
-          mainStageFocusedApplication_ = application;
-          emit mainStageFocusedApplicationChanged();
-        }
-        if (sideStageFocusedApplication_ != application) {
-          DASSERT(taskEvent->stage_ == SIDE_STAGE_HINT);
-          sideStageFocusedApplication_ = application;
-          emit sideStageFocusedApplicationChanged();
+        if (taskEvent->stage_ == MAIN_STAGE_HINT) {
+          if (mainStageFocusedApplication_ != application) {
+            mainStageFocusedApplication_ = application;
+            emit mainStageFocusedApplicationChanged();
+          }
+        } else if (taskEvent->stage_ == SIDE_STAGE_HINT) {
+          if (sideStageFocusedApplication_ != application) {
+            sideStageFocusedApplication_ = application;
+            emit sideStageFocusedApplicationChanged();
+          }
         }
       }
       break;
