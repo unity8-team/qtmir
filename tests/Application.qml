@@ -46,8 +46,8 @@ import Ubuntu.Application 0.1
 
 Rectangle {
     id: surface
-    width: 720
-    height: 1280
+    width: 2560 // 720
+    height: 1600 // 1280
     color: "blue"
 
     Connections {
