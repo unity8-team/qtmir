@@ -45,6 +45,9 @@ class ApplicationListModel : public QAbstractListModel {
   void add(Application* application);
   void remove(Application* application);
   Application* findFromTimerId(int timerId);
+#if !defined(QT_NO_DEBUG)
+  bool contains(Application* application) const { return applications_.contains(application); }
+#endif
 
   QHash<int,QByteArray> roleNames_;
   QList<Application*> applications_;
