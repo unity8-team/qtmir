@@ -79,14 +79,14 @@ Rectangle {
 
         Text {
             font.family: "Ubuntu"; font.weight: Font.Bold; font.pixelSize: 30; color: "white"
-            text: "Number of applications running: %1".arg(ApplicationManager.applications.count)
+            text: "Apps running in main stage: %1".arg(ApplicationManager.mainStageApplications.count)
         }
 
         Text {
             font.family: "Ubuntu"; font.weight: Font.Bold; font.pixelSize: 30; color: "white"
-            text: ApplicationManager.applications.count >= 1 ?
-                      "First is \"%1\" %2".arg(ApplicationManager.applications.get(0).name)
-                                          .arg(ApplicationManager.applications.get(0))
+            text: ApplicationManager.mainStageApplications.count >= 1 ?
+                      "First is \"%1\" %2".arg(ApplicationManager.mainStageApplications.get(0).name)
+                                          .arg(ApplicationManager.mainStageApplications.get(0))
                     : "Start an application with --desktop_file_hint=..."
         }
 
@@ -109,7 +109,7 @@ Rectangle {
             }
             MouseArea {
                 anchors.fill: parent
-                onClicked: ApplicationManager.applications.move(1, 0)
+                onClicked: ApplicationManager.mainStageApplications.move(1, 0)
             }
         }
     }
@@ -120,7 +120,7 @@ Rectangle {
             topMargin: 10
         }
         Repeater {
-            model: ApplicationManager.applications
+            model: ApplicationManager.mainStageApplications
             delegate: ApplicationImage {
                 id: applicationImage
                 width: 720 / 4; height: 1280 / 4
