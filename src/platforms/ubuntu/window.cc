@@ -76,7 +76,6 @@ void QUbuntuWindow::createWindow() {
   // Get surface geometry.
   QRect geometry;
   if (state_ == Qt::WindowFullScreen) {
-    ubuntu_application_ui_request_fullscreen_for_surface(surface_);
     geometry = screen()->geometry();
   } else if (state_ == Qt::WindowMaximized) {
     geometry = screen()->availableGeometry();
@@ -94,6 +93,9 @@ void QUbuntuWindow::createWindow() {
     ubuntu_application_ui_move_surface_to(surface_, geometry.x(), geometry.y());
   ASSERT(surface_ != NULL);
   createSurface(ubuntu_application_ui_surface_to_native_window_type(surface_));
+  if (state_ == Qt::WindowFullScreen) {
+    ubuntu_application_ui_request_fullscreen_for_surface(surface_);
+  }
 
   // Tell Qt about the geometry.
   QWindowSystemInterface::handleGeometryChange(window(), geometry);
