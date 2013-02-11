@@ -17,11 +17,31 @@
 #include "base/logging.h"
 #include <ubuntu/application/ui/ubuntu_application_ui.h>
 
-// FIXME(loicm) There is no way to get the strut from a system session. Values are hard-coded for
-//     the phone right now, 59 corresponds to 3 grid units minus 2 density independent pixels.
-static const struct { int left; int right; int top; int bottom; } kStrut = { 0, 0, 59, 0 };
+const int kDefaultGridUnit = 18;
 
 QUbuntuScreen::QUbuntuScreen() {
+  // Retrieve units from the environment.
+  int gridUnit = kDefaultGridUnit;
+  QByteArray gridUnitString = qgetenv("GRID_UNIT_PX");
+  if (!gridUnitString.isEmpty()) {
+    bool ok;
+    gridUnit = gridUnitString.toInt(&ok);
+    if (!ok) {
+      gridUnit = kDefaultGridUnit;
+    }
+  }
+  gridUnit_ = gridUnit;
+  densityPixel_ = qRound(gridUnit * (1.0 / 8.0));
+  DLOG("grid unit is %d", gridUnit);
+  DLOG("density pixel is %d", densityPixel_);
+
+  // Compute menubar strut.
+  // FIXME(loicm) Hard-coded to 3 grid units minus 2 density independent pixels for now.
+  struct { int left; int right; int top; int bottom; } strut = {
+    0, 0, toGridUnit(3) - toDensityPixel(2), 0
+  };
+  DLOG("menu bar height is %d pixels", strut.top);
+
   // Get screen resolution.
   ubuntu_application_ui_physical_display_info info;
   ubuntu_application_ui_create_display_info(&info, 0);
@@ -34,8 +54,8 @@ QUbuntuScreen::QUbuntuScreen() {
   // Store geometries.
   geometry_ = QRect(0, 0, kScreenWidth, kScreenHeight);
   availableGeometry_ = QRect(
-      kStrut.left, kStrut.top, kScreenWidth - kStrut.left - kStrut.right,
-      kScreenHeight - kStrut.top - kStrut.bottom);
+      strut.left, strut.top, kScreenWidth - strut.left - strut.right,
+      kScreenHeight - strut.top - strut.bottom);
 
   DLOG("QUbuntuScreen::QUbuntuScreen (this=%p)", this);
 
