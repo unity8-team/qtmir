@@ -46,9 +46,9 @@ import Ubuntu.Application 0.1
 
 Rectangle {
     id: surface
-    width: 2560 // 720
-    height: 1600 // 1280
-    color: "blue"
+    width: 2560
+    height: 1600
+    color: "#000020"
 
     Connections {
         target: ApplicationManager
@@ -64,12 +64,12 @@ Rectangle {
         id: touchArea
         anchors.fill: parent
         onClicked: {
-            ApplicationManager.focusFavoriteApplication(ApplicationManager.BrowserApplication);
+            // ApplicationManager.focusFavoriteApplication(ApplicationManager.BrowserApplication);
         }
     }
 
     Column {
-        id: header
+        id: mainHeader
 
         anchors {
             left: parent.left
@@ -78,55 +78,73 @@ Rectangle {
         spacing: 10
 
         Text {
-            font.family: "Ubuntu"; font.weight: Font.Bold; font.pixelSize: 30; color: "white"
-            text: "Apps running in main stage: %1".arg(ApplicationManager.mainStageApplications.count)
+            font.family: "Ubuntu Mono"; font.weight: Font.Bold; font.pixelSize: 40; color: "white"
+            text: "Main stage:"
         }
+    }
+
+    Row {
+        id: mainRow
+
+        anchors {
+            top: mainHeader.bottom
+            topMargin: 10
+        }
+
+        Repeater {
+            model: ApplicationManager.mainStageApplications
+            delegate: ApplicationImage {
+                id: applicationImage
+                width: 2560 / 5; height: 1600 / 5
+                source: application
+                Text {
+                    font.family: "Ubuntu Mono"; font.weight: Font.Bold; font.pixelSize: 30; color: "white"
+                    text: application.name
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: applicationImage.scheduleUpdate()
+                }
+
+                Timer {
+                    running: true
+                    onTriggered: applicationImage.scheduleUpdate()
+                }
+            }
+        }
+    }
+
+    Column {
+        id: sideHeader
+        y: surface.height / 2
+
+        anchors {
+            left: parent.left
+            right: parent.right
+        }
+        spacing: 10
 
         Text {
-            font.family: "Ubuntu"; font.weight: Font.Bold; font.pixelSize: 30; color: "white"
-            text: ApplicationManager.mainStageApplications.count >= 1 ?
-                      "First is \"%1\" %2".arg(ApplicationManager.mainStageApplications.get(0).name)
-                                          .arg(ApplicationManager.mainStageApplications.get(0))
-                    : "Start an application with --desktop_file_hint=..."
-        }
-
-        Item {
-            id: moveButton
-            anchors {
-                left: parent.left
-                right: parent.right
-            }
-            height: 100
-
-            Rectangle {
-                anchors.fill: parent
-                color: "#e9ecd9"
-            }
-            Text {
-                anchors.centerIn: parent
-                font.family: "Ubuntu"; font.weight: Font.Bold; font.pixelSize: 30; color: "darkgrey"
-                text: "Move first application to second place"
-            }
-            MouseArea {
-                anchors.fill: parent
-                onClicked: ApplicationManager.mainStageApplications.move(1, 0)
-            }
+            font.family: "Ubuntu Mono"; font.weight: Font.Bold; font.pixelSize: 40; color: "white"
+            text: "Side stage:"
         }
     }
 
     Row {
         anchors {
-            top: header.bottom
+            top: sideHeader.bottom
             topMargin: 10
         }
+
         Repeater {
-            model: ApplicationManager.mainStageApplications
+            model: ApplicationManager.sideStageApplications
             delegate: ApplicationImage {
                 id: applicationImage
-                width: 720 / 4; height: 1280 / 4
+                width: 2560 / 5; height: 1600 / 5
                 source: application
                 Text {
-                    font.family: "Ubuntu"; font.weight: Font.Bold; font.pixelSize: 30; color: "white"
+                    font.family: "Ubuntu Mono"; font.weight: Font.Bold; font.pixelSize: 30; color: "white"
                     text: application.name
                 }
 
