@@ -43,7 +43,7 @@ class TaskEvent : public QEvent {
  public:
   enum Task { kAddApplication = 0, kRemoveApplication, kUnfocusApplication, kFocusApplication,
               kRequestFocus };
-  TaskEvent(char* desktopFile, int id, int task, int stage, QEvent::Type type)
+  TaskEvent(char* desktopFile, int id, int stage, int task, QEvent::Type type)
       : QEvent(type)
       , desktopFile_(desktopFile)
       , id_(id)
