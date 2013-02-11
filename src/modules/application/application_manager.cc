@@ -66,9 +66,8 @@ static void sessionBornCallback(ubuntu_ui_session_properties session, void* cont
   ApplicationManager* manager = static_cast<ApplicationManager*>(context);
   QCoreApplication::postEvent(manager, new TaskEvent(
       qstrdup(ubuntu_ui_session_properties_get_desktop_file_hint(session)),
-      ubuntu_ui_session_properties_get_application_instance_id(session), MAIN_STAGE_HINT,
-      // FIXME(loicm) Add that once supported in Ubuntu Platform API.
-      // ubuntu_ui_session_properties_get_application_stage_hint(session),
+      ubuntu_ui_session_properties_get_application_instance_id(session),
+      ubuntu_ui_session_properties_get_application_stage_hint(session),
       TaskEvent::kAddApplication, manager->eventType()));
 }
 
@@ -88,9 +87,8 @@ static void sessionUnfocusedCallback(ubuntu_ui_session_properties session, void*
   // Post a task to be executed on the ApplicationManager thread (GUI thread).
   ApplicationManager* manager = static_cast<ApplicationManager*>(context);
   QCoreApplication::postEvent(manager, new TaskEvent(
-      NULL, ubuntu_ui_session_properties_get_application_instance_id(session), MAIN_STAGE_HINT,
-      // FIXME(loicm) Add that once supported in Ubuntu Platform API.
-      // ubuntu_ui_session_properties_get_application_stage_hint(session),
+      NULL, ubuntu_ui_session_properties_get_application_instance_id(session),
+      ubuntu_ui_session_properties_get_application_stage_hint(session),
       TaskEvent::kUnfocusApplication, manager->eventType()));
 }
 
@@ -100,9 +98,8 @@ static void sessionFocusedCallback(ubuntu_ui_session_properties session, void* c
   // Post a task to be executed on the ApplicationManager thread (GUI thread).
   ApplicationManager* manager = static_cast<ApplicationManager*>(context);
   QCoreApplication::postEvent(manager, new TaskEvent(
-      NULL, ubuntu_ui_session_properties_get_application_instance_id(session), MAIN_STAGE_HINT,
-      // FIXME(loicm) Add that once supported in Ubuntu Platform API.
-      // ubuntu_ui_session_properties_get_application_stage_hint(session),
+      NULL, ubuntu_ui_session_properties_get_application_instance_id(session),
+      ubuntu_ui_session_properties_get_application_stage_hint(session),
       TaskEvent::kFocusApplication, manager->eventType()));
 }
 
