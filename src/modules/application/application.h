@@ -30,6 +30,7 @@ class Application : public QObject {
   Q_PROPERTY(QString exec READ exec NOTIFY execChanged)
   Q_PROPERTY(qint64 handle READ handle NOTIFY handleChanged)
   Q_PROPERTY(State state READ state NOTIFY stateChanged)
+  Q_PROPERTY(bool fullscreen READ fullscreen NOTIFY fullscreenChanged)
 
  public:
   enum State { Starting, Running };
@@ -44,6 +45,7 @@ class Application : public QObject {
   QString exec() const;
   qint64 handle() const;
   State state() const;
+  bool fullscreen() const;
 
  Q_SIGNALS:
   void desktopFileChanged();
@@ -53,14 +55,17 @@ class Application : public QObject {
   void execChanged();
   void handleChanged();
   void stateChanged();
+  void fullscreenChanged();
 
  private:
   void setState(State state);
+  void setFullscreen(bool fullscreen);
   int timerId() const { return timerId_; }
 
   DesktopData* desktopData_;
   qint64 pid_;
   State state_;
+  bool fullscreen_;
   int timerId_;
 
   friend class ApplicationManager;
