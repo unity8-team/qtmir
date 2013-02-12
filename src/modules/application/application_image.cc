@@ -128,10 +128,10 @@ void ApplicationImage::paint(QPainter* painter) {
         qreal heightScale = height() / qreal(sourceRect_.height());
 
         if (widthScale > heightScale) {
-          int croppedHeight = (heightScale / widthScale) * qreal(sourceRect_.height());
+          int croppedHeight = height() / widthScale;
           sourceRect = QRect(sourceRect_.x(), sourceRect_.y(), sourceRect_.width(), croppedHeight);
         } else {
-          int croppedWidth = (widthScale / heightScale) * qreal(sourceRect_.width());
+          int croppedWidth = width() / heightScale;
           sourceRect = QRect(sourceRect_.x(), sourceRect_.y(), croppedWidth, sourceRect_.height());
         }
         break;
