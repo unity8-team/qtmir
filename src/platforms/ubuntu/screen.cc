@@ -13,12 +13,15 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+// Unit conversion code has been extracted from the Ubuntu UI toolkit.
+
 #include "screen.h"
 #include "base/logging.h"
+#include <QtCore/qmath.h>
 #include <ubuntu/application/ui/ubuntu_application_ui.h>
 
 // Grid unit used if GRID_UNIT_PX is not in the environment.
-const int kDefaultGridUnit = 18;
+const int kDefaultGridUnit = 8;
 
 // Size of the side stage in grid units.
 // FIXME(loicm) Hard-coded to 40 grid units for now.
@@ -36,14 +39,14 @@ QUbuntuScreen::QUbuntuScreen() {
     }
   }
   gridUnit_ = gridUnit;
-  densityPixel_ = qRound(gridUnit * (1.0 / 8.0));
+  densityPixelRatio_ = static_cast<float>(gridUnit) / kDefaultGridUnit;
   DLOG("grid unit is %d", gridUnit);
-  DLOG("density pixel is %d", densityPixel_);
+  DLOG("density pixel ratio is %.2f", densityPixelRatio_);
 
   // Compute menubar strut.
   // FIXME(loicm) Hard-coded to 3 grid units minus 2 density independent pixels for now.
   struct { int left; int right; int top; int bottom; } strut = {
-    0, 0, toGridUnit(3) - toDensityPixel(2), 0
+    0, 0, gridUnitToPixel(3) - densityPixelToPixel(2), 0
   };
   DLOG("menu bar height is %d pixels", strut.top);
 
@@ -65,7 +68,7 @@ QUbuntuScreen::QUbuntuScreen() {
         strut.left, strut.top, kScreenWidth - strut.left - strut.right,
         kScreenHeight - strut.top - strut.bottom);
   } else {
-    const int kSideStageWidthPixels = toGridUnit(kSideStageWidth);
+    const int kSideStageWidthPixels = gridUnitToPixel(kSideStageWidth);
     geometry_ = QRect(kScreenWidth - kSideStageWidthPixels, 0, kSideStageWidthPixels,
                       kScreenHeight);
     availableGeometry_ = QRect(
@@ -81,4 +84,19 @@ QUbuntuScreen::QUbuntuScreen() {
 
 QUbuntuScreen::~QUbuntuScreen() {
   DLOG("QUbuntuScreen::~QUbuntuScreen");
+}
+
+int QUbuntuScreen::gridUnitToPixel(int value) const {
+  DLOG("QUbuntuScreen::gridUnitToPixel (this=%p, value=%d)", this, value);
+  return value * gridUnit_;
+}
+
+int QUbuntuScreen::densityPixelToPixel(int value) const {
+  DLOG("QUbuntuScreen::densityPixelToPixel (this=%p, value=%d)", this, value);
+  if (value <= 2) {
+    // For values under 2dp, return only multiples of the value.
+    return static_cast<int>(value * qFloor(densityPixelRatio_));
+  } else {
+    return static_cast<int>(qRound(value * densityPixelRatio_));
+  }
 }
