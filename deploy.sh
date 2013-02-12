@@ -11,5 +11,6 @@ adb push tests/MovingLogo.qml /data/ubuntu/usr/lib/arm-linux-gnueabihf/qt5/tests
 adb push tests/WarpingLogo.qml /data/ubuntu/usr/lib/arm-linux-gnueabihf/qt5/tests
 adb push tests/Input.qml /data/ubuntu/usr/lib/arm-linux-gnueabihf/qt5/tests
 adb push tests/Application.qml /data/ubuntu/usr/lib/arm-linux-gnueabihf/qt5/tests
+adb push tests/Fullscreen.qml /data/ubuntu/usr/lib/arm-linux-gnueabihf/qt5/tests
 adb push tests/logo.png /data/ubuntu/usr/lib/arm-linux-gnueabihf/qt5/tests
 adb push tests/noise.png /data/ubuntu/usr/lib/arm-linux-gnueabihf/qt5/tests

@@ -40,6 +40,12 @@
 //
 // In order to focus or start a favorite application, that function can be used:
 //     ApplicationManager.focusFavoriteApplication(ApplicationManager.GalleryApplication);
+//
+// A good way to use Application.qml is to launch it using:
+//     qmlscene-ubuntu --fullscreen --session 1 --role 0 Application.qml
+// and then to launch other applications using:
+//     qmlscene-ubuntu --session 0 --role 1 MovingLogo.qml \
+//         --desktop_file_hint=/usr/share/applications/goodhope.desktop --stage_hint=main_stage
 
 import QtQuick 2.0
 import Ubuntu.Application 0.1
