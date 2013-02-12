@@ -40,20 +40,18 @@ class ApplicationImageEvent : public QEvent {
 const QEvent::Type ApplicationImageEvent::type_ =
     static_cast<QEvent::Type>(QEvent::registerEventType());
 
-static void snapshotCallback(const void* pixels, unsigned int sourceWidth, unsigned int sourceHeight,
+static void snapshotCallback(const void* pixels, unsigned int bufferWidth, unsigned int bufferHeight,
+                             unsigned int sourceX, unsigned int sourceY,
+                             unsigned int sourceWidth, unsigned int sourceHeight,
                              unsigned int stride, void* context) {
   // FIXME(loicm) stride from Ubuntu application API is wrong.
   Q_UNUSED(stride);
-  DLOG("snapshotCallback (pixels=%p, sourceWidth=%u, sourceHeight=%u, stride=%u, context=%p)",
-       pixels, sourceHeight, sourceHeight, stride, context);
+  DLOG("snapshotCallback (pixels=%p, bufferWidth=%u, bufferHeight=%u, sourceX=%u, sourceY=%u, sourceWidth=%u, sourceHeight=%u, stride=%u, context=%p)",
+       pixels, bufferWidth, bufferHeight, sourceX, sourceY, sourceHeight, sourceHeight, stride, context);
   DASSERT(context != NULL);
   // Copy the pixels and post an event to the GUI thread so that we can safely schedule an update.
   ApplicationImage* applicationImage = static_cast<ApplicationImage*>(context);
-  // FIXME(fboucault) should receive these values from Ubuntu Application API
-  unsigned int bufferWidth = 2560;
-  unsigned int bufferHeight = 1600;
-  // FIXME(fboucault) assumes that the source is at the bottom right corner of the image
-  QRect sourceRect(bufferWidth - sourceWidth, bufferHeight - sourceHeight, sourceWidth, sourceHeight);
+  QRect sourceRect(sourceX, sourceY, sourceWidth, sourceHeight);
   QImage image(static_cast<const uchar*>(pixels), bufferWidth, bufferHeight, bufferWidth * 4,
                QImage::Format_ARGB32_Premultiplied);
   QCoreApplication::postEvent(
