@@ -61,7 +61,8 @@ static void snapshotCallback(const void* pixels, unsigned int bufferWidth, unsig
 
 ApplicationImage::ApplicationImage(QQuickPaintedItem* parent)
     : QQuickPaintedItem(parent)
-    , source_(NULL) {
+    , source_(NULL)
+    , fillMode_(Stretch) {
   DLOG("ApplicationImage::ApplicationImage (this=%p, parent=%p)", this, parent);
   setRenderTarget(QQuickPaintedItem::FramebufferObject);
   setFillColor(QColor(0, 0, 0, 255));
@@ -90,6 +91,15 @@ void ApplicationImage::setSource(Application* source) {
   }
 }
 
+void ApplicationImage::setFillMode(FillMode fillMode) {
+  DLOG("ApplicationImage::setApplication (this=%p, fillMode=%d)", this, fillMode);
+  if (fillMode_ != fillMode) {
+    fillMode_ = fillMode;
+    update();
+    emit fillModeChanged();
+  }
+}
+
 void ApplicationImage::scheduleUpdate() {
   DLOG("ApplicationImage::scheduleUpdate (this=%p)", this);
   if (source_ != NULL && source_->state() == Application::Running)
@@ -102,7 +112,32 @@ void ApplicationImage::paint(QPainter* painter) {
   DLOG("ApplicationImage::paint (this=%p, painter=%p)", this, painter);
   if (source_ != NULL && source_->state() == Application::Running) {
     painter->setCompositionMode(QPainter::CompositionMode_Source);
-    painter->drawImage(QRect(0, 0, width(), height()), image_, sourceRect_);
+
+    QRect targetRect;
+    QRect sourceRect;
+
+    switch(fillMode_) {
+      case Stretch:
+        targetRect = QRect(0, 0, width(), height());
+        sourceRect = sourceRect_;
+        break;
+      case PreserveAspectCrop:
+        // assume AlignTop and AlignLeft alignment
+        targetRect = QRect(0, 0, width(), height());
+        qreal widthScale = width() / qreal(sourceRect_.width());
+        qreal heightScale = height() / qreal(sourceRect_.height());
+
+        if (widthScale > heightScale) {
+          int croppedHeight = (heightScale / widthScale) * qreal(sourceRect_.height());
+          sourceRect = QRect(sourceRect_.x(), sourceRect_.y(), sourceRect_.width(), croppedHeight);
+        } else {
+          int croppedWidth = (widthScale / heightScale) * qreal(sourceRect_.width());
+          sourceRect = QRect(sourceRect_.x(), sourceRect_.y(), croppedWidth, sourceRect_.height());
+        }
+        break;
+    }
+
+    painter->drawImage(targetRect, image_, sourceRect);
   }
 }
 

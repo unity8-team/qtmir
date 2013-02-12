@@ -23,11 +23,15 @@ class Application;
 
 class ApplicationImage : public QQuickPaintedItem {
   Q_OBJECT
+  Q_ENUMS(FillMode)
   Q_PROPERTY(Application* source READ source WRITE setSource NOTIFY sourceChanged)
+  Q_PROPERTY(FillMode fillMode READ fillMode WRITE setFillMode NOTIFY fillModeChanged)
 
  public:
   explicit ApplicationImage(QQuickPaintedItem* parent = 0);
   ~ApplicationImage();
+
+  enum FillMode { Stretch, PreserveAspectCrop };
 
   // QObject methods.
   void customEvent(QEvent* event);
@@ -38,10 +42,13 @@ class ApplicationImage : public QQuickPaintedItem {
   // ApplicationImage methods.
   Application* source() const { return source_; }
   void setSource(Application* source);
+  FillMode fillMode() const  { return fillMode_; }
+  void setFillMode(FillMode);
   Q_INVOKABLE void scheduleUpdate();
 
  Q_SIGNALS:
   void sourceChanged();
+  void fillModeChanged();
 
  private Q_SLOTS:
   void onSourceDestroyed();
@@ -49,6 +56,7 @@ class ApplicationImage : public QQuickPaintedItem {
  private:
   QImage image_;
   Application* source_;
+  FillMode fillMode_;
   QRect sourceRect_;
 };
 
