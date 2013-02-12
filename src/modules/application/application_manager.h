@@ -65,7 +65,7 @@ class ApplicationManager : public QObject {
   ApplicationManager();
   ~ApplicationManager();
 
-  // Mapping enums to Ubuntu application API enums.
+  // Mapping enums to Ubuntu Platform API enums.
   enum Role {
     Dash = DASH_ACTOR_ROLE, Default = MAIN_ACTOR_ROLE, Indicators = INDICATOR_ACTOR_ROLE,
     Notifications = NOTIFICATIONS_ACTOR_ROLE, Greeter = GREETER_ACTOR_ROLE,

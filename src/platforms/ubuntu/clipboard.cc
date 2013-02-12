@@ -16,7 +16,7 @@
 // FIXME(loicm) The clipboard data format is not defined by Ubuntu Platform API
 //     which makes it impossible to have non-Qt applications communicate with Qt
 //     applications through the clipboard API. The solution would be to have
-//     Ubuntu Application define the data format or propose an API that supports
+//     Ubuntu Platform define the data format or propose an API that supports
 //     embedding different mime types in the clipboard.
 
 // Data format:

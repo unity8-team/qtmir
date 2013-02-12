@@ -40,7 +40,7 @@ const QEvent::Type ApplicationImageEvent::type_ =
 
 static void snapshotCallback(const void* pixels, unsigned int width, unsigned int height,
                              unsigned int stride, void* context) {
-  // FIXME(loicm) stride from Ubuntu application API is wrong.
+  // FIXME(loicm) stride from Ubuntu Platform API is wrong.
   Q_UNUSED(stride);
   DLOG("snapshotCallback (pixels=%p, width=%u, height=%u, stride=%u, context=%p)",
        pixels, width, height, stride, context);

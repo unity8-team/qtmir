@@ -53,7 +53,7 @@ static void unfocusedCallback(void* context) {
 
 QUbuntuIntegration::QUbuntuIntegration()
     : clipboard_(new QUbuntuClipboard()) {
-  // Init ubuntu application UI.
+  // Init Ubuntu Platform library.
   QStringList args = QCoreApplication::arguments();
   argc_ = args.size() + 1;
   argv_ = new char*[argc_];
