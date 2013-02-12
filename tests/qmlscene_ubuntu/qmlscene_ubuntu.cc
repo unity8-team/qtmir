@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
   bool fullscreen = false;
   bool maximized = false;
   int session = 0;
-  int role = 0;
+  int role = 1;
   int opaque = 0;
 
   for (int i = 1; i < argc; ++i) {
