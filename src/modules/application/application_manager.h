@@ -17,8 +17,8 @@
 #define APPLICATION_MANAGER_H
 
 #include <QtCore/QtCore>
-#include "ubuntu/application/ui/ubuntu_application_ui.h"
-#include "ubuntu/ui/ubuntu_ui_session_service.h"
+#include <ubuntu/application/ui/ubuntu_application_ui.h>
+#include <ubuntu/ui/ubuntu_ui_session_service.h>
 
 class Application;
 class ApplicationListModel;
