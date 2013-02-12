@@ -18,6 +18,14 @@
 
 #include <QtCore/QtCore>
 #include "ubuntu/application/ui/ubuntu_application_ui.h"
+/* FIXME: undef required so that this class compiles properly.
+   '#define Bool int' is part of <X11/Xlib.h> which is included
+   by the following chain of includes:
+   - <EGL/eglplatform.h> included by
+   - <EGL/egl.h> included by
+   - "ubuntu/application/ui/ubuntu_application_ui.h"
+*/
+#undef Bool
 
 class DesktopData;
 
