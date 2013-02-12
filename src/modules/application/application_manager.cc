@@ -38,7 +38,7 @@ const int kTimeBeforeClosingProcess = 10000;
 class TaskEvent : public QEvent {
  public:
   enum Task { kAddApplication = 0, kRemoveApplication, kUnfocusApplication, kFocusApplication,
-              kRequestFocus };
+              kRequestFocus, kRequestFullscreen };
   TaskEvent(char* desktopFile, int id, int stage, int task, QEvent::Type type)
       : QEvent(type)
       , desktopFile_(desktopFile)
@@ -105,10 +105,13 @@ static void sessionFocusedCallback(ubuntu_ui_session_properties session, void* c
 
 static void sessionRequestedFullscreenCallback(
     ubuntu_ui_session_properties session, void* context) {
-  Q_UNUSED(session);
-  Q_UNUSED(context);
   DLOG("sessionRequestedFullscreenCallback (session=%p, context=%p)", session, context);
   DASSERT(context != NULL);
+  // Post a task to be executed on the ApplicationManager thread (GUI thread).
+  ApplicationManager* manager = static_cast<ApplicationManager*>(context);
+  QCoreApplication::postEvent(manager, new TaskEvent(
+      NULL, ubuntu_ui_session_properties_get_application_instance_id(session), 0,
+      TaskEvent::kRequestFullscreen, manager->eventType()));
 }
 
 static void sessionRequestedCallback(ubuntu_ui_well_known_application application, void* context) {
@@ -376,6 +379,15 @@ void ApplicationManager::customEvent(QEvent* event) {
             emit sideStageFocusedApplicationChanged();
           }
         }
+      }
+      break;
+    }
+
+    case TaskEvent::kRequestFullscreen: {
+      DLOG("handling request fullscreen task");
+      Application* application = pidHash_.value(taskEvent->id_);
+      if (application != NULL) {
+        application->setFullscreen(true);
       }
       break;
     }

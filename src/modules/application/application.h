@@ -33,6 +33,7 @@ class Application : public QObject {
   Q_PROPERTY(qint64 handle READ handle NOTIFY handleChanged)
   Q_PROPERTY(Stage stage READ stage NOTIFY stageChanged)
   Q_PROPERTY(State state READ state NOTIFY stateChanged)
+  Q_PROPERTY(bool fullscreen READ fullscreen NOTIFY fullscreenChanged)
 
  public:
   enum Stage {
@@ -53,6 +54,7 @@ class Application : public QObject {
   qint64 handle() const;
   Stage stage() const;
   State state() const;
+  bool fullscreen() const;
 
  Q_SIGNALS:
   void desktopFileChanged();
@@ -63,16 +65,19 @@ class Application : public QObject {
   void handleChanged();
   void stageChanged();
   void stateChanged();
+  void fullscreenChanged();
 
  private:
   void setStage(Stage stage);
   void setState(State state);
+  void setFullscreen(bool fullscreen);
   int timerId() const { return timerId_; }
 
   DesktopData* desktopData_;
   qint64 pid_;
   Stage stage_;
   State state_;
+  bool fullscreen_;
   int timerId_;
 
   friend class ApplicationManager;
