@@ -1,3 +1,9 @@
+qtubuntu (0.45) quantal; urgency=low
+
+  * Added side stage support.
+
+ -- Loïc Molinari <loic.molinari@canonical.com>  Tue, 12 Feb 2013 11:47:53 +0100
+
 qtubuntu (0.44) quantal; urgency=low
 
   * New release
