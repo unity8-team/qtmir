@@ -316,7 +316,6 @@ void ApplicationManager::customEvent(QEvent* event) {
       if (application != NULL) {
         DLOG("removing application '%s' (%d) from the application lists",
              application->name().toLatin1().data(), kPid);
-        DASSERT(static_cast<int>(application->stage()) == taskEvent->stage_);
         if (application->state() == Application::Starting) {
           killTimer(application->timerId());
         }
@@ -347,7 +346,6 @@ void ApplicationManager::customEvent(QEvent* event) {
       // Reset the currently focused application.
       Application* application = pidHash_.value(taskEvent->id_);
       if (application != NULL) {
-        DASSERT(static_cast<int>(application->stage()) == taskEvent->stage_);
         if (mainStageFocusedApplication_ == application) {
           DASSERT(taskEvent->stage_ == MAIN_STAGE_HINT);
           mainStageFocusedApplication_ = NULL;
@@ -367,7 +365,6 @@ void ApplicationManager::customEvent(QEvent* event) {
       // Update the currently focused application.
       Application* application = pidHash_.value(taskEvent->id_);
       if (application != NULL) {
-        DASSERT(static_cast<int>(application->stage()) == taskEvent->stage_);
         if (application->stage() == Application::MainStage) {
           if (mainStageFocusedApplication_ != application) {
             mainStageFocusedApplication_ = application;

@@ -17,15 +17,6 @@
 #define APPLICATION_H
 
 #include <QtCore/QtCore>
-#include "ubuntu/application/ui/ubuntu_application_ui.h"
-/* FIXME: undef required so that this class compiles properly.
-   '#define Bool int' is part of <X11/Xlib.h> which is included
-   by the following chain of includes:
-   - <EGL/eglplatform.h> included by
-   - <EGL/egl.h> included by
-   - "ubuntu/application/ui/ubuntu_application_ui.h"
-*/
-#undef Bool
 
 class DesktopData;
 
@@ -44,11 +35,7 @@ class Application : public QObject {
   Q_PROPERTY(bool fullscreen READ fullscreen NOTIFY fullscreenChanged)
 
  public:
-  enum Stage {
-    MainStage = MAIN_STAGE_HINT, IntegrationStage = INTEGRATION_STAGE_HINT,
-    ShareStage = SHARE_STAGE_HINT, ContentPickingStage = CONTENT_PICKING_STAGE_HINT,
-    SideStage = SIDE_STAGE_HINT, ConfigurationStage = CONFIGURATION_STAGE_HINT
-  };
+  enum Stage { MainStage, SideStage };
   enum State { Starting, Running };
 
   Application(DesktopData* desktopData, qint64 pid, Stage stage, State state, int timerId);
