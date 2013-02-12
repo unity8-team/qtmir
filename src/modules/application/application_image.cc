@@ -124,8 +124,8 @@ void ApplicationImage::paint(QPainter* painter) {
       case PreserveAspectCrop:
         // assume AlignTop and AlignLeft alignment
         targetRect = QRect(0, 0, width(), height());
-        qreal widthScale = width() / qreal(sourceRect_.width());
-        qreal heightScale = height() / qreal(sourceRect_.height());
+        float widthScale = width() / float(sourceRect_.width());
+        float heightScale = height() / float(sourceRect_.height());
 
         if (widthScale > heightScale) {
           int croppedHeight = height() / widthScale;
