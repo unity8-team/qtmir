@@ -43,14 +43,16 @@ class InputFilterArea : public QQuickItem {
 
  private:
   void listenToAscendantsChanges();
-  void updateTrap();
+  void disconnectFromAscendantsChanges();
   void setInputTrap(const QRect & geometry);
   void enableInputTrap();
   void disableInputTrap();
+  QRect relativeToAbsoluteGeometry(QRectF relativeGeometry);
 
   bool blockInput_;
   unsigned int trapHandle_;
-  QRect geometry_;
+  QRectF geometry_;
+  QRect trapGeometry_;
   QLinkedList<QMetaObject::Connection> connections_;
 };
 

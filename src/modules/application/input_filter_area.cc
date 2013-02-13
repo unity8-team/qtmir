@@ -23,8 +23,6 @@ InputFilterArea::InputFilterArea(QQuickItem* parent)
     , blockInput_(false)
     , trapHandle_(0) {
   DLOG("InputFilterArea::InputFilterArea (this=%p, parent=%p)", this, parent);
-  listenToAscendantsChanges();
-  connect(this, &QQuickItem::parentChanged, this, &InputFilterArea::onAscendantChanged);
 }
 
 InputFilterArea::~InputFilterArea() {
@@ -48,9 +46,11 @@ void InputFilterArea::setBlockInput(bool blockInput) {
 void InputFilterArea::geometryChanged(const QRectF & newGeometry, const QRectF & oldGeometry) {
   DLOG("InputFilterArea::geometryChanged (this=%p)", this);
   qDebug() << newGeometry;
-  if (blockInput_ && newGeometry != oldGeometry) {
-    geometry_ = newGeometry.toRect();
-    setInputTrap(newGeometry.toRect());
+  if (newGeometry != oldGeometry) {
+    geometry_ = newGeometry;
+    if (blockInput_) {
+      setInputTrap(relativeToAbsoluteGeometry(geometry_));
+    }
   }
   QQuickItem::geometryChanged(newGeometry, oldGeometry);
 }
@@ -58,24 +58,21 @@ void InputFilterArea::geometryChanged(const QRectF & newGeometry, const QRectF &
 void InputFilterArea::onAscendantChanged() {
   DLOG("InputFilterArea::onAscendantChanged (this=%p)", this);
   listenToAscendantsChanges();
-  updateTrap();
+  setInputTrap(relativeToAbsoluteGeometry(geometry_));
 }
 
 void InputFilterArea::onAscendantGeometryChanged() {
   DLOG("InputFilterArea::onAscendantGeometryChanged (this=%p)", this);
-  updateTrap();
+  setInputTrap(relativeToAbsoluteGeometry(geometry_));
 }
 
 void InputFilterArea::listenToAscendantsChanges() {
   DLOG("InputFilterArea::listenToAscendantsChanges (this=%p)", this);
 
-  // disconnect all previously connected signals
-  Q_FOREACH (QMetaObject::Connection connection, connections_) {
-    disconnect(connection);
-  }
-  connections_.clear();
+  disconnectFromAscendantsChanges();
 
   // listen to geometry changes and parent changes on all the ascendants
+  connections_.append(connect(this, &QQuickItem::parentChanged, this, &InputFilterArea::onAscendantChanged));
   QQuickItem* parent = parentItem();
   while (parent != NULL) {
     connections_.append(connect(parent, &QQuickItem::parentChanged, this, &InputFilterArea::onAscendantChanged));
@@ -87,32 +84,36 @@ void InputFilterArea::listenToAscendantsChanges() {
   }
 }
 
-void InputFilterArea::updateTrap() {
-  DLOG("InputFilterArea::updateTrap (this=%p)", this);
-
-  setInputTrap(geometry_);
+void InputFilterArea::disconnectFromAscendantsChanges() {
+  DLOG("InputFilterArea::disconnectFromAscendantsChanges (this=%p)", this);
+  // disconnect all previously connected signals
+  Q_FOREACH (QMetaObject::Connection connection, connections_) {
+    disconnect(connection);
+  }
+  connections_.clear();
 }
 
 void InputFilterArea::setInputTrap(const QRect & geometry) {
   DLOG("InputFilterArea::setInputTrap (this=%p)", this);
   qDebug() << geometry;
 
-  disableInputTrap();
-
-  if (blockInput_ && geometry.isValid()) {
-    QRect sceneGeometry;
-    if (parentItem()) {
-      sceneGeometry = parentItem()->mapRectToScene(geometry).toRect();
-    } else {
-      sceneGeometry = geometry;
+  if (geometry != trapGeometry_) {
+    trapGeometry_ = geometry;
+    if (trapHandle_ != 0) {
+      ubuntu_ui_unset_surface_trap(trapHandle_);
+      trapHandle_ = 0;
     }
-    trapHandle_ = ubuntu_ui_set_surface_trap(sceneGeometry.x(), sceneGeometry.y(), sceneGeometry.width(), sceneGeometry.height());
+    if (geometry.isValid()) {
+      trapHandle_ = ubuntu_ui_set_surface_trap(geometry.x(), geometry.y(), geometry.width(), geometry.height());
+    }
   }
 }
 
 void InputFilterArea::enableInputTrap() {
   DLOG("InputFilterArea::enableInputTrap (this=%p)", this);
-  setInputTrap(geometry_);
+  setInputTrap(relativeToAbsoluteGeometry(geometry_));
+  listenToAscendantsChanges();
+  connect(this, &QQuickItem::parentChanged, this, &InputFilterArea::onAscendantChanged);
 }
 
 void InputFilterArea::disableInputTrap() {
@@ -120,5 +121,15 @@ void InputFilterArea::disableInputTrap() {
   if (trapHandle_ != 0) {
     ubuntu_ui_unset_surface_trap(trapHandle_);
     trapHandle_ = 0;
+  }
+  trapGeometry_ = QRect();
+  disconnectFromAscendantsChanges();
+}
+
+QRect InputFilterArea::relativeToAbsoluteGeometry(QRectF relativeGeometry) {
+  if (parentItem()) {
+    return parentItem()->mapRectToScene(relativeGeometry).toRect();
+  } else {
+    return relativeGeometry.toRect();
   }
 }
