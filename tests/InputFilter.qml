@@ -17,7 +17,7 @@ import QtQuick 2.0
 import Ubuntu.Application 0.1
 
 Item {
-    width: 720; height: 1280
+    width: 700; height: 700
 
     InputFilterArea {
         id: topLeftFilter
@@ -55,9 +55,19 @@ Item {
     }
 
     Item {
+        id: bottomRightItem
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 200
+
+        NumberAnimation {
+            target: bottomRightItem
+            property: "anchors.bottomMargin"
+            loops: Animation.Infinite
+            from: 0
+            to: 200
+            duration: 10000
+            running: true
+        }
 
         InputFilterArea {
             id: bottomRightFilter
