@@ -15,7 +15,7 @@
 
 #include "input_filter_area.h"
 #include "logging.h"
-//#include <ubuntu/ui/ubuntu_ui_session_service.h>
+#include <ubuntu/ui/ubuntu_ui_session_service.h>
 
 InputFilterArea::InputFilterArea(QQuickItem* parent)
     : QQuickItem(parent)
@@ -48,11 +48,11 @@ void InputFilterArea::setInputTrap(const QRectF & geometry) {
   DLOG("InputFilterArea::setInputTrap (this=%p)", this);
 
   if (trapHandle_ != 0) {
-//    unset_surface_trap(trapHandle_);
+    ubuntu_ui_unset_surface_trap(trapHandle_);
   }
 
   QRectF sceneGeometry = mapRectToScene(geometry);
   if (blockInput_) {
-//    trapHandle_ = set_surface_trap(sceneGeometry.x(), sceneGeometry.y(), sceneGeometry.width(), sceneGeometry.height());
+    trapHandle_ = ubuntu_ui_set_surface_trap(sceneGeometry.x(), sceneGeometry.y(), sceneGeometry.width(), sceneGeometry.height());
   }
 }
