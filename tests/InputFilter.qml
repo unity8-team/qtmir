@@ -57,12 +57,12 @@ Item {
     Item {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
+        anchors.bottomMargin: 200
 
         InputFilterArea {
             id: bottomRightFilter
             anchors.right: parent.right
             anchors.bottom: parent.bottom
-            anchors.bottomMargin: 200
             width: 500
             height: 500
             blockInput: true
