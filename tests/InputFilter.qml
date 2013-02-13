@@ -38,7 +38,7 @@ Item {
         height: 200
         onClicked: {
             topLeftFilter.blockInput = !topLeftFilter.blockInput;
-            bottomLeftFilter.blockInput = !bottomRightFilter.blockInput;
+            bottomRightFilter.blockInput = !bottomRightFilter.blockInput;
         }
 
         Rectangle {
