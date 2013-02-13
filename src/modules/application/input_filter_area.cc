@@ -55,6 +55,7 @@ void InputFilterArea::setInputTrap(const QRect & geometry) {
 
   if (trapHandle_ != 0) {
     ubuntu_ui_unset_surface_trap(trapHandle_);
+    trapHandle_ = 0;
   }
 
   if (blockInput_ && geometry.isValid()) {
