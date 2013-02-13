@@ -110,7 +110,6 @@ void InputFilterArea::enableInputTrap() {
   DLOG("InputFilterArea::enableInputTrap (this=%p)", this);
   setInputTrap(relativeToAbsoluteGeometry(geometry_));
   listenToAscendantsChanges();
-  connect(this, &QQuickItem::parentChanged, this, &InputFilterArea::onAscendantChanged);
 }
 
 void InputFilterArea::disableInputTrap() {
