@@ -15,7 +15,6 @@
 
 #include "input_filter_area.h"
 #include "logging.h"
-#include <QDebug>
 #include <ubuntu/ui/ubuntu_ui_session_service.h>
 
 InputFilterArea::InputFilterArea(QQuickItem* parent)
@@ -45,7 +44,6 @@ void InputFilterArea::setBlockInput(bool blockInput) {
 
 void InputFilterArea::geometryChanged(const QRectF & newGeometry, const QRectF & oldGeometry) {
   DLOG("InputFilterArea::geometryChanged (this=%p)", this);
-  qDebug() << newGeometry;
   if (newGeometry != oldGeometry) {
     geometry_ = newGeometry;
     if (blockInput_) {
@@ -95,7 +93,6 @@ void InputFilterArea::disconnectFromAscendantsChanges() {
 
 void InputFilterArea::setInputTrap(const QRect & geometry) {
   DLOG("InputFilterArea::setInputTrap (this=%p)", this);
-  qDebug() << geometry;
 
   if (geometry != trapGeometry_) {
     trapGeometry_ = geometry;
