@@ -27,6 +27,9 @@ InputFilterArea::InputFilterArea(QQuickItem* parent)
 
 InputFilterArea::~InputFilterArea() {
   DLOG("InputFilterArea::~InputFilterArea");
+  if (trapHandle_ != 0) {
+    ubuntu_ui_unset_surface_trap(trapHandle_);
+  }
 }
 
 void InputFilterArea::setBlockInput(bool blockInput) {
