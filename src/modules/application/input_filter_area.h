@@ -36,7 +36,7 @@ class InputFilterArea : public QQuickItem {
   virtual void geometryChanged(const QRectF & newGeometry, const QRectF & oldGeometry);
 
  private:
-  void setInputTrap(const QRectF & geometry);
+  void setInputTrap(const QRect & geometry);
 
   bool blockInput_;
   unsigned int trapHandle_;
