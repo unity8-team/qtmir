@@ -39,6 +39,7 @@ void InputFilterArea::setBlockInput(bool blockInput) {
 
 void InputFilterArea::geometryChanged(const QRectF & newGeometry, const QRectF & oldGeometry) {
   DLOG("InputFilterArea::geometryChanged (this=%p)", this);
+  qDebug() << newGeometry;
   setInputTrap(newGeometry);
   QQuickItem::geometryChanged(newGeometry, oldGeometry);
 }
@@ -46,6 +47,7 @@ void InputFilterArea::geometryChanged(const QRectF & newGeometry, const QRectF &
 
 void InputFilterArea::setInputTrap(const QRectF & geometry) {
   DLOG("InputFilterArea::setInputTrap (this=%p)", this);
+  qDebug() << geometry;
 
   if (trapHandle_ != 0) {
     ubuntu_ui_unset_surface_trap(trapHandle_);
@@ -53,6 +55,7 @@ void InputFilterArea::setInputTrap(const QRectF & geometry) {
 
   QRectF sceneGeometry = mapRectToScene(geometry);
   if (blockInput_) {
+    qDebug() << sceneGeometry;
     trapHandle_ = ubuntu_ui_set_surface_trap(sceneGeometry.x(), sceneGeometry.y(), sceneGeometry.width(), sceneGeometry.height());
   }
 }
