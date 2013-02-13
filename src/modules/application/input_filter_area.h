@@ -45,6 +45,8 @@ class InputFilterArea : public QQuickItem {
   void listenToAscendantsChanges();
   void updateTrap();
   void setInputTrap(const QRect & geometry);
+  void enableInputTrap();
+  void disableInputTrap();
 
   bool blockInput_;
   unsigned int trapHandle_;

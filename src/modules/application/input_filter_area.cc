@@ -29,16 +29,18 @@ InputFilterArea::InputFilterArea(QQuickItem* parent)
 
 InputFilterArea::~InputFilterArea() {
   DLOG("InputFilterArea::~InputFilterArea");
-  if (trapHandle_ != 0) {
-    ubuntu_ui_unset_surface_trap(trapHandle_);
-  }
+  disableInputTrap();
 }
 
 void InputFilterArea::setBlockInput(bool blockInput) {
   DLOG("InputFilterArea::setBlockInput (this=%p, blockInput=%d)", this, blockInput);
   if (blockInput_ != blockInput) {
     blockInput_ = blockInput;
-    setInputTrap(geometry_);
+    if (blockInput) {
+      enableInputTrap();
+    } else {
+      disableInputTrap();
+    }
     emit blockInputChanged();
   }
 }
@@ -95,10 +97,7 @@ void InputFilterArea::setInputTrap(const QRect & geometry) {
   DLOG("InputFilterArea::setInputTrap (this=%p)", this);
   qDebug() << geometry;
 
-  if (trapHandle_ != 0) {
-    ubuntu_ui_unset_surface_trap(trapHandle_);
-    trapHandle_ = 0;
-  }
+  disableInputTrap();
 
   if (blockInput_ && geometry.isValid()) {
     QRect sceneGeometry;
@@ -108,5 +107,18 @@ void InputFilterArea::setInputTrap(const QRect & geometry) {
       sceneGeometry = geometry;
     }
     trapHandle_ = ubuntu_ui_set_surface_trap(sceneGeometry.x(), sceneGeometry.y(), sceneGeometry.width(), sceneGeometry.height());
+  }
+}
+
+void InputFilterArea::enableInputTrap() {
+  DLOG("InputFilterArea::enableInputTrap (this=%p)", this);
+  setInputTrap(geometry_);
+}
+
+void InputFilterArea::disableInputTrap() {
+  DLOG("InputFilterArea::disableInputTrap (this=%p)", this);
+  if (trapHandle_ != 0) {
+    ubuntu_ui_unset_surface_trap(trapHandle_);
+    trapHandle_ = 0;
   }
 }
