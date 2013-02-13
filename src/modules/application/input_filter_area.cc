@@ -15,6 +15,7 @@
 
 #include "input_filter_area.h"
 #include "logging.h"
+#include <QDebug>
 #include <ubuntu/ui/ubuntu_ui_session_service.h>
 
 InputFilterArea::InputFilterArea(QQuickItem* parent)
