@@ -37,9 +37,8 @@ Item {
         width: 500
         height: 200
         onClicked: {
-//            topLeftFilter.blockInput = !topLeftFilter.blockInput;
-//            bottomRightFilter.blockInput = !bottomRightFilter.blockInput;
-            bottomRightItem.anchors.bottomMargin = 200
+            topLeftFilter.blockInput = !topLeftFilter.blockInput;
+            bottomRightFilter.blockInput = !bottomRightFilter.blockInput;
         }
 
         Rectangle {
@@ -55,34 +54,18 @@ Item {
         }
     }
 
-    Item {
-        id: bottomRightItem
+    InputFilterArea {
+        id: bottomRightFilter
         anchors.right: parent.right
         anchors.bottom: parent.bottom
+        width: 500
+        height: 500
+        blockInput: true
 
-        NumberAnimation {
-            target: bottomRightItem
-            property: "anchors.bottomMargin"
-            loops: Animation.Infinite
-            from: 0
-            to: 200
-            duration: 10000
-//            running: true
-        }
-
-        InputFilterArea {
-            id: bottomRightFilter
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
-            width: 500
-            height: 500
-            blockInput: true
-
-            Rectangle {
-                anchors.fill: parent
-                color: parent.blockInput ? "red" : "green"
-                opacity: parent.blockInput ? 1.0 : 0.8
-            }
+        Rectangle {
+            anchors.fill: parent
+            color: parent.blockInput ? "red" : "green"
+            opacity: parent.blockInput ? 1.0 : 0.8
         }
     }
 }
