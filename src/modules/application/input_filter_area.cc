@@ -41,7 +41,7 @@ void InputFilterArea::setBlockInput(bool blockInput) {
 void InputFilterArea::geometryChanged(const QRectF & newGeometry, const QRectF & oldGeometry) {
   DLOG("InputFilterArea::geometryChanged (this=%p)", this);
   qDebug() << newGeometry;
-  if (blockInput_) {
+  if (blockInput_ && newGeometry != oldGeometry) {
     setInputTrap(newGeometry.toRect());
   }
   QQuickItem::geometryChanged(newGeometry, oldGeometry);
