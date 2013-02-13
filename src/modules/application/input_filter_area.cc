@@ -53,8 +53,8 @@ void InputFilterArea::setInputTrap(const QRectF & geometry) {
     ubuntu_ui_unset_surface_trap(trapHandle_);
   }
 
-  QRectF sceneGeometry = mapRectToScene(geometry);
   if (blockInput_) {
+    QRectF sceneGeometry = mapRectToScene(geometry);
     qDebug() << sceneGeometry;
     trapHandle_ = ubuntu_ui_set_surface_trap(sceneGeometry.x(), sceneGeometry.y(), sceneGeometry.width(), sceneGeometry.height());
   }
