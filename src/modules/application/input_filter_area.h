@@ -40,6 +40,7 @@ class InputFilterArea : public QQuickItem {
 
   bool blockInput_;
   unsigned int trapHandle_;
+  QRect geometry_;
 };
 
 #endif  // INPUT_FILTER_AREA_H
