@@ -17,6 +17,8 @@
 #define INPUT_FILTER_AREA_H
 
 #include <QtQuick/QQuickItem>
+#include <QtCore/QLinkedList>
+#include <QtCore/QMetaObject>
 
 class InputFilterArea : public QQuickItem {
   Q_OBJECT
@@ -35,12 +37,19 @@ class InputFilterArea : public QQuickItem {
  protected:
   virtual void geometryChanged(const QRectF & newGeometry, const QRectF & oldGeometry);
 
+ private Q_SLOTS:
+  void onAscendantChanged();
+  void onAscendantGeometryChanged();
+
  private:
+  void listenToAscendantsChanges();
+  void updateTrap();
   void setInputTrap(const QRect & geometry);
 
   bool blockInput_;
   unsigned int trapHandle_;
   QRect geometry_;
+  QLinkedList<QMetaObject::Connection> connections_;
 };
 
 #endif  // INPUT_FILTER_AREA_H

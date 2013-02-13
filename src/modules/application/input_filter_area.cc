@@ -23,6 +23,8 @@ InputFilterArea::InputFilterArea(QQuickItem* parent)
     , blockInput_(false)
     , trapHandle_(0) {
   DLOG("InputFilterArea::InputFilterArea (this=%p, parent=%p)", this, parent);
+  listenToAscendantsChanges();
+  connect(this, &QQuickItem::parentChanged, this, &InputFilterArea::onAscendantChanged);
 }
 
 InputFilterArea::~InputFilterArea() {
@@ -51,6 +53,43 @@ void InputFilterArea::geometryChanged(const QRectF & newGeometry, const QRectF &
   QQuickItem::geometryChanged(newGeometry, oldGeometry);
 }
 
+void InputFilterArea::onAscendantChanged() {
+  DLOG("InputFilterArea::onAscendantChanged (this=%p)", this);
+  listenToAscendantsChanges();
+  updateTrap();
+}
+
+void InputFilterArea::onAscendantGeometryChanged() {
+  DLOG("InputFilterArea::onAscendantGeometryChanged (this=%p)", this);
+  updateTrap();
+}
+
+void InputFilterArea::listenToAscendantsChanges() {
+  DLOG("InputFilterArea::listenToAscendantsChanges (this=%p)", this);
+
+  // disconnect all previously connected signals
+  Q_FOREACH (QMetaObject::Connection connection, connections_) {
+    disconnect(connection);
+  }
+  connections_.clear();
+
+  // listen to geometry changes and parent changes on all the ascendants
+  QQuickItem* parent = parentItem();
+  while (parent != NULL) {
+    connections_.append(connect(parent, &QQuickItem::parentChanged, this, &InputFilterArea::onAscendantChanged));
+    connections_.append(connect(parent, &QQuickItem::xChanged, this, &InputFilterArea::onAscendantGeometryChanged));
+    connections_.append(connect(parent, &QQuickItem::yChanged, this, &InputFilterArea::onAscendantGeometryChanged));
+    connections_.append(connect(parent, &QQuickItem::widthChanged, this, &InputFilterArea::onAscendantGeometryChanged));
+    connections_.append(connect(parent, &QQuickItem::heightChanged, this, &InputFilterArea::onAscendantGeometryChanged));
+    parent = parent->parentItem();
+  }
+}
+
+void InputFilterArea::updateTrap() {
+  DLOG("InputFilterArea::updateTrap (this=%p)", this);
+
+  setInputTrap(geometry_);
+}
 
 void InputFilterArea::setInputTrap(const QRect & geometry) {
   DLOG("InputFilterArea::setInputTrap (this=%p)", this);
@@ -62,6 +101,12 @@ void InputFilterArea::setInputTrap(const QRect & geometry) {
   }
 
   if (blockInput_ && geometry.isValid()) {
-    trapHandle_ = ubuntu_ui_set_surface_trap(geometry.x(), geometry.y(), geometry.width(), geometry.height());
+    QRect sceneGeometry;
+    if (parentItem()) {
+      sceneGeometry = parentItem()->mapRectToScene(geometry).toRect();
+    } else {
+      sceneGeometry = geometry;
+    }
+    trapHandle_ = ubuntu_ui_set_surface_trap(sceneGeometry.x(), sceneGeometry.y(), sceneGeometry.width(), sceneGeometry.height());
   }
 }

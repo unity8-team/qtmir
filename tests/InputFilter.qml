@@ -37,8 +37,9 @@ Item {
         width: 500
         height: 200
         onClicked: {
-            topLeftFilter.blockInput = !topLeftFilter.blockInput;
-            bottomRightFilter.blockInput = !bottomRightFilter.blockInput;
+//            topLeftFilter.blockInput = !topLeftFilter.blockInput;
+//            bottomRightFilter.blockInput = !bottomRightFilter.blockInput;
+            bottomRightItem.anchors.bottomMargin = 200
         }
 
         Rectangle {
@@ -66,7 +67,7 @@ Item {
             from: 0
             to: 200
             duration: 10000
-            running: true
+//            running: true
         }
 
         InputFilterArea {
