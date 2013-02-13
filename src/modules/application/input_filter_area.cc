@@ -26,11 +26,13 @@ InputFilterArea::InputFilterArea(QQuickItem* parent)
 
 InputFilterArea::~InputFilterArea() {
   DLOG("InputFilterArea::~InputFilterArea");
+
   disableInputTrap();
 }
 
 void InputFilterArea::setBlockInput(bool blockInput) {
   DLOG("InputFilterArea::setBlockInput (this=%p, blockInput=%d)", this, blockInput);
+
   if (blockInput_ != blockInput) {
     blockInput_ = blockInput;
     if (blockInput) {
@@ -44,6 +46,7 @@ void InputFilterArea::setBlockInput(bool blockInput) {
 
 void InputFilterArea::geometryChanged(const QRectF & newGeometry, const QRectF & oldGeometry) {
   DLOG("InputFilterArea::geometryChanged (this=%p)", this);
+
   if (newGeometry != oldGeometry) {
     geometry_ = newGeometry;
     if (blockInput_) {
@@ -55,12 +58,14 @@ void InputFilterArea::geometryChanged(const QRectF & newGeometry, const QRectF &
 
 void InputFilterArea::onAscendantChanged() {
   DLOG("InputFilterArea::onAscendantChanged (this=%p)", this);
+
   listenToAscendantsChanges();
   setInputTrap(relativeToAbsoluteGeometry(geometry_));
 }
 
 void InputFilterArea::onAscendantGeometryChanged() {
   DLOG("InputFilterArea::onAscendantGeometryChanged (this=%p)", this);
+
   setInputTrap(relativeToAbsoluteGeometry(geometry_));
 }
 
@@ -84,6 +89,7 @@ void InputFilterArea::listenToAscendantsChanges() {
 
 void InputFilterArea::disconnectFromAscendantsChanges() {
   DLOG("InputFilterArea::disconnectFromAscendantsChanges (this=%p)", this);
+
   // disconnect all previously connected signals
   Q_FOREACH (QMetaObject::Connection connection, connections_) {
     disconnect(connection);
@@ -108,12 +114,14 @@ void InputFilterArea::setInputTrap(const QRect & geometry) {
 
 void InputFilterArea::enableInputTrap() {
   DLOG("InputFilterArea::enableInputTrap (this=%p)", this);
+
   setInputTrap(relativeToAbsoluteGeometry(geometry_));
   listenToAscendantsChanges();
 }
 
 void InputFilterArea::disableInputTrap() {
   DLOG("InputFilterArea::disableInputTrap (this=%p)", this);
+
   if (trapHandle_ != 0) {
     ubuntu_ui_unset_surface_trap(trapHandle_);
     trapHandle_ = 0;
