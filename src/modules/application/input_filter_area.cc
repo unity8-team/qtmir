@@ -74,7 +74,12 @@ void InputFilterArea::listenToAscendantsChanges() {
 
   disconnectFromAscendantsChanges();
 
-  // listen to geometry changes and parent changes on all the ascendants
+  /* Listen to geometry changes and parent changes on all the ascendants.
+     Listening on x, y, width, height changes on all the ascendants is
+     necessary because there is no API that notifies of absolute geometry
+     changes.
+     Ref.: https://bugreports.qt-project.org/browse/QTBUG-19746
+  */
   connections_.append(connect(this, &QQuickItem::parentChanged, this, &InputFilterArea::onAscendantChanged));
   QQuickItem* parent = parentItem();
   while (parent != NULL) {
