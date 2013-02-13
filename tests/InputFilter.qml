@@ -54,10 +54,16 @@ Item {
         }
     }
 
+    Item {
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+
+
     InputFilterArea {
         id: bottomLeftFilter
         anchors.right: parent.right
         anchors.bottom: parent.bottom
+        anchors.bottomMargin: 200
         width: 500
         height: 500
         blockInput: true
@@ -68,4 +74,5 @@ Item {
             opacity: parent.blockInput ? 1.0 : 0.8
         }
     }
+        }
 }
