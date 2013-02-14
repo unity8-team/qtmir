@@ -74,7 +74,7 @@ void InputFilterArea::listenToAscendantsChanges() {
 
   disconnectFromAscendantsChanges();
 
-  /* Listen to geometry changes and parent changes on all the ascendants.
+  /* FIXME: Listen to geometry changes and parent changes on all the ascendants.
      Listening on x, y, width, height changes on all the ascendants is
      necessary because there is no API that notifies of absolute geometry
      changes.
