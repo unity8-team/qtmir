@@ -17,8 +17,8 @@
 #define APPLICATION_MANAGER_H
 
 #include <QtCore/QtCore>
-#include "ubuntu/application/ui/ubuntu_application_ui.h"
-#include "ubuntu/ui/ubuntu_ui_session_service.h"
+#include <ubuntu/application/ui/ubuntu_application_ui.h>
+#include <ubuntu/ui/ubuntu_ui_session_service.h>
 
 class Application;
 class ApplicationListModel;
@@ -65,7 +65,7 @@ class ApplicationManager : public QObject {
   ApplicationManager();
   ~ApplicationManager();
 
-  // Mapping enums to Ubuntu application API enums.
+  // Mapping enums to Ubuntu Platform API enums.
   enum Role {
     Dash = DASH_ACTOR_ROLE, Default = MAIN_ACTOR_ROLE, Indicators = INDICATOR_ACTOR_ROLE,
     Notifications = NOTIFICATIONS_ACTOR_ROLE, Greeter = GREETER_ACTOR_ROLE,

@@ -8,12 +8,11 @@
 1. Description
 --------------
 
-  QtUbuntu is a set of Qt5 components for the Ubuntu Application
-  API. It contains a QPA (Qt Platform Abstraction) plugin based on the
-  Ubuntu Application API and a legacy QPA plugin based on the
-  compatibility layers. It also provides Qt bindings for Ubuntu
-  Application API features that are not exposed through the QPA
-  plugins.
+  QtUbuntu is a set of Qt5 components for the Ubuntu Platform API. It
+  contains a QPA (Qt Platform Abstraction) plugin based on the Ubuntu
+  Platform API and a legacy QPA plugin based on the compatibility
+  layers. It also provides Qt bindings for Ubuntu Platform API
+  features that are not exposed through the QPA plugins.
 
 
 2 Running
@@ -54,72 +53,16 @@
 3. Building
 -----------
 
-  Here is the process to follow in order to cross-compile the project
-  and deploy it to the phone. First, install PBuilder on the chroot
-  host:
+  To compile QtUbuntu, create the makefiles with qmake and build with
+  make:
 
-    $ sudo apt-get install pbuilder
-
-  Get the pbuilder-scripts Ubuntu package hosted on Chinstrap
-  (https://chinstrap.canonical.com/~mfrey/newyork/pbuilder-scripts_14_all.deb),
-  and install it:
-
-    $ sudo dpkg -i pbuilder-scripts_14_all.deb
-
-  Create the chroot:
-
-    $ pcreate -a armel -d quantal -e "vim apt-transport-https ca-certificates libgles2-mesa-dev libegl1-mesa-dev libudev-dev libfontconfig1-dev libfreetype6-dev libglib2.0-dev" armel-quantal
-
-  Skip the sources.list entry edition pressing "ZZ", then login the
-  chroot using the save command:
-
-    $ ptest --save armel-quantal
-
-  Add Manhattan repositories to Apt. See the wiki for the credentials
-  (https://wiki.canonical.com/PES/Infrastructure/Repository/CustomerMirrors).
-
-    $ echo "deb https://USER:PASSWORD@cesg.canonical.com/canonical manhattan-quantal-devel public private" >> /etc/apt/sources.list
-    $ echo "deb-src https://USER:PASSWORD@cesg.canonical.com/canonical manhattan-quantal-devel public private" >> /etc/apt/sources.list
-    $ echo "deb http://ppa.launchpad.net/canonical-qt5-edgers/qt5-proper/ubuntu quantal main" >> /etc/apt/sources.list
-    $ apt-get update
-
-  Then install Qt5 and the libhybris development files:
-
-    $ apt-get install -y qt5-default libqt5qml5 libqt5quick5 qtdeclarative5-qtquick2-plugin libhybris-dev
-
-  Exit the chroot saving the current session:
-
-    $ exit
-
-  Files created inside the chroot will be deleted once logging out. In
-  order to write files to a filesystem on the chroot host, edit
-  .pbuilderrc in your home directory and add the filesystem, for
-  example "/media/data", using the BINDMOUNTS option.
-
-    $ echo "BINDMOUNTS=\"/media/data\"" >> ~/.pbuilderrc
-
-  Log back to the chroot:
-
-    $ ptest armel-quantal
-
-  The build environment is now ready. In order to compile QtUbuntu, go
-  to the file system set up earlier, generate the makefiles and build:
-
-    $ cd /media/data/qtubuntu
     $ qmake
     $ make
 
   By default, QtUbuntu compiles a release build. To compile a debug
-  build, the following command can be used:
+  build, the following qmake command should be used:
 
-    $ qmake "CONFIG+=debug" && make
-
-  To deploy on the phone, open a new shell outside the chroot and push
-  the files to the phone using adb (in the android-tools-adb Quantal
-  package). The deploy.sh script at the root directory is meant to do
-  that:
-
-    $ ./deploy.sh
+    $ qmake CONFIG+=debug
 
 
 4. QPA native interface
@@ -161,9 +104,9 @@
   The QPA plugin for Ubuntu looks for a "session" dynamic property on
   the QPlatformNativeInterface object in order to know the session
   type to request. That property can be set to an integer representing
-  a SessionType specified in the Ubuntu Application API before the
-  first window is shown. In order to request a system session type,
-  the following code can be used:
+  a SessionType specified in the Ubuntu Platform API before the first
+  window is shown. In order to request a system session type, the
+  following code can be used:
 
     #include <qpa/qplatformnativeinterface.h>
     ...

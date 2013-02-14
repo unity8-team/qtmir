@@ -1,3 +1,9 @@
+qtubuntu (0.44) quantal; urgency=low
+
+  * New release
+
+ -- Florian Boucault <florian.boucault@canonical.com>  Tue, 12 Feb 2013 10:09:19 +0000
+
 qtubuntu (0.43) quantal; urgency=low
 
   * Update applications list in the right order to prevent missed updates

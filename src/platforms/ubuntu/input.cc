@@ -36,7 +36,7 @@ void QUbuntuInput::handleTouchEvent(
   if (sessionType_ != 1) {
     QUbuntuBaseInput::handleTouchEvent(window, timestamp, device, points);
   } else {
-    // Ubuntu application API creates an input handler per window. Since system sessions have
+    // Ubuntu platform API creates an input handler per window. Since system sessions have
     // fullscreen input handlers, the last created window has an input handler that takes precedence
     // over the others. Because of that, only the last created window receives touch input. In order
     // to fix that issue for system sessions, we pass the NULL pointer to the Qt handler as window
