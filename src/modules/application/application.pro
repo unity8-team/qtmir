@@ -15,13 +15,15 @@ SOURCES = plugin.cc \
           application_list_model.cc \
           application_image.cc \
           application_window.cc \
-          application.cc
+          application.cc \
+          input_filter_area.cc
 
 HEADERS = application_manager.h \
           application_list_model.h \
           application_image.h \
           application_window.h \
           application.h \
+          input_filter_area.h \
           logging.h
 
 CONFIG += plugin
