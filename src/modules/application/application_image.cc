@@ -23,9 +23,10 @@
 
 class ApplicationImageEvent : public QEvent {
  public:
-  ApplicationImageEvent(QEvent::Type type, QImage image)
+  ApplicationImageEvent(QEvent::Type type, QImage image, const QRect& sourceRect)
       : QEvent(type)
-      , image_(image) {
+      , image_(image)
+      , sourceRect_(sourceRect) {
     DLOG("ApplicationImageEvent::ApplicationImageEvent (this=%p, type=%d)", this, type);
   }
   ~ApplicationImageEvent() {
@@ -33,30 +34,40 @@ class ApplicationImageEvent : public QEvent {
   }
   static const QEvent::Type type_;
   QImage image_;
+  QRect sourceRect_;
 };
 
 const QEvent::Type ApplicationImageEvent::type_ =
     static_cast<QEvent::Type>(QEvent::registerEventType());
 
-static void snapshotCallback(const void* pixels, unsigned int width, unsigned int height,
+static void snapshotCallback(const void* pixels, unsigned int bufferWidth, unsigned int bufferHeight,
+                             unsigned int sourceX, unsigned int sourceY,
+                             unsigned int sourceWidth, unsigned int sourceHeight,
                              unsigned int stride, void* context) {
   // FIXME(loicm) stride from Ubuntu Platform API is wrong.
   Q_UNUSED(stride);
-  DLOG("snapshotCallback (pixels=%p, width=%u, height=%u, stride=%u, context=%p)",
-       pixels, width, height, stride, context);
+  DLOG("snapshotCallback (pixels=%p, bufferWidth=%u, bufferHeight=%u, sourceX=%u, sourceY=%u, sourceWidth=%u, sourceHeight=%u, stride=%u, context=%p)",
+       pixels, bufferWidth, bufferHeight, sourceX, sourceY, sourceHeight, sourceHeight, stride, context);
   DASSERT(context != NULL);
   // Copy the pixels and post an event to the GUI thread so that we can safely schedule an update.
   ApplicationImage* applicationImage = static_cast<ApplicationImage*>(context);
-  QImage image(static_cast<const uchar*>(pixels), width, height, width * 4,
-               QImage::Format_ARGB32_Premultiplied);
-  QCoreApplication::postEvent(
-      applicationImage, new ApplicationImageEvent(
-          ApplicationImageEvent::type_, image.rgbSwapped()));
+
+  if (pixels == NULL || bufferWidth == 0 || bufferHeight == 0) {
+      QCoreApplication::postEvent(applicationImage, new ApplicationImageEvent(
+                                  ApplicationImageEvent::type_, QImage(), QRect()));
+  } else {
+    QRect sourceRect(sourceX, sourceY, sourceWidth, sourceHeight);
+    QImage image(static_cast<const uchar*>(pixels), bufferWidth, bufferHeight, bufferWidth * 4,
+                 QImage::Format_ARGB32_Premultiplied);
+    QCoreApplication::postEvent(applicationImage, new ApplicationImageEvent(
+          ApplicationImageEvent::type_, image.rgbSwapped(), sourceRect));
+  }
 }
 
 ApplicationImage::ApplicationImage(QQuickPaintedItem* parent)
     : QQuickPaintedItem(parent)
-    , source_(NULL) {
+    , source_(NULL)
+    , fillMode_(Stretch) {
   DLOG("ApplicationImage::ApplicationImage (this=%p, parent=%p)", this, parent);
   setRenderTarget(QQuickPaintedItem::FramebufferObject);
   setFillColor(QColor(0, 0, 0, 255));
@@ -73,6 +84,7 @@ void ApplicationImage::customEvent(QEvent* event) {
   ApplicationImageEvent* imageEvent = static_cast<ApplicationImageEvent*>(event);
   // Store the new image and schedule an update.
   image_ = imageEvent->image_;
+  sourceRect_ = imageEvent->sourceRect_;
   update();
 }
 
@@ -81,6 +93,15 @@ void ApplicationImage::setSource(Application* source) {
   if (source_ != source) {
     source_ = source;
     emit sourceChanged();
+  }
+}
+
+void ApplicationImage::setFillMode(FillMode fillMode) {
+  DLOG("ApplicationImage::setApplication (this=%p, fillMode=%d)", this, fillMode);
+  if (fillMode_ != fillMode) {
+    fillMode_ = fillMode;
+    update();
+    emit fillModeChanged();
   }
 }
 
@@ -94,9 +115,35 @@ void ApplicationImage::scheduleUpdate() {
 
 void ApplicationImage::paint(QPainter* painter) {
   DLOG("ApplicationImage::paint (this=%p, painter=%p)", this, painter);
-  if (source_ != NULL && source_->state() == Application::Running) {
+  if (source_ != NULL && !image_.isNull() && sourceRect_.isValid()
+      && source_->state() == Application::Running) {
     painter->setCompositionMode(QPainter::CompositionMode_Source);
-    painter->drawImage(QRect(0, 0, width(), height()), image_, image_.rect());
+
+    QRect targetRect;
+    QRect sourceRect;
+
+    switch(fillMode_) {
+      case Stretch:
+        targetRect = QRect(0, 0, width(), height());
+        sourceRect = sourceRect_;
+        break;
+      case PreserveAspectCrop:
+        // assume AlignTop and AlignLeft alignment
+        targetRect = QRect(0, 0, width(), height());
+        float widthScale = width() / float(sourceRect_.width());
+        float heightScale = height() / float(sourceRect_.height());
+
+        if (widthScale > heightScale) {
+          int croppedHeight = height() / widthScale;
+          sourceRect = QRect(sourceRect_.x(), sourceRect_.y(), sourceRect_.width(), croppedHeight);
+        } else {
+          int croppedWidth = width() / heightScale;
+          sourceRect = QRect(sourceRect_.x(), sourceRect_.y(), croppedWidth, sourceRect_.height());
+        }
+        break;
+    }
+
+    painter->drawImage(targetRect, image_, sourceRect);
   }
 }
 
