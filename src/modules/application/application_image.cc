@@ -51,12 +51,17 @@ static void snapshotCallback(const void* pixels, unsigned int bufferWidth, unsig
   DASSERT(context != NULL);
   // Copy the pixels and post an event to the GUI thread so that we can safely schedule an update.
   ApplicationImage* applicationImage = static_cast<ApplicationImage*>(context);
-  QRect sourceRect(sourceX, sourceY, sourceWidth, sourceHeight);
-  QImage image(static_cast<const uchar*>(pixels), bufferWidth, bufferHeight, bufferWidth * 4,
-               QImage::Format_ARGB32_Premultiplied);
-  QCoreApplication::postEvent(
-      applicationImage, new ApplicationImageEvent(
+
+  if (pixels == NULL || bufferWidth == 0 || bufferHeight == 0) {
+      QCoreApplication::postEvent(applicationImage, new ApplicationImageEvent(
+                                  ApplicationImageEvent::type_, QImage(), QRect()));
+  } else {
+    QRect sourceRect(sourceX, sourceY, sourceWidth, sourceHeight);
+    QImage image(static_cast<const uchar*>(pixels), bufferWidth, bufferHeight, bufferWidth * 4,
+                 QImage::Format_ARGB32_Premultiplied);
+    QCoreApplication::postEvent(applicationImage, new ApplicationImageEvent(
           ApplicationImageEvent::type_, image.rgbSwapped(), sourceRect));
+  }
 }
 
 ApplicationImage::ApplicationImage(QQuickPaintedItem* parent)
@@ -110,7 +115,8 @@ void ApplicationImage::scheduleUpdate() {
 
 void ApplicationImage::paint(QPainter* painter) {
   DLOG("ApplicationImage::paint (this=%p, painter=%p)", this, painter);
-  if (source_ != NULL && source_->state() == Application::Running) {
+  if (source_ != NULL && !image_.isNull() && sourceRect_.isValid()
+      && source_->state() == Application::Running) {
     painter->setCompositionMode(QPainter::CompositionMode_Source);
 
     QRect targetRect;
