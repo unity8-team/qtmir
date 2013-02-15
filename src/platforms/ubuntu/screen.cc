@@ -44,9 +44,9 @@ QUbuntuScreen::QUbuntuScreen() {
   DLOG("density pixel ratio is %.2f", densityPixelRatio_);
 
   // Compute menubar strut.
-  // FIXME(loicm) Hard-coded to 3 grid units minus 2 density independent pixels for now.
+  // FIXME(loicm) Hard-coded to 3 grid units plus 2 density independent pixels for now.
   struct { int left; int right; int top; int bottom; } strut = {
-    0, 0, gridUnitToPixel(3) - densityPixelToPixel(2), 0
+    0, 0, gridUnitToPixel(3) + densityPixelToPixel(2), 0
   };
   DLOG("menu bar height is %d pixels", strut.top);
 
