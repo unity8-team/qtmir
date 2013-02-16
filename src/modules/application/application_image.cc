@@ -67,7 +67,8 @@ static void snapshotCallback(const void* pixels, unsigned int bufferWidth, unsig
 ApplicationImage::ApplicationImage(QQuickPaintedItem* parent)
     : QQuickPaintedItem(parent)
     , source_(NULL)
-    , fillMode_(Stretch) {
+    , fillMode_(Stretch)
+    , ready_(false) {
   DLOG("ApplicationImage::ApplicationImage (this=%p, parent=%p)", this, parent);
   setRenderTarget(QQuickPaintedItem::FramebufferObject);
   setFillColor(QColor(0, 0, 0, 255));
@@ -86,12 +87,20 @@ void ApplicationImage::customEvent(QEvent* event) {
   image_ = imageEvent->image_;
   sourceRect_ = imageEvent->sourceRect_;
   update();
+  if (!ready_) {
+    ready_ = true;
+    emit readyChanged();
+  }
 }
 
 void ApplicationImage::setSource(Application* source) {
   DLOG("ApplicationImage::setApplication (this=%p, source=%p)", this, source);
   if (source_ != source) {
     source_ = source;
+    if (ready_) {
+      ready_ = false;
+      emit readyChanged();
+    }
     emit sourceChanged();
   }
 }
@@ -107,10 +116,15 @@ void ApplicationImage::setFillMode(FillMode fillMode) {
 
 void ApplicationImage::scheduleUpdate() {
   DLOG("ApplicationImage::scheduleUpdate (this=%p)", this);
+  if (ready_) {
+    ready_ = false;
+    emit readyChanged();
+  }
   if (source_ != NULL && source_->state() == Application::Running)
     ubuntu_ui_session_snapshot_running_session_with_id(source_->handle(), snapshotCallback, this);
-  else
+  else {
     update();
+  }
 }
 
 void ApplicationImage::paint(QPainter* painter) {

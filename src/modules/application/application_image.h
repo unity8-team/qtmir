@@ -26,6 +26,7 @@ class ApplicationImage : public QQuickPaintedItem {
   Q_ENUMS(FillMode)
   Q_PROPERTY(Application* source READ source WRITE setSource NOTIFY sourceChanged)
   Q_PROPERTY(FillMode fillMode READ fillMode WRITE setFillMode NOTIFY fillModeChanged)
+  Q_PROPERTY(bool ready READ ready NOTIFY readyChanged)
 
  public:
   explicit ApplicationImage(QQuickPaintedItem* parent = 0);
@@ -44,11 +45,13 @@ class ApplicationImage : public QQuickPaintedItem {
   void setSource(Application* source);
   FillMode fillMode() const  { return fillMode_; }
   void setFillMode(FillMode);
+  bool ready() const { return ready_; }
   Q_INVOKABLE void scheduleUpdate();
 
  Q_SIGNALS:
   void sourceChanged();
   void fillModeChanged();
+  void readyChanged();
 
  private Q_SLOTS:
   void onSourceDestroyed();
@@ -57,6 +60,7 @@ class ApplicationImage : public QQuickPaintedItem {
   QImage image_;
   Application* source_;
   FillMode fillMode_;
+  bool ready_;
   QRect sourceRect_;
 };
 
