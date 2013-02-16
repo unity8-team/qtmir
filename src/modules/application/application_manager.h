@@ -33,6 +33,7 @@ class DesktopData {
   QString comment() const { return entries_[kCommentIndex]; }
   QString icon() const { return entries_[kIconIndex]; }
   QString exec() const { return entries_[kExecIndex]; }
+  QString stageHint() const { return entries_[kStageHintIndex]; }
   bool loaded() const { return loaded_; }
 
  private:
@@ -40,7 +41,8 @@ class DesktopData {
     kCommentIndex = 1,
     kIconIndex = 2,
     kExecIndex = 3,
-    kNumberOfEntries = 4;
+    kStageHintIndex = 4,
+    kNumberOfEntries = 5;
 
   bool loadDesktopFile(QString desktopFile);
 
@@ -55,11 +57,17 @@ class ApplicationManager : public QObject {
   Q_ENUMS(StageHint)
   Q_ENUMS(FormFactorHint)
   Q_ENUMS(FavoriteApplication)
+  Q_PROPERTY(int sideStageWidth READ sideStageWidth)
   Q_PROPERTY(StageHint stageHint READ stageHint)
   Q_PROPERTY(FormFactorHint formFactorHint READ formFactorHint)
-  Q_PROPERTY(ApplicationListModel* applications READ applications NOTIFY applicationsChanged)
-  Q_PROPERTY(Application* focusedApplication READ focusedApplication
-             NOTIFY focusedApplicationChanged)
+  Q_PROPERTY(ApplicationListModel* mainStageApplications READ mainStageApplications
+             NOTIFY mainStageApplicationsChanged)
+  Q_PROPERTY(ApplicationListModel* sideStageApplications READ sideStageApplications
+             NOTIFY sideStageApplicationsChanged)
+  Q_PROPERTY(Application* mainStageFocusedApplication READ mainStageFocusedApplication
+             NOTIFY mainStageFocusedApplicationChanged)
+  Q_PROPERTY(Application* sideStageFocusedApplication READ sideStageFocusedApplication
+             NOTIFY sideStageFocusedApplicationChanged)
 
  public:
   ApplicationManager();
@@ -90,14 +98,17 @@ class ApplicationManager : public QObject {
   void customEvent(QEvent* event);
   void timerEvent(QTimerEvent* event);
 
+  int sideStageWidth() const;
   StageHint stageHint() const;
   FormFactorHint formFactorHint() const;
-  ApplicationListModel* applications() const;
-  Application* focusedApplication() const;
+  ApplicationListModel* mainStageApplications() const;
+  ApplicationListModel* sideStageApplications() const;
+  Application* mainStageFocusedApplication() const;
+  Application* sideStageFocusedApplication() const;
 
   Q_INVOKABLE void focusApplication(int handle);
   Q_INVOKABLE void focusFavoriteApplication(FavoriteApplication application);
-  Q_INVOKABLE void unfocusCurrentApplication();
+  Q_INVOKABLE void unfocusCurrentApplication(StageHint stageHint);
   Q_INVOKABLE Application* startProcess(QString desktopFile, QStringList arguments = QStringList());
   Q_INVOKABLE void stopProcess(Application* application);
   Q_INVOKABLE void startWatcher() {}
@@ -105,15 +116,19 @@ class ApplicationManager : public QObject {
   QEvent::Type eventType() { return eventType_; }
 
  Q_SIGNALS:
-  void applicationsChanged();
-  void focusedApplicationChanged();
+  void mainStageApplicationsChanged();
+  void sideStageApplicationsChanged();
+  void mainStageFocusedApplicationChanged();
+  void sideStageFocusedApplicationChanged();
   void focusRequested(FavoriteApplication favoriteApplication);
 
  private:
   void killProcess(qint64 pid);
 
-  ApplicationListModel* applications_;
-  Application* focusedApplication_;
+  ApplicationListModel* mainStageApplications_;
+  ApplicationListModel* sideStageApplications_;
+  Application* mainStageFocusedApplication_;
+  Application* sideStageFocusedApplication_;
   QHash<int,Application*> pidHash_;
   QEvent::Type eventType_;
 };

@@ -1,3 +1,11 @@
+qtubuntu (0.46) quantal; urgency=low
+
+  * Added side stage support.
+  * ApplicationImage: crop buffer to surface's source size and position.
+  * ApplicationImage: added new 'fillMode' property with 2 possible values: Stretch and PreserveAspectCrop.
+
+ -- Loïc Molinari <loic.molinari@canonical.com>  Tue, 12 Feb 2013 11:47:53 +0100
+
 qtubuntu (0.45) quantal; urgency=low
 
   * Added new InputFilterArea QML item.

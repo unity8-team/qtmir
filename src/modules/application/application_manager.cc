@@ -29,6 +29,9 @@
 #define ARRAY_SIZE(a) \
     ((sizeof(a) / sizeof(*(a))) / static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))))
 
+// Size of the side stage in grid units.
+const int kSideStageWidth = 40;
+
 // The time (in ms) to wait before closing a process that's not been matched by a new session.
 const int kTimeBeforeClosingProcess = 10000;
 
@@ -36,13 +39,14 @@ class TaskEvent : public QEvent {
  public:
   enum Task { kAddApplication = 0, kRemoveApplication, kUnfocusApplication, kFocusApplication,
               kRequestFocus, kRequestFullscreen };
-  TaskEvent(char* desktopFile, int id, int task, QEvent::Type type)
+  TaskEvent(char* desktopFile, int id, int stage, int task, QEvent::Type type)
       : QEvent(type)
       , desktopFile_(desktopFile)
       , id_(id)
+      , stage_(stage)
       , task_(task) {
-    DLOG("TaskEvent::TaskEvent (this=%p, desktopFile='%s', id=%d, task=%d, type=%d)",
-         this, desktopFile, id, task, type);
+    DLOG("TaskEvent::TaskEvent (this=%p, desktopFile='%s', id=%d, stage=%d, task=%d, type=%d)",
+         this, desktopFile, id, stage, task, type);
   }
   ~TaskEvent() {
     DLOG("TaskEvent::~TaskEvent");
@@ -50,6 +54,7 @@ class TaskEvent : public QEvent {
   }
   char* desktopFile_;
   int id_;
+  int stage_;
   int task_;
 };
 
@@ -61,6 +66,7 @@ static void sessionBornCallback(ubuntu_ui_session_properties session, void* cont
   QCoreApplication::postEvent(manager, new TaskEvent(
       qstrdup(ubuntu_ui_session_properties_get_desktop_file_hint(session)),
       ubuntu_ui_session_properties_get_application_instance_id(session),
+      ubuntu_ui_session_properties_get_application_stage_hint(session),
       TaskEvent::kAddApplication, manager->eventType()));
 }
 
@@ -71,6 +77,7 @@ static void sessionDiedCallback(ubuntu_ui_session_properties session, void* cont
   ApplicationManager* manager = static_cast<ApplicationManager*>(context);
   QCoreApplication::postEvent(manager, new TaskEvent(
       NULL, ubuntu_ui_session_properties_get_application_instance_id(session),
+      ubuntu_ui_session_properties_get_application_stage_hint(session),
       TaskEvent::kRemoveApplication, manager->eventType()));
 }
 
@@ -81,6 +88,7 @@ static void sessionUnfocusedCallback(ubuntu_ui_session_properties session, void*
   ApplicationManager* manager = static_cast<ApplicationManager*>(context);
   QCoreApplication::postEvent(manager, new TaskEvent(
       NULL, ubuntu_ui_session_properties_get_application_instance_id(session),
+      ubuntu_ui_session_properties_get_application_stage_hint(session),
       TaskEvent::kUnfocusApplication, manager->eventType()));
 }
 
@@ -91,6 +99,7 @@ static void sessionFocusedCallback(ubuntu_ui_session_properties session, void* c
   ApplicationManager* manager = static_cast<ApplicationManager*>(context);
   QCoreApplication::postEvent(manager, new TaskEvent(
       NULL, ubuntu_ui_session_properties_get_application_instance_id(session),
+      ubuntu_ui_session_properties_get_application_stage_hint(session),
       TaskEvent::kFocusApplication, manager->eventType()));
 }
 
@@ -101,7 +110,7 @@ static void sessionRequestedFullscreenCallback(
   // Post a task to be executed on the ApplicationManager thread (GUI thread).
   ApplicationManager* manager = static_cast<ApplicationManager*>(context);
   QCoreApplication::postEvent(manager, new TaskEvent(
-      NULL, ubuntu_ui_session_properties_get_application_instance_id(session),
+      NULL, ubuntu_ui_session_properties_get_application_instance_id(session), 0,
       TaskEvent::kRequestFullscreen, manager->eventType()));
 }
 
@@ -111,7 +120,7 @@ static void sessionRequestedCallback(ubuntu_ui_well_known_application applicatio
   // Post a task to be executed on the ApplicationManager thread (GUI thread).
   ApplicationManager* manager = static_cast<ApplicationManager*>(context);
   QCoreApplication::postEvent(manager, new TaskEvent(
-      NULL, static_cast<int>(application), TaskEvent::kRequestFocus, manager->eventType()));
+      NULL, static_cast<int>(application), 0, TaskEvent::kRequestFocus, manager->eventType()));
 }
 
 DesktopData::DesktopData(QString desktopFile)
@@ -132,14 +141,16 @@ bool DesktopData::loadDesktopFile(QString desktopFile) {
        this, desktopFile.toLatin1().data());
   DASSERT(desktopFile != NULL);
   const struct { const char* const name; int size; unsigned int flag; } kEntryNames[] = {
-    { "Name=",    sizeof("Name=") - 1,    1 << DesktopData::kNameIndex },
+    { "Name=", sizeof("Name=") - 1, 1 << DesktopData::kNameIndex },
     { "Comment=", sizeof("Comment=") - 1, 1 << DesktopData::kCommentIndex },
-    { "Icon=",    sizeof("Icon=") - 1,    1 << DesktopData::kIconIndex },
-    { "Exec=",    sizeof("Exec=") - 1,    1 << DesktopData::kExecIndex }
+    { "Icon=", sizeof("Icon=") - 1, 1 << DesktopData::kIconIndex },
+    { "Exec=", sizeof("Exec=") - 1, 1 << DesktopData::kExecIndex },
+    { "X-Ubuntu-StageHint=", sizeof("X-Ubuntu-StageHint=") - 1, 1 << DesktopData::kStageHintIndex }
   };
   const unsigned int kAllEntriesMask =
       (1 << DesktopData::kNameIndex) | (1 << DesktopData::kCommentIndex)
-      | (1 << DesktopData::kIconIndex) | (1 << DesktopData::kExecIndex);
+      | (1 << DesktopData::kIconIndex) | (1 << DesktopData::kExecIndex)
+      | (1 << DesktopData::kStageHintIndex);
   const unsigned int kMandatoryEntriesMask =
       (1 << DesktopData::kNameIndex) | (1 << DesktopData::kIconIndex)
       | (1 << DesktopData::kExecIndex);
@@ -192,11 +203,12 @@ bool DesktopData::loadDesktopFile(QString desktopFile) {
 
   // Check that the mandatory entries are set.
   if ((entryFlags & kMandatoryEntriesMask) == kMandatoryEntriesMask) {
-    DLOG("loaded desktop file with name='%s', comment='%s', icon='%s', exec='%s'",
+    DLOG("loaded desktop file with name='%s', comment='%s', icon='%s', exec='%s', stagehint='%s'",
          entries_[DesktopData::kNameIndex].toLatin1().data(),
          entries_[DesktopData::kCommentIndex].toLatin1().data(),
          entries_[DesktopData::kIconIndex].toLatin1().data(),
-         entries_[DesktopData::kExecIndex].toLatin1().data());
+         entries_[DesktopData::kExecIndex].toLatin1().data(),
+         entries_[DesktopData::kStageHintIndex].toLatin1().data());
     return true;
   } else {
     DLOG("not a valid desktop file, missing mandatory entries in the standard group header");
@@ -205,8 +217,10 @@ bool DesktopData::loadDesktopFile(QString desktopFile) {
 }
 
 ApplicationManager::ApplicationManager()
-    : applications_(new ApplicationListModel())
-    , focusedApplication_(NULL)
+    : mainStageApplications_(new ApplicationListModel())
+    , sideStageApplications_(new ApplicationListModel())
+    , mainStageFocusedApplication_(NULL)
+    , sideStageFocusedApplication_(NULL)
     , pidHash_()
     , eventType_(static_cast<QEvent::Type>(QEvent::registerEventType())) {
   static int once = false;
@@ -225,7 +239,8 @@ ApplicationManager::ApplicationManager()
 ApplicationManager::~ApplicationManager() {
   DLOG("ApplicationManager::~ApplicationManager");
   pidHash_.clear();
-  delete applications_;
+  delete mainStageApplications_;
+  delete sideStageApplications_;
 }
 
 void ApplicationManager::killProcess(qint64 pid) {
@@ -253,21 +268,41 @@ void ApplicationManager::customEvent(QEvent* event) {
       const int kPid = taskEvent->id_;
       Application* application = pidHash_.value(kPid, NULL);
       if (application) {
-        DLOG("got a match in the application list, setting '%s' (%d) to running",
+        DLOG("got a match in the application lists, setting '%s' (%d) to running",
              application->name().toLatin1().data(), kPid);
+#if !defined(QT_NO_DEBUG)
+        // Ensure we're in sync with Ubuntu Platform.
+        if (taskEvent->stage_ == MAIN_STAGE_HINT) {
+          ASSERT(mainStageApplications_->contains(application));
+          ASSERT(application->stage() == Application::MainStage);
+        } else if (taskEvent->stage_ == SIDE_STAGE_HINT) {
+          ASSERT(sideStageApplications_->contains(application));
+          ASSERT(application->stage() == Application::SideStage);
+        } else {
+          NOT_REACHED();
+        }
+#endif
         application->setState(Application::Running);
         killTimer(application->timerId());
       } else {
-        DLOG("didn't get a match in the application list, loading the desktop file");
+        DLOG("didn't get a match in the application lists, loading the desktop file");
         DesktopData* desktopData = new DesktopData(taskEvent->desktopFile_);
         if (desktopData->loaded()) {
-          DLOG("desktopFile loaded, storing '%s' (%d) in the application list",
-               desktopData->name().toLatin1().data(), kPid);
-          Application* application = new Application(desktopData, kPid, Application::Running, -1);
+          Application* application = new Application(
+              desktopData, kPid, Application::MainStage, Application::Running, -1);
           pidHash_.insert(kPid, application);
-          applications_->add(application);
+          if (taskEvent->stage_ != SIDE_STAGE_HINT) {
+            DLOG("desktopFile loaded, storing '%s' (%d) in the main stage application list",
+                 desktopData->name().toLatin1().data(), kPid);
+            mainStageApplications_->add(application);
+          } else {
+            DLOG("desktopFile loaded, storing '%s' (%d) in the side stage application list",
+                 desktopData->name().toLatin1().data(), kPid);
+            application->setStage(Application::SideStage);
+            sideStageApplications_->add(application);
+          }
         } else {
-          DLOG("unknown application, not storing in the application list");
+          DLOG("unknown application, not storing in the application lists");
           delete desktopData;
         }
       }
@@ -279,19 +314,29 @@ void ApplicationManager::customEvent(QEvent* event) {
       const int kPid = taskEvent->id_;
       Application* application = pidHash_.take(kPid);
       if (application != NULL) {
-        DLOG("removing application '%s' (%d) from the application list",
+        DLOG("removing application '%s' (%d) from the application lists",
              application->name().toLatin1().data(), kPid);
         if (application->state() == Application::Starting) {
           killTimer(application->timerId());
         }
-        applications_->remove(application);
-        if (focusedApplication_ == application) {
-          focusedApplication_ = NULL;
-          emit focusedApplicationChanged();
+        if (application->stage() == Application::MainStage) {
+          mainStageApplications_->remove(application);
+          DASSERT(sideStageFocusedApplication_ != application);
+          if (mainStageFocusedApplication_ == application) {
+            mainStageFocusedApplication_ = NULL;
+            emit mainStageFocusedApplicationChanged();
+          }
+        } else if (application->stage() == Application::SideStage) {
+          sideStageApplications_->remove(application);
+          DASSERT(mainStageFocusedApplication_ != application);
+          if (sideStageFocusedApplication_ == application) {
+            sideStageFocusedApplication_ = NULL;
+            emit sideStageFocusedApplicationChanged();
+          }
         }
         delete application;
       } else {
-        DLOG("Unknown application, not stored in the application list");
+        DLOG("Unknown application, not stored in the application lists");
       }
       break;
     }
@@ -301,9 +346,15 @@ void ApplicationManager::customEvent(QEvent* event) {
       // Reset the currently focused application.
       Application* application = pidHash_.value(taskEvent->id_);
       if (application != NULL) {
-        if (focusedApplication_ == application) {
-          focusedApplication_ = NULL;
-          emit focusedApplicationChanged();
+        if (mainStageFocusedApplication_ == application) {
+          DASSERT(taskEvent->stage_ == MAIN_STAGE_HINT);
+          mainStageFocusedApplication_ = NULL;
+          emit mainStageFocusedApplicationChanged();
+        }
+        else if (sideStageFocusedApplication_ == application) {
+          DASSERT(taskEvent->stage_ == SIDE_STAGE_HINT);
+          sideStageFocusedApplication_ = NULL;
+          emit sideStageFocusedApplicationChanged();
         }
       }
       break;
@@ -314,9 +365,16 @@ void ApplicationManager::customEvent(QEvent* event) {
       // Update the currently focused application.
       Application* application = pidHash_.value(taskEvent->id_);
       if (application != NULL) {
-        if (focusedApplication_ != application) {
-          focusedApplication_ = application;
-          emit focusedApplicationChanged();
+        if (application->stage() == Application::MainStage) {
+          if (mainStageFocusedApplication_ != application) {
+            mainStageFocusedApplication_ = application;
+            emit mainStageFocusedApplicationChanged();
+          }
+        } else if (application->stage() == Application::SideStage) {
+          if (sideStageFocusedApplication_ != application) {
+            sideStageFocusedApplication_ = application;
+            emit sideStageFocusedApplicationChanged();
+          }
         }
       }
       break;
@@ -346,19 +404,38 @@ void ApplicationManager::customEvent(QEvent* event) {
 
 void ApplicationManager::timerEvent(QTimerEvent* event) {
   DLOG("ApplicationManager::timerEvent (this=%p, event=%p)", this, event);
+  Application* application;
+  ApplicationListModel* applications;
+
+  // Get the application with the time id and store the applications list it comes from.
   const int kTimerId = event->timerId();
-  Application* application = applications_->findFromTimerId(kTimerId);
+  application = mainStageApplications_->findFromTimerId(kTimerId);
+  if (application != NULL) {
+    applications = mainStageApplications_;
+  } else {
+    application = sideStageApplications_->findFromTimerId(kTimerId);
+    if (application != NULL) {
+      applications = sideStageApplications_;
+    }
+  }
+
+  // Remove application from list and kill it.
   if (application != NULL) {
     const qint64 kPid = application->handle();
     DLOG("application '%s' (%lld) hasn't been matched, killing it",
          application->name().toLatin1().data(), kPid);
     DASSERT(pidHash_.contains(kPid));
     pidHash_.remove(kPid);
-    applications_->remove(application);
+    applications->remove(application);
     delete application;
     killProcess(kPid);
   }
   killTimer(kTimerId);
+}
+
+int ApplicationManager::sideStageWidth() const {
+  DLOG("ApplicationManager::sideStageWidth (this=%p)", this);
+  return kSideStageWidth;
 }
 
 ApplicationManager::StageHint ApplicationManager::stageHint() const {
@@ -372,14 +449,24 @@ ApplicationManager::FormFactorHint ApplicationManager::formFactorHint() const {
       ubuntu_application_ui_setup_get_form_factor_hint());
 }
 
-ApplicationListModel* ApplicationManager::applications() const {
-  DLOG("ApplicationManager::applications (this=%p)", this);
-  return applications_;
+ApplicationListModel* ApplicationManager::mainStageApplications() const {
+  DLOG("ApplicationManager::mainStageApplications (this=%p)", this);
+  return mainStageApplications_;
 }
 
-Application* ApplicationManager::focusedApplication() const {
-  DLOG("ApplicationManager::focusedApplication (this=%p)", this);
-  return focusedApplication_;
+ApplicationListModel* ApplicationManager::sideStageApplications() const {
+  DLOG("ApplicationManager::sideStageApplications (this=%p)", this);
+  return sideStageApplications_;
+}
+
+Application* ApplicationManager::mainStageFocusedApplication() const {
+  DLOG("ApplicationManager::mainStageFocusedApplication (this=%p)", this);
+  return mainStageFocusedApplication_;
+}
+
+Application* ApplicationManager::sideStageFocusedApplication() const {
+  DLOG("ApplicationManager::sideStageFocusedApplication (this=%p)", this);
+  return sideStageFocusedApplication_;
 }
 
 void ApplicationManager::focusApplication(int handle) {
@@ -395,8 +482,11 @@ void ApplicationManager::focusFavoriteApplication(
       static_cast<ubuntu_ui_well_known_application>(application));
 }
 
-void ApplicationManager::unfocusCurrentApplication() {
-  DLOG("ApplicationManager::unfocusCurrentApplication (this=%p)", this);
+void ApplicationManager::unfocusCurrentApplication(ApplicationManager::StageHint stageHint) {
+  DLOG("ApplicationManager::unfocusCurrentApplication (this=%p, stageHint=%d)", this,
+       static_cast<int>(stageHint));
+  // FIXME(loicm): Add that once supported in Ubuntu Platform API.
+  // ubuntu_ui_session_unfocus_running_sessions(static_cast<StageHint>(stageHint));
   ubuntu_ui_session_unfocus_running_sessions();
 }
 
@@ -428,6 +518,8 @@ Application* ApplicationManager::startProcess(QString desktopFile, QStringList a
     arguments.prepend(execArguments[i]);
   }
   arguments.append(QString("--desktop_file_hint=") + desktopData->file());
+  if (desktopData->stageHint() == "SideStage")
+    arguments.append(QString("--stage_hint=side_stage"));
 #if !defined(QT_NO_DEBUG)
   LOG("starting process '%s' with arguments:", exec.toLatin1().data());
   for (int i = 0; i < arguments.size(); i++)
@@ -442,12 +534,18 @@ Application* ApplicationManager::startProcess(QString desktopFile, QStringList a
   result = QProcess::startDetached(exec, arguments, QString(passwd ? passwd->pw_dir : "/"), &pid);
   DLOG_IF(result == false, "process failed to start");
   if (result == true) {
-    DLOG("started process with pid %lld, adding '%s' to application list",
+    DLOG("started process with pid %lld, adding '%s' to application lists",
          pid, desktopData->name().toLatin1().data());
     Application* application = new Application(
-        desktopData, pid, Application::Starting, startTimer(kTimeBeforeClosingProcess));
+        desktopData, pid, Application::SideStage, Application::Starting,
+        startTimer(kTimeBeforeClosingProcess));
     pidHash_.insert(pid, application);
-    applications_->add(application);
+    if (desktopData->stageHint() != "SideStage") {
+      mainStageApplications_->add(application);
+    } else {
+      application->setStage(Application::SideStage);
+      sideStageApplications_->add(application);
+    }
     return application;
   } else {
     return NULL;
@@ -459,7 +557,13 @@ void ApplicationManager::stopProcess(Application* application) {
   if (application != NULL) {
     const qint64 kPid = application->handle();
     if (pidHash_.remove(kPid) > 0) {
-      applications_->remove(application);
+      if (application->stage() == Application::MainStage) {
+        mainStageApplications_->remove(application);
+      } else if (application->stage() == Application::SideStage) {
+        sideStageApplications_->remove(application);
+      } else {
+        DNOT_REACHED();
+      }
       delete application;
       killProcess(kPid);
     }

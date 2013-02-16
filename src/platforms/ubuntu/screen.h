@@ -28,11 +28,14 @@ class QUbuntuScreen : public QUbuntuBaseScreen {
   QRect availableGeometry() const { return availableGeometry_; }
 
   Qt::ScreenOrientation nativeOrientation() const { return nativeOrientation_; }
+  int gridUnitToPixel(int value) const;
+  int densityPixelToPixel(int value) const;
 
  private:
   QRect geometry_;
   QRect availableGeometry_;
-
+  int gridUnit_;
+  float densityPixelRatio_;
   Qt::ScreenOrientation nativeOrientation_;
 };
 

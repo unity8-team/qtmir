@@ -22,6 +22,7 @@ class DesktopData;
 
 class Application : public QObject {
   Q_OBJECT
+  Q_ENUMS(Stage)
   Q_ENUMS(State)
   Q_PROPERTY(QString desktopFile READ desktopFile NOTIFY desktopFileChanged)
   Q_PROPERTY(QString name READ name NOTIFY nameChanged)
@@ -29,13 +30,15 @@ class Application : public QObject {
   Q_PROPERTY(QString icon READ icon NOTIFY iconChanged)
   Q_PROPERTY(QString exec READ exec NOTIFY execChanged)
   Q_PROPERTY(qint64 handle READ handle NOTIFY handleChanged)
+  Q_PROPERTY(Stage stage READ stage NOTIFY stageChanged)
   Q_PROPERTY(State state READ state NOTIFY stateChanged)
   Q_PROPERTY(bool fullscreen READ fullscreen NOTIFY fullscreenChanged)
 
  public:
+  enum Stage { MainStage, SideStage };
   enum State { Starting, Running };
 
-  Application(DesktopData* desktopData, qint64 pid, State state, int timerId);
+  Application(DesktopData* desktopData, qint64 pid, Stage stage, State state, int timerId);
   ~Application();
 
   QString desktopFile() const;
@@ -44,6 +47,7 @@ class Application : public QObject {
   QString icon() const;
   QString exec() const;
   qint64 handle() const;
+  Stage stage() const;
   State state() const;
   bool fullscreen() const;
 
@@ -54,16 +58,19 @@ class Application : public QObject {
   void iconChanged();
   void execChanged();
   void handleChanged();
+  void stageChanged();
   void stateChanged();
   void fullscreenChanged();
 
  private:
+  void setStage(Stage stage);
   void setState(State state);
   void setFullscreen(bool fullscreen);
   int timerId() const { return timerId_; }
 
   DesktopData* desktopData_;
   qint64 pid_;
+  Stage stage_;
   State state_;
   bool fullscreen_;
   int timerId_;

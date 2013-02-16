@@ -40,15 +40,21 @@
 //
 // In order to focus or start a favorite application, that function can be used:
 //     ApplicationManager.focusFavoriteApplication(ApplicationManager.GalleryApplication);
+//
+// A good way to use Application.qml is to launch it using:
+//     qmlscene-ubuntu --fullscreen --session 1 --role 0 Application.qml
+// and then to launch other applications using:
+//     qmlscene-ubuntu --session 0 --role 1 MovingLogo.qml \
+//         --desktop_file_hint=/usr/share/applications/goodhope.desktop --stage_hint=main_stage
 
 import QtQuick 2.0
 import Ubuntu.Application 0.1
 
 Rectangle {
     id: surface
-    width: 720
-    height: 1280
-    color: "blue"
+    width: 2560
+    height: 1600
+    color: "#000020"
 
     Connections {
         target: ApplicationManager
@@ -64,12 +70,12 @@ Rectangle {
         id: touchArea
         anchors.fill: parent
         onClicked: {
-            ApplicationManager.focusFavoriteApplication(ApplicationManager.BrowserApplication);
+            // ApplicationManager.focusFavoriteApplication(ApplicationManager.BrowserApplication);
         }
     }
 
     Column {
-        id: header
+        id: mainHeader
 
         anchors {
             left: parent.left
@@ -78,55 +84,73 @@ Rectangle {
         spacing: 10
 
         Text {
-            font.family: "Ubuntu"; font.weight: Font.Bold; font.pixelSize: 30; color: "white"
-            text: "Number of applications running: %1".arg(ApplicationManager.applications.count)
+            font.family: "Ubuntu Mono"; font.weight: Font.Bold; font.pixelSize: 40; color: "white"
+            text: "Main stage:"
         }
+    }
+
+    Row {
+        id: mainRow
+
+        anchors {
+            top: mainHeader.bottom
+            topMargin: 10
+        }
+
+        Repeater {
+            model: ApplicationManager.mainStageApplications
+            delegate: ApplicationImage {
+                id: applicationImage
+                width: 2560 / 5; height: 1600 / 5
+                source: application
+                Text {
+                    font.family: "Ubuntu Mono"; font.weight: Font.Bold; font.pixelSize: 30; color: "white"
+                    text: application.name
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: applicationImage.scheduleUpdate()
+                }
+
+                Timer {
+                    running: true
+                    onTriggered: applicationImage.scheduleUpdate()
+                }
+            }
+        }
+    }
+
+    Column {
+        id: sideHeader
+        y: surface.height / 2
+
+        anchors {
+            left: parent.left
+            right: parent.right
+        }
+        spacing: 10
 
         Text {
-            font.family: "Ubuntu"; font.weight: Font.Bold; font.pixelSize: 30; color: "white"
-            text: ApplicationManager.applications.count >= 1 ?
-                      "First is \"%1\" %2".arg(ApplicationManager.applications.get(0).name)
-                                          .arg(ApplicationManager.applications.get(0))
-                    : "Start an application with --desktop_file_hint=..."
-        }
-
-        Item {
-            id: moveButton
-            anchors {
-                left: parent.left
-                right: parent.right
-            }
-            height: 100
-
-            Rectangle {
-                anchors.fill: parent
-                color: "#e9ecd9"
-            }
-            Text {
-                anchors.centerIn: parent
-                font.family: "Ubuntu"; font.weight: Font.Bold; font.pixelSize: 30; color: "darkgrey"
-                text: "Move first application to second place"
-            }
-            MouseArea {
-                anchors.fill: parent
-                onClicked: ApplicationManager.applications.move(1, 0)
-            }
+            font.family: "Ubuntu Mono"; font.weight: Font.Bold; font.pixelSize: 40; color: "white"
+            text: "Side stage:"
         }
     }
 
     Row {
         anchors {
-            top: header.bottom
+            top: sideHeader.bottom
             topMargin: 10
         }
+
         Repeater {
-            model: ApplicationManager.applications
+            model: ApplicationManager.sideStageApplications
             delegate: ApplicationImage {
                 id: applicationImage
-                width: 720 / 4; height: 1280 / 4
+                width: 2560 / 5; height: 1600 / 5
                 source: application
                 Text {
-                    font.family: "Ubuntu"; font.weight: Font.Bold; font.pixelSize: 30; color: "white"
+                    font.family: "Ubuntu Mono"; font.weight: Font.Bold; font.pixelSize: 30; color: "white"
                     text: application.name
                 }
 
