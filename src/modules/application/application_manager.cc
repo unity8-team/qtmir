@@ -58,6 +58,20 @@ class TaskEvent : public QEvent {
   int task_;
 };
 
+class KeyboardGeometryEvent : public QEvent {
+ public:
+  KeyboardGeometryEvent(QRect geometry, QEvent::Type type)
+      : QEvent(type)
+      , geometry_(geometry) {
+    DLOG("KeyboardGeometryEvent::KeyboardGeometryEvent (this=%p, type=%d)", this, type);
+  }
+  ~KeyboardGeometryEvent() {
+    DLOG("KeyboardGeometryEvent::~KeyboardGeometryEvent");
+  }
+
+  QRect geometry_;
+};
+
 static void sessionBornCallback(ubuntu_ui_session_properties session, void* context) {
   DLOG("sessionBornCallback (session=%p, context=%p)", session, context);
   DASSERT(context != NULL);
@@ -121,6 +135,16 @@ static void sessionRequestedCallback(ubuntu_ui_well_known_application applicatio
   ApplicationManager* manager = static_cast<ApplicationManager*>(context);
   QCoreApplication::postEvent(manager, new TaskEvent(
       NULL, static_cast<int>(application), 0, TaskEvent::kRequestFocus, manager->eventType()));
+}
+
+static void keyboardGeometryChanged(int x, int y, int width, int height, void* context) {
+  DLOG("keyboardGeometryChanged (x=%d, y=%d, width=%d, height=%d, context=%p)", x, y, width, height, context);
+  DASSERT(context != NULL);
+  // Post a task to be executed on the ApplicationManager thread (GUI thread).
+  ApplicationManager* manager = static_cast<ApplicationManager*>(context);
+  QCoreApplication::postEvent(manager,
+        new KeyboardGeometryEvent(QRect(x, y, width, height),
+                                  manager->keyboardGeometryEventType()));
 }
 
 DesktopData::DesktopData(QString desktopFile)
@@ -217,18 +241,22 @@ bool DesktopData::loadDesktopFile(QString desktopFile) {
 }
 
 ApplicationManager::ApplicationManager()
-    : mainStageApplications_(new ApplicationListModel())
+    : keyboardHeight_(0)
+    , keyboardVisible_(false)
+    , mainStageApplications_(new ApplicationListModel())
     , sideStageApplications_(new ApplicationListModel())
     , mainStageFocusedApplication_(NULL)
     , sideStageFocusedApplication_(NULL)
     , pidHash_()
-    , eventType_(static_cast<QEvent::Type>(QEvent::registerEventType())) {
+    , eventType_(static_cast<QEvent::Type>(QEvent::registerEventType()))
+    , keyboardGeometryEventType_(static_cast<QEvent::Type>(QEvent::registerEventType())) {
   static int once = false;
   if (!once) {
     DLOG("starting application watcher");
     static ubuntu_ui_session_lifecycle_observer watcher = {
       sessionRequestedCallback, sessionBornCallback, sessionUnfocusedCallback,
-      sessionFocusedCallback, sessionRequestedFullscreenCallback, sessionDiedCallback, this
+      sessionFocusedCallback, keyboardGeometryChanged, sessionRequestedFullscreenCallback,
+      sessionDiedCallback, this
     };
     ubuntu_ui_session_install_session_lifecycle_observer(&watcher);
     once = true;
@@ -260,6 +288,22 @@ void ApplicationManager::killProcess(qint64 pid) {
 void ApplicationManager::customEvent(QEvent* event) {
   DLOG("ApplicationManager::customEvent (this=%p, event=%p)", this, event);
   DASSERT(QThread::currentThread() == thread());
+
+  KeyboardGeometryEvent* keyboardGeometryEvent = dynamic_cast<KeyboardGeometryEvent*>(event);
+  if (keyboardGeometryEvent != NULL) {
+      bool visible = keyboardGeometryEvent->geometry_.isValid();
+      int height = keyboardGeometryEvent->geometry_.height();
+      if (height != keyboardHeight_) {
+          keyboardHeight_ = height;
+          emit keyboardHeightChanged();
+      }
+      if (visible != keyboardVisible_) {
+          keyboardVisible_ = visible;
+          emit keyboardVisibleChanged();
+      }
+      return;
+  }
+
   TaskEvent* taskEvent = static_cast<TaskEvent*>(event);
   switch (taskEvent->task_) {
 
@@ -431,6 +475,16 @@ void ApplicationManager::timerEvent(QTimerEvent* event) {
     killProcess(kPid);
   }
   killTimer(kTimerId);
+}
+
+int ApplicationManager::keyboardHeight() const {
+  DLOG("ApplicationManager::keyboardHeight (this=%p)", this);
+  return keyboardHeight_;
+}
+
+bool ApplicationManager::keyboardVisible() const {
+  DLOG("ApplicationManager::keyboardVisible (this=%p)", this);
+  return keyboardVisible_;
 }
 
 int ApplicationManager::sideStageWidth() const {

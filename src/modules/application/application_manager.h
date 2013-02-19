@@ -20,6 +20,15 @@
 #include <ubuntu/application/ui/ubuntu_application_ui.h>
 #include <ubuntu/ui/ubuntu_ui_session_service.h>
 
+/* FIXME: undef required so that this class compiles properly.
+   '#define Bool int' is part of <X11/Xlib.h> which is included
+   by the following chain of includes:
+   - <EGL/eglplatform.h> included by
+   - <EGL/egl.h> included by
+   - <ubuntu/application/ui/ubuntu_application_ui.h>
+*/
+#undef Bool
+
 class Application;
 class ApplicationListModel;
 
@@ -57,6 +66,8 @@ class ApplicationManager : public QObject {
   Q_ENUMS(StageHint)
   Q_ENUMS(FormFactorHint)
   Q_ENUMS(FavoriteApplication)
+  Q_PROPERTY(int keyboardHeight READ keyboardHeight NOTIFY keyboardHeightChanged)
+  Q_PROPERTY(bool keyboardVisible READ keyboardVisible NOTIFY keyboardVisibleChanged)
   Q_PROPERTY(int sideStageWidth READ sideStageWidth)
   Q_PROPERTY(StageHint stageHint READ stageHint)
   Q_PROPERTY(FormFactorHint formFactorHint READ formFactorHint)
@@ -98,6 +109,8 @@ class ApplicationManager : public QObject {
   void customEvent(QEvent* event);
   void timerEvent(QTimerEvent* event);
 
+  int keyboardHeight() const;
+  bool keyboardVisible() const;
   int sideStageWidth() const;
   StageHint stageHint() const;
   FormFactorHint formFactorHint() const;
@@ -114,8 +127,11 @@ class ApplicationManager : public QObject {
   Q_INVOKABLE void startWatcher() {}
 
   QEvent::Type eventType() { return eventType_; }
+  QEvent::Type keyboardGeometryEventType() { return keyboardGeometryEventType_; }
 
  Q_SIGNALS:
+  void keyboardHeightChanged();
+  void keyboardVisibleChanged();
   void mainStageApplicationsChanged();
   void sideStageApplicationsChanged();
   void mainStageFocusedApplicationChanged();
@@ -125,12 +141,15 @@ class ApplicationManager : public QObject {
  private:
   void killProcess(qint64 pid);
 
+  int keyboardHeight_;
+  bool keyboardVisible_;
   ApplicationListModel* mainStageApplications_;
   ApplicationListModel* sideStageApplications_;
   Application* mainStageFocusedApplication_;
   Application* sideStageFocusedApplication_;
   QHash<int,Application*> pidHash_;
   QEvent::Type eventType_;
+  QEvent::Type keyboardGeometryEventType_;
 };
 
 Q_DECLARE_METATYPE(ApplicationManager*)
