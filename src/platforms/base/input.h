@@ -19,7 +19,6 @@
 #include <qpa/qwindowsysteminterface.h>
 
 class QUbuntuBaseIntegration;
-struct Event;
 
 class QUbuntuBaseInput : public QObject {
   Q_OBJECT
@@ -36,13 +35,13 @@ class QUbuntuBaseInput : public QObject {
   virtual void handleKeyEvent(QWindow* window, ulong timestamp, QEvent::Type type, int key,
                               Qt::KeyboardModifiers modifiers, const QString& text);
 
-  void postEvent(QWindow* window, const Event* event);
+  void postEvent(QWindow* window, const void* event);
   QUbuntuBaseIntegration* integration() const { return integration_; }
 
  private:
-  void dispatchMotionEvent(QWindow* window, const Event* event);
-  void dispatchKeyEvent(QWindow* window, const Event* event);
-  void dispatchHWSwitchEvent(QWindow* window, const Event* event);
+  void dispatchMotionEvent(QWindow* window, const void* event);
+  void dispatchKeyEvent(QWindow* window, const void* event);
+  void dispatchHWSwitchEvent(QWindow* window, const void* event);
 
   QUbuntuBaseIntegration* integration_;
   QTouchDevice* touchDevice_;

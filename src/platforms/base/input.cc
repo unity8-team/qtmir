@@ -24,10 +24,8 @@
 #include <QtCore/QCoreApplication>
 #include <private/qguiapplication_p.h>
 #include <qpa/qplatforminputcontext.h>
-#include <cstring>  // input_stack_compatibility_layer.h needs this for size_t.
-#include <input/input_stack_compatibility_layer.h>
-#include <input/input_stack_compatibility_layer_flags_motion.h>
-#include <input/input_stack_compatibility_layer_flags_key.h>
+#include <ubuntu/application/ui/ubuntu_application_ui.h>
+#include <input/input_stack_compatibility_layer_flags.h>
 
 #define LOG_EVENTS 0
 
@@ -335,13 +333,15 @@ void QUbuntuBaseInput::customEvent(QEvent* event) {
   }
 }
 
-void QUbuntuBaseInput::postEvent(QWindow* window, const Event* event) {
+void QUbuntuBaseInput::postEvent(QWindow* window, const void* event) {
   DLOG("QUbuntuBaseInput::postEvent (this=%p, window=%p, event=%p)", this, window, event);
-  QCoreApplication::postEvent(this, new QUbuntuBaseEvent(window, event, eventType_));
+  QCoreApplication::postEvent(this, new QUbuntuBaseEvent(
+      window, reinterpret_cast<const Event*>(event), eventType_));
 }
 
-void QUbuntuBaseInput::dispatchMotionEvent(QWindow* window, const Event* event) {
-  DLOG("QUbuntuBaseInput::dispatchMotionEvent (this=%p, window=%p, event=%p)", this, window, event);
+void QUbuntuBaseInput::dispatchMotionEvent(QWindow* window, const void* ev) {
+  DLOG("QUbuntuBaseInput::dispatchMotionEvent (this=%p, window=%p, event=%p)", this, window, ev);
+  const Event* event = reinterpret_cast<const Event*>(ev);
 
 #if (LOG_EVENTS != 0)
   // Motion event logging.
@@ -467,8 +467,9 @@ void QUbuntuBaseInput::handleTouchEvent(
   QWindowSystemInterface::handleTouchEvent(window, timestamp, device, points);
 }
 
-void QUbuntuBaseInput::dispatchKeyEvent(QWindow* window, const Event* event) {
-  DLOG("QUbuntuBaseInput::dispatchKeyEvent (this=%p, window=%p, event=%p)", this, window, event);
+void QUbuntuBaseInput::dispatchKeyEvent(QWindow* window, const void* ev) {
+  DLOG("QUbuntuBaseInput::dispatchKeyEvent (this=%p, window=%p, event=%p)", this, window, ev);
+  const Event* event = reinterpret_cast<const Event*>(ev);
 
 #if (LOG_EVENTS != 0)
   // Key event logging.
@@ -527,13 +528,14 @@ void QUbuntuBaseInput::handleKeyEvent(
   QWindowSystemInterface::handleKeyEvent(window, timestamp, type, key, modifiers, text);
 }
 
-void QUbuntuBaseInput::dispatchHWSwitchEvent(QWindow* window, const Event* event) {
+void QUbuntuBaseInput::dispatchHWSwitchEvent(QWindow* window, const void* ev) {
   Q_UNUSED(window);
-  Q_UNUSED(event);
-  DLOG("QUbuntuBaseInput::dispatchSwitchEvent (this=%p, window=%p, event=%p)", this, window, event);
+  Q_UNUSED(ev);
+  DLOG("QUbuntuBaseInput::dispatchSwitchEvent (this=%p, window=%p, event=%p)", this, window, ev);
 
 #if (LOG_EVENTS != 0)
   // HW switch event logging.
+  const Event* event = reinterpret_cast<const Event*>(ev);
   LOG("HWSWITCH device_id:%d source_id:%d action:%d flags:%d meta_state:%d event_time:%lld "
       "policy_flags:%u switch_values:%d switch_mask:%d", event->device_id, event->source_id,
       event->action, event->flags, event->meta_state, event->details.hw_switch.event_time,
