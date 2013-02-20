@@ -58,6 +58,8 @@ class TaskEvent : public QEvent {
   int task_;
 };
 
+// FIXME(kaleo, loicm): If we keep that keyboard geometry/visibilty API, we should integrate that
+//     event type in the existing task event system.
 class KeyboardGeometryEvent : public QEvent {
  public:
   KeyboardGeometryEvent(QRect geometry, QEvent::Type type)
@@ -289,6 +291,9 @@ void ApplicationManager::customEvent(QEvent* event) {
   DLOG("ApplicationManager::customEvent (this=%p, event=%p)", this, event);
   DASSERT(QThread::currentThread() == thread());
 
+  // FIXME(kaleo, loicm) If we keep that keyboard geometry/visibilty API, we should integrate that
+  //     event type in the existing task event system. Moreover, Qt code shouldn't use C++ RTTI
+  //     (which is slow) but the Qt meta object implementation.
   KeyboardGeometryEvent* keyboardGeometryEvent = dynamic_cast<KeyboardGeometryEvent*>(event);
   if (keyboardGeometryEvent != NULL) {
       bool visible = keyboardGeometryEvent->geometry_.isValid();

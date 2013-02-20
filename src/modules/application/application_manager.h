@@ -66,8 +66,11 @@ class ApplicationManager : public QObject {
   Q_ENUMS(StageHint)
   Q_ENUMS(FormFactorHint)
   Q_ENUMS(FavoriteApplication)
+
+  // FIXME(kaleo, loicm): That keyboard API might need a cleaner design.
   Q_PROPERTY(int keyboardHeight READ keyboardHeight NOTIFY keyboardHeightChanged)
   Q_PROPERTY(bool keyboardVisible READ keyboardVisible NOTIFY keyboardVisibleChanged)
+
   Q_PROPERTY(int sideStageWidth READ sideStageWidth)
   Q_PROPERTY(StageHint stageHint READ stageHint)
   Q_PROPERTY(FormFactorHint formFactorHint READ formFactorHint)
