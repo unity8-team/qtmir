@@ -1,3 +1,9 @@
+qtubuntu (0.47) quantal; urgency=low
+
+  * ApplicationManager: added 2 properties 'keyboardVisible' and 'keyboardHeight'
+
+ -- Florian Boucault <florian.boucault@canonical.com>  Wed, 20 Feb 2013 07:07:00 +0000
+
 qtubuntu (0.46) quantal; urgency=low
 
   * Added side stage support.
