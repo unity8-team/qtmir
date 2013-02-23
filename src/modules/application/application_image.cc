@@ -133,7 +133,7 @@ void ApplicationImage::scheduleUpdate() {
   }
 }
 
-bool ApplicationImage::updateFromCache() {
+void ApplicationImage::updateFromCache() {
   DLOG("ApplicationImage::updateFromCache (this=%p)", this);
   if (imageCache_.contains(source_)) {
     DLOG("ApplicationImage: using image from cache (this=%p)");
@@ -147,9 +147,6 @@ bool ApplicationImage::updateFromCache() {
       ready_ = true;
       emit readyChanged();
     }
-    return true;
-  } else {
-    return false;
   }
 }
 

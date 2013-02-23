@@ -47,7 +47,7 @@ class ApplicationImage : public QQuickPaintedItem {
   void setFillMode(FillMode);
   bool ready() const { return ready_; }
   Q_INVOKABLE void scheduleUpdate();
-  Q_INVOKABLE bool updateFromCache();
+  Q_INVOKABLE void updateFromCache();
 
  Q_SIGNALS:
   void sourceChanged();
