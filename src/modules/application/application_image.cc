@@ -88,7 +88,7 @@ void ApplicationImage::customEvent(QEvent* event) {
   // Store the new image and schedule an update.
   image_ = imageEvent->image_;
   sourceRect_ = imageEvent->sourceRect_;
-  DLOG("ApplicationImage: inserted image in cache (this=%p)");
+  DLOG("ApplicationImage: inserted image in cache (this=%p)", this);
   imageCache_.insert(source_, QPair<QImage, QRect>(image_, sourceRect_));
   connect(source_, &Application::destroyed,
           this, &ApplicationImage::onSourceDestroyed, Qt::UniqueConnection);
@@ -103,6 +103,8 @@ void ApplicationImage::setSource(Application* source) {
   DLOG("ApplicationImage::setApplication (this=%p, source=%p)", this, source);
   if (source_ != source) {
     source_ = source;
+    image_ = QImage();
+    sourceRect_ = QRect();
     if (ready_) {
       ready_ = false;
       emit readyChanged();
@@ -136,7 +138,7 @@ void ApplicationImage::scheduleUpdate() {
 void ApplicationImage::updateFromCache() {
   DLOG("ApplicationImage::updateFromCache (this=%p)", this);
   if (imageCache_.contains(source_)) {
-    DLOG("ApplicationImage: using image from cache (this=%p)");
+    DLOG("ApplicationImage: using image from cache (this=%p)", this);
     QPair<QImage, QRect> value = imageCache_.value(source_);
     if (image_ != value.first || sourceRect_ != value.second) {
       image_ = value.first;
