@@ -1,3 +1,10 @@
+qtubuntu (0.48) quantal; urgency=low
+
+  * ApplicationImage: added an internal cache of QImages and a new method to
+    use it instead of taking screenshots: updateFromCache().
+
+ -- Florian Boucault <florian.boucault@canonical.com>  Sun, 24 Feb 2013 23:28:00 +0000
+
 qtubuntu (0.47) quantal; urgency=low
 
   * ApplicationManager: added 2 properties 'keyboardVisible' and 'keyboardHeight'

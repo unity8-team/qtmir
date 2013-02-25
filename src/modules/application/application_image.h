@@ -47,6 +47,7 @@ class ApplicationImage : public QQuickPaintedItem {
   void setFillMode(FillMode);
   bool ready() const { return ready_; }
   Q_INVOKABLE void scheduleUpdate();
+  Q_INVOKABLE void updateFromCache();
 
  Q_SIGNALS:
   void sourceChanged();
@@ -62,6 +63,9 @@ class ApplicationImage : public QQuickPaintedItem {
   FillMode fillMode_;
   bool ready_;
   QRect sourceRect_;
+  // cache of application screenshots keeping pairs of image and source rectangle
+  // for applications that are alive
+  static QHash<Application*, QPair<QImage, QRect> > imageCache_;
 };
 
 #endif  // APPLICATION_IMAGE_H

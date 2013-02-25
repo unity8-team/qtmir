@@ -64,6 +64,8 @@ static void snapshotCallback(const void* pixels, unsigned int bufferWidth, unsig
   }
 }
 
+QHash<Application*, QPair<QImage, QRect> > ApplicationImage::imageCache_;
+
 ApplicationImage::ApplicationImage(QQuickPaintedItem* parent)
     : QQuickPaintedItem(parent)
     , source_(NULL)
@@ -86,6 +88,10 @@ void ApplicationImage::customEvent(QEvent* event) {
   // Store the new image and schedule an update.
   image_ = imageEvent->image_;
   sourceRect_ = imageEvent->sourceRect_;
+  DLOG("ApplicationImage: inserted image in cache (this=%p)", this);
+  imageCache_.insert(source_, QPair<QImage, QRect>(image_, sourceRect_));
+  connect(source_, &Application::destroyed,
+          this, &ApplicationImage::onSourceDestroyed, Qt::UniqueConnection);
   update();
   if (!ready_) {
     ready_ = true;
@@ -97,6 +103,8 @@ void ApplicationImage::setSource(Application* source) {
   DLOG("ApplicationImage::setApplication (this=%p, source=%p)", this, source);
   if (source_ != source) {
     source_ = source;
+    image_ = QImage();
+    sourceRect_ = QRect();
     if (ready_) {
       ready_ = false;
       emit readyChanged();
@@ -126,6 +134,24 @@ void ApplicationImage::scheduleUpdate() {
     update();
   }
 }
+
+void ApplicationImage::updateFromCache() {
+  DLOG("ApplicationImage::updateFromCache (this=%p)", this);
+  if (imageCache_.contains(source_)) {
+    DLOG("ApplicationImage: using image from cache (this=%p)", this);
+    QPair<QImage, QRect> value = imageCache_.value(source_);
+    if (image_ != value.first || sourceRect_ != value.second) {
+      image_ = value.first;
+      sourceRect_ = value.second;
+      update();
+    }
+    if (!ready_) {
+      ready_ = true;
+      emit readyChanged();
+    }
+  }
+}
+
 
 void ApplicationImage::paint(QPainter* painter) {
   DLOG("ApplicationImage::paint (this=%p, painter=%p)", this, painter);
@@ -163,5 +189,17 @@ void ApplicationImage::paint(QPainter* painter) {
 
 void ApplicationImage::onSourceDestroyed() {
   DLOG("ApplicationImage::onSourceDestroyed (this=%p)", this);
-  source_ = NULL;
+  if (imageCache_.remove(source_) != 0) {
+    DLOG("ApplicationImage: removed image from cache (this=%p)", this);
+  }
+  image_ = QImage();
+  sourceRect_ = QRect();
+  if (ready_) {
+    ready_ = false;
+    emit readyChanged();
+  }
+  if (source_ != NULL) {
+    source_ = NULL;
+    emit sourceChanged();
+  }
 }
