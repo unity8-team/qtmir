@@ -596,7 +596,7 @@ Application* ApplicationManager::startProcess(QString desktopFile, QStringList a
     DLOG("started process with pid %lld, adding '%s' to application lists",
          pid, desktopData->name().toLatin1().data());
     Application* application = new Application(
-        desktopData, pid, Application::SideStage, Application::Starting,
+        desktopData, pid, Application::MainStage, Application::Starting,
         startTimer(kTimeBeforeClosingProcess));
     pidHash_.insert(pid, application);
     if (desktopData->stageHint() != "SideStage") {
