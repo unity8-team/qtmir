@@ -64,6 +64,11 @@ void QUbuntuWindow::createWindow() {
   QVariant opaqueVariant = window()->property("opaque");
   uint flags = opaqueVariant.isValid() ?
       opaqueVariant.toUInt() ? static_cast<uint>(IS_OPAQUE_FLAG) : 0 : 0;
+  if (!systemSession_) {
+    // FIXME(loicm) Opaque flag is forced for now for non-system sessions (applications) for
+    //     performance reasons.
+    flags |= static_cast<uint>(IS_OPAQUE_FLAG);
+  }
 #if !defined(QT_NO_DEBUG)
   ASSERT(role <= ON_SCREEN_KEYBOARD_ACTOR_ROLE);
   const char* const roleString[] = {
