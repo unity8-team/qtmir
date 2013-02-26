@@ -17,8 +17,29 @@
 
 #include "screen.h"
 #include "base/logging.h"
+#include <QtCore/QCoreApplication>
 #include <QtCore/qmath.h>
+#include <QOrientationSensor>
+#include <QOrientationReading>
+#include <QScreen>
+#include <qpa/qwindowsysteminterface.h>
 #include <ubuntu/application/ui/ubuntu_application_ui.h>
+
+class OrientationReadingEvent : public QEvent {
+ public:
+  OrientationReadingEvent(QEvent::Type type, QOrientationReading::Orientation orientation)
+      : QEvent(type)
+      , orientation_(orientation)
+  {
+  }
+  ~OrientationReadingEvent() {
+  }
+  static const QEvent::Type type_;
+  QOrientationReading::Orientation orientation_;
+};
+
+const QEvent::Type OrientationReadingEvent::type_ =
+    static_cast<QEvent::Type>(QEvent::registerEventType());
 
 // Grid unit used if GRID_UNIT_PX is not in the environment.
 const int kDefaultGridUnit = 8;
@@ -79,11 +100,29 @@ QUbuntuScreen::QUbuntuScreen() {
   DLOG("QUbuntuScreen::QUbuntuScreen (this=%p)", this);
 
   // Set the default orientation based on the initial screen dimmensions.
-  nativeOrientation_ = kScreenWidth >= kScreenHeight ? Qt::LandscapeOrientation : Qt::PortraitOrientation;
+  nativeOrientation_ = (kScreenWidth >= kScreenHeight) ? Qt::LandscapeOrientation : Qt::PortraitOrientation;
+
+  // If it's a landscape device (i.e. some tablets), start in landscape, otherwise portrait
+  currentOrientation_ = (nativeOrientation_ == Qt::LandscapeOrientation) ? Qt::LandscapeOrientation : Qt::PortraitOrientation;
+
+  orientationSensor_ = new QOrientationSensor();
+  // Connect to the orientation sensor's readingChanged signal
+  QObject::connect(orientationSensor_, SIGNAL(readingChanged()), this, SLOT(onOrientationReadingChanged()));
+  orientationSensor_->start();
 }
 
 QUbuntuScreen::~QUbuntuScreen() {
   DLOG("QUbuntuScreen::~QUbuntuScreen");
+
+  if (orientationSensor_ != NULL) {
+    orientationSensor_->stop();
+    delete orientationSensor_;
+  }
+}
+
+Qt::ScreenOrientation QUbuntuScreen::orientation() const
+{
+    return currentOrientation_;
 }
 
 int QUbuntuScreen::gridUnitToPixel(int value) const {
@@ -99,4 +138,58 @@ int QUbuntuScreen::densityPixelToPixel(int value) const {
   } else {
     return static_cast<int>(qRound(value * densityPixelRatio_));
   }
+}
+
+void QUbuntuScreen::customEvent(QEvent* event)
+{
+  DASSERT(QThread::currentThread() == thread());
+
+  OrientationReadingEvent *oReadingEvent = static_cast<OrientationReadingEvent*>(event);
+  if (nativeOrientation_ == Qt::LandscapeOrientation) {
+    switch (oReadingEvent->orientation_) {
+      case QOrientationReading::LeftUp:
+          currentOrientation_ = Qt::InvertedPortraitOrientation;
+          break;
+      case QOrientationReading::TopUp:
+          currentOrientation_ = Qt::LandscapeOrientation;
+          break;
+      case QOrientationReading::RightUp:
+          currentOrientation_ = Qt::PortraitOrientation;
+          break;
+      case QOrientationReading::TopDown:
+          currentOrientation_ = Qt::InvertedLandscapeOrientation;
+          break;
+      default:
+          DLOG("Unknown orientation.");
+    }
+  } else {
+    switch (oReadingEvent->orientation_) {
+      case QOrientationReading::LeftUp:
+          currentOrientation_ = Qt::LandscapeOrientation;
+          break;
+      case QOrientationReading::TopUp:
+          currentOrientation_ = Qt::PortraitOrientation;
+          break;
+      case QOrientationReading::RightUp:
+          currentOrientation_ = Qt::InvertedLandscapeOrientation;
+          break;
+      case QOrientationReading::TopDown:
+          currentOrientation_ = Qt::InvertedPortraitOrientation;
+          break;
+      default:
+          DLOG("Unknown orientation.");
+    }
+  }
+
+  // Raise the event signal so that client apps know the orientation changed
+  QWindowSystemInterface::handleScreenOrientationChange(screen(), currentOrientation_);
+}
+
+void QUbuntuScreen::onOrientationReadingChanged()
+{
+    DASSERT(orientationSensor_ != NULL);
+
+    // Make sure to switch to the main Qt thread context
+    QCoreApplication::postEvent(this, new OrientationReadingEvent(
+                                OrientationReadingEvent::type_, orientationSensor_->reading()->orientation()));
 }

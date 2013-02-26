@@ -18,8 +18,13 @@
 
 #include "base/screen.h"
 
-class QUbuntuScreen : public QUbuntuBaseScreen {
- public:
+#include <QObject>
+
+class QOrientationSensor;
+
+class QUbuntuScreen : public QObject, public QUbuntuBaseScreen {
+ Q_OBJECT
+public:
   QUbuntuScreen();
   ~QUbuntuScreen();
 
@@ -28,8 +33,15 @@ class QUbuntuScreen : public QUbuntuBaseScreen {
   QRect availableGeometry() const { return availableGeometry_; }
 
   Qt::ScreenOrientation nativeOrientation() const { return nativeOrientation_; }
+  Qt::ScreenOrientation orientation() const;
   int gridUnitToPixel(int value) const;
   int densityPixelToPixel(int value) const;
+
+  // QObject methods.
+  void customEvent(QEvent* event);
+
+public Q_SLOTS:
+    void onOrientationReadingChanged();
 
  private:
   QRect geometry_;
@@ -37,6 +49,8 @@ class QUbuntuScreen : public QUbuntuBaseScreen {
   int gridUnit_;
   float densityPixelRatio_;
   Qt::ScreenOrientation nativeOrientation_;
+  Qt::ScreenOrientation currentOrientation_;
+  QOrientationSensor *orientationSensor_;
 };
 
 #endif  // QUBUNTUSCREEN_H
