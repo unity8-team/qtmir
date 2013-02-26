@@ -1,14 +1,14 @@
 // This file is part of QtUbuntu, a set of Qt components for Ubuntu.
 // Copyright © 2013 Canonical Ltd.
 //
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation; version 3.
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Lesser General Public License version 3, as published by
+// the Free Software Foundation.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranties of MERCHANTABILITY,
+// SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
@@ -53,6 +53,12 @@ static void printEglConfig(EGLDisplay display, EGLConfig config) {
     { EGL_MAX_SWAP_INTERVAL, "EGL_MAX_SWAP_INTERVAL" },
     { -1, NULL }
   };
+  const char* string = eglQueryString(display, EGL_VENDOR);
+  LOG("EGL vendor: %s", string);
+  string = eglQueryString(display, EGL_VERSION);
+  LOG("EGL version: %s", string);
+  string = eglQueryString(display, EGL_EXTENSIONS);
+  LOG("EGL extensions: %s", string);
   LOG("EGL configuration attibutes:");
   for (int index = 0; kAttribs[index].attrib != -1; index++) {
     EGLint value;
@@ -69,11 +75,9 @@ QUbuntuBaseScreen::QUbuntuBaseScreen()
     , eglDisplay_(EGL_NO_DISPLAY)
     , eglConfig_(NULL) {
   // Initialize EGL.
-  EGLint major, minor;
   ASSERT(eglBindAPI(EGL_OPENGL_ES_API) == EGL_TRUE);
   ASSERT((eglDisplay_ = eglGetDisplay(EGL_DEFAULT_DISPLAY)) != EGL_NO_DISPLAY);
-  ASSERT(eglInitialize(eglDisplay_, &major, &minor) == EGL_TRUE);
-  DLOG("EGL version: %d.%d", major, minor);
+  ASSERT(eglInitialize(eglDisplay_, NULL, NULL) == EGL_TRUE);
 
   // Configure EGL buffers format.
   surfaceFormat_.setRedBufferSize(8);

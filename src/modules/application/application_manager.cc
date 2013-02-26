@@ -1,14 +1,14 @@
 // This file is part of QtUbuntu, a set of Qt components for Ubuntu.
 // Copyright © 2013 Canonical Ltd.
 //
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation; version 3.
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Lesser General Public License version 3, as published by
+// the Free Software Foundation.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranties of MERCHANTABILITY,
+// SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
@@ -596,7 +596,7 @@ Application* ApplicationManager::startProcess(QString desktopFile, QStringList a
     DLOG("started process with pid %lld, adding '%s' to application lists",
          pid, desktopData->name().toLatin1().data());
     Application* application = new Application(
-        desktopData, pid, Application::SideStage, Application::Starting,
+        desktopData, pid, Application::MainStage, Application::Starting,
         startTimer(kTimeBeforeClosingProcess));
     pidHash_.insert(pid, application);
     if (desktopData->stageHint() != "SideStage") {
