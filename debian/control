@@ -15,7 +15,8 @@ Build-Depends:  debhelper (>= 8.0.0),
                 libfontconfig1-dev,
                 libfreetype6-dev,
                 libdbus-1-dev,
-                libatspi2.0-dev
+                libatspi2.0-dev,
+                qtsensors5-dev
 Standards-Version: 3.9.3
 Section: libs
 
