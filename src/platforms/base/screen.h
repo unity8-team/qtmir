@@ -16,7 +16,6 @@
 #ifndef QUBUNTUBASESCREEN_H
 #define QUBUNTUBASESCREEN_H
 
-#include <QObject>
 #include <qpa/qplatformscreen.h>
 #include <QSurfaceFormat>
 #include <EGL/egl.h>
