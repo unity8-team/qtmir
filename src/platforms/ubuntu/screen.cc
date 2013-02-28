@@ -22,6 +22,7 @@
 #include <QOrientationSensor>
 #include <QOrientationReading>
 #include <QScreen>
+#include <QThread>
 #include <qpa/qwindowsysteminterface.h>
 #include <ubuntu/application/ui/ubuntu_application_ui.h>
 
