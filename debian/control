@@ -15,7 +15,8 @@ Build-Depends:  debhelper (>= 8.0.0),
                 libfontconfig1-dev,
                 libfreetype6-dev,
                 libdbus-1-dev,
-                libatspi2.0-dev
+                libatspi2.0-dev,
+                qtsensors5-dev
 Standards-Version: 3.9.3
 Section: libs
 
@@ -24,7 +25,10 @@ Replaces: qthybris (<< 0.37)
 Breaks: qthybris (<< 0.37)
 Section: libs
 Architecture: armel armhf
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends},
+         libqt5sensors5,
+         qtubuntu-sensors[armel],
+         qtubuntu-sensors[armhf],
 Description: Qt plugins for Ubuntu Platform API
  QtUbuntu is a set of Qt5 components for the Ubuntu Platform API. It
  contains a QPA (Qt Platform Abstraction) plugin based on the Ubuntu
