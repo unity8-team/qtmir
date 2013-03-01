@@ -23,8 +23,8 @@
 class QOrientationSensor;
 
 class QUbuntuScreen : public QObject, public QUbuntuBaseScreen {
- Q_OBJECT
-public:
+  Q_OBJECT
+ public:
   QUbuntuScreen();
   ~QUbuntuScreen();
 
@@ -33,14 +33,14 @@ public:
   QRect availableGeometry() const { return availableGeometry_; }
 
   Qt::ScreenOrientation nativeOrientation() const { return nativeOrientation_; }
-  Qt::ScreenOrientation orientation() const;
+  Qt::ScreenOrientation orientation() const { return currentOrientation_; }
   int gridUnitToPixel(int value) const;
   int densityPixelToPixel(int value) const;
 
   // QObject methods.
   void customEvent(QEvent* event);
 
-public Q_SLOTS:
+ public Q_SLOTS:
     void onOrientationReadingChanged();
 
  private:
@@ -50,7 +50,7 @@ public Q_SLOTS:
   float densityPixelRatio_;
   Qt::ScreenOrientation nativeOrientation_;
   Qt::ScreenOrientation currentOrientation_;
-  QOrientationSensor *orientationSensor_;
+  QOrientationSensor* orientationSensor_;
 };
 
 #endif  // QUBUNTUSCREEN_H

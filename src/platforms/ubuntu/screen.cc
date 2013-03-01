@@ -19,10 +19,10 @@
 #include "base/logging.h"
 #include <QtCore/QCoreApplication>
 #include <QtCore/qmath.h>
-#include <QOrientationSensor>
-#include <QOrientationReading>
-#include <QScreen>
-#include <QThread>
+#include <QtSensors/QOrientationSensor>
+#include <QtSensors/QOrientationReading>
+#include <QtGui/QScreen>
+#include <QtCore/QThread>
 #include <qpa/qwindowsysteminterface.h>
 #include <ubuntu/application/ui/ubuntu_application_ui.h>
 
@@ -30,10 +30,11 @@ class OrientationReadingEvent : public QEvent {
  public:
   OrientationReadingEvent(QEvent::Type type, QOrientationReading::Orientation orientation)
       : QEvent(type)
-      , orientation_(orientation)
-  {
+      , orientation_(orientation) {
+    DLOG("OrientationReadingEvent::OrientationReadingEvent()");
   }
   ~OrientationReadingEvent() {
+    DLOG("OrientationReadingEvent::~OrientationReadingEvent()");
   }
   static const QEvent::Type type_;
   QOrientationReading::Orientation orientation_;
@@ -107,7 +108,6 @@ QUbuntuScreen::QUbuntuScreen() {
   currentOrientation_ = (nativeOrientation_ == Qt::LandscapeOrientation) ? Qt::LandscapeOrientation : Qt::PortraitOrientation;
 
   orientationSensor_ = new QOrientationSensor();
-  // Connect to the orientation sensor's readingChanged signal
   QObject::connect(orientationSensor_, SIGNAL(readingChanged()), this, SLOT(onOrientationReadingChanged()));
   orientationSensor_->start();
 }
@@ -115,15 +115,7 @@ QUbuntuScreen::QUbuntuScreen() {
 QUbuntuScreen::~QUbuntuScreen() {
   DLOG("QUbuntuScreen::~QUbuntuScreen");
 
-  if (orientationSensor_ != NULL) {
-    orientationSensor_->stop();
-    delete orientationSensor_;
-  }
-}
-
-Qt::ScreenOrientation QUbuntuScreen::orientation() const
-{
-    return currentOrientation_;
+  delete orientationSensor_;
 }
 
 int QUbuntuScreen::gridUnitToPixel(int value) const {
@@ -141,44 +133,34 @@ int QUbuntuScreen::densityPixelToPixel(int value) const {
   }
 }
 
-void QUbuntuScreen::customEvent(QEvent* event)
-{
+void QUbuntuScreen::customEvent(QEvent* event) {
+  DLOG("QUbuntuScreen::customEvent (event: %p)", event);
   DASSERT(QThread::currentThread() == thread());
 
-  OrientationReadingEvent *oReadingEvent = static_cast<OrientationReadingEvent*>(event);
-  if (nativeOrientation_ == Qt::LandscapeOrientation) {
-    switch (oReadingEvent->orientation_) {
-      case QOrientationReading::LeftUp:
-          currentOrientation_ = Qt::InvertedPortraitOrientation;
-          break;
-      case QOrientationReading::TopUp:
-          currentOrientation_ = Qt::LandscapeOrientation;
-          break;
-      case QOrientationReading::RightUp:
-          currentOrientation_ = Qt::PortraitOrientation;
-          break;
-      case QOrientationReading::TopDown:
-          currentOrientation_ = Qt::InvertedLandscapeOrientation;
-          break;
-      default:
-          DLOG("Unknown orientation.");
+  OrientationReadingEvent* oReadingEvent = static_cast<OrientationReadingEvent*>(event);
+  switch (oReadingEvent->orientation_) {
+    case QOrientationReading::LeftUp: {
+      currentOrientation_ = (nativeOrientation_ == Qt::LandscapeOrientation) ?
+          Qt::InvertedPortraitOrientation : Qt::LandscapeOrientation;
+      break;
     }
-  } else {
-    switch (oReadingEvent->orientation_) {
-      case QOrientationReading::LeftUp:
-          currentOrientation_ = Qt::LandscapeOrientation;
-          break;
-      case QOrientationReading::TopUp:
-          currentOrientation_ = Qt::PortraitOrientation;
-          break;
-      case QOrientationReading::RightUp:
-          currentOrientation_ = Qt::InvertedLandscapeOrientation;
-          break;
-      case QOrientationReading::TopDown:
-          currentOrientation_ = Qt::InvertedPortraitOrientation;
-          break;
-      default:
-          DLOG("Unknown orientation.");
+    case QOrientationReading::TopUp: {
+      currentOrientation_ = (nativeOrientation_ == Qt::LandscapeOrientation) ?
+          Qt::LandscapeOrientation : Qt::PortraitOrientation;
+      break;
+    }
+    case QOrientationReading::RightUp: {
+      currentOrientation_ = (nativeOrientation_ == Qt::LandscapeOrientation) ?
+          Qt::PortraitOrientation : Qt::InvertedLandscapeOrientation;
+      break;
+    }
+    case QOrientationReading::TopDown: {
+      currentOrientation_ = (nativeOrientation_ == Qt::LandscapeOrientation) ?
+          Qt::InvertedLandscapeOrientation : Qt::InvertedPortraitOrientation;
+      break;
+    }
+    default: {
+      DLOG("Unknown orientation.");
     }
   }
 
@@ -186,11 +168,11 @@ void QUbuntuScreen::customEvent(QEvent* event)
   QWindowSystemInterface::handleScreenOrientationChange(screen(), currentOrientation_);
 }
 
-void QUbuntuScreen::onOrientationReadingChanged()
-{
-    DASSERT(orientationSensor_ != NULL);
+void QUbuntuScreen::onOrientationReadingChanged() {
+  DLOG("QUbuntuScreen::onOrientationReadingChanged");
+  DASSERT(orientationSensor_ != NULL);
 
-    // Make sure to switch to the main Qt thread context
-    QCoreApplication::postEvent(this, new OrientationReadingEvent(
+  // Make sure to switch to the main Qt thread context
+  QCoreApplication::postEvent(this, new OrientationReadingEvent(
                                 OrientationReadingEvent::type_, orientationSensor_->reading()->orientation()));
 }
