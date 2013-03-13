@@ -1,22 +1,22 @@
 Source: qtubuntu
 Priority: extra
 Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
-Build-Depends:  debhelper (>= 8.0.0),
-                qt5-default,
-                qtbase5-private-dev,
-                qtdeclarative5-private-dev,
-                libudev-dev,
-                libgles2-mesa-dev,
-                libegl1-mesa-dev,
-                libhybris-dev,
-                libubuntu-platform-api1-dev,
-                libglib2.0-dev,
-                zlib1g-dev,
-                libfontconfig1-dev,
-                libfreetype6-dev,
-                libdbus-1-dev,
-                libatspi2.0-dev,
-                qtsensors5-dev
+Build-Depends: debhelper (>= 9),
+               libatspi2.0-dev,
+               libdbus-1-dev,
+               libegl1-mesa-dev,
+               libfontconfig1-dev,
+               libfreetype6-dev,
+               libgles2-mesa-dev,
+               libglib2.0-dev,
+               libhybris-dev,
+               libubuntu-platform-api1-dev,
+               libudev-dev,
+               qt5-default,
+               qtbase5-private-dev,
+               qtdeclarative5-private-dev,
+               qtsensors5-dev,
+               zlib1g-dev,
 Standards-Version: 3.9.3
 Section: libs
 
@@ -25,7 +25,8 @@ Replaces: qthybris (<< 0.37)
 Breaks: qthybris (<< 0.37)
 Section: libs
 Architecture: armel armhf
-Depends: ${shlibs:Depends}, ${misc:Depends},
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
          libqt5sensors5,
          qtubuntu-sensors[armel],
          qtubuntu-sensors[armhf],
@@ -37,7 +38,8 @@ Description: Qt plugins for Ubuntu Platform API
  that are not exposed through the QPA plugins.
 
 Package: qthybris
-Depends: qtubuntu, ${misc:Depends}
+Depends: ${misc:Depends},
+         qtubuntu,
 Architecture: armel armhf
 Section: oldlibs
 Description: transitional dummy package
