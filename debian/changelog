@@ -1,3 +1,9 @@
+qtubuntu (0.50) UNRELEASED; urgency=low
+
+  * Use more modern packaging, fix a copyright typo
+
+ -- Michael Terry <mterry@ubuntu.com>  Tue, 12 Mar 2013 16:33:43 -0400
+
 qtubuntu (0.49) quantal; urgency=low
 
   * Implements live orientation support for client applications using the
