@@ -60,6 +60,16 @@ class DesktopData {
   bool loaded_;
 };
 
+class ProcessFlags {
+ public:
+  enum Flag {
+   ForceMainStage = 0x1,
+  };
+  Q_DECLARE_FLAGS(Flags, Flag)
+};
+
+Q_DECLARE_OPERATORS_FOR_FLAGS(ProcessFlags::Flags)
+
 class ApplicationManager : public QObject {
   Q_OBJECT
   Q_ENUMS(Role)
@@ -125,7 +135,7 @@ class ApplicationManager : public QObject {
   Q_INVOKABLE void focusApplication(int handle);
   Q_INVOKABLE void focusFavoriteApplication(FavoriteApplication application);
   Q_INVOKABLE void unfocusCurrentApplication(StageHint stageHint);
-  Q_INVOKABLE Application* startProcess(QString desktopFile, QStringList arguments = QStringList());
+  Q_INVOKABLE Application* startProcess(QString desktopFile, ProcessFlags::Flags flags, QStringList arguments = QStringList());
   Q_INVOKABLE void stopProcess(Application* application);
   Q_INVOKABLE void startWatcher() {}
 

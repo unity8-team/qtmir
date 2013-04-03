@@ -549,7 +549,7 @@ void ApplicationManager::unfocusCurrentApplication(ApplicationManager::StageHint
   ubuntu_ui_session_unfocus_running_sessions();
 }
 
-Application* ApplicationManager::startProcess(QString desktopFile, QStringList arguments) {
+Application* ApplicationManager::startProcess(QString desktopFile, ProcessFlags::Flags flags, QStringList arguments) {
   DLOG("ApplicationManager::startProcess (this=%p)", this);
   // Load desktop file.
   DesktopData* desktopData = new DesktopData(desktopFile);
@@ -577,8 +577,12 @@ Application* ApplicationManager::startProcess(QString desktopFile, QStringList a
     arguments.prepend(execArguments[i]);
   }
   arguments.append(QString("--desktop_file_hint=") + desktopData->file());
-  if (desktopData->stageHint() == "SideStage")
-    arguments.append(QString("--stage_hint=side_stage"));
+  if (flags.testFlag(ProcessFlags::ForceMainStage))
+    arguments.append(QString("--stage_hint=main_stage"));
+  else {
+    if (desktopData->stageHint() == "SideStage")
+      arguments.append(QString("--stage_hint=side_stage"));
+  }
 #if !defined(QT_NO_DEBUG)
   LOG("starting process '%s' with arguments:", exec.toLatin1().data());
   for (int i = 0; i < arguments.size(); i++)
