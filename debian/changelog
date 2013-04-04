@@ -1,8 +1,14 @@
-qtubuntu (0.50) UNRELEASED; urgency=low
+qtubuntu (0.50) quantal; urgency=low
 
+  [ Michael Terry ]
   * Use more modern packaging, fix a copyright typo
 
- -- Michael Terry <mterry@ubuntu.com>  Tue, 12 Mar 2013 16:33:43 -0400
+  [ Ricardo Mendoza ]
+  * Add execution flags to ApplicationManager::startProcess to force
+    starting an app in a desired stage. Can support other flags
+    later on.
+
+ -- Ricardo Mendoza <ricardo.mendoza@canonical.com>  Wed, 03 Apr 2013 20:13:34 -0430
 
 qtubuntu (0.49) quantal; urgency=low
 

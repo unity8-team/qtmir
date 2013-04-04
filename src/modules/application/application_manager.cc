@@ -549,8 +549,8 @@ void ApplicationManager::unfocusCurrentApplication(ApplicationManager::StageHint
   ubuntu_ui_session_unfocus_running_sessions();
 }
 
-Application* ApplicationManager::startProcess(QString desktopFile, QStringList arguments) {
-  DLOG("ApplicationManager::startProcess (this=%p)", this);
+Application* ApplicationManager::startProcess(QString desktopFile, ApplicationManager::ExecFlags flags, QStringList arguments) {
+  DLOG("ApplicationManager::startProcess (this=%p, flags=%d)", this, (int) flags);
   // Load desktop file.
   DesktopData* desktopData = new DesktopData(desktopFile);
   if (!desktopData->loaded()) {
@@ -577,8 +577,11 @@ Application* ApplicationManager::startProcess(QString desktopFile, QStringList a
     arguments.prepend(execArguments[i]);
   }
   arguments.append(QString("--desktop_file_hint=") + desktopData->file());
-  if (desktopData->stageHint() == "SideStage")
+  if (flags.testFlag(ApplicationManager::ForceMainStage))
+    arguments.append(QString("--stage_hint=main_stage"));
+  else if (desktopData->stageHint() == "SideStage")
     arguments.append(QString("--stage_hint=side_stage"));
+
 #if !defined(QT_NO_DEBUG)
   LOG("starting process '%s' with arguments:", exec.toLatin1().data());
   for (int i = 0; i < arguments.size(); i++)
@@ -599,7 +602,7 @@ Application* ApplicationManager::startProcess(QString desktopFile, QStringList a
         desktopData, pid, Application::MainStage, Application::Starting,
         startTimer(kTimeBeforeClosingProcess));
     pidHash_.insert(pid, application);
-    if (desktopData->stageHint() != "SideStage") {
+    if (flags.testFlag(ApplicationManager::ForceMainStage) || desktopData->stageHint() != "SideStage") {
       mainStageApplications_->add(application);
     } else {
       application->setStage(Application::SideStage);
