@@ -577,13 +577,11 @@ Application* ApplicationManager::startProcess(QString desktopFile, ApplicationMa
     arguments.prepend(execArguments[i]);
   }
   arguments.append(QString("--desktop_file_hint=") + desktopData->file());
-  if (flags.testFlag(ApplicationManager::ForceMainStage)) {
-    DLOG("ApplicationManager::startProcess ForceMainStage");
+  if (flags.testFlag(ApplicationManager::ForceMainStage))
     arguments.append(QString("--stage_hint=main_stage"));
-  } else {
-    if (desktopData->stageHint() == "SideStage")
-      arguments.append(QString("--stage_hint=side_stage"));
-  }
+  else if (desktopData->stageHint() == "SideStage")
+    arguments.append(QString("--stage_hint=side_stage"));
+
 #if !defined(QT_NO_DEBUG)
   LOG("starting process '%s' with arguments:", exec.toLatin1().data());
   for (int i = 0; i < arguments.size(); i++)

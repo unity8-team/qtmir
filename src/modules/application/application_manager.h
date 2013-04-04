@@ -66,6 +66,7 @@ class ApplicationManager : public QObject {
   Q_ENUMS(StageHint)
   Q_ENUMS(FormFactorHint)
   Q_ENUMS(FavoriteApplication)
+  Q_FLAGS(ExecFlags)
   
   // FIXME(kaleo, loicm): That keyboard API might need a cleaner design.
   Q_PROPERTY(int keyboardHeight READ keyboardHeight NOTIFY keyboardHeightChanged)
@@ -112,7 +113,6 @@ class ApplicationManager : public QObject {
     ForceMainStage = 0x1,
   };
   Q_DECLARE_FLAGS(ExecFlags, Flag)
-  Q_FLAGS(ExecFlags)
 
   // QObject methods.
   void customEvent(QEvent* event);
