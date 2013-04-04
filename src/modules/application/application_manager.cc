@@ -602,7 +602,7 @@ Application* ApplicationManager::startProcess(QString desktopFile, ApplicationMa
         desktopData, pid, Application::MainStage, Application::Starting,
         startTimer(kTimeBeforeClosingProcess));
     pidHash_.insert(pid, application);
-    if (desktopData->stageHint() != "SideStage") {
+    if (flags.testFlag(ApplicationManager::ForceMainStage) || desktopData->stageHint() != "SideStage") {
       mainStageApplications_->add(application);
     } else {
       application->setStage(Application::SideStage);
