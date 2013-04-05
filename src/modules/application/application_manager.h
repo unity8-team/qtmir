@@ -66,7 +66,8 @@ class ApplicationManager : public QObject {
   Q_ENUMS(StageHint)
   Q_ENUMS(FormFactorHint)
   Q_ENUMS(FavoriteApplication)
-
+  Q_FLAGS(ExecFlags)
+  
   // FIXME(kaleo, loicm): That keyboard API might need a cleaner design.
   Q_PROPERTY(int keyboardHeight READ keyboardHeight NOTIFY keyboardHeightChanged)
   Q_PROPERTY(bool keyboardVisible READ keyboardVisible NOTIFY keyboardVisibleChanged)
@@ -107,6 +108,11 @@ class ApplicationManager : public QObject {
     CameraApplication = CAMERA_APP, GalleryApplication = GALLERY_APP,
     BrowserApplication = BROWSER_APP, ShareApplication = SHARE_APP
   };
+  enum Flag { 
+    NoFlag = 0x0,
+    ForceMainStage = 0x1,
+  };
+  Q_DECLARE_FLAGS(ExecFlags, Flag)
 
   // QObject methods.
   void customEvent(QEvent* event);
@@ -125,7 +131,7 @@ class ApplicationManager : public QObject {
   Q_INVOKABLE void focusApplication(int handle);
   Q_INVOKABLE void focusFavoriteApplication(FavoriteApplication application);
   Q_INVOKABLE void unfocusCurrentApplication(StageHint stageHint);
-  Q_INVOKABLE Application* startProcess(QString desktopFile, QStringList arguments = QStringList());
+  Q_INVOKABLE Application* startProcess(QString desktopFile, ExecFlags flags, QStringList arguments = QStringList());
   Q_INVOKABLE void stopProcess(Application* application);
   Q_INVOKABLE void startWatcher() {}
 
@@ -154,6 +160,8 @@ class ApplicationManager : public QObject {
   QEvent::Type eventType_;
   QEvent::Type keyboardGeometryEventType_;
 };
+
+Q_DECLARE_OPERATORS_FOR_FLAGS(ApplicationManager::ExecFlags)
 
 Q_DECLARE_METATYPE(ApplicationManager*)
 
