@@ -24,12 +24,11 @@ Package: qtubuntu
 Replaces: qthybris (<< 0.37)
 Breaks: qthybris (<< 0.37)
 Section: libs
-Architecture: armel armhf
+Architecture: i386 amd64 armhf
 Depends: ${misc:Depends},
          ${shlibs:Depends},
          libqt5sensors5,
-         qtubuntu-sensors[armel],
-         qtubuntu-sensors[armhf],
+         qtubuntu-sensors,
 Description: Qt plugins for Ubuntu Platform API
  QtUbuntu is a set of Qt5 components for the Ubuntu Platform API. It
  contains a QPA (Qt Platform Abstraction) plugin based on the Ubuntu
@@ -40,7 +39,7 @@ Description: Qt plugins for Ubuntu Platform API
 Package: qthybris
 Depends: ${misc:Depends},
          qtubuntu,
-Architecture: armel armhf
+Architecture: i386 amd64 armhf
 Section: oldlibs
 Description: transitional dummy package
  This is a transitional dummy package for the qthybris -> qtubuntu
