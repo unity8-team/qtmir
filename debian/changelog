@@ -1,3 +1,9 @@
+qtubuntu (0.51) UNRELEASED; urgency=low
+
+  * Automatic snapshot from revision 120 (bootstrap)
+
+ -- Michael Terry <mterry@ubuntu.com>  Fri, 05 Apr 2013 10:45:47 -0400
+
 qtubuntu (0.50) quantal; urgency=low
 
   [ Michael Terry ]
