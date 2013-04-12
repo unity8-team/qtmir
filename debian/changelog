@@ -1,8 +1,12 @@
-qtubuntu (0.51) UNRELEASED; urgency=low
+qtubuntu (0.51daily13.04.12ubuntu.unity.next-0ubuntu1) raring; urgency=low
 
+  [ Michael Terry ]
   * Automatic snapshot from revision 120 (bootstrap)
 
- -- Michael Terry <mterry@ubuntu.com>  Fri, 05 Apr 2013 10:45:47 -0400
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 125 (ubuntu-unity/next)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 12 Apr 2013 02:01:44 +0000
 
 qtubuntu (0.50) quantal; urgency=low
 
