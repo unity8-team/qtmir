@@ -1,3 +1,9 @@
+qtubuntu (0.51daily13.04.26ubuntu.unity.next-0ubuntu1) raring; urgency=low
+
+  * Automatic snapshot from revision 127 (ubuntu-unity/next)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 26 Apr 2013 02:14:16 +0000
+
 qtubuntu (0.51daily13.04.12ubuntu.unity.next-0ubuntu1) raring; urgency=low
 
   [ Michael Terry ]
