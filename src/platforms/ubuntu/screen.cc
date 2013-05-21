@@ -24,7 +24,8 @@
 #include <QtGui/QScreen>
 #include <QtCore/QThread>
 #include <qpa/qwindowsysteminterface.h>
-#include <ubuntu/application/ui/ubuntu_application_ui.h>
+#include <ubuntu/application/ui/options.h>
+#include <ubuntu/application/ui/display.h>
 
 class OrientationReadingEvent : public QEvent {
  public:
@@ -50,7 +51,7 @@ const int kDefaultGridUnit = 8;
 // FIXME(loicm) Hard-coded to 40 grid units for now.
 const int kSideStageWidth = 40;
 
-QUbuntuScreen::QUbuntuScreen() {
+QUbuntuScreen::QUbuntuScreen(UApplicationOptions *options) {
   // Retrieve units from the environment.
   int gridUnit = kDefaultGridUnit;
   QByteArray gridUnitString = qgetenv("GRID_UNIT_PX");
@@ -74,18 +75,17 @@ QUbuntuScreen::QUbuntuScreen() {
   DLOG("menu bar height is %d pixels", strut.top);
 
   // Get screen resolution.
-  ubuntu_application_ui_physical_display_info info;
-  ubuntu_application_ui_create_display_info(&info, 0);
-  const int kScreenWidth = ubuntu_application_ui_query_horizontal_resolution(info);
-  const int kScreenHeight = ubuntu_application_ui_query_vertical_resolution(info);
+  UAUiDisplay* display = ua_ui_display_new_with_index(0);
+  const int kScreenWidth = ua_ui_display_query_horizontal_res(display);
+  const int kScreenHeight = ua_ui_display_query_vertical_res(display);
   ASSERT(kScreenWidth > 0 && kScreenHeight > 0);
   DLOG("screen resolution: %dx%d", kScreenWidth, kScreenHeight);
-  ubuntu_application_ui_destroy_display_info(info);
+  ua_ui_display_destroy(display);
 
   // Store geometries depending on the stage hint.
-  const StageHint kStageHint = ubuntu_application_ui_setup_get_stage_hint();
-  DASSERT(kStageHint == MAIN_STAGE_HINT || kStageHint == SIDE_STAGE_HINT);
-  if (kStageHint != SIDE_STAGE_HINT) {
+  const UAUiStage kStageHint = static_cast<UAUiStage>(u_application_options_get_stage(options));
+  DASSERT(kStageHint == U_MAIN_STAGE || kStageHint == U_SIDE_STAGE);
+  if (kStageHint != U_SIDE_STAGE) {
     geometry_ = QRect(0, 0, kScreenWidth, kScreenHeight);
     availableGeometry_ = QRect(
         strut.left, strut.top, kScreenWidth - strut.left - strut.right,
@@ -101,8 +101,8 @@ QUbuntuScreen::QUbuntuScreen() {
 
   DLOG("QUbuntuScreen::QUbuntuScreen (this=%p)", this);
 
-  // Set the default orientation based on the initial stage dimensions.
-  nativeOrientation_ = (availableGeometry_.width() >= availableGeometry_.height()) ? Qt::LandscapeOrientation : Qt::PortraitOrientation;
+  // Set the default orientation based on the initial screen dimmensions.
+  nativeOrientation_ = (kScreenWidth >= kScreenHeight) ? Qt::LandscapeOrientation : Qt::PortraitOrientation;
 
   // If it's a landscape device (i.e. some tablets), start in landscape, otherwise portrait
   currentOrientation_ = (nativeOrientation_ == Qt::LandscapeOrientation) ? Qt::LandscapeOrientation : Qt::PortraitOrientation;

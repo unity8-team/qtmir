@@ -17,6 +17,7 @@
 #define QUBUNTUSCREEN_H
 
 #include "base/screen.h"
+#include <ubuntu/application/ui/options.h>
 
 #include <QObject>
 
@@ -25,7 +26,7 @@ class QOrientationSensor;
 class QUbuntuScreen : public QObject, public QUbuntuBaseScreen {
   Q_OBJECT
  public:
-  QUbuntuScreen();
+  QUbuntuScreen(UApplicationOptions *options);
   ~QUbuntuScreen();
 
   // QPlatformScreen methods.

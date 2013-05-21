@@ -24,7 +24,7 @@
 #include <QtCore/QCoreApplication>
 #include <private/qguiapplication_p.h>
 #include <qpa/qplatforminputcontext.h>
-#include <ubuntu/application/ui/ubuntu_application_ui.h>
+#include <ubuntu/application/ui/input/event.h>
 #include <input/input_stack_compatibility_layer_flags.h>
 
 #define LOG_EVENTS 0

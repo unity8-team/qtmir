@@ -16,7 +16,7 @@
 #include "input.h"
 #include "integration.h"
 #include "base/logging.h"
-#include <ubuntu/application/ui/ubuntu_application_ui.h>
+#include <ubuntu/application/ui/input/event.h>
 
 QUbuntuInput::QUbuntuInput(QUbuntuIntegration* integration)
     : QUbuntuBaseInput(integration, UBUNTU_APPLICATION_UI_INPUT_EVENT_MAX_POINTER_COUNT)
