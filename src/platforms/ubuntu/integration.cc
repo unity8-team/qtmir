@@ -51,7 +51,6 @@ QUbuntuIntegration::QUbuntuIntegration()
   for (int i = 0; i < argc_ - 1; i++)
     argv_[i] = qstrdup(args.at(i).toLocal8Bit());
   argv_[argc_ - 1] = NULL;
-  /* FIXME ubuntu_application_ui_init(argc_ - 1, argv_); */
   // Setup options
   options_ = u_application_options_new_from_cmd_line(argc_ - 1, argv_);
 
@@ -60,15 +59,10 @@ QUbuntuIntegration::QUbuntuIntegration()
   UApplicationId* id = u_application_id_new_from_stringn("QtUbuntu", 8);
   u_application_description_set_application_id(desc_, id);
   UApplicationLifecycleDelegate* delegate = u_application_lifecycle_delegate_new();
-  DLOG("delegate %p", delegate);
   u_application_lifecycle_delegate_set_application_resumed_cb(delegate, &resumedCallback);
-  DLOG("delegate %p", delegate);
   u_application_lifecycle_delegate_set_application_about_to_stop_cb(delegate, &aboutToStopCallback);
-  DLOG("delegate %p", delegate);
   u_application_lifecycle_delegate_set_context(delegate, this);
-  DLOG("delegate %p", delegate);
   u_application_description_set_application_lifecycle_delegate(desc_, delegate);
-  DLOG("delegate %p", delegate);
 
   // Create new application instance
   instance_ = u_application_instance_new_from_description_with_options(desc_, options_);
