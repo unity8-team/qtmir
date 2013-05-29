@@ -497,19 +497,6 @@ int ApplicationManager::sideStageWidth() const {
   return kSideStageWidth;
 }
 
-ApplicationManager::StageHint ApplicationManager::stageHint() const {
-  DLOG("ApplicationManager::stageHint (this=%p)", this);
-    return static_cast<ApplicationManager::StageHint>(1);
-//  return static_cast<ApplicationManager::StageHint>(ua_ui_get_stage());
-}
-
-ApplicationManager::FormFactorHint ApplicationManager::formFactorHint() const {
-  DLOG("ApplicationManager::formFactorHint (this=%p)", this);
-  return static_cast<ApplicationManager::FormFactorHint>(1);
-//  return static_cast<ApplicationManager::FormFactorHint>(
-//      ubuntu_application_ui_setup_get_form_factor_hint());
-}
-
 ApplicationListModel* ApplicationManager::mainStageApplications() const {
   DLOG("ApplicationManager::mainStageApplications (this=%p)", this);
   return mainStageApplications_;

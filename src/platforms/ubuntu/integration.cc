@@ -28,8 +28,8 @@
 #include <ubuntu/application/ui/options.h>
 #include <ubuntu/application/ui/session.h>
 
-static void startedCallback(const UApplicationOptions *options, void* context) {
-  DLOG("startedCallback (options=%p, context=%p)", options, context);
+static void resumedCallback(const UApplicationOptions *options, void* context) {
+  DLOG("resumedCallback (options=%p, context=%p)", options, context);
   DASSERT(context != NULL);
   // FIXME(loicm) Add support for resumed callback.
   // QUbuntuScreen* screen = static_cast<QUbuntuScreen*>(context);
@@ -61,7 +61,7 @@ QUbuntuIntegration::QUbuntuIntegration()
   u_application_description_set_application_id(desc_, id);
   UApplicationLifecycleDelegate* delegate = u_application_lifecycle_delegate_new();
   DLOG("delegate %p", delegate);
-  u_application_lifecycle_delegate_set_application_started_cb(delegate, &startedCallback);
+  u_application_lifecycle_delegate_set_application_resumed_cb(delegate, &resumedCallback);
   DLOG("delegate %p", delegate);
   u_application_lifecycle_delegate_set_application_about_to_stop_cb(delegate, &aboutToStopCallback);
   DLOG("delegate %p", delegate);
@@ -135,7 +135,7 @@ QPlatformWindow* QUbuntuIntegration::createPlatformWindow(QWindow* window) {
         formFactorHintString[u_application_options_get_form_factor(options_)]);
 #endif
   
-    LOG("callbacks %p %p", &startedCallback, &aboutToStopCallback);
+    LOG("callbacks %p %p", &resumedCallback, &aboutToStopCallback);
     
     props_ = ua_ui_session_properties_new();
     ua_ui_session_properties_set_type(props_, static_cast<UAUiSessionType>(sessionType));

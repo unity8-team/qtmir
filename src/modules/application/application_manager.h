@@ -75,8 +75,6 @@ class ApplicationManager : public QObject {
   Q_PROPERTY(bool keyboardVisible READ keyboardVisible NOTIFY keyboardVisibleChanged)
 
   Q_PROPERTY(int sideStageWidth READ sideStageWidth)
-  Q_PROPERTY(StageHint stageHint READ stageHint)
-  Q_PROPERTY(FormFactorHint formFactorHint READ formFactorHint)
   Q_PROPERTY(ApplicationListModel* mainStageApplications READ mainStageApplications
              NOTIFY mainStageApplicationsChanged)
   Q_PROPERTY(ApplicationListModel* sideStageApplications READ sideStageApplications
@@ -123,8 +121,6 @@ class ApplicationManager : public QObject {
   int keyboardHeight() const;
   bool keyboardVisible() const;
   int sideStageWidth() const;
-  StageHint stageHint() const;
-  FormFactorHint formFactorHint() const;
   ApplicationListModel* mainStageApplications() const;
   ApplicationListModel* sideStageApplications() const;
   Application* mainStageFocusedApplication() const;
