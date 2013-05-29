@@ -20,6 +20,8 @@
 #include <ubuntu/application/instance.h>
 #include <ubuntu/application/ui/window.h>
 
+#define IS_OPAQUE_FLAG 1
+
 class QUbuntuScreen;
 class QUbuntuInput;
 
