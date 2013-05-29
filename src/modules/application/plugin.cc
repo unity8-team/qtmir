@@ -40,7 +40,7 @@ class UbuntuApplicationPlugin : public QQmlExtensionPlugin {
     qmlRegisterSingletonType<ApplicationManager>(
         uri, 0, 1, "ApplicationManager", applicationManagerSingleton);
     qmlRegisterUncreatableType<Application>(
-        uri, 0, 1, "ApplicationInfo", "Application can't be instantiated");
+        uri, 0, 1, "ApplicationInfo", "ApplicationInfo can't be instantiated");
     qmlRegisterUncreatableType<ApplicationListModel>(
         uri, 0, 1, "ApplicationListModel", "ApplicationListModel can't be instantiated");
     qmlRegisterExtendedType<QQuickWindow, ApplicationWindow>(uri, 0, 1, "Window");
