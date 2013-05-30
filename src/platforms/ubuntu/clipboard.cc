@@ -32,7 +32,7 @@
 #include "base/logging.h"
 #include <QtCore/QMimeData>
 #include <QtCore/QStringList>
-#include <ubuntu/application/ui/ubuntu_application_ui.h>
+#include <ubuntu/application/ui/clipboard.h>
 
 const int maxFormatsCount = 16;
 const int maxBufferSize = 4 * 1024 * 1024;  // 4 Mb
@@ -54,7 +54,7 @@ QMimeData* QUbuntuClipboard::mimeData(QClipboard::Mode mode) {
   // Get clipboard data.
   void* data = NULL;
   size_t size = 0;
-  ubuntu_application_ui_get_clipboard_content(&data, &size);
+  ua_ui_get_clipboard_content(&data, &size);
 
   // Deserialize, update and return mime data taking care of incorrectly
   // formatted input.
@@ -83,7 +83,7 @@ void QUbuntuClipboard::setMimeData(QMimeData* mimeData, QClipboard::Mode mode) {
   DLOG("QUbuntuClipboard::setMimeData (this=%p, data=%p, mode=%d)", this, mimeData,
        static_cast<int>(mode));
   if (mimeData == NULL) {
-    ubuntu_application_ui_set_clipboard_content(NULL, 0);
+    ua_ui_set_clipboard_content(NULL, 0);
     return;
   }
 
@@ -121,6 +121,6 @@ void QUbuntuClipboard::setMimeData(QMimeData* mimeData, QClipboard::Mode mode) {
   }
 
   // Set clipboard content.
-  ubuntu_application_ui_set_clipboard_content(reinterpret_cast<void*>(buffer), bufferSize);
+  ua_ui_set_clipboard_content(reinterpret_cast<void*>(buffer), bufferSize);
   delete [] buffer;
 }

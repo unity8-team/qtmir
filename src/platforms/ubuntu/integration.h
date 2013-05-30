@@ -18,6 +18,8 @@
 
 #include "base/integration.h"
 #include "screen.h"
+#include <ubuntu/application/instance.h>
+#include <ubuntu/application/ui/session.h>
 
 class QUbuntuInput;
 
@@ -39,6 +41,12 @@ class QUbuntuIntegration : public QUbuntuBaseIntegration {
   QUbuntuInput* input_;
   QPlatformInputContext* inputContext_;
   QPlatformClipboard* clipboard_;
+
+  UApplicationOptions* options_;
+  UApplicationDescription* desc_;
+  UApplicationInstance* instance_;
+  UAUiSessionProperties* props_;
+  UAUiSession* session_;
 };
 
 #endif  // QUBUNTUINTEGRATION_H

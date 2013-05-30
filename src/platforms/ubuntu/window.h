@@ -17,14 +17,17 @@
 #define QUBUNTUWINDOW_H
 
 #include "base/window.h"
-#include <ubuntu/application/ui/ubuntu_application_ui.h>
+#include <ubuntu/application/instance.h>
+#include <ubuntu/application/ui/window.h>
+
+#define IS_OPAQUE_FLAG 1
 
 class QUbuntuScreen;
 class QUbuntuInput;
 
 class QUbuntuWindow : public QUbuntuBaseWindow {
  public:
-  QUbuntuWindow(QWindow* w, QUbuntuScreen* screen, QUbuntuInput* input, bool systemSession);
+  QUbuntuWindow(QWindow* w, QUbuntuScreen* screen, QUbuntuInput* input, bool systemSession, UApplicationInstance* instance);
   ~QUbuntuWindow();
 
   // QPlatformWindow methods.
@@ -38,10 +41,12 @@ class QUbuntuWindow : public QUbuntuBaseWindow {
   void createWindow();
   void moveResize(const QRect& rect);
 
-  ubuntu_application_ui_surface surface_;
+  UAUiWindow* window_;
   Qt::WindowState state_;
   QRect geometry_;
   bool systemSession_;
+  UApplicationInstance* uainstance_;
+  UAUiWindowProperties* wprops_;
 };
 
 #endif  // QUBUNTUWINDOW_H

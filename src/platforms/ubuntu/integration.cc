@@ -22,32 +22,23 @@
 #include <qpa/qplatformnativeinterface.h>
 #include <qpa/qplatforminputcontextfactory_p.h>
 #include <qpa/qplatforminputcontext.h>
+#include <ubuntu/application/lifecycle_delegate.h>
+#include <ubuntu/application/id.h>
+#include <ubuntu/application/options.h>
+#include <ubuntu/application/ui/options.h>
+#include <ubuntu/application/ui/session.h>
 
-static void resumedCallback(void* context) {
-  DLOG("resumedCallback (context=%p)", context);
+static void resumedCallback(const UApplicationOptions *options, void* context) {
+  DLOG("resumedCallback (options=%p, context=%p)", options, context);
   DASSERT(context != NULL);
   // FIXME(loicm) Add support for resumed callback.
   // QUbuntuScreen* screen = static_cast<QUbuntuScreen*>(context);
 }
 
-static void suspendedCallback(void* context) {
-  DLOG("suspendedCallback (context=%p)", context);
+static void aboutToStopCallback(UApplicationArchive *archive, void* context) {
+  DLOG("aboutToStopCallback (archive=%p, context=%p)", archive, context);
   DASSERT(context != NULL);
   // FIXME(loicm) Add support for suspended callback.
-  // QUbuntuScreen* screen = static_cast<QUbuntuScreen*>(context);
-}
-
-static void focusedCallback(void* context) {
-  DLOG("focusedCallback (context=%p)", context);
-  DASSERT(context != NULL);
-  // FIXME(loicm) Add support for focused callback.
-  // QUbuntuScreen* screen = static_cast<QUbuntuScreen*>(context);
-}
-
-static void unfocusedCallback(void* context) {
-  DLOG("unfocusedCallback (context=%p)", context);
-  DASSERT(context != NULL);
-  // FIXME(loicm) Add support for unfocused callback.
   // QUbuntuScreen* screen = static_cast<QUbuntuScreen*>(context);
 }
 
@@ -60,10 +51,24 @@ QUbuntuIntegration::QUbuntuIntegration()
   for (int i = 0; i < argc_ - 1; i++)
     argv_[i] = qstrdup(args.at(i).toLocal8Bit());
   argv_[argc_ - 1] = NULL;
-  ubuntu_application_ui_init(argc_ - 1, argv_);
+  // Setup options
+  options_ = u_application_options_new_from_cmd_line(argc_ - 1, argv_);
+
+  // Setup application description
+  desc_ = u_application_description_new();
+  UApplicationId* id = u_application_id_new_from_stringn("QtUbuntu", 8);
+  u_application_description_set_application_id(desc_, id);
+  UApplicationLifecycleDelegate* delegate = u_application_lifecycle_delegate_new();
+  u_application_lifecycle_delegate_set_application_resumed_cb(delegate, &resumedCallback);
+  u_application_lifecycle_delegate_set_application_about_to_stop_cb(delegate, &aboutToStopCallback);
+  u_application_lifecycle_delegate_set_context(delegate, this);
+  u_application_description_set_application_lifecycle_delegate(desc_, delegate);
+
+  // Create new application instance
+  instance_ = u_application_instance_new_from_description_with_options(desc_, options_);
 
   // Create default screen.
-  screen_ = new QUbuntuScreen();
+  screen_ = new QUbuntuScreen(options_);
   screenAdded(screen_);
 
   // Initialize input.
@@ -107,7 +112,7 @@ QPlatformWindow* QUbuntuIntegration::createPlatformWindow(QWindow* window) {
       sessionType = nativeInterface()->property("ubuntuSessionType").toUInt();
     }
 #if !defined(QT_NO_DEBUG)
-    ASSERT(sessionType <= SYSTEM_SESSION_TYPE);
+    ASSERT(sessionType <= U_SYSTEM_SESSION);
     const char* const sessionTypeString[] = {
       "User", "System"
     };
@@ -119,22 +124,25 @@ QPlatformWindow* QUbuntuIntegration::createPlatformWindow(QWindow* window) {
     };
     LOG("ubuntu session type: '%s'", sessionTypeString[sessionType]);
     LOG("ubuntu application stage hint: '%s'",
-        stageHintString[ubuntu_application_ui_setup_get_stage_hint()]);
+        stageHintString[u_application_options_get_stage(options_)]);
     LOG("ubuntu application form factor: '%s'",
-        formFactorHintString[ubuntu_application_ui_setup_get_form_factor_hint()]);
+        formFactorHintString[u_application_options_get_form_factor(options_)]);
 #endif
-    SessionCredentials credentials = {
-      static_cast<SessionType>(sessionType), APPLICATION_SUPPORTS_OVERLAYED_MENUBAR, "QtUbuntu",
-      resumedCallback, suspendedCallback, focusedCallback, unfocusedCallback, this
-    };
-    ubuntu_application_ui_start_a_new_session(&credentials);
+  
+    LOG("callbacks %p %p", &resumedCallback, &aboutToStopCallback);
+    
+    props_ = ua_ui_session_properties_new();
+    ua_ui_session_properties_set_type(props_, static_cast<UAUiSessionType>(sessionType));
+
+    session_ = ua_ui_session_new_with_properties(props_);
+
     input_->setSessionType(sessionType);
     once = true;
   }
 
   // Create the window.
   QPlatformWindow* platformWindow = new QUbuntuWindow(
-      window, static_cast<QUbuntuScreen*>(screen_), input_, static_cast<bool>(sessionType));
+      window, static_cast<QUbuntuScreen*>(screen_), input_, static_cast<bool>(sessionType), instance_);
   platformWindow->requestActivateWindow();
   return platformWindow;
 }

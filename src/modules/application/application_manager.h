@@ -17,7 +17,9 @@
 #define APPLICATION_MANAGER_H
 
 #include <QtCore/QtCore>
-#include <ubuntu/application/ui/ubuntu_application_ui.h>
+#include <ubuntu/application/ui/window.h>
+#include <ubuntu/application/ui/options.h>
+#include <ubuntu/application/ui/input/event.h>
 #include <ubuntu/ui/ubuntu_ui_session_service.h>
 
 /* FIXME: undef required so that this class compiles properly.
@@ -25,7 +27,7 @@
    by the following chain of includes:
    - <EGL/eglplatform.h> included by
    - <EGL/egl.h> included by
-   - <ubuntu/application/ui/ubuntu_application_ui.h>
+   - <ubuntu/application/ui/window.h>
 */
 #undef Bool
 
@@ -73,8 +75,6 @@ class ApplicationManager : public QObject {
   Q_PROPERTY(bool keyboardVisible READ keyboardVisible NOTIFY keyboardVisibleChanged)
 
   Q_PROPERTY(int sideStageWidth READ sideStageWidth)
-  Q_PROPERTY(StageHint stageHint READ stageHint)
-  Q_PROPERTY(FormFactorHint formFactorHint READ formFactorHint)
   Q_PROPERTY(ApplicationListModel* mainStageApplications READ mainStageApplications
              NOTIFY mainStageApplicationsChanged)
   Q_PROPERTY(ApplicationListModel* sideStageApplications READ sideStageApplications
@@ -90,19 +90,19 @@ class ApplicationManager : public QObject {
 
   // Mapping enums to Ubuntu Platform API enums.
   enum Role {
-    Dash = DASH_ACTOR_ROLE, Default = MAIN_ACTOR_ROLE, Indicators = INDICATOR_ACTOR_ROLE,
-    Notifications = NOTIFICATIONS_ACTOR_ROLE, Greeter = GREETER_ACTOR_ROLE,
-    Launcher = LAUNCHER_ACTOR_ROLE, OnScreenKeyboard = ON_SCREEN_KEYBOARD_ACTOR_ROLE,
-    ShutdownDialog = SHUTDOWN_DIALOG_ACTOR_ROLE
+    Dash = U_DASH_ROLE, Default = U_MAIN_ROLE, Indicators = U_INDICATOR_ROLE,
+    Notifications = U_NOTIFICATIONS_ROLE, Greeter = U_GREETER_ROLE,
+    Launcher = U_LAUNCHER_ROLE, OnScreenKeyboard = U_ON_SCREEN_KEYBOARD_ROLE,
+    ShutdownDialog = U_SHUTDOWN_DIALOG_ROLE
   };
   enum StageHint {
-    MainStage = MAIN_STAGE_HINT, IntegrationStage = INTEGRATION_STAGE_HINT,
-    ShareStage = SHARE_STAGE_HINT, ContentPickingStage = CONTENT_PICKING_STAGE_HINT,
-    SideStage = SIDE_STAGE_HINT, ConfigurationStage = CONFIGURATION_STAGE_HINT
+    MainStage = U_MAIN_STAGE, IntegrationStage = U_INTEGRATION_STAGE,
+    ShareStage = U_SHARE_STAGE, ContentPickingStage = U_CONTENT_PICKING_STAGE,
+    SideStage = U_SIDE_STAGE, ConfigurationStage = U_CONFIGURATION_STAGE
   };
   enum FormFactorHint {
-    DesktopFormFactor = DESKTOP_FORM_FACTOR_HINT, PhoneFormFactor = PHONE_FORM_FACTOR_HINT,
-    TabletFormFactor = TABLET_FORM_FACTOR_HINT
+    DesktopFormFactor = U_DESKTOP, PhoneFormFactor = U_PHONE,
+    TabletFormFactor = U_TABLET
   };
   enum FavoriteApplication {
     CameraApplication = CAMERA_APP, GalleryApplication = GALLERY_APP,
@@ -121,8 +121,6 @@ class ApplicationManager : public QObject {
   int keyboardHeight() const;
   bool keyboardVisible() const;
   int sideStageWidth() const;
-  StageHint stageHint() const;
-  FormFactorHint formFactorHint() const;
   ApplicationListModel* mainStageApplications() const;
   ApplicationListModel* sideStageApplications() const;
   Application* mainStageFocusedApplication() const;

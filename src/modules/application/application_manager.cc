@@ -321,10 +321,10 @@ void ApplicationManager::customEvent(QEvent* event) {
              application->name().toLatin1().data(), kPid);
 #if !defined(QT_NO_DEBUG)
         // Ensure we're in sync with Ubuntu Platform.
-        if (taskEvent->stage_ == MAIN_STAGE_HINT) {
+        if (taskEvent->stage_ == U_MAIN_STAGE) {
           ASSERT(mainStageApplications_->contains(application));
           ASSERT(application->stage() == Application::MainStage);
-        } else if (taskEvent->stage_ == SIDE_STAGE_HINT) {
+        } else if (taskEvent->stage_ == U_SIDE_STAGE) {
           ASSERT(sideStageApplications_->contains(application));
           ASSERT(application->stage() == Application::SideStage);
         } else {
@@ -340,7 +340,7 @@ void ApplicationManager::customEvent(QEvent* event) {
           Application* application = new Application(
               desktopData, kPid, Application::MainStage, Application::Running, -1);
           pidHash_.insert(kPid, application);
-          if (taskEvent->stage_ != SIDE_STAGE_HINT) {
+          if (taskEvent->stage_ != U_SIDE_STAGE) {
             DLOG("desktopFile loaded, storing '%s' (%d) in the main stage application list",
                  desktopData->name().toLatin1().data(), kPid);
             mainStageApplications_->add(application);
@@ -396,12 +396,12 @@ void ApplicationManager::customEvent(QEvent* event) {
       Application* application = pidHash_.value(taskEvent->id_);
       if (application != NULL) {
         if (mainStageFocusedApplication_ == application) {
-          DASSERT(taskEvent->stage_ == MAIN_STAGE_HINT);
+          DASSERT(taskEvent->stage_ == U_MAIN_STAGE);
           mainStageFocusedApplication_ = NULL;
           emit mainStageFocusedApplicationChanged();
         }
         else if (sideStageFocusedApplication_ == application) {
-          DASSERT(taskEvent->stage_ == SIDE_STAGE_HINT);
+          DASSERT(taskEvent->stage_ == U_SIDE_STAGE);
           sideStageFocusedApplication_ = NULL;
           emit sideStageFocusedApplicationChanged();
         }
@@ -495,17 +495,6 @@ bool ApplicationManager::keyboardVisible() const {
 int ApplicationManager::sideStageWidth() const {
   DLOG("ApplicationManager::sideStageWidth (this=%p)", this);
   return kSideStageWidth;
-}
-
-ApplicationManager::StageHint ApplicationManager::stageHint() const {
-  DLOG("ApplicationManager::stageHint (this=%p)", this);
-  return static_cast<ApplicationManager::StageHint>(ubuntu_application_ui_setup_get_stage_hint());
-}
-
-ApplicationManager::FormFactorHint ApplicationManager::formFactorHint() const {
-  DLOG("ApplicationManager::formFactorHint (this=%p)", this);
-  return static_cast<ApplicationManager::FormFactorHint>(
-      ubuntu_application_ui_setup_get_form_factor_hint());
 }
 
 ApplicationListModel* ApplicationManager::mainStageApplications() const {

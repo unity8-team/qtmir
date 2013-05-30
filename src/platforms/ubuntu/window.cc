@@ -23,7 +23,7 @@
 #include "input.h"
 #include "base/logging.h"
 #include <qpa/qwindowsysteminterface.h>
-#include <ubuntu/application/ui/ubuntu_application_ui.h>
+#include <ubuntu/application/ui/window.h>
 
 static void eventCallback(void* context, const Event* event) {
   DLOG("eventCallback (context=%p, event=%p)", context, event);
@@ -33,11 +33,13 @@ static void eventCallback(void* context, const Event* event) {
 }
 
 QUbuntuWindow::QUbuntuWindow(
-    QWindow* w, QUbuntuScreen* screen, QUbuntuInput* input, bool systemSession)
+    QWindow* w, QUbuntuScreen* screen, QUbuntuInput* input,
+    bool systemSession, UApplicationInstance* instance)
     : QUbuntuBaseWindow(w, screen)
     , input_(input)
     , state_(window()->windowState())
-    , systemSession_(systemSession) {
+    , systemSession_(systemSession)
+    , uainstance_(instance) {
   if (!systemSession) {
     // Non-system sessions can't resize the window geometry.
     geometry_ = screen->availableGeometry();
@@ -52,7 +54,7 @@ QUbuntuWindow::QUbuntuWindow(
 
 QUbuntuWindow::~QUbuntuWindow() {
   DLOG("QUbuntuWindow::~QUbuntuWindow");
-  ubuntu_application_ui_destroy_surface(surface_);
+  ua_ui_window_destroy(window_);
 }
 
 void QUbuntuWindow::createWindow() {
@@ -70,12 +72,12 @@ void QUbuntuWindow::createWindow() {
     flags |= static_cast<uint>(IS_OPAQUE_FLAG);
   }
 #if !defined(QT_NO_DEBUG)
-  ASSERT(role <= ON_SCREEN_KEYBOARD_ACTOR_ROLE);
+  //ASSERT(role <= ON_SCREEN_KEYBOARD_ACTOR_ROLE);
   const char* const roleString[] = {
     "Dash", "Default", "Indicator", "Notifications", "Greeter", "Launcher", "OSK", "ShutdownDialog"
   };
   LOG("role: '%s'", roleString[role]);
-  LOG("flags: '%s'", (flags & static_cast<uint>(IS_OPAQUE_FLAG)) ? "Opaque" : "NotOpaque");
+  LOG("flags: '%s'", (flags & static_cast<uint>(1)) ? "Opaque" : "NotOpaque");
 #endif
 
   // Get surface geometry.
@@ -88,18 +90,28 @@ void QUbuntuWindow::createWindow() {
     geometry = geometry_;
   }
 
-  // Create surface.
-  DLOG("creating surface at (%d, %d) with size (%d, %d)", geometry.x(), geometry.y(),
+  fprintf(stderr, "creating surface at (%d, %d) with size (%d, %d)", geometry.x(), geometry.y(),
        geometry.width(), geometry.height());
-  ubuntu_application_ui_create_surface(
-      &surface_, "QUbuntuWindow", geometry.width(), geometry.height(),
-      static_cast<SurfaceRole>(role), flags, eventCallback, this);
+
+  // Setup platform window creation properties
+  wprops_ = ua_ui_window_properties_new_for_normal_window();
+  ua_ui_window_properties_set_titlen(wprops_, "Window 1", 8);
+  ua_ui_window_properties_set_role(wprops_, static_cast<UAUiWindowRole>(role));
+  ua_ui_window_properties_set_input_cb_and_ctx(wprops_, &eventCallback, this);
+
+  // Create platform window
+  window_ = ua_ui_window_new_for_application_with_properties(uainstance_, wprops_);
+
+  if (geometry.width() != 0 || geometry.height() != 0)
+      ua_ui_window_resize(window_, geometry.width(), geometry.height());
+
   if (geometry.x() != 0 || geometry.y() != 0)
-    ubuntu_application_ui_move_surface_to(surface_, geometry.x(), geometry.y());
-  ASSERT(surface_ != NULL);
-  createSurface(ubuntu_application_ui_surface_to_native_window_type(surface_));
+      ua_ui_window_move(window_, geometry.x(), geometry.y());
+
+  ASSERT(window_ != NULL);
+  createSurface(ua_ui_window_get_native_type(window_));
   if (state_ == Qt::WindowFullScreen) {
-    ubuntu_application_ui_request_fullscreen_for_surface(surface_);
+    ua_ui_window_request_fullscreen(window_);
   }
 
   // Tell Qt about the geometry.
@@ -108,10 +120,10 @@ void QUbuntuWindow::createWindow() {
 }
 
 void QUbuntuWindow::moveResize(const QRect& rect) {
-  DLOG("QUbuntuWindow::moveResize (this=%p, x=%d, y=%d, w=%d, h=%d)", this, rect.x(), rect.y(),
+  fprintf(stderr, "\nQUbuntuWindow::moveResize (this=%p, x=%d, y=%d, w=%d, h=%d)\n", this, rect.x(), rect.y(),
        rect.width(), rect.height());
-  ubuntu_application_ui_move_surface_to(surface_, rect.x(), rect.y());
-  ubuntu_application_ui_resize_surface_to(surface_, rect.width(), rect.height());
+  ua_ui_window_move(window_, rect.x(), rect.y());
+  ua_ui_window_resize(window_, rect.width(), rect.height());
   QWindowSystemInterface::handleGeometryChange(window(), rect);
   QPlatformWindow::setGeometry(rect);
 }
@@ -130,7 +142,7 @@ void QUbuntuWindow::setWindowState(Qt::WindowState state) {
     }
     case Qt::WindowFullScreen: {
       DLOG("setting window state: 'FullScreen'");
-      ubuntu_application_ui_request_fullscreen_for_surface(surface_);
+      ua_ui_window_request_fullscreen(window_);
       moveResize(screen()->geometry());
       state_ = Qt::WindowFullScreen;
       break;
@@ -151,7 +163,7 @@ void QUbuntuWindow::setWindowState(Qt::WindowState state) {
 }
 
 void QUbuntuWindow::setGeometry(const QRect& rect) {
-  DLOG("QUbuntuWindow::setGeometry (this=%p)", this);
+  fprintf(stderr, "QUbuntuWindow::setGeometry (this=%p)", this);
   if (systemSession_) {
     // Non-system sessions can't resize the window geometry.
     geometry_ = rect;
@@ -163,9 +175,9 @@ void QUbuntuWindow::setGeometry(const QRect& rect) {
 void QUbuntuWindow::setVisible(bool visible) {
   DLOG("QUbuntuWindow::setVisible (this=%p, visible=%s)", this, visible ? "true" : "false");
   if (visible) {
-    ubuntu_application_ui_show_surface(surface_);
+    ua_ui_window_show(window_);
     QWindowSystemInterface::handleExposeEvent(window(), QRect());
   } else {
-    ubuntu_application_ui_hide_surface(surface_);
+    ua_ui_window_hide(window_);
   }
 }
