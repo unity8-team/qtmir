@@ -1,3 +1,13 @@
+qtubuntu (0.51daily13.05.30ubuntu.unity.next-0ubuntu1) raring; urgency=low
+
+  [ Ricardo Mendoza ]
+  * * Migrate QtUbuntu to make use of the new platform API definitions.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 131 (ubuntu-unity/next)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 30 May 2013 03:29:40 +0000
+
 qtubuntu (0.51daily13.04.29ubuntu.unity.next-0ubuntu1) raring; urgency=low
 
   [ Kaleo ]
