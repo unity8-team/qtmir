@@ -1,3 +1,13 @@
+qtubuntu (0.51daily13.05.31ubuntu.unity.next-0ubuntu1) raring; urgency=low
+
+  [ Ricardo Mendoza ]
+  * Hide input panel when application is unfocused. (LP: #1183113)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 133 (ubuntu-unity/next)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 31 May 2013 02:01:41 +0000
+
 qtubuntu (0.51daily13.05.30ubuntu.unity.next-0ubuntu1) raring; urgency=low
 
   [ Ricardo Mendoza ]
