@@ -102,7 +102,7 @@ QUbuntuScreen::QUbuntuScreen(UApplicationOptions *options) {
   DLOG("QUbuntuScreen::QUbuntuScreen (this=%p)", this);
 
   // Set the default orientation based on the initial screen dimmensions.
-  nativeOrientation_ = (kScreenWidth >= kScreenHeight) ? Qt::LandscapeOrientation : Qt::PortraitOrientation;
+  nativeOrientation_ = (availableGeometry_.width() >= availableGeometry_.height()) ? Qt::LandscapeOrientation : Qt::PortraitOrientation;
 
   // If it's a landscape device (i.e. some tablets), start in landscape, otherwise portrait
   currentOrientation_ = (nativeOrientation_ == Qt::LandscapeOrientation) ? Qt::LandscapeOrientation : Qt::PortraitOrientation;
