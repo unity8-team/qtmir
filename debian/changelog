@@ -1,3 +1,13 @@
+qtubuntu (0.51daily13.06.02ubuntu.unity.next-0ubuntu1) raring; urgency=low
+
+  [ Ricardo Mendoza ]
+  * Fix orientation launching for sidestage apps.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 135 (ubuntu-unity/next)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Sun, 02 Jun 2013 02:02:01 +0000
+
 qtubuntu (0.51daily13.05.31ubuntu.unity.next-0ubuntu1) raring; urgency=low
 
   [ Ricardo Mendoza ]
