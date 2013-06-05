@@ -1,3 +1,27 @@
+qtubuntu (0.51daily13.06.05.1-0ubuntu1) saucy; urgency=low
+
+  [ Michael Terry ]
+  * Widen qtubuntu's architecture support.
+  * Add missing libxrender-dev Build-Depends needed on i386 and amd64.
+
+  [ Daniel d'Andrada ]
+  * Export Application as ApplicationInfo to avoid clashing with
+    QtQuick.Application.
+
+  [ Kaleo ]
+  * Based native orientation selection on the available stage size. (LP:
+    #1172883)
+
+  [ Ricardo Mendoza ]
+  * * Migrate QtUbuntu to make use of the new platform API definitions.
+  * Hide input panel when application is unfocused. (LP: #1183113)
+  * Fix orientation launching for sidestage apps.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 136
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 05 Jun 2013 17:04:49 +0000
+
 qtubuntu (0.51daily13.06.02ubuntu.unity.next-0ubuntu1) raring; urgency=low
 
   [ Ricardo Mendoza ]
