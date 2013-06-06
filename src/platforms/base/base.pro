@@ -19,7 +19,8 @@ SOURCES = integration.cc \
           window.cc \
           input.cc \
           theme.cc \
-          clipboard.cc
+          clipboard.cc \
+          qeglconvenience.cpp
 
 HEADERS = integration.h \
           backing_store.h \
