@@ -74,6 +74,18 @@ class KeyboardGeometryEvent : public QEvent {
   QRect geometry_;
 };
 
+static void continueTask(int pid, void* context)
+{
+  DLOG("continueTask(pid=%d, context=%p)", pid, context);
+  kill(pid, SIGCONT);
+}
+
+static void suspendTask(int pid, void* context)
+{
+  DLOG("suspendTask(pid=%d, context=%p)", pid, context);
+  kill(pid, SIGSTOP);
+}
+
 static void sessionBornCallback(ubuntu_ui_session_properties session, void* context) {
   DLOG("sessionBornCallback (session=%p, context=%p)", session, context);
   DASSERT(context != NULL);
@@ -261,6 +273,12 @@ ApplicationManager::ApplicationManager()
       sessionDiedCallback, this
     };
     ubuntu_ui_session_install_session_lifecycle_observer(&watcher);
+
+    static ubuntu_ui_task_controller controller = {
+        continueTask, suspendTask, this
+    };
+    ubuntu_ui_install_task_controller(&controller);
+    
     once = true;
   }
   DLOG("ApplicationManager::ApplicationManager (this=%p)", this);
