@@ -52,7 +52,8 @@ QVector<EGLint> q_createConfigAttributesFromFormat(const QSurfaceFormat &format)
     int blueSize    = format.blueBufferSize();
     int alphaSize   = format.alphaBufferSize();
     int depthSize   = format.depthBufferSize();
-    int stencilSize = format.stencilBufferSize();
+    // TODO: Renable ~racarr
+//    int stencilSize = format.stencilBufferSize();
     int sampleCount = format.samples();
 
     // We want to make sure 16-bit configs are chosen over 32-bit configs as they will provide

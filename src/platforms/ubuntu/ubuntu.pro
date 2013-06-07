@@ -24,12 +24,12 @@ HEADERS = integration.h \
           input.h \
           clipboard.h
 
-CONFIG += plugin link_prl
+CONFIG += plugin link_prl debug
 
 PRE_TARGETDEPS = ../base/libubuntubase.a
 
 INCLUDEPATH += ..
-LIBS += -L../base -lubuntubase -lubuntu_application_api_mirclient
+LIBS += -L../base -lubuntubase -lubuntu_application_api_mirserver
 
 OTHER_FILES += ubuntu.json
 

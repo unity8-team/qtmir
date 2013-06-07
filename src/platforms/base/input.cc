@@ -501,11 +501,12 @@ void QUbuntuBaseInput::dispatchKeyEvent(QWindow* window, const void* ev) {
     modifiers |= Qt::MetaModifier;
     unicodeIndex = 2;
   }
-
+  // TODO: Fix
+  (void)unicodeIndex;
   // Key event propagation.
   QEvent::Type keyType = kEventType[event->action];
-  quint32 keyCode = kKeyCode[event->details.key.key_code].keycode;
-  QString text(kKeyCode[event->details.key.key_code].unicode[unicodeIndex]);
+  quint32 keyCode = event->details.key.key_code;
+  QString text(keyCode);
   ulong timestamp = event->details.key.event_time / 1000000;
   QPlatformInputContext* context = QGuiApplicationPrivate::platformIntegration()->inputContext();
   if (context) {
