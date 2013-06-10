@@ -30,14 +30,14 @@ class QUbuntuMirIntegrationPlugin : public QPlatformIntegrationPlugin {
 
 QStringList QUbuntuMirIntegrationPlugin::keys() const {
   QStringList list;
-  list << "ubuntu";
+  list << "ubuntumir";
   return list;
 }
 
 QPlatformIntegration* QUbuntuMirIntegrationPlugin::create(
     const QString& system, const QStringList& paramList) {
   Q_UNUSED(paramList);
-  if (system.toLower() == "ubuntu")
+  if (system.toLower() == "ubuntumir")
     return new QUbuntuIntegration();
   return 0;
 }
