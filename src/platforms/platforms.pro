@@ -1,6 +1,9 @@
 TEMPLATE = subdirs
 
-SUBDIRS += base ubuntu
+SUBDIRS += base ubuntucommon ubuntu ubuntumir ubuntumirserver
 
 ubuntulegacy.depends = base
-ubuntu.depends = base
+ubuntucommon.depends = base
+ubuntu.depends = ubuntucommon
+ubuntumir.depends = ubuntucommon
+ubuntumirserver.depends = ubuntucommon

@@ -33,6 +33,6 @@ HEADERS = integration.h \
           theme.h \
           clipboard.h
 
-CONFIG += static create_prl egl qpa/genericunixfontdatabase debug
+CONFIG += static create_prl egl qpa/genericunixfontdatabase
 
 INCLUDEPATH += .. /usr/include/hybris
