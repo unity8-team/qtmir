@@ -1,3 +1,13 @@
+qtubuntu (0.51daily13.06.11.1-0ubuntu1) saucy; urgency=low
+
+  [ Ricardo Mendoza ]
+  * Take over signalling of processes from the Android side app manager.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 140
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 11 Jun 2013 17:51:55 +0000
+
 qtubuntu (0.51daily13.06.11-0ubuntu1) saucy; urgency=low
 
   [ Ricardo Mendoza ]
