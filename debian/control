@@ -1,5 +1,5 @@
 Source: qtubuntu
-Priority: extra
+Priority: optional
 Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
 Build-Depends: debhelper (>= 9),
                libatspi2.0-dev,
@@ -24,8 +24,8 @@ Section: libs
 Package: qtubuntu
 Replaces: qthybris (<< 0.37)
 Breaks: qthybris (<< 0.37)
-Section: libs
 Architecture: i386 amd64 armhf
+Multi-Arch: same
 Depends: ${misc:Depends},
          ${shlibs:Depends},
          libqt5sensors5,
@@ -36,6 +36,20 @@ Description: Qt plugins for Ubuntu Platform API
  Platform API and a legacy QPA plugin based on the compatibility
  layers. It also provides Qt bindings for Ubuntu Platform API features
  that are not exposed through the QPA plugins.
+
+Package: qtubuntu-examples
+Architecture: i386 amd64 armhf
+Multi-Arch: same
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Description: Qt plugins for Ubuntu Platform API
+ QtUbuntu is a set of Qt5 components for the Ubuntu Platform API. It
+ contains a QPA (Qt Platform Abstraction) plugin based on the Ubuntu
+ Platform API and a legacy QPA plugin based on the compatibility
+ layers. It also provides Qt bindings for Ubuntu Platform API features
+ that are not exposed through the QPA plugins.
+ .
+ This package contains examples not part of the main package.
 
 Package: qthybris
 Depends: ${misc:Depends},
