@@ -5,7 +5,7 @@ QT += core-private gui-private platformsupport-private
 
 DEFINES += MESA_EGL_NO_X11_HEADERS
 QMAKE_CXXFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden
-QMAKE_LFLAGS += -Wl,-no-undefined -lubuntu_application_api_mirserver
+QMAKE_LFLAGS += -Wl,-no-undefined
 
 CONFIG(debug) {
   QMAKE_CXXFLAGS_DEBUG += -Werror
@@ -33,6 +33,6 @@ HEADERS = integration.h \
           theme.h \
           clipboard.h
 
-CONFIG += static create_prl egl qpa/genericunixfontdatabase debug
+CONFIG += static create_prl egl qpa/genericunixfontdatabase
 
 INCLUDEPATH += .. /usr/include/hybris

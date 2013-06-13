@@ -227,8 +227,8 @@ EGLConfig q_configFromGLFormat(EGLDisplay display, const QSurfaceFormat &format,
     else if (format.renderableType() == QSurfaceFormat::OpenGL)
         configureAttributes.append(EGL_OPENGL_BIT);
 #endif
-    else if (format.majorVersion() == 1)
-        configureAttributes.append(EGL_OPENGL_ES_BIT);
+    // else if (format.majorVersion() == 1)
+    //     configureAttributes.append(EGL_OPENGL_ES_BIT);
     else
         configureAttributes.append(EGL_OPENGL_ES2_BIT);
 

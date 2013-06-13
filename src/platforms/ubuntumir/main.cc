@@ -18,26 +18,26 @@
 
 QT_BEGIN_NAMESPACE
 
-class QUbuntuIntegrationPlugin : public QPlatformIntegrationPlugin {
+class QUbuntuMirIntegrationPlugin : public QPlatformIntegrationPlugin {
   Q_OBJECT
   Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QPA.QPlatformIntegrationFactoryInterface.5.1"
-                    FILE "ubuntu.json")
+                    FILE "ubuntumir.json")
 
  public:
   QStringList keys() const;
   QPlatformIntegration* create(const QString&, const QStringList&);
 };
 
-QStringList QUbuntuIntegrationPlugin::keys() const {
+QStringList QUbuntuMirIntegrationPlugin::keys() const {
   QStringList list;
-  list << "ubuntu";
+  list << "ubuntumir";
   return list;
 }
 
-QPlatformIntegration* QUbuntuIntegrationPlugin::create(
+QPlatformIntegration* QUbuntuMirIntegrationPlugin::create(
     const QString& system, const QStringList& paramList) {
   Q_UNUSED(paramList);
-  if (system.toLower() == "ubuntu")
+  if (system.toLower() == "ubuntumir")
     return new QUbuntuIntegration();
   return 0;
 }

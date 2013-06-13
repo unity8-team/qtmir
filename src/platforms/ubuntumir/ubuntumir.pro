@@ -1,4 +1,4 @@
-TARGET = qubuntu
+TARGET = qubuntumir
 TEMPLATE = lib
 
 QT += core-private gui-private platformsupport-private sensors-private
@@ -18,8 +18,7 @@ CONFIG += plugin link_prl
 PRE_TARGETDEPS = ../ubuntucommon/libqubuntucommon.a ../base/libubuntubase.a
 
 INCLUDEPATH += ..
-# TODO: ~racarr, revert this to just ubuntu_application_api for hybris build once I make a conditional...
-LIBS += -L../ubuntucommon -lqubuntucommon -lubuntu_application_api_mirserver -L../base -lubuntubase
+LIBS += -L../ubuntucommon -lqubuntucommon -lubuntu_application_api_mirclient -L../base -lubuntubase
 
 OTHER_FILES += ubuntu.json
 
