@@ -37,20 +37,6 @@ Description: Qt plugins for Ubuntu Platform API
  layers. It also provides Qt bindings for Ubuntu Platform API features
  that are not exposed through the QPA plugins.
 
-Package: qtubuntu-examples
-Architecture: any
-Multi-Arch: same
-Depends: ${misc:Depends},
-         ${shlibs:Depends},
-Description: Qt plugins for Ubuntu Platform API
- QtUbuntu is a set of Qt5 components for the Ubuntu Platform API. It
- contains a QPA (Qt Platform Abstraction) plugin based on the Ubuntu
- Platform API and a legacy QPA plugin based on the compatibility
- layers. It also provides Qt bindings for Ubuntu Platform API features
- that are not exposed through the QPA plugins.
- .
- This package contains examples not part of the main package.
-
 Package: qthybris
 Depends: ${misc:Depends},
          qtubuntu,
