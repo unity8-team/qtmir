@@ -8,7 +8,5 @@ SOURCES += qmlscene_ubuntu.cc
 
 LIBS += -lrt
 
-target.path = $$[QT_INSTALL_EXAMPLES]/qtubuntu
 sources.path = $$[QT_INSTALL_EXAMPLES]/qtubuntu
 sources.files = $$HEADERS $$SOURCES qmlscene_ubuntu.pro
-INSTALLS += target
