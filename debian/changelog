@@ -1,3 +1,19 @@
+qtubuntu (0.51daily13.06.17-0ubuntu1) saucy; urgency=low
+
+  [ Ken VanDine ]
+  * Don't install test files (merge lp:~ken-
+    vandine/qtubuntu/packaging_fixes), update Standards-Version.
+
+  [ Timo Jyrinki ]
+  * Enable multi-arch, split examples package, use architecture: any.
+  * Don't install test files (merge lp:~ken-
+    vandine/qtubuntu/packaging_fixes), update Standards-Version.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 143
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 17 Jun 2013 02:02:10 +0000
+
 qtubuntu (0.51daily13.06.11.1-0ubuntu1) saucy; urgency=low
 
   [ Ricardo Mendoza ]
