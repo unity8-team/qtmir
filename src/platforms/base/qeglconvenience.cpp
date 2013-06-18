@@ -52,8 +52,7 @@ QVector<EGLint> q_createConfigAttributesFromFormat(const QSurfaceFormat &format)
     int blueSize    = format.blueBufferSize();
     int alphaSize   = format.alphaBufferSize();
     int depthSize   = format.depthBufferSize();
-    // TODO: Renable ~racarr
-//    int stencilSize = format.stencilBufferSize();
+    int stencilSize = format.stencilBufferSize();
     int sampleCount = format.samples();
 
     // We want to make sure 16-bit configs are chosen over 32-bit configs as they will provide
@@ -101,8 +100,7 @@ QVector<EGLint> q_createConfigAttributesFromFormat(const QSurfaceFormat &format)
     configAttributes.append(depthSize > 0 ? depthSize : 0);
 
     configAttributes.append(EGL_STENCIL_SIZE);
-    // TODO: Note stencil is ignored due to mesa-egl-platform-mir radeon issue.... (racarr)
-//    configAttributes.append(stencilSize > 0 ? stencilSize : 0);
+    configAttributes.append(stencilSize > 0 ? stencilSize : 0);
     configAttributes.append(0);
 
     configAttributes.append(EGL_SAMPLES);
