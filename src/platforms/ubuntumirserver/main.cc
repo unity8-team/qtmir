@@ -44,4 +44,12 @@ QPlatformIntegration* QUbuntuMirServerIntegrationPlugin::create(
 
 QT_END_NAMESPACE
 
+extern "C"
+{
+void ua_ui_session_properties_set_remote_pid(UAUiSessionProperties*, uint32_t)
+{
+    // TODO: Remove once mir stubs land in platform-api
+}
+}
+
 #include "main.moc"

@@ -131,15 +131,15 @@ QPlatformWindow* QUbuntuIntegration::createPlatformWindow(QWindow* window) {
   
     LOG("callbacks %p %p", &resumedCallback, &aboutToStopCallback);
     
-//    props_ = ua_ui_session_properties_new();
-  //  ua_ui_session_properties_set_type(props_, static_cast<UAUiSessionType>(sessionType));
+    props_ = ua_ui_session_properties_new();
+    ua_ui_session_properties_set_type(props_, static_cast<UAUiSessionType>(sessionType));
 
-    // ua_ui_session_properties_set_remote_pid(
-    //     props_,
-    //     static_cast<uint32_t>(QCoreApplication::applicationPid())
-    //     );
+    ua_ui_session_properties_set_remote_pid(
+         props_,
+         static_cast<uint32_t>(QCoreApplication::applicationPid())
+         );
 
-//    session_ = ua_ui_session_new_with_properties(props_);
+    session_ = ua_ui_session_new_with_properties(props_);
 
     input_->setSessionType(sessionType);
     once = true;
