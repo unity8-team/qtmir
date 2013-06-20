@@ -31,6 +31,8 @@ Depends: ${misc:Depends},
          ${shlibs:Depends},
          libqt5sensors5,
          qtubuntu-sensors,
+         libplatform-api1-mirclient,
+         libplatform-api1-mirserver,
 Description: Qt plugins for Ubuntu Platform API
  QtUbuntu is a set of Qt5 components for the Ubuntu Platform API. It
  contains a QPA (Qt Platform Abstraction) plugin based on the Ubuntu
