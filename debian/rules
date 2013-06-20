@@ -6,9 +6,10 @@ export DPKG_GENSYMBOLS_CHECK_LEVEL=4
 %:
 	dh $@ --parallel
 
-# Force the build to generate debug symbols, so we can have -dbgsym packages
 override_dh_auto_configure:
-	dh_auto_configure -- QMAKE_CXXFLAGS=-g
+	dh_auto_configure -- "CONFIG+=mirserver" "CONFIG+=mirclient" "CONFIG+=hybris" "QMAKE_CXXFLAGS=-g"
 
 override_dh_install:
+	rm -f debian/*/usr/lib/*/qt5/examples/qtubuntu/qmlscene-ubuntu
 	dh_install --fail-missing
+	dh_auto_configure -- "CONFIG+=mirserver" "CONFIG+=mirclient" "CONFIG+=hybris" "QMAKE_CXXFLAGS=-g"
