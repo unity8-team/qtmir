@@ -19,6 +19,8 @@ Build-Depends: debhelper (>= 9),
                qtdeclarative5-private-dev,
                qtsensors5-dev,
                zlib1g-dev,
+               libplatform-api1-mirclient,
+               libplatform-api1-mirserver,
 Standards-Version: 3.9.4
 Section: libs
 
