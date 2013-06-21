@@ -11,14 +11,12 @@ CONFIG(debug) {
   QMAKE_CXXFLAGS_DEBUG += -Werror
 }
 
-SOURCES = main.cc ../base/qeglconvenience.cpp
+SOURCES = main.cc ../../../base/qeglconvenience.cpp
 
 CONFIG += plugin link_prl
 
-PRE_TARGETDEPS = ../ubuntucommon/libqubuntucommon.a ../base/libubuntubase.a
-
-INCLUDEPATH += ..
-LIBS += -L../ubuntucommon -lqubuntucommon -lubuntu_application_api_mirserver -L../base -lubuntubase
+INCLUDEPATH += ../../../ ../../
+LIBS += -L../../ubuntucommon -lqubuntucommon -lubuntu_application_api_mirserver -L../../../base -lubuntubase
 
 OTHER_FILES += ubuntu.json
 

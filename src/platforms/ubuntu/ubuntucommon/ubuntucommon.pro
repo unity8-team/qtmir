@@ -25,7 +25,5 @@ HEADERS = integration.h \
 
 CONFIG += static plugin link_prl
 
-PRE_TARGETDEPS = ../base/libubuntubase.a
-
-INCLUDEPATH += ..
+INCLUDEPATH += ../../
 LIBS += -L../base -Wl,--whole-archive -lubuntubase -Wl,--no-whole-archive

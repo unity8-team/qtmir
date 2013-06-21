@@ -1,4 +1,4 @@
-TARGET = qubuntumirclient
+TARGET = qubuntu
 TEMPLATE = lib
 
 QT += core-private gui-private platformsupport-private sensors-private
@@ -11,14 +11,12 @@ CONFIG(debug) {
   QMAKE_CXXFLAGS_DEBUG += -Werror
 }
 
-SOURCES = main.cc ../base/qeglconvenience.cpp
+SOURCES = main.cc
 
 CONFIG += plugin link_prl
 
-PRE_TARGETDEPS = ../ubuntucommon/libqubuntucommon.a ../base/libubuntubase.a
-
-INCLUDEPATH += ..
-LIBS += -L../ubuntucommon -lqubuntucommon -lubuntu_application_api_mirclient -L../base -lubuntubase
+INCLUDEPATH += ../../ ../
+LIBS += -L../ubuntucommon -lqubuntucommon -lubuntu_application_api -L../../base -lubuntubase
 
 OTHER_FILES += ubuntu.json
 
