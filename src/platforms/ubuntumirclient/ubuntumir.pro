@@ -1,4 +1,4 @@
-TARGET = qubuntumir
+TARGET = qubuntumirclient
 TEMPLATE = lib
 
 QT += core-private gui-private platformsupport-private sensors-private

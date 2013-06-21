@@ -10,7 +10,7 @@ hybris {
 SUBDIRS += ubuntu
 }
 mirclient {
-SUBDIRS += ubuntumir
+SUBDIRS += ubuntumirclient
 }
 mirserver {
 SUBDIRS += ubuntumirserver
@@ -19,5 +19,5 @@ SUBDIRS += ubuntumirserver
 ubuntulegacy.depends = base
 ubuntucommon.depends = base
 ubuntu.depends = ubuntucommon
-ubuntumir.depends = ubuntucommon
+ubuntumirclient.depends = ubuntucommon
 ubuntumirserver.depends = ubuntucommon
