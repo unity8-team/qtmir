@@ -14,7 +14,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <qpa/qplatformintegrationplugin.h>
-#include "ubuntucommon/integration.h"
+#include "ubuntumircommon/integration.h"
 
 QT_BEGIN_NAMESPACE
 
@@ -38,7 +38,7 @@ QPlatformIntegration* QUbuntuMirServerIntegrationPlugin::create(
     const QString& system, const QStringList& paramList) {
   Q_UNUSED(paramList);
   if (system.toLower() == "ubuntumirserver")
-    return new QUbuntuIntegration();
+    return new QUbuntuMirIntegration();
   return 0;
 }
 

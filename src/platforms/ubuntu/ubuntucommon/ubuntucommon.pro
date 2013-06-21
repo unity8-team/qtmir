@@ -24,7 +24,7 @@ HEADERS = integration.h \
           clipboard.h \
           input_adaptor_factory.h
 
-CONFIG += static plugin link_prl
+CONFIG += static plugin create_prl link_prl
 
 INCLUDEPATH += ../../
 LIBS += -L../base -Wl,--whole-archive -lubuntubase -Wl,--no-whole-archive
