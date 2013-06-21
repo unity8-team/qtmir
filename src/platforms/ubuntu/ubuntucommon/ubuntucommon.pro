@@ -21,7 +21,8 @@ HEADERS = integration.h \
           window.h \
           screen.h \
           input.h \
-          clipboard.h
+          clipboard.h \
+          input_adaptor_factory.h
 
 CONFIG += static plugin link_prl
 

@@ -1,7 +1,5 @@
 TEMPLATE = subdirs
 
-SUBDIRS += ubuntucommon ubuntumir
-
 !mirclient:!mirserver {
 CONFIG += hybris
 }
@@ -9,6 +7,8 @@ CONFIG += hybris
 hybris {
 SUBDIRS += ubuntu
 }
+
+SUBDIRS += ubuntucommon ubuntumir
 
 ubuntu.depends = ubuntucommon
 ubuntumir.depends = ubuntucommon

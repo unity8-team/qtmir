@@ -17,6 +17,7 @@
 #include "window.h"
 #include "input.h"
 #include "clipboard.h"
+#include "input_adaptor_factory.h"
 #include "base/logging.h"
 #include <QtCore/QCoreApplication>
 #include <qpa/qplatformnativeinterface.h>
@@ -42,7 +43,7 @@ static void aboutToStopCallback(UApplicationArchive *archive, void* context) {
   integration->inputContext()->hideInputPanel();
 }
 
-QUbuntuIntegration::QUbuntuIntegration()
+QUbuntuIntegration::QUbuntuIntegration(QUbuntuInputAdaptorFactory *input_factory)
     : clipboard_(new QUbuntuClipboard()) {
   // Init Ubuntu Platform library.
   QStringList args = QCoreApplication::arguments();
@@ -73,7 +74,7 @@ QUbuntuIntegration::QUbuntuIntegration()
 
   // Initialize input.
   if (qEnvironmentVariableIsEmpty("QTUBUNTU_NO_INPUT")) {
-    input_ = new QUbuntuInput(this);
+    input_ = input_factory->create_input_adaptor(this);
     inputContext_ = QPlatformInputContextFactory::create();
   } else {
     input_ = NULL;
