@@ -33,7 +33,7 @@ class QUbuntuIntegration : public QUbuntuBaseIntegration {
   QPlatformWindow* createPlatformWindow(QWindow* window);
   QPlatformInputContext* inputContext() const { return inputContext_; }
   QPlatformClipboard* clipboard() const { return clipboard_; }
-
+  
  private:
   int argc_;
   char** argv_;

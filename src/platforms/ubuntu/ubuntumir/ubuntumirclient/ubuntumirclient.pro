@@ -18,7 +18,7 @@ CONFIG += plugin link_prl
 INCLUDEPATH += ../../../ ../../
 LIBS += -L../../ubuntucommon -lqubuntucommon -lubuntu_application_api_mirclient -L../../../base -lubuntubase
 
-OTHER_FILES += ubuntu.json
+OTHER_FILES += ubuntumirclient.json
 
 target.path += $$[QT_INSTALL_PLUGINS]/platforms
 INSTALLS += target
