@@ -11,7 +11,7 @@ CONFIG(debug) {
   QMAKE_CXXFLAGS_DEBUG += -Werror
 }
 
-SOURCES = main.cc ../../../base/qeglconvenience.cpp
+SOURCES = main.cc 
 
 CONFIG += plugin link_prl
 
