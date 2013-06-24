@@ -19,14 +19,14 @@
 class QUbuntuInput;
 class QUbuntuIntegration;
 
-class QUbuntuInputAdaptorFactory
-{
-public:
-    virtual ~QUbuntuInputAdaptorFactory() {}
+class QUbuntuInputAdaptorFactory {
+ public:
+  virtual ~QUbuntuInputAdaptorFactory() {}
     
-    virtual QUbuntuInput* create_input_adaptor(QUbuntuIntegration* integration) = 0;
-protected:
-    QUbuntuInputAdaptorFactory() {}
+  virtual QUbuntuInput* create_input_adaptor(QUbuntuIntegration* integration) = 0;
+
+ protected:
+  QUbuntuInputAdaptorFactory() {}
 };
 
 #endif

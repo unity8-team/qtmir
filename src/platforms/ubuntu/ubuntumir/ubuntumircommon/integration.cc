@@ -19,25 +19,24 @@
 
 namespace
 {
-struct InputAdaptorFactory : public QUbuntuInputAdaptorFactory
-{
-    InputAdaptorFactory() {}
-    ~InputAdaptorFactory() {}
+struct InputAdaptorFactory : public QUbuntuInputAdaptorFactory {
+  InputAdaptorFactory() {}
+  ~InputAdaptorFactory() {}
     
-    QUbuntuInput *create_input_adaptor(QUbuntuIntegration* integration)
-    {
-        return new QUbuntuMirInput(integration);
-    }
-    static InputAdaptorFactory* instance()
-    {
-        static InputAdaptorFactory global_instance;
-        return &global_instance;
-    }
+  QUbuntuInput *create_input_adaptor(QUbuntuIntegration* integration)
+  {
+    return new QUbuntuMirInput(integration);
+  }
+  static InputAdaptorFactory* instance()
+  {
+    static InputAdaptorFactory global_instance;
+    return &global_instance;
+  }
 };
 }
 
 QUbuntuMirIntegration::QUbuntuMirIntegration()
-    : QUbuntuIntegration(InputAdaptorFactory::instance()) {
+  : QUbuntuIntegration(InputAdaptorFactory::instance()) {
 }
 
 QUbuntuMirIntegration::~QUbuntuMirIntegration() {

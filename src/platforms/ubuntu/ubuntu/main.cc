@@ -20,9 +20,7 @@
 
 namespace
 {
-class InputAdaptorFactory : public QUbuntuInputAdaptorFactory
-{
- public:
+struct InputAdaptorFactory : public QUbuntuInputAdaptorFactory {
   InputAdaptorFactory() {}
   ~InputAdaptorFactory() {}
     
@@ -30,10 +28,10 @@ class InputAdaptorFactory : public QUbuntuInputAdaptorFactory
     return new QUbuntuInput(integration);
   }
     
-    static InputAdaptorFactory* instance(){
-      static InputAdaptorFactory global_instance;
-      return &global_instance;
-    }
+  static InputAdaptorFactory* instance(){
+    static InputAdaptorFactory global_instance;
+    return &global_instance;
+  }
 };
 }
 
