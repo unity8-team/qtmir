@@ -22,19 +22,17 @@ namespace
 {
 class InputAdaptorFactory : public QUbuntuInputAdaptorFactory
 {
-public:
-    InputAdaptorFactory() {}
-    ~InputAdaptorFactory() {}
+ public:
+  InputAdaptorFactory() {}
+  ~InputAdaptorFactory() {}
     
-    QUbuntuInput* create_input_adaptor(QUbuntuIntegration *integration)
-    {
-        return new QUbuntuInput(integration);
-    }
+  QUbuntuInput* create_input_adaptor(QUbuntuIntegration *integration){
+    return new QUbuntuInput(integration);
+  }
     
-    static InputAdaptorFactory* instance()
-    {
-        static InputAdaptorFactory global_instance;
-        return &global_instance;
+    static InputAdaptorFactory* instance(){
+      static InputAdaptorFactory global_instance;
+      return &global_instance;
     }
 };
 }
