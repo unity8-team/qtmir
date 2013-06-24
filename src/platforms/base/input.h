@@ -41,7 +41,7 @@ class QUbuntuBaseInput : public QObject {
   void dispatchMotionEvent(QWindow* window, const void* event);
   void dispatchHWSwitchEvent(QWindow* window, const void* event);
 
-protected:
+ protected:
   virtual void dispatchKeyEvent(QWindow* window, const void* event);
 
  private:

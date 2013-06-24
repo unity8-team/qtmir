@@ -15,7 +15,7 @@ SOURCES = main.cc ../../../base/qeglconvenience.cpp
 
 CONFIG += plugin link_prl
 
-INCLUDEPATH += ../../../ ../../
+INCLUDEPATH += ../../../ ../../ ../
 LIBS += -Wl,--whole-archive -L../../../base -lubuntubase -L../../ubuntucommon -lqubuntucommon  -L../ubuntumircommon -lqubuntumircommon -Wl,--no-whole-archive -lubuntu_application_api_mirserver
 
 OTHER_FILES += ubuntu.json

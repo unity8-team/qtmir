@@ -24,6 +24,8 @@ class QUbuntuMirInput : public QUbuntuInput {
 public:
   QUbuntuMirInput(QUbuntuIntegration* integration);
   ~QUbuntuMirInput();
+  
+  virtual void dispatchKeyEvent(QWindow* window, const void* event);
 };
 
 #endif  // QUBUNTU_MIR_INPUT_H
