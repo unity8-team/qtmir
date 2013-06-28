@@ -24,7 +24,8 @@ Section: libs
 Package: qtubuntu-android
 Architecture: armhf
 Multi-Arch: same
-Replaces: qthybris (<< 0.37)
+Replaces: qthybris (<< 0.37),
+          qtubuntu (<< 0.52),
 Breaks: qthybris (<< 0.37)
 Provides: qtubuntu-shell,
           qtubuntu,
