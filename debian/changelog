@@ -1,10 +1,14 @@
-qtubuntu (0.52-0ubuntu1) UNRELEASED; urgency=low
+qtubuntu (0.52+13.10.20130703-0ubuntu1) saucy; urgency=low
 
+  [ Didier Roche ]
   * Transition qtubuntu to qtubuntu-android (only available on armhf as
     it's where it's built) and provides a qtubuntu and qtubuntu-shell
     virtual package, enabling even mock to fulfill the dep
 
- -- Didier Roche <didrocks@ubuntu.com>  Fri, 28 Jun 2013 12:04:33 +0200
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 145
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 03 Jul 2013 15:14:53 +0000
 
 qtubuntu (0.51daily13.06.17-0ubuntu1) saucy; urgency=low
 
