@@ -25,6 +25,8 @@
 #include <errno.h>
 #include <pwd.h>
 
+#include <QRegularExpression>
+
 // Retrieves the size of an array at compile time.
 #define ARRAY_SIZE(a) \
     ((sizeof(a) / sizeof(*(a))) / static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))))
@@ -595,12 +597,19 @@ Application* ApplicationManager::startProcess(QString desktopFile, ApplicationMa
     LOG("  '%s'", arguments[i].toLatin1().data());
 #endif
 
+  // get the appId for the process which is the .desktop file name without the extension
+  QString appId = desktopData->file().split(QLatin1String("/")).last().remove(QRegularExpression("\\.desktop$"));
+
   // Start process.
   bool result;
   qint64 pid = 0;
   struct passwd* passwd = getpwuid(getuid());
   DLOG("current working directory: '%s'", passwd ? passwd->pw_dir : "/");
+  QByteArray envSetAppId = QString("APP_ID=%1").arg(appId).toLocal8Bit();
+  putenv(envSetAppId.data()); // envSetAppId must be available and unmodified until the env var is unset
   result = QProcess::startDetached(exec, arguments, QString(passwd ? passwd->pw_dir : "/"), &pid);
+  QByteArray envClearAppId = QString("APP_ID").toLocal8Bit();
+  putenv(envClearAppId.data()); // now it's safe to deallocate envSetAppId.
   DLOG_IF(result == false, "process failed to start");
   if (result == true) {
     DLOG("started process with pid %lld, adding '%s' to application lists",
