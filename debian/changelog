@@ -1,3 +1,13 @@
+qtubuntu (0.52+13.10.20130711-0ubuntu1) saucy; urgency=low
+
+  [ Antti Kaijanmäki ]
+  * ApplicationManager: Set APP_ID env variable on started processes.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 147
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 11 Jul 2013 02:01:48 +0000
+
 qtubuntu (0.52+13.10.20130703-0ubuntu1) saucy; urgency=low
 
   [ Didier Roche ]
