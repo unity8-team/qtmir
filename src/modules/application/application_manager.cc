@@ -574,7 +574,7 @@ Application* ApplicationManager::startProcess(QString desktopFile, ApplicationMa
   DASSERT(execArguments.size() > 0);
   QString exec(execArguments[0]);
   const int kSize = execArguments.size();
-  for (int i = 1; i < kSize; i++) {
+  for (int i = kSize - 1; i > 0; i--) {
     if ((execArguments[i].size() == 2) && (execArguments[i][0].toLatin1() == '%')) {
       const char kChar = execArguments[i][1].toLatin1();
       if (kChar == 'F' || kChar == 'u' || kChar == 'U' || kChar == 'd' || kChar == 'D'
