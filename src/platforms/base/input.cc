@@ -116,7 +116,7 @@ static const struct {
   { Qt::Key_BracketLeft, { 0x005b, 0xffff, 0xffff } },     // ISCL_KEYCODE_LEFT_BRACKET    = 71
   { Qt::Key_BracketRight, { 0x005d, 0xffff, 0xffff } },    // ISCL_KEYCODE_RIGHT_BRACKET   = 72
   { Qt::Key_Backslash, { 0x005c, 0xffff, 0xffff } },       // ISCL_KEYCODE_BACKSLASH       = 73
-  { Qt::Key_Semicolon, { 0x003b, 0xffff, 0xffff } },       // ISCL_KEYCODE_SEMICOLON       = 74
+  { Qt::Key_Semicolon, { 0x003b, 0x003a, 0xffff } },       // ISCL_KEYCODE_SEMICOLON       = 74
   { Qt::Key_Apostrophe, { 0x0027, 0xffff, 0xffff } },      // ISCL_KEYCODE_APOSTROPHE      = 75
   { Qt::Key_Slash, { 0x002f, 0xffff, 0xffff } },           // ISCL_KEYCODE_SLASH           = 76
   { Qt::Key_At, { 0x0040, 0xffff, 0xffff } },              // ISCL_KEYCODE_AT              = 77
