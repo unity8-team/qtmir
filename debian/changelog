@@ -1,3 +1,13 @@
+qtubuntu (0.52+13.10.20130720-0ubuntu1) saucy; urgency=low
+
+  [ Ricardo Mendoza ]
+  * Send colon unicode when hitting key with modifier.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 151
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Sat, 20 Jul 2013 02:01:53 +0000
+
 qtubuntu (0.52+13.10.20130718-0ubuntu1) saucy; urgency=low
 
   [ Ricardo Mendoza ]
