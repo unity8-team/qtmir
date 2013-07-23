@@ -22,11 +22,14 @@ Build-Depends: debhelper (>= 9),
 Standards-Version: 3.9.4
 Section: libs
 
-Package: qtubuntu
-Replaces: qthybris (<< 0.37)
-Breaks: qthybris (<< 0.37)
+Package: qtubuntu-android
 Architecture: any
 Multi-Arch: same
+Replaces: qthybris (<< 0.37),
+          qtubuntu (<< 0.52),
+Breaks: qthybris (<< 0.37)
+Provides: qtubuntu-shell,
+          qtubuntu,
 Depends: ${misc:Depends},
          ${shlibs:Depends},
          libqt5sensors5,
@@ -40,7 +43,7 @@ Description: Qt plugins for Ubuntu Platform API
 
 Package: qthybris
 Depends: ${misc:Depends},
-         qtubuntu,
+         qtubuntu-android,
 Architecture: any
 Section: oldlibs
 Description: transitional dummy package
