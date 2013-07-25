@@ -44,6 +44,7 @@ class DesktopData {
   QString comment() const { return entries_[kCommentIndex]; }
   QString icon() const { return entries_[kIconIndex]; }
   QString exec() const { return entries_[kExecIndex]; }
+  QString path() const { return entries_[kPathIndex]; }
   QString stageHint() const { return entries_[kStageHintIndex]; }
   bool loaded() const { return loaded_; }
 
@@ -52,8 +53,9 @@ class DesktopData {
     kCommentIndex = 1,
     kIconIndex = 2,
     kExecIndex = 3,
-    kStageHintIndex = 4,
-    kNumberOfEntries = 5;
+    kPathIndex = 4,
+    kStageHintIndex = 5,
+    kNumberOfEntries = 6;
 
   bool loadDesktopFile(QString desktopFile);
 
