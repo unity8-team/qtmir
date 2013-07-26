@@ -29,7 +29,6 @@ class QUbuntuIntegration : public QUbuntuBaseIntegration {
   ~QUbuntuIntegration();
 
   // QPlatformIntegration methods.
-  void postEvent(QEvent* event);
   QPlatformWindow* createPlatformWindow(QWindow* window) const;
   QPlatformWindow* createPlatformWindow(QWindow* window);
   QPlatformInputContext* inputContext() const { return inputContext_; }

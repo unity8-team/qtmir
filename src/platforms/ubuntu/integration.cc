@@ -31,8 +31,7 @@
 static void resumedCallback(const UApplicationOptions *options, void* context) {
   DLOG("resumedCallback (options=%p, context=%p)", options, context);
   DASSERT(context != NULL);
-  QUbuntuIntegration* integration = static_cast<QUbuntuIntegration*>(context);
-  integration->postEvent(new QEvent(QEvent::ApplicationActivate));
+  QCoreApplication::postEvent(QCoreApplication::instance(), new QEvent(QEvent::ApplicationActivate));
 }
 
 static void aboutToStopCallback(UApplicationArchive *archive, void* context) {
@@ -40,7 +39,7 @@ static void aboutToStopCallback(UApplicationArchive *archive, void* context) {
   DASSERT(context != NULL);
   QUbuntuIntegration* integration = static_cast<QUbuntuIntegration*>(context);
   integration->inputContext()->hideInputPanel();
-  integration->postEvent(new QEvent(QEvent::ApplicationDeactivate));
+  QCoreApplication::postEvent(QCoreApplication::instance(), new QEvent(QEvent::ApplicationDeactivate));
 }
 
 QUbuntuIntegration::QUbuntuIntegration()
@@ -93,11 +92,6 @@ QUbuntuIntegration::~QUbuntuIntegration() {
   for (int i = 0; i < argc_; i++)
     delete [] argv_[i];
   delete [] argv_;
-}
-
-void QUbuntuIntegration::postEvent(QEvent* event) {
-  DLOG("QUbuntuIntegration::postEvent(this=%p, event=%p)", this, event);
-  QCoreApplication::postEvent(QCoreApplication::instance(), event);
 }
 
 QPlatformWindow* QUbuntuIntegration::createPlatformWindow(QWindow* window) const {
