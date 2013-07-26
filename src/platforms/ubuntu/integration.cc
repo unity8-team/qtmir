@@ -31,8 +31,7 @@
 static void resumedCallback(const UApplicationOptions *options, void* context) {
   DLOG("resumedCallback (options=%p, context=%p)", options, context);
   DASSERT(context != NULL);
-  // FIXME(loicm) Add support for resumed callback.
-  // QUbuntuScreen* screen = static_cast<QUbuntuScreen*>(context);
+  QCoreApplication::postEvent(QCoreApplication::instance(), new QEvent(QEvent::ApplicationActivate));
 }
 
 static void aboutToStopCallback(UApplicationArchive *archive, void* context) {
@@ -40,6 +39,7 @@ static void aboutToStopCallback(UApplicationArchive *archive, void* context) {
   DASSERT(context != NULL);
   QUbuntuIntegration* integration = static_cast<QUbuntuIntegration*>(context);
   integration->inputContext()->hideInputPanel();
+  QCoreApplication::postEvent(QCoreApplication::instance(), new QEvent(QEvent::ApplicationDeactivate));
 }
 
 QUbuntuIntegration::QUbuntuIntegration()
