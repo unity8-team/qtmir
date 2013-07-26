@@ -107,7 +107,7 @@ class ApplicationManager : public QObject {
   enum FavoriteApplication {
     CameraApplication = CAMERA_APP, GalleryApplication = GALLERY_APP,
     BrowserApplication = BROWSER_APP, ShareApplication = SHARE_APP,
-    PhoneApplication = PHONE_APP, DialerApplication = DialerApp,
+    PhoneApplication = PHONE_APP, DialerApplication = DIALER_APP,
     MessagingApplication = MESSAGING_APP, AddressbookApplication = ADDRESSBOOK_APP
   };
   enum Flag { 
