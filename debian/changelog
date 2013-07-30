@@ -1,3 +1,14 @@
+qtubuntu (0.52+13.10.20130730-0ubuntu1) saucy; urgency=low
+
+  [ Gustavo Pichorim Boiko ]
+  * Add values for the new applications that were created as a result of
+    the splitting of the phone-app.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 157
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 30 Jul 2013 02:01:54 +0000
+
 qtubuntu (0.52+13.10.20130729-0ubuntu1) saucy; urgency=low
 
   [ Ricardo Mendoza ]
