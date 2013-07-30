@@ -49,7 +49,7 @@ static const struct {
   { Qt::Key_Back, { 0xffff, 0xffff, 0xffff } },            // ISCL_KEYCODE_BACK            = 4
   { Qt::Key_Call, { 0xffff, 0xffff, 0xffff } },            // ISCL_KEYCODE_CALL            = 5
   { Qt::Key_Hangup, { 0xffff, 0xffff, 0xffff } },          // ISCL_KEYCODE_ENDCALL         = 6
-  { Qt::Key_0, { 0x0030, 0xffff, 0xffff } },               // ISCL_KEYCODE_0               = 7
+  { Qt::Key_0, { 0x0030, 0x0029, 0xffff } },               // ISCL_KEYCODE_0               = 7
   { Qt::Key_1, { 0x0031, 0xffff, 0xffff } },               // ISCL_KEYCODE_1               = 8
   { Qt::Key_2, { 0x0032, 0xffff, 0xffff } },               // ISCL_KEYCODE_2               = 9
   { Qt::Key_3, { 0x0033, 0xffff, 0xffff } },               // ISCL_KEYCODE_3               = 10
@@ -57,8 +57,8 @@ static const struct {
   { Qt::Key_5, { 0x0035, 0xffff, 0xffff } },               // ISCL_KEYCODE_5               = 12
   { Qt::Key_6, { 0x0036, 0xffff, 0xffff } },               // ISCL_KEYCODE_6               = 13
   { Qt::Key_7, { 0x0037, 0xffff, 0xffff } },               // ISCL_KEYCODE_7               = 14
-  { Qt::Key_8, { 0x0038, 0x0028, 0xffff } },               // ISCL_KEYCODE_8               = 15
-  { Qt::Key_9, { 0x0039, 0x0029, 0xffff } },               // ISCL_KEYCODE_9               = 16
+  { Qt::Key_8, { 0x0038, 0xffff, 0xffff } },               // ISCL_KEYCODE_8               = 15
+  { Qt::Key_9, { 0x0039, 0x0028, 0xffff } },               // ISCL_KEYCODE_9               = 16
   { Qt::Key_unknown, { 0xffff, 0xffff, 0xffff } },         // ISCL_KEYCODE_STAR            = 17
   { Qt::Key_unknown, { 0xffff, 0xffff, 0xffff } },         // ISCL_KEYCODE_POUND           = 18
   { Qt::Key_unknown, { 0xffff, 0xffff, 0xffff } },         // ISCL_KEYCODE_DPAD_UP         = 19
