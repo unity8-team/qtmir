@@ -1,3 +1,13 @@
+qtubuntu (0.52+13.10.20130731-0ubuntu1) saucy; urgency=low
+
+  [ Ricardo Mendoza ]
+  * Add mapping for some missing special characters. (LP: #1203212)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 159
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 31 Jul 2013 02:01:55 +0000
+
 qtubuntu (0.52+13.10.20130730-0ubuntu1) saucy; urgency=low
 
   [ Gustavo Pichorim Boiko ]
