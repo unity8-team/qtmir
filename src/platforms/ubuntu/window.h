@@ -27,7 +27,7 @@ class QUbuntuInput;
 
 class QUbuntuWindow : public QUbuntuBaseWindow {
  public:
-  QUbuntuWindow(QWindow* w, QUbuntuScreen* screen, QUbuntuInput* input, bool systemSession, UApplicationInstance* instance);
+  QUbuntuWindow(QWindow* w, QUbuntuScreen* screen, QUbuntuInput* input, bool systemSession, UApplicationInstance* instance, bool isShell);
   ~QUbuntuWindow();
 
   // QPlatformWindow methods.
@@ -48,6 +48,7 @@ class QUbuntuWindow : public QUbuntuBaseWindow {
   UApplicationInstance* uainstance_;
   UAUiWindowProperties* wprops_;
   QUbuntuScreen* screen_;
+  bool isShell_;
 };
 
 #endif  // QUBUNTUWINDOW_H

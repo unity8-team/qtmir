@@ -74,11 +74,6 @@ QUbuntuIntegration::QUbuntuIntegration()
   screen_ = new QUbuntuScreen(options_);
   screenAdded(screen_);
 
-  // FIXME (ricmm) We shouldn't disable sensors for the shell process
-  // it is only valid right now because the shell doesnt use them
-  if (args.contains("unity8") || args.contains("/usr/bin/unity8"))
-      screen_->toggleSensors(false);
-
   // Initialize input.
   if (qEnvironmentVariableIsEmpty("QTUBUNTU_NO_INPUT")) {
     input_ = new QUbuntuInput(this);
@@ -153,9 +148,19 @@ QPlatformWindow* QUbuntuIntegration::createPlatformWindow(QWindow* window) {
     once = true;
   }
 
+  QStringList args = QCoreApplication::arguments();
+
+  // FIXME (ricmm) We shouldn't disable sensors for the shell process
+  // it is only valid right now because the shell doesnt use them
+  bool isShell = false;
+  if (args.contains("unity8") || args.contains("/usr/bin/unity8")) {
+    isShell = true;
+    screen_->toggleSensors(false);
+  }
+
   // Create the window.
   QPlatformWindow* platformWindow = new QUbuntuWindow(
-      window, static_cast<QUbuntuScreen*>(screen_), input_, static_cast<bool>(sessionType), instance_);
+      window, static_cast<QUbuntuScreen*>(screen_), input_, static_cast<bool>(sessionType), instance_, isShell);
   platformWindow->requestActivateWindow();
   return platformWindow;
 }
