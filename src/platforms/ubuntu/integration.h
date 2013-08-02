@@ -33,14 +33,16 @@ class QUbuntuIntegration : public QUbuntuBaseIntegration {
   QPlatformWindow* createPlatformWindow(QWindow* window);
   QPlatformInputContext* inputContext() const { return inputContext_; }
   QPlatformClipboard* clipboard() const { return clipboard_; }
+  QUbuntuScreen* screen() const { return screen_; }
 
  private:
   int argc_;
   char** argv_;
-  QPlatformScreen* screen_;
+  QUbuntuScreen* screen_;
   QUbuntuInput* input_;
   QPlatformInputContext* inputContext_;
   QPlatformClipboard* clipboard_;
+  bool isShell_;
 
   UApplicationOptions* options_;
   UApplicationDescription* desc_;

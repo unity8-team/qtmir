@@ -118,6 +118,14 @@ QUbuntuScreen::~QUbuntuScreen() {
   delete orientationSensor_;
 }
 
+void QUbuntuScreen::toggleSensors(bool enable) const {
+  DLOG("QUbuntuScreen::toggleSensors (this=%p, enable=%d)", this, enable);
+  if (enable)
+      orientationSensor_->start();
+  else
+      orientationSensor_->stop();
+}
+
 int QUbuntuScreen::gridUnitToPixel(int value) const {
   DLOG("QUbuntuScreen::gridUnitToPixel (this=%p, value=%d)", this, value);
   return value * gridUnit_;
