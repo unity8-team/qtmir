@@ -47,6 +47,7 @@ class QUbuntuWindow : public QUbuntuBaseWindow {
   bool systemSession_;
   UApplicationInstance* uainstance_;
   UAUiWindowProperties* wprops_;
+  QUbuntuScreen* screen_;
 };
 
 #endif  // QUBUNTUWINDOW_H

@@ -39,7 +39,8 @@ QUbuntuWindow::QUbuntuWindow(
     , input_(input)
     , state_(window()->windowState())
     , systemSession_(systemSession)
-    , uainstance_(instance) {
+    , uainstance_(instance)
+    , screen_(screen) {
   if (!systemSession) {
     // Non-system sessions can't resize the window geometry.
     geometry_ = screen->availableGeometry();
@@ -174,6 +175,7 @@ void QUbuntuWindow::setGeometry(const QRect& rect) {
 
 void QUbuntuWindow::setVisible(bool visible) {
   DLOG("QUbuntuWindow::setVisible (this=%p, visible=%s)", this, visible ? "true" : "false");
+  screen_->toggleSensors(visible);
   if (visible) {
     ua_ui_window_show(window_);
     QWindowSystemInterface::handleExposeEvent(window(), QRect());
