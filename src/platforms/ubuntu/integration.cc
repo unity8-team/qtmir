@@ -31,6 +31,8 @@
 static void resumedCallback(const UApplicationOptions *options, void* context) {
   DLOG("resumedCallback (options=%p, context=%p)", options, context);
   DASSERT(context != NULL);
+  QUbuntuIntegration* integration = static_cast<QUbuntuIntegration*>(context);
+  integration->screen()->toggleSensors(true);
   QCoreApplication::postEvent(QCoreApplication::instance(), new QEvent(QEvent::ApplicationActivate));
 }
 
@@ -38,6 +40,7 @@ static void aboutToStopCallback(UApplicationArchive *archive, void* context) {
   DLOG("aboutToStopCallback (archive=%p, context=%p)", archive, context);
   DASSERT(context != NULL);
   QUbuntuIntegration* integration = static_cast<QUbuntuIntegration*>(context);
+  integration->screen()->toggleSensors(false);
   integration->inputContext()->hideInputPanel();
   QCoreApplication::postEvent(QCoreApplication::instance(), new QEvent(QEvent::ApplicationDeactivate));
 }
@@ -70,6 +73,11 @@ QUbuntuIntegration::QUbuntuIntegration()
   // Create default screen.
   screen_ = new QUbuntuScreen(options_);
   screenAdded(screen_);
+
+  // FIXME (ricmm) We shouldn't disable sensors for the shell process
+  // it is only valid right now because the shell doesnt use them
+  if (args.contains("unity8") || args.contains("/usr/bin/unity8"))
+      screen_->toggleSensors(false);
 
   // Initialize input.
   if (qEnvironmentVariableIsEmpty("QTUBUNTU_NO_INPUT")) {
