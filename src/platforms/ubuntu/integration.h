@@ -42,6 +42,7 @@ class QUbuntuIntegration : public QUbuntuBaseIntegration {
   QUbuntuInput* input_;
   QPlatformInputContext* inputContext_;
   QPlatformClipboard* clipboard_;
+  bool isShell_;
 
   UApplicationOptions* options_;
   UApplicationDescription* desc_;
