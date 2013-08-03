@@ -1,3 +1,15 @@
+qtubuntu (0.52+13.10.20130803-0ubuntu1) saucy; urgency=low
+
+  [ Ricardo Mendoza ]
+  * * Add method to disable/enable sensors opened from the QPA
+    automatically. * Make use of the hook to disable/enable when the
+    application active status changes.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 161
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Sat, 03 Aug 2013 02:01:59 +0000
+
 qtubuntu (0.52+13.10.20130731-0ubuntu1) saucy; urgency=low
 
   [ Ricardo Mendoza ]
