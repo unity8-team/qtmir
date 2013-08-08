@@ -14,31 +14,31 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <qpa/qplatformintegrationplugin.h>
-#include "ubuntucommon/integration.h"
+#include "ubuntumircommon/integration.h"
 
 QT_BEGIN_NAMESPACE
 
-class QUbuntuIntegrationPlugin : public QPlatformIntegrationPlugin {
+class QUbuntuMirClientIntegrationPlugin : public QPlatformIntegrationPlugin {
   Q_OBJECT
   Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QPA.QPlatformIntegrationFactoryInterface.5.1"
-                    FILE "ubuntu.json")
+                    FILE "ubuntumirclient.json")
 
  public:
   QStringList keys() const;
   QPlatformIntegration* create(const QString&, const QStringList&);
 };
 
-QStringList QUbuntuIntegrationPlugin::keys() const {
+QStringList QUbuntuMirClientIntegrationPlugin::keys() const {
   QStringList list;
-  list << "ubuntu";
+  list << "ubuntumirclient";
   return list;
 }
 
-QPlatformIntegration* QUbuntuIntegrationPlugin::create(
+QPlatformIntegration* QUbuntuMirClientIntegrationPlugin::create(
     const QString& system, const QStringList& paramList) {
   Q_UNUSED(paramList);
-  if (system.toLower() == "ubuntu")
-    return new QUbuntuIntegration();
+  if (system.toLower() == "ubuntumirclient")
+    return new QUbuntuMirIntegration();
   return 0;
 }
 

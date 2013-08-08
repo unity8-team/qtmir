@@ -1,4 +1,4 @@
-TARGET = qubuntumir
+TARGET = qubuntumirclient
 TEMPLATE = lib
 
 QT += core-private gui-private platformsupport-private sensors-private
@@ -15,12 +15,10 @@ SOURCES = main.cc
 
 CONFIG += plugin link_prl
 
-PRE_TARGETDEPS = ../ubuntucommon/libqubuntucommon.a ../base/libubuntubase.a
+INCLUDEPATH += ../../../ ../../ ../
+LIBS += -Wl,--whole-archive -L../../../base -lubuntubase -L../../ubuntucommon -lqubuntucommon  -L../ubuntumircommon -lqubuntumircommon -Wl,--no-whole-archive -lubuntu_application_api_mirclient
 
-INCLUDEPATH += ..
-LIBS += -L../ubuntucommon -lqubuntucommon -lubuntu_application_api_mirclient -L../base -lubuntubase
-
-OTHER_FILES += ubuntu.json
+OTHER_FILES += ubuntumirclient.json
 
 target.path += $$[QT_INSTALL_PLUGINS]/platforms
 INSTALLS += target

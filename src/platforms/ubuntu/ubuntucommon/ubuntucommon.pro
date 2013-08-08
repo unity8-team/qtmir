@@ -21,11 +21,10 @@ HEADERS = integration.h \
           window.h \
           screen.h \
           input.h \
-          clipboard.h
+          clipboard.h \
+          input_adaptor_factory.h
 
-CONFIG += static plugin link_prl
+CONFIG += static plugin create_prl link_prl
 
-PRE_TARGETDEPS = ../base/libubuntubase.a
-
-INCLUDEPATH += ..
+INCLUDEPATH += ../../
 LIBS += -L../base -Wl,--whole-archive -lubuntubase -Wl,--no-whole-archive

@@ -38,11 +38,12 @@ class QUbuntuBaseInput : public QObject {
   void postEvent(QWindow* window, const void* event);
   QUbuntuBaseIntegration* integration() const { return integration_; }
 
- private:
+ protected:
+  virtual void dispatchKeyEvent(QWindow* window, const void* event);
   void dispatchMotionEvent(QWindow* window, const void* event);
-  void dispatchKeyEvent(QWindow* window, const void* event);
   void dispatchHWSwitchEvent(QWindow* window, const void* event);
 
+ private:
   QUbuntuBaseIntegration* integration_;
   QTouchDevice* touchDevice_;
   QList<QWindowSystemInterface::TouchPoint> touchPoints_;
