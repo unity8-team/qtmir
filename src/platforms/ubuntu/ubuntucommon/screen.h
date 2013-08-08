@@ -38,6 +38,8 @@ class QUbuntuScreen : public QObject, public QUbuntuBaseScreen {
   int gridUnitToPixel(int value) const;
   int densityPixelToPixel(int value) const;
 
+  void toggleSensors(bool enable) const;
+
   // QObject methods.
   void customEvent(QEvent* event);
 
