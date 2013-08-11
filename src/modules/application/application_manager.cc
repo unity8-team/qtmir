@@ -185,12 +185,13 @@ bool DesktopData::loadDesktopFile(QString desktopFile) {
     { "Comment=", sizeof("Comment=") - 1, 1 << DesktopData::kCommentIndex },
     { "Icon=", sizeof("Icon=") - 1, 1 << DesktopData::kIconIndex },
     { "Exec=", sizeof("Exec=") - 1, 1 << DesktopData::kExecIndex },
+    { "Path=", sizeof("Path=") - 1, 1 << DesktopData::kPathIndex },
     { "X-Ubuntu-StageHint=", sizeof("X-Ubuntu-StageHint=") - 1, 1 << DesktopData::kStageHintIndex }
   };
   const unsigned int kAllEntriesMask =
       (1 << DesktopData::kNameIndex) | (1 << DesktopData::kCommentIndex)
       | (1 << DesktopData::kIconIndex) | (1 << DesktopData::kExecIndex)
-      | (1 << DesktopData::kStageHintIndex);
+      | (1 << DesktopData::kPathIndex) | (1 << DesktopData::kStageHintIndex);
   const unsigned int kMandatoryEntriesMask =
       (1 << DesktopData::kNameIndex) | (1 << DesktopData::kIconIndex)
       | (1 << DesktopData::kExecIndex);
@@ -243,11 +244,12 @@ bool DesktopData::loadDesktopFile(QString desktopFile) {
 
   // Check that the mandatory entries are set.
   if ((entryFlags & kMandatoryEntriesMask) == kMandatoryEntriesMask) {
-    DLOG("loaded desktop file with name='%s', comment='%s', icon='%s', exec='%s', stagehint='%s'",
+    DLOG("loaded desktop file with name='%s', comment='%s', icon='%s', exec='%s', path='%s', stagehint='%s'",
          entries_[DesktopData::kNameIndex].toLatin1().data(),
          entries_[DesktopData::kCommentIndex].toLatin1().data(),
          entries_[DesktopData::kIconIndex].toLatin1().data(),
          entries_[DesktopData::kExecIndex].toLatin1().data(),
+         entries_[DesktopData::kPathIndex].toLatin1().data(),
          entries_[DesktopData::kStageHintIndex].toLatin1().data());
     return true;
   } else {
@@ -603,11 +605,19 @@ Application* ApplicationManager::startProcess(QString desktopFile, ApplicationMa
   // Start process.
   bool result;
   qint64 pid = 0;
-  struct passwd* passwd = getpwuid(getuid());
-  DLOG("current working directory: '%s'", passwd ? passwd->pw_dir : "/");
+  QString path = "/";
+  // respect Path from .desktop file
+  if (desktopData->path() != "") {
+    path = desktopData->path();
+  } else {
+    struct passwd* passwd = getpwuid(getuid());
+    if (passwd)
+      path = passwd->pw_dir;
+  }
+  DLOG("current working directory: '%s'", path.toLatin1().data());
   QByteArray envSetAppId = QString("APP_ID=%1").arg(appId).toLocal8Bit();
   putenv(envSetAppId.data()); // envSetAppId must be available and unmodified until the env var is unset
-  result = QProcess::startDetached(exec, arguments, QString(passwd ? passwd->pw_dir : "/"), &pid);
+  result = QProcess::startDetached(exec, arguments, path, &pid);
   QByteArray envClearAppId = QString("APP_ID").toLocal8Bit();
   putenv(envClearAppId.data()); // now it's safe to deallocate envSetAppId.
   DLOG_IF(result == false, "process failed to start");
