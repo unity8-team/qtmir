@@ -17,6 +17,8 @@
 #include "logging.h"
 #include <QtPlatformSupport/private/qeglconvenience_p.h>
 
+#include <ubuntu/application/ui/display.h>
+
 static const int kSwapInterval = 1;
 
 #if !defined(QT_NO_DEBUG)
@@ -76,7 +78,10 @@ QUbuntuBaseScreen::QUbuntuBaseScreen()
     , eglConfig_(NULL) {
   // Initialize EGL.
   ASSERT(eglBindAPI(EGL_OPENGL_ES_API) == EGL_TRUE);
-  ASSERT((eglDisplay_ = eglGetDisplay(EGL_DEFAULT_DISPLAY)) != EGL_NO_DISPLAY);
+
+  UAUiDisplay* u_display = ua_ui_display_new_with_index(0);
+  ASSERT((eglDisplay_ = eglGetDisplay(ua_ui_display_get_native_type(u_display))) != EGL_NO_DISPLAY);
+  ua_ui_display_destroy(u_display);
   ASSERT(eglInitialize(eglDisplay_, NULL, NULL) == EGL_TRUE);
 
   // Configure EGL buffers format.

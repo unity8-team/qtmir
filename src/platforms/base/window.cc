@@ -33,7 +33,7 @@ QUbuntuBaseWindow::~QUbuntuBaseWindow() {
 }
 
 void QUbuntuBaseWindow::createSurface(EGLNativeWindowType nativeWindow) {
-  DLOG("QUbuntuBaseWindow::createSurface (this=%p, nativeWindow=%u)", this, nativeWindow);
+  DLOG("QUbuntuBaseWindow::createSurface (this=%p, nativeWindow=%p)", this, reinterpret_cast<void*>(nativeWindow));
   ASSERT((eglSurface_ = eglCreateWindowSurface(
       screen_->eglDisplay(), screen_->eglConfig(), nativeWindow, NULL)) != EGL_NO_SURFACE);
 }

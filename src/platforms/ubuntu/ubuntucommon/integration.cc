@@ -17,6 +17,7 @@
 #include "window.h"
 #include "input.h"
 #include "clipboard.h"
+#include "input_adaptor_factory.h"
 #include "base/logging.h"
 #include <QtCore/QCoreApplication>
 #include <qpa/qplatformnativeinterface.h>
@@ -45,7 +46,7 @@ static void aboutToStopCallback(UApplicationArchive *archive, void* context) {
   QCoreApplication::postEvent(QCoreApplication::instance(), new QEvent(QEvent::ApplicationDeactivate));
 }
 
-QUbuntuIntegration::QUbuntuIntegration()
+QUbuntuIntegration::QUbuntuIntegration(QUbuntuInputAdaptorFactory *input_factory)
     : clipboard_(new QUbuntuClipboard()) {
   // Init Ubuntu Platform library.
   QStringList args = QCoreApplication::arguments();
@@ -83,7 +84,7 @@ QUbuntuIntegration::QUbuntuIntegration()
 
   // Initialize input.
   if (qEnvironmentVariableIsEmpty("QTUBUNTU_NO_INPUT")) {
-    input_ = new QUbuntuInput(this);
+    input_ = input_factory->create_input_adaptor(this);
     inputContext_ = QPlatformInputContextFactory::create();
   } else {
     input_ = NULL;
@@ -144,10 +145,8 @@ QPlatformWindow* QUbuntuIntegration::createPlatformWindow(QWindow* window) {
     props_ = ua_ui_session_properties_new();
     ua_ui_session_properties_set_type(props_, static_cast<UAUiSessionType>(sessionType));
 
-    ua_ui_session_properties_set_remote_pid(
-        props_,
-        static_cast<uint32_t>(QCoreApplication::applicationPid())
-        );
+    ua_ui_session_properties_set_remote_pid(props_,
+      static_cast<uint32_t>(QCoreApplication::applicationPid()));
 
     session_ = ua_ui_session_new_with_properties(props_);
 

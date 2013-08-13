@@ -21,11 +21,12 @@
 #include <ubuntu/application/instance.h>
 #include <ubuntu/application/ui/session.h>
 
+class QUbuntuInputAdaptorFactory;
 class QUbuntuInput;
 
 class QUbuntuIntegration : public QUbuntuBaseIntegration {
  public:
-  QUbuntuIntegration();
+  QUbuntuIntegration(QUbuntuInputAdaptorFactory* input_factory);
   ~QUbuntuIntegration();
 
   // QPlatformIntegration methods.

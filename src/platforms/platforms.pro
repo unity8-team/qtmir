@@ -1,6 +1,5 @@
 TEMPLATE = subdirs
 
-SUBDIRS += base ubuntulegacy ubuntu
+SUBDIRS += base ubuntu
 
-ubuntulegacy.depends = base
 ubuntu.depends = base

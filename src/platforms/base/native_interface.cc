@@ -20,7 +20,7 @@
 
 #include "native_interface.h"
 #include "screen.h"
-#include "ubuntu/screen.h"
+#include "ubuntu/ubuntucommon/screen.h"
 #include "context.h"
 #include "logging.h"
 #include <private/qguiapplication_p.h>
