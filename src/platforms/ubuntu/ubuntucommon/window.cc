@@ -96,7 +96,7 @@ void QUbuntuWindow::createWindow() {
     geometry = geometry_;
   }
 
-  fprintf(stderr, "creating surface at (%d, %d) with size (%d, %d) with name %s", geometry.x(), geometry.y(),
+  fprintf(stderr, "creating surface at (%d, %d) with size (%d, %d) with title '%s'", geometry.x(), geometry.y(),
           geometry.width(), geometry.height(), title.data());
 
   // Setup platform window creation properties
