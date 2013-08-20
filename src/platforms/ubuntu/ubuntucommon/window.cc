@@ -73,6 +73,9 @@ void QUbuntuWindow::createWindow() {
     //     performance reasons.
     flags |= static_cast<uint>(IS_OPAQUE_FLAG);
   }
+
+  const QByteArray title = (!window()->title().isNull()) ? window()->title().toUtf8() : "Window 1"; // legacy title
+
 #if !defined(QT_NO_DEBUG)
   //ASSERT(role <= ON_SCREEN_KEYBOARD_ACTOR_ROLE);
   const char* const roleString[] = {
@@ -80,6 +83,7 @@ void QUbuntuWindow::createWindow() {
   };
   LOG("role: '%s'", roleString[role]);
   LOG("flags: '%s'", (flags & static_cast<uint>(1)) ? "Opaque" : "NotOpaque");
+  LOG("title: '%s'", title.constData());
 #endif
 
   // Get surface geometry.
@@ -92,12 +96,12 @@ void QUbuntuWindow::createWindow() {
     geometry = geometry_;
   }
 
-  fprintf(stderr, "creating surface at (%d, %d) with size (%d, %d)", geometry.x(), geometry.y(),
-       geometry.width(), geometry.height());
+  fprintf(stderr, "creating surface at (%d, %d) with size (%d, %d) with title '%s'", geometry.x(), geometry.y(),
+          geometry.width(), geometry.height(), title.data());
 
   // Setup platform window creation properties
   wprops_ = ua_ui_window_properties_new_for_normal_window();
-  ua_ui_window_properties_set_titlen(wprops_, "Window 1", 8);
+  ua_ui_window_properties_set_titlen(wprops_, title.data(), title.size());
   ua_ui_window_properties_set_role(wprops_, static_cast<UAUiWindowRole>(role));
   ua_ui_window_properties_set_input_cb_and_ctx(wprops_, &eventCallback, this);
 
