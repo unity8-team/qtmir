@@ -1,3 +1,13 @@
+qtubuntu (0.52+13.10.20130820-0ubuntu1) saucy; urgency=low
+
+  [ Gerry Boland ]
+  * Allow setting title of QWindow to propagate through to platform-api.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 167
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 20 Aug 2013 14:06:20 +0000
+
 qtubuntu (0.52+13.10.20130814.1-0ubuntu1) saucy; urgency=low
 
   [ Gerry Boland ]
