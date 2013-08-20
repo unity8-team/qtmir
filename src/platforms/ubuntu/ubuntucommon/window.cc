@@ -74,7 +74,7 @@ void QUbuntuWindow::createWindow() {
     flags |= static_cast<uint>(IS_OPAQUE_FLAG);
   }
 
-  QByteArray title = (!window()->title().isNull()) ? window()->title().toLatin1() : "Window 1"; // legacy title
+  QByteArray title = (!window()->title().isNull()) ? window()->title().toUtf8() : "Window 1"; // legacy title
 
 #if !defined(QT_NO_DEBUG)
   //ASSERT(role <= ON_SCREEN_KEYBOARD_ACTOR_ROLE);
