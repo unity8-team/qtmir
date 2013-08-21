@@ -12,4 +12,3 @@ override_dh_auto_configure:
 override_dh_install:
 	rm -f debian/*/usr/lib/*/qt5/examples/qtubuntu/qmlscene-ubuntu
 	dh_install --fail-missing
-	dh_auto_configure -- "CONFIG+=mirserver" "CONFIG+=mirclient" "CONFIG+=hybris" "QMAKE_CXXFLAGS=-g"
