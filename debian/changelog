@@ -1,3 +1,14 @@
+qtubuntu (0.52+13.10.20130821-0ubuntu1) saucy; urgency=low
+
+  [ Timo Jyrinki ]
+  * Remove extra dh_auto_configure from install phase. (LP: #1212131).
+    (LP: #1212131)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 169
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 21 Aug 2013 14:40:14 +0000
+
 qtubuntu (0.52+13.10.20130820-0ubuntu1) saucy; urgency=low
 
   [ Gerry Boland ]
