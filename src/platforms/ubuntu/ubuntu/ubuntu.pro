@@ -16,7 +16,7 @@ SOURCES = main.cc
 CONFIG += plugin link_prl
 
 INCLUDEPATH += ../../ ../
-LIBS += -L../ubuntucommon -lqubuntucommon -lubuntu_application_api -L../../base -lubuntubase -lubuntu_application_url_dispatcher
+LIBS += -L../ubuntucommon -lqubuntucommon -lubuntu_application_api -L../../base -lubuntubase
 
 OTHER_FILES += ubuntu.json
 
