@@ -1,4 +1,4 @@
-TARGET = ubuntuapplicationplugin
+TARGET = unityapplicationplugin
 TEMPLATE = lib
 
 QT += quick-private qml-private
@@ -30,6 +30,6 @@ CONFIG += plugin
 
 LIBS += -lubuntu_application_api
 
-target.files += libubuntuapplicationplugin.so qmldir
-target.path += $$[QT_INSTALL_IMPORTS]/Ubuntu/Application
+target.files += libunityapplicationplugin.so qmldir
+target.path += $$[QT_INSTALL_IMPORTS]/Unity/Application
 INSTALLS += target

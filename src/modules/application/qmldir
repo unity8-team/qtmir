@@ -1,2 +1,2 @@
-module Ubuntu.Application
-plugin ubuntuapplicationplugin
+module Unity.Application
+plugin unityapplicationplugin
