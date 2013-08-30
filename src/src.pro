@@ -1,3 +1,3 @@
 TEMPLATE = subdirs
 
-SUBDIRS += platforms modules
+SUBDIRS += modules

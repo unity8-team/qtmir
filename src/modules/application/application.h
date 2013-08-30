@@ -37,13 +37,15 @@ class Application : public ApplicationInfoInterface {
   QString appId() const;
   QString name() const;
   QString comment() const;
-  QString icon() const;
+  QUrl icon() const;
   Stage stage() const;
   State state() const;
   bool focused() const;
   bool fullscreen() const;
 
+  // used internally, not for QML
   QString exec() const;
+  qint64 pid() const;
 
  Q_SIGNALS:
   void fullscreenChanged(bool fullscreen);

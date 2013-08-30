@@ -19,7 +19,8 @@ SOURCES = plugin.cc \
           application_image.cc \
           application_window.cc \
           application.cc \
-          input_filter_area.cc
+          input_filter_area.cc \
+    desktopdata.cpp
 
 HEADERS = application_manager.h \
           application_list_model.h \
@@ -27,7 +28,8 @@ HEADERS = application_manager.h \
           application_window.h \
           application.h \
           input_filter_area.h \
-          logging.h
+          logging.h \
+    desktopdata.h
 
 CONFIG += plugin
 

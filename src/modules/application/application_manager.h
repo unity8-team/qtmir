@@ -34,36 +34,6 @@
 class Application;
 class ApplicationListModel;
 
-class DesktopData {
- public:
-  DesktopData(QString appId);
-  ~DesktopData();
-
-  QString appId() const { return appId_; }
-  QString name() const { return entries_[kNameIndex]; }
-  QString comment() const { return entries_[kCommentIndex]; }
-  QString icon() const { return entries_[kIconIndex]; }
-  QString exec() const { return entries_[kExecIndex]; }
-  QString path() const { return entries_[kPathIndex]; }
-  QString stageHint() const { return entries_[kStageHintIndex]; }
-  bool loaded() const { return loaded_; }
-
- private:
-  static const int kNameIndex = 0,
-    kCommentIndex = 1,
-    kIconIndex = 2,
-    kExecIndex = 3,
-    kPathIndex = 4,
-    kStageHintIndex = 5,
-    kNumberOfEntries = 6;
-
-  bool loadDataForAppId(QString desktopFile);
-
-  QString appId_;
-  QVector<QString> entries_;
-  bool loaded_;
-};
-
 class ApplicationManager : public QObject {
   Q_OBJECT
   Q_ENUMS(Role)

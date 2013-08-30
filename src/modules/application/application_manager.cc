@@ -18,6 +18,7 @@
 #include "application_manager.h"
 #include "application_list_model.h"
 #include "application.h"
+#include "desktopdata.h"
 #include "logging.h"
 #include <sys/types.h>
 #include <signal.h>
@@ -26,10 +27,6 @@
 #include <pwd.h>
 
 #include <QRegularExpression>
-
-// Retrieves the size of an array at compile time.
-#define ARRAY_SIZE(a) \
-    ((sizeof(a) / sizeof(*(a))) / static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))))
 
 // Size of the side stage in grid units.
 const int kSideStageWidth = 40;
@@ -161,102 +158,6 @@ static void keyboardGeometryChanged(int x, int y, int width, int height, void* c
   QCoreApplication::postEvent(manager,
         new KeyboardGeometryEvent(QRect(x, y, width, height),
                                   manager->keyboardGeometryEventType()));
-}
-
-DesktopData::DesktopData(QString appId)
-    : appId_(appId)
-    , entries_(DesktopData::kNumberOfEntries, "") {
-  DLOG("DesktopData::DesktopData (this=%p, appId='%s')", this, appId.toLatin1().data());
-  DASSERT(appId != NULL);
-  loaded_ = loadDataForAppId(appId);
-}
-
-DesktopData::~DesktopData() {
-  DLOG("DesktopData::~DesktopData");
-  entries_.clear();
-}
-
-bool DesktopData::loadDataForAppId(QString appId) {
-  DLOG("DesktopData::loadForAppId (this=%p, desktopFile='%s')", this, appId.toLatin1().data());
-  DASSERT(appId != NULL);
-
-  const struct { const char* const name; int size; unsigned int flag; } kEntryNames[] = {
-    { "Name=", sizeof("Name=") - 1, 1 << DesktopData::kNameIndex },
-    { "Comment=", sizeof("Comment=") - 1, 1 << DesktopData::kCommentIndex },
-    { "Icon=", sizeof("Icon=") - 1, 1 << DesktopData::kIconIndex },
-    { "Exec=", sizeof("Exec=") - 1, 1 << DesktopData::kExecIndex },
-    { "Path=", sizeof("Path=") - 1, 1 << DesktopData::kPathIndex },
-    { "X-Ubuntu-StageHint=", sizeof("X-Ubuntu-StageHint=") - 1, 1 << DesktopData::kStageHintIndex }
-  };
-  const unsigned int kAllEntriesMask =
-      (1 << DesktopData::kNameIndex) | (1 << DesktopData::kCommentIndex)
-      | (1 << DesktopData::kIconIndex) | (1 << DesktopData::kExecIndex)
-      | (1 << DesktopData::kPathIndex) | (1 << DesktopData::kStageHintIndex);
-  const unsigned int kMandatoryEntriesMask =
-      (1 << DesktopData::kNameIndex) | (1 << DesktopData::kIconIndex)
-      | (1 << DesktopData::kExecIndex);
-  const int kEntriesCount = ARRAY_SIZE(kEntryNames);
-  const int kBufferSize = 256;
-  static char buffer[kBufferSize];
-  QString desktopFileDirectory("/usr/share/applications/");
-  QFile file(desktopFileDirectory + appId);
-
-  // Open file.
-  if (!file.open(QFile::ReadOnly | QIODevice::Text)) {
-    DLOG("can't open file: %s", file.errorString().toLatin1().data());
-    return false;
-  }
-
-  // Validate "magic key" (standard group header).
-  if (file.readLine(buffer, kBufferSize) != -1) {
-    if (strncmp(buffer, "[Desktop Entry]", sizeof("[Desktop Entry]" - 1))) {
-      DLOG("not a desktop file");
-      return false;
-    }
-  }
-
-  int length;
-  unsigned int entryFlags = 0;
-  while ((length = file.readLine(buffer, kBufferSize)) != -1) {
-    // Skip empty lines.
-    if (length > 1) {
-      // Stop when reaching unsupported next group header.
-      if (buffer[0] == '[') {
-        DLOG("reached next group header, leaving loop");
-        break;
-      }
-      // Lookup entries ignoring duplicates if any.
-      for (int i = 0; i < kEntriesCount; i++) {
-        if (!strncmp(buffer, kEntryNames[i].name, kEntryNames[i].size)) {
-          if (~entryFlags & kEntryNames[i].flag) {
-            buffer[length-1] = '\0';
-            entries_[i] = QString::fromLatin1(&buffer[kEntryNames[i].size]);
-            entryFlags |= kEntryNames[i].flag;
-            break;
-          }
-        }
-      }
-      // Stop when matching the right number of entries.
-      if (entryFlags == kAllEntriesMask) {
-        break;
-      }
-    }
-  }
-
-  // Check that the mandatory entries are set.
-  if ((entryFlags & kMandatoryEntriesMask) == kMandatoryEntriesMask) {
-    DLOG("loaded desktop file with name='%s', comment='%s', icon='%s', exec='%s', path='%s', stagehint='%s'",
-         entries_[DesktopData::kNameIndex].toLatin1().data(),
-         entries_[DesktopData::kCommentIndex].toLatin1().data(),
-         entries_[DesktopData::kIconIndex].toLatin1().data(),
-         entries_[DesktopData::kExecIndex].toLatin1().data(),
-         entries_[DesktopData::kPathIndex].toLatin1().data(),
-         entries_[DesktopData::kStageHintIndex].toLatin1().data());
-    return true;
-  } else {
-    DLOG("not a valid desktop file, missing mandatory entries in the standard group header");
-    return false;
-  }
 }
 
 ApplicationManager::ApplicationManager()
@@ -493,7 +394,7 @@ void ApplicationManager::timerEvent(QTimerEvent* event) {
 
   // Remove application from list and kill it.
   if (application != NULL) {
-    const qint64 kPid = application->handle();
+    const qint64 kPid = application->pid_;
     DLOG("application '%s' (%lld) hasn't been matched, killing it",
          application->name().toLatin1().data(), kPid);
     DASSERT(pidHash_.contains(kPid));
@@ -644,7 +545,7 @@ Application* ApplicationManager::startProcess(QString desktopFile, ApplicationMa
 void ApplicationManager::stopProcess(Application* application) {
   DLOG("ApplicationManager::stopProcess (this=%p, application=%p)", this, application);
   if (application != NULL) {
-    const qint64 kPid = application->handle();
+    const qint64 kPid = application->pid_;
     if (pidHash_.remove(kPid) > 0) {
       if (application->stage() == Application::MainStage) {
         mainStageApplications_->remove(application);

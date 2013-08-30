@@ -14,13 +14,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "application.h"
-#include "application_manager.h"
+#include "desktopdata.h"
 #include "logging.h"
 
 Application::Application(
     DesktopData* desktopData, qint64 pid, Application::Stage stage, Application::State state,
     int timerId)
-    : desktopData_(desktopData)
+    : ApplicationInfoInterface(desktopData->appId())
+    , desktopData_(desktopData)
     , pid_(pid)
     , stage_(stage)
     , state_(state)
@@ -49,12 +50,16 @@ QString Application::comment() const {
   return desktopData_->comment();
 }
 
-QString Application::icon() const {
-  return desktopData_->icon();
+QUrl Application::icon() const {
+  return QUrl(desktopData_->icon());
 }
 
 QString Application::exec() const {
   return desktopData_->exec();
+}
+
+qint64 Application::pid() const {
+  return pid_;
 }
 
 Application::Stage Application::stage() const {
