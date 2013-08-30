@@ -2,9 +2,12 @@ TARGET = unityapplicationplugin
 TEMPLATE = lib
 
 QT += quick-private qml-private
+CONFIG += link_pkgconfig
 
 QMAKE_CXXFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden
 QMAKE_LFLAGS += -Wl,-no-undefined
+
+PKGCONFIG += unity-shell-application
 
 CONFIG(debug) {
   QMAKE_CXXFLAGS_DEBUG += -Werror

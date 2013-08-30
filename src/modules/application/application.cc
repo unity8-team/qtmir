@@ -37,8 +37,8 @@ Application::~Application() {
   delete desktopData_;
 }
 
-QString Application::desktopFile() const {
-  return desktopData_->file();
+QString Application::appId() const {
+  return desktopData_->appId();
 }
 
 QString Application::name() const {
@@ -57,10 +57,6 @@ QString Application::exec() const {
   return desktopData_->exec();
 }
 
-qint64 Application::handle() const {
-  return pid_;
-}
-
 Application::Stage Application::stage() const {
   return stage_;
 }
@@ -77,7 +73,7 @@ void Application::setStage(Application::Stage stage) {
   DLOG("Application::setStage (this=%p, stage=%d)", this, static_cast<int>(stage));
   if (stage_ != stage) {
     stage_ = stage;
-    emit stageChanged();
+    emit stageChanged(stage);
   }
 }
 
@@ -85,7 +81,7 @@ void Application::setState(Application::State state) {
   DLOG("Application::setState (this=%p, state=%d)", this, static_cast<int>(state));
   if (state_ != state) {
     state_ = state;
-    emit stateChanged();
+    emit stateChanged(state);
   }
 }
 
@@ -93,6 +89,6 @@ void Application::setFullscreen(bool fullscreen) {
   DLOG("Application::setFullscreen (this=%p, fullscreen=%s)", this, fullscreen ? "yes" : "no");
   if (fullscreen_ != fullscreen) {
     fullscreen_ = fullscreen;
-    emit fullscreenChanged();
+    emit fullscreenChanged(fullscreen);
   }
 }

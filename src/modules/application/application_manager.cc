@@ -163,12 +163,12 @@ static void keyboardGeometryChanged(int x, int y, int width, int height, void* c
                                   manager->keyboardGeometryEventType()));
 }
 
-DesktopData::DesktopData(QString desktopFile)
-    : file_(desktopFile)
+DesktopData::DesktopData(QString appId)
+    : appId_(appId)
     , entries_(DesktopData::kNumberOfEntries, "") {
-  DLOG("DesktopData::DesktopData (this=%p, desktopFile='%s')", this, desktopFile.toLatin1().data());
-  DASSERT(desktopFile != NULL);
-  loaded_ = loadDesktopFile(desktopFile);
+  DLOG("DesktopData::DesktopData (this=%p, appId='%s')", this, appId.toLatin1().data());
+  DASSERT(appId != NULL);
+  loaded_ = loadDataForAppId(appId);
 }
 
 DesktopData::~DesktopData() {
@@ -176,10 +176,10 @@ DesktopData::~DesktopData() {
   entries_.clear();
 }
 
-bool DesktopData::loadDesktopFile(QString desktopFile) {
-  DLOG("DesktopData::loadDesktopFile (this=%p, desktopFile='%s')",
-       this, desktopFile.toLatin1().data());
-  DASSERT(desktopFile != NULL);
+bool DesktopData::loadDataForAppId(QString appId) {
+  DLOG("DesktopData::loadForAppId (this=%p, desktopFile='%s')", this, appId.toLatin1().data());
+  DASSERT(appId != NULL);
+
   const struct { const char* const name; int size; unsigned int flag; } kEntryNames[] = {
     { "Name=", sizeof("Name=") - 1, 1 << DesktopData::kNameIndex },
     { "Comment=", sizeof("Comment=") - 1, 1 << DesktopData::kCommentIndex },
@@ -198,7 +198,8 @@ bool DesktopData::loadDesktopFile(QString desktopFile) {
   const int kEntriesCount = ARRAY_SIZE(kEntryNames);
   const int kBufferSize = 256;
   static char buffer[kBufferSize];
-  QFile file(desktopFile);
+  QString desktopFileDirectory("/usr/share/applications/");
+  QFile file(desktopFileDirectory + appId);
 
   // Open file.
   if (!file.open(QFile::ReadOnly | QIODevice::Text)) {
@@ -282,7 +283,7 @@ ApplicationManager::ApplicationManager()
         continueTask, suspendTask, this
     };
     ubuntu_ui_install_task_controller(&controller);
-    
+
     once = true;
   }
   DLOG("ApplicationManager::ApplicationManager (this=%p)", this);

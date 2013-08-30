@@ -36,10 +36,10 @@ class ApplicationListModel;
 
 class DesktopData {
  public:
-  DesktopData(QString desktopFile);
+  DesktopData(QString appId);
   ~DesktopData();
 
-  QString file() const { return file_; }
+  QString appId() const { return appId_; }
   QString name() const { return entries_[kNameIndex]; }
   QString comment() const { return entries_[kCommentIndex]; }
   QString icon() const { return entries_[kIconIndex]; }
@@ -57,9 +57,9 @@ class DesktopData {
     kStageHintIndex = 5,
     kNumberOfEntries = 6;
 
-  bool loadDesktopFile(QString desktopFile);
+  bool loadDataForAppId(QString desktopFile);
 
-  QString file_;
+  QString appId_;
   QVector<QString> entries_;
   bool loaded_;
 };
@@ -71,7 +71,7 @@ class ApplicationManager : public QObject {
   Q_ENUMS(FormFactorHint)
   Q_ENUMS(FavoriteApplication)
   Q_FLAGS(ExecFlags)
-  
+
   // FIXME(kaleo, loicm): That keyboard API might need a cleaner design.
   Q_PROPERTY(int keyboardHeight READ keyboardHeight NOTIFY keyboardHeightChanged)
   Q_PROPERTY(bool keyboardVisible READ keyboardVisible NOTIFY keyboardVisibleChanged)
@@ -112,7 +112,7 @@ class ApplicationManager : public QObject {
     PhoneApplication = PHONE_APP, DialerApplication = DIALER_APP,
     MessagingApplication = MESSAGING_APP, AddressbookApplication = ADDRESSBOOK_APP
   };
-  enum Flag { 
+  enum Flag {
     NoFlag = 0x0,
     ForceMainStage = 0x1,
   };

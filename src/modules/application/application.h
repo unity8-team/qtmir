@@ -18,49 +18,35 @@
 
 #include <QtCore/QtCore>
 
+// unity-api
+#include <unity/shell/application/ApplicationInfoInterface.h>
+
 class DesktopData;
 
-class Application : public QObject {
+using namespace unity::shell::application;
+
+class Application : public ApplicationInfoInterface {
   Q_OBJECT
-  Q_ENUMS(Stage)
-  Q_ENUMS(State)
-  Q_PROPERTY(QString desktopFile READ desktopFile NOTIFY desktopFileChanged)
-  Q_PROPERTY(QString name READ name NOTIFY nameChanged)
-  Q_PROPERTY(QString comment READ comment NOTIFY commentChanged)
-  Q_PROPERTY(QString icon READ icon NOTIFY iconChanged)
-  Q_PROPERTY(QString exec READ exec NOTIFY execChanged)
-  Q_PROPERTY(qint64 handle READ handle NOTIFY handleChanged)
-  Q_PROPERTY(Stage stage READ stage NOTIFY stageChanged)
-  Q_PROPERTY(State state READ state NOTIFY stateChanged)
+
   Q_PROPERTY(bool fullscreen READ fullscreen NOTIFY fullscreenChanged)
 
  public:
-  enum Stage { MainStage, SideStage };
-  enum State { Starting, Running };
-
   Application(DesktopData* desktopData, qint64 pid, Stage stage, State state, int timerId);
   ~Application();
 
-  QString desktopFile() const;
+  QString appId() const;
   QString name() const;
   QString comment() const;
   QString icon() const;
-  QString exec() const;
-  qint64 handle() const;
   Stage stage() const;
   State state() const;
+  bool focused() const;
   bool fullscreen() const;
 
+  QString exec() const;
+
  Q_SIGNALS:
-  void desktopFileChanged();
-  void nameChanged();
-  void commentChanged();
-  void iconChanged();
-  void execChanged();
-  void handleChanged();
-  void stageChanged();
-  void stateChanged();
-  void fullscreenChanged();
+  void fullscreenChanged(bool fullscreen);
 
  private:
   void setStage(Stage stage);

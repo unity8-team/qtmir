@@ -18,6 +18,7 @@ Build-Depends: debhelper (>= 9),
                qtbase5-private-dev,
                qtdeclarative5-private-dev,
                qtsensors5-dev,
+               unity-api-dev,
                zlib1g-dev,
 Standards-Version: 3.9.4
 Section: libs
