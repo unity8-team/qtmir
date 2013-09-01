@@ -17,7 +17,6 @@
 #include <QtQuick/QQuickWindow>
 #include "application.h"
 #include "application_manager.h"
-#include "application_list_model.h"
 #include "application_image.h"
 #include "application_window.h"
 #include "input_filter_area.h"
@@ -41,8 +40,6 @@ class UbuntuApplicationPlugin : public QQmlExtensionPlugin {
         uri, 0, 1, "ApplicationManager", applicationManagerSingleton);
     qmlRegisterUncreatableType<Application>(
         uri, 0, 1, "ApplicationInfo", "ApplicationInfo can't be instantiated");
-    qmlRegisterUncreatableType<ApplicationListModel>(
-        uri, 0, 1, "ApplicationListModel", "ApplicationListModel can't be instantiated");
     qmlRegisterExtendedType<QQuickWindow, ApplicationWindow>(uri, 0, 1, "Window");
     qmlRegisterType<ApplicationImage>(uri, 0, 1, "ApplicationImage");
     qmlRegisterType<InputFilterArea>(uri, 0, 1, "InputFilterArea");

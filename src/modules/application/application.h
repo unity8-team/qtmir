@@ -66,7 +66,6 @@ class Application : public ApplicationInfoInterface {
   int timerId_;
 
   friend class ApplicationManager;
-  friend class ApplicationListModel;
 };
 
 Q_DECLARE_METATYPE(Application*)

@@ -19,7 +19,6 @@ UNITY_API_INCLUDEPATH = `pkg-config`
 
 SOURCES = plugin.cc \
           application_manager.cc \
-          application_list_model.cc \
           application_image.cc \
           application_window.cc \
           application.cc \
@@ -27,7 +26,6 @@ SOURCES = plugin.cc \
           desktopdata.cpp
 
 HEADERS = application_manager.h \
-          application_list_model.h \
           application_image.h \
           application_window.h \
           application.h \
