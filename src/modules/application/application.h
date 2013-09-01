@@ -34,13 +34,13 @@ class Application : public ApplicationInfoInterface {
   Application(DesktopData* desktopData, qint64 pid, Stage stage, State state, int timerId);
   ~Application();
 
-  QString appId() const;
-  QString name() const;
-  QString comment() const;
-  QUrl icon() const;
-  Stage stage() const;
-  State state() const;
-  bool focused() const;
+  QString appId() const override;
+  QString name() const override;
+  QString comment() const override;
+  QUrl icon() const override;
+  Stage stage() const override;
+  State state() const override;
+  bool focused() const override;
   bool fullscreen() const;
 
   // used internally, not for QML
@@ -53,6 +53,7 @@ class Application : public ApplicationInfoInterface {
  private:
   void setStage(Stage stage);
   void setState(State state);
+  void setFocused(bool focused);
   void setFullscreen(bool fullscreen);
   int timerId() const { return timerId_; }
 
@@ -60,6 +61,7 @@ class Application : public ApplicationInfoInterface {
   qint64 pid_;
   Stage stage_;
   State state_;
+  bool focused_;
   bool fullscreen_;
   int timerId_;
 

@@ -25,6 +25,7 @@ Application::Application(
     , pid_(pid)
     , stage_(stage)
     , state_(state)
+    , focused_(false)
     , fullscreen_(false)
     , timerId_(timerId) {
   DASSERT(desktopData != NULL);
@@ -70,6 +71,10 @@ Application::State Application::state() const {
   return state_;
 }
 
+bool Application::focused() const {
+  return focused_;
+}
+
 bool Application::fullscreen() const {
   return fullscreen_;
 }
@@ -88,6 +93,14 @@ void Application::setState(Application::State state) {
     state_ = state;
     emit stateChanged(state);
   }
+}
+
+void Application::setFocused(bool focused) {
+    DLOG("Application::setFocused (this=%p, focused=%d)", this, static_cast<int>(focused));
+    if (focused_ != focused) {
+      focused_ = focused;
+      emit focusedChanged(focused);
+    }
 }
 
 void Application::setFullscreen(bool fullscreen) {
