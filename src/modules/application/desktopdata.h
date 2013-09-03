@@ -18,6 +18,7 @@
 
 #include <QString>
 #include <QVector>
+#include <QUrl>
 
 class DesktopData {
 public:
@@ -28,7 +29,7 @@ public:
     QString file() const;
     QString name() const { return entries_[kNameIndex]; }
     QString comment() const { return entries_[kCommentIndex]; }
-    QString icon() const { return entries_[kIconIndex]; }
+    QUrl icon() const { return QUrl(entries_[kIconIndex]); }
     QString exec() const { return entries_[kExecIndex]; }
     QString path() const { return entries_[kPathIndex]; }
     QString stageHint() const { return entries_[kStageHintIndex]; }
@@ -43,7 +44,7 @@ private:
     kStageHintIndex = 5,
     kNumberOfEntries = 6;
 
-    bool loadDataForAppId(QString desktopFile);
+    bool load();
 
     QString appId_;
     QVector<QString> entries_;

@@ -35,7 +35,7 @@ class UbuntuApplicationPlugin : public QQmlExtensionPlugin {
 
   virtual void registerTypes(const char* uri) {
     DLOG("UbuntuApplicationPlugin::registerTypes (this=%p, uri='%s')", this, uri);
-    ASSERT(QLatin1String(uri) == QLatin1String("Ubuntu.Application"));
+    ASSERT(QLatin1String(uri) == QLatin1String("Unity.Application"));
     qmlRegisterSingletonType<ApplicationManager>(
         uri, 0, 1, "ApplicationManager", applicationManagerSingleton);
     qmlRegisterUncreatableType<Application>(

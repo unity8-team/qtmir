@@ -15,8 +15,6 @@ CONFIG(debug) {
   QMAKE_CXXFLAGS_DEBUG += -Werror
 }
 
-UNITY_API_INCLUDEPATH = `pkg-config`
-
 SOURCES = plugin.cc \
           application_manager.cc \
           application_image.cc \

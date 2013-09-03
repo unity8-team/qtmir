@@ -30,7 +30,7 @@ DesktopData::DesktopData(QString appId)
     , entries_(DesktopData::kNumberOfEntries, "") {
     DLOG("DesktopData::DesktopData (this=%p, appId='%s')", this, appId.toLatin1().data());
     DASSERT(appId != NULL);
-    loaded_ = loadDataForAppId(appId);
+    loaded_ = load();
 }
 
 DesktopData::~DesktopData() {
@@ -39,12 +39,11 @@ DesktopData::~DesktopData() {
 }
 
 QString DesktopData::file() const {
-    return desktopFilePath + appId_;
+    return desktopFilePath + appId_ + ".desktop";
 }
 
-bool DesktopData::loadDataForAppId(QString appId) {
-    DLOG("DesktopData::loadForAppId (this=%p, desktopFile='%s')", this, appId.toLatin1().data());
-    DASSERT(appId != NULL);
+bool DesktopData::load() {
+    DLOG("DesktopData::load (this=%p, desktopFile='%s')", this, qPrintable(appId_));
 
     const struct { const char* const name; int size; unsigned int flag; } kEntryNames[] = {
         { "Name=", sizeof("Name=") - 1, 1 << DesktopData::kNameIndex },
@@ -65,7 +64,7 @@ bool DesktopData::loadDataForAppId(QString appId) {
     const int kBufferSize = 256;
     static char buffer[kBufferSize];
 
-    QFile file(desktopFilePath + appId);
+    QFile file(this->file());
 
     // Open file.
     if (!file.open(QFile::ReadOnly | QIODevice::Text)) {

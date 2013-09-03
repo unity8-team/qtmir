@@ -41,6 +41,7 @@ using namespace unity::shell::application;
 
 class ApplicationManager : public ApplicationManagerInterface {
   Q_OBJECT
+  Q_ENUMS(Roles) //inherited, but want to expose to QML
   Q_ENUMS(SurfaceRole)
   Q_ENUMS(StageHint)
   Q_ENUMS(FormFactorHint)
@@ -83,6 +84,15 @@ class ApplicationManager : public ApplicationManagerInterface {
     NoFlag = 0x0,
     ForceMainStage = 0x1,
   };
+  enum Roles { // Q_ENUM of inherited Roles doesn't work?!?!?!
+      RoleAppId = Qt::UserRole,
+      RoleName,
+      RoleComment,
+      RoleIcon,
+      RoleStage,
+      RoleState,
+      RoleFocused,
+  };
   Q_DECLARE_FLAGS(ExecFlags, Flag)
 
   // QObject methods.
@@ -97,19 +107,19 @@ class ApplicationManager : public ApplicationManagerInterface {
   int rowCount(const QModelIndex& parent = QModelIndex()) const override;
   QVariant data(const QModelIndex& index, int role) const override;
   Q_INVOKABLE Application *get(int index) const override;
+  Q_INVOKABLE Application *findApplication(const QString &appId) const override;
 
   Q_INVOKABLE void move(int from, int to);
 
   // Application control methods
-  Q_INVOKABLE void focusApplication(ApplicationInfoInterface* application) override;
+  Q_INVOKABLE bool focusApplication(const QString &appId) override;
   Q_INVOKABLE void focusFavoriteApplication(FavoriteApplication application);
   Q_INVOKABLE void unfocusCurrentApplication() override;
-  Q_INVOKABLE Application* startApplication(const QString &appId, const QStringList &arguments = QStringList()) override;
-  Q_INVOKABLE Application* startApplication(const QString &appId, ExecFlags flags, const QStringList &arguments = QStringList());
-  Q_INVOKABLE void stopApplication(ApplicationInfoInterface* application) override;
-  Q_INVOKABLE void startWatcher() {}
+  Q_INVOKABLE bool startApplication(const QString &appId, const QStringList &arguments = QStringList()) override;
+  Q_INVOKABLE bool startApplication(const QString &appId, ExecFlags flags, const QStringList &arguments = QStringList());
+  Q_INVOKABLE bool stopApplication(const QString &appId) override;
 
-  Application *focusedApplication() const override;
+  QString focusedApplicationId() const override;
 
   QEvent::Type eventType() { return eventType_; }
   QEvent::Type keyboardGeometryEventType() { return keyboardGeometryEventType_; }

@@ -52,7 +52,7 @@ QString Application::comment() const {
 }
 
 QUrl Application::icon() const {
-  return QUrl(desktopData_->icon());
+  return desktopData_->icon();
 }
 
 QString Application::exec() const {

@@ -44,7 +44,7 @@ class TaskEvent : public QEvent {
       , stage_(stage)
       , task_(task) {
     DLOG("TaskEvent::TaskEvent (this=%p, appId='%s', id=%d, stage=%d, task=%d, type=%d)",
-         this, appId.toLatin1().constData(), id, stage, task, type);
+         this, qPrintable(appId), id, stage, task, type);
   }
   ~TaskEvent() {
     DLOG("TaskEvent::~TaskEvent");
@@ -74,12 +74,14 @@ class KeyboardGeometryEvent : public QEvent {
 static void continueTask(int pid, void* context)
 {
   DLOG("continueTask(pid=%d, context=%p)", pid, context);
+  Q_UNUSED(context)
   kill(pid, SIGCONT);
 }
 
 static void suspendTask(int pid, void* context)
 {
   DLOG("suspendTask(pid=%d, context=%p)", pid, context);
+  Q_UNUSED(context)
   kill(pid, SIGSTOP);
 }
 
@@ -230,15 +232,24 @@ QVariant ApplicationManager::data(const QModelIndex& index, int role) const {
   default:
       return QVariant();
   }
-  //return QVariant::fromValue(applications_.at(index.row()));
 }
 
-Application *ApplicationManager::get(int row) const {  //Do we want this any more???
+Application *ApplicationManager::get(int row) const {
   DLOG("ApplicationManager::get (this=%p, row=%d)", this, row);
   if (row < 0 || row >= applications_.size())
     return nullptr;
 
   return applications_.at(row);
+}
+
+Application *ApplicationManager::findApplication(const QString &appId) const {
+  DLOG("ApplicationManager::findApplication (this=%p, appId=%d)", this, qPrintable(appId));
+  for (Application *app : applications_) {
+    if (app->appId() == appId) {
+      return app;
+    }
+  }
+  return nullptr;
 }
 
 void ApplicationManager::move(int from, int to) {
@@ -300,8 +311,7 @@ void ApplicationManager::customEvent(QEvent* event) {
       const int kPid = taskEvent->id_;
       Application* application = pidHash_.value(kPid, NULL);
       if (application) {
-        DLOG("got a match in the application lists, setting '%s' (%d) to running",
-             application->name().toLatin1().data(), kPid);
+        DLOG("got a match in the application lists, setting '%s' (%d) to running", qPrintable(application->name()), kPid);
 #if !defined(QT_NO_DEBUG)
         // Ensure we're in sync with Ubuntu Platform.
         ASSERT(applications_.contains(application));
@@ -315,9 +325,8 @@ void ApplicationManager::customEvent(QEvent* event) {
           Application* application = new Application(
               desktopData, kPid, Application::MainStage, Application::Running, -1);
           pidHash_.insert(kPid, application);
-          DLOG("desktopFile loaded, storing '%s' (%d) in the application list",
-               desktopData->name().toLatin1().data(), kPid);
-          add(application);
+          DLOG("desktopFile loaded, storing '%s' (%d) in the application list", qPrintable(desktopData->name()), kPid);
+          add(application); //TODO(greyback) - where is new app added in list, top??
         } else {
           DLOG("unknown application, not storing in the application lists");
           delete desktopData;
@@ -331,18 +340,17 @@ void ApplicationManager::customEvent(QEvent* event) {
       const int kPid = taskEvent->id_;
       Application* application = pidHash_.take(kPid);
       if (application != NULL) {
-        DLOG("removing application '%s' (%d) from the application lists",
-             application->name().toLatin1().data(), kPid);
+        DLOG("removing application '%s' (%d) from the application lists", qPrintable(application->name()), kPid);
         if (application->state() == Application::Starting) {
           killTimer(application->timerId());
         }
 
         if (application->focused()) {
           application->setFocused(false);
-          emit focusedApplicationChanged();
+          emit focusedApplicationIdChanged(); //TODO(greyback) call after app removed from list??
         }
         remove(application);
-        delete application;
+        application->deleteLater();
       } else {
         DLOG("Unknown application, not stored in the application lists");
       }
@@ -355,6 +363,8 @@ void ApplicationManager::customEvent(QEvent* event) {
       Application* application = pidHash_.value(taskEvent->id_);
       if (application != NULL && application->focused()) {
         application->setFocused(false);
+        //TODO(greyback) move application to top-most unfocused position in applications_ list
+        emit focusedApplicationIdChanged();
       }
       break;
     }
@@ -365,6 +375,8 @@ void ApplicationManager::customEvent(QEvent* event) {
       Application* application = pidHash_.value(taskEvent->id_);
       if (application != NULL && application->focused()) {
         application->setFocused(true);
+        //TODO(greyback) move application to top of applications_ list
+        emit focusedApplicationIdChanged();
       }
       break;
     }
@@ -400,8 +412,7 @@ void ApplicationManager::timerEvent(QTimerEvent* event) {
   // Remove application from list and kill it.
   if (application != NULL) {
     const qint64 kPid = application->pid();
-    DLOG("application '%s' (%lld) hasn't been matched, killing it",
-         application->name().toLatin1().data(), kPid);
+    DLOG("application '%s' (%lld) hasn't been matched, killing it", qPrintable(application->name()), kPid);
     DASSERT(pidHash_.contains(kPid));
     pidHash_.remove(kPid);
     remove(application);
@@ -426,12 +437,14 @@ int ApplicationManager::sideStageWidth() const {
   return kSideStageWidth;
 }
 
-void ApplicationManager::focusApplication(ApplicationInfoInterface *app) {
-  Application *application = qobject_cast<Application*>(app);
-  if (application == nullptr) return;
+bool ApplicationManager::focusApplication(const QString &appId) {
+  Application *application = this->findApplication(appId);
+  if (application == nullptr)
+    return false;
 
   DLOG("ApplicationManager::focusApplication (this=%p, app_pid=%lld)", this, application->pid());
   ubuntu_ui_session_focus_running_session_with_id(application->pid());
+  return true;
 }
 
 void ApplicationManager::focusFavoriteApplication(
@@ -442,29 +455,26 @@ void ApplicationManager::focusFavoriteApplication(
       static_cast<ubuntu_ui_well_known_application>(application));
 }
 
-void ApplicationManager::unfocusCurrentApplication() { //FIXME bad name, as unfocuses all focused apps
+void ApplicationManager::unfocusCurrentApplication() {
   DLOG("ApplicationManager::unfocusCurrentApplication (this=%p)", this);
   // FIXME(loicm): Add that once supported in Ubuntu Platform API.
   // ubuntu_ui_session_unfocus_running_sessions(static_cast<StageHint>(stageHint));
   ubuntu_ui_session_unfocus_running_sessions();
 }
 
-Application *ApplicationManager::focusedApplication() const {
-  if (applications_.isEmpty()) return nullptr;
-
-  auto topApplication = applications_.first();
-  if (!topApplication->focused()) {
-    return nullptr;
-  } else {
-    return topApplication;
+QString ApplicationManager::focusedApplicationId() const {
+  for (Application *app : applications_) {
+    if (app->focused())
+      return app->appId();
   }
+  return QString();
 }
 
-Application* ApplicationManager::startApplication(const QString &appId, const QStringList &arguments) {
+bool ApplicationManager::startApplication(const QString &appId, const QStringList &arguments) {
     return startApplication(appId, NoFlag, arguments);
 }
 
-Application* ApplicationManager::startApplication(const QString &appId, ApplicationManager::ExecFlags flags,
+bool ApplicationManager::startApplication(const QString &appId, ApplicationManager::ExecFlags flags,
                                                   const QStringList &arguments) {
   DLOG("ApplicationManager::startProcess (this=%p, flags=%d)", this, (int) flags);
   // Load desktop file.
@@ -501,9 +511,9 @@ Application* ApplicationManager::startApplication(const QString &appId, Applicat
     argumentsCopy.append(QString("--stage_hint=side_stage"));
 
 #if !defined(QT_NO_DEBUG)
-  LOG("starting process '%s' with arguments:", exec.toLatin1().data());
+  LOG("starting process '%s' with arguments:", qPrintable(exec));
   for (int i = 0; i < argumentsCopy.size(); i++)
-    LOG("  '%s'", argumentsCopy[i].toLatin1().data());
+    LOG("  '%s'", qPrintable(argumentsCopy[i]));
 #endif
 
   // Start process.
@@ -518,7 +528,7 @@ Application* ApplicationManager::startApplication(const QString &appId, Applicat
     if (passwd)
       path = passwd->pw_dir;
   }
-  DLOG("current working directory: '%s'", path.toLatin1().data());
+  DLOG("current working directory: '%s'", qPrintable(path));
   QByteArray envSetAppId = QString("APP_ID=%1").arg(appId).toLocal8Bit();
   putenv(envSetAppId.data()); // envSetAppId must be available and unmodified until the env var is unset
   result = QProcess::startDetached(exec, argumentsCopy, path, &pid);
@@ -526,8 +536,7 @@ Application* ApplicationManager::startApplication(const QString &appId, Applicat
   putenv(envClearAppId.data()); // now it's safe to deallocate envSetAppId.
   DLOG_IF(result == false, "process failed to start");
   if (result == true) {
-    DLOG("started process with pid %lld, adding '%s' to application lists",
-         pid, desktopData->name().toLatin1().data());
+    DLOG("started process with pid %lld, adding '%s' to application lists", pid, qPrintable(desktopData->name()));
 
     //decide stage
     Application::Stage stage = Application::MainStage;
@@ -541,30 +550,32 @@ Application* ApplicationManager::startApplication(const QString &appId, Applicat
     pidHash_.insert(pid, application);
 
     add(application);
-    return application;
+    return true;
   } else {
-    return NULL;
+    return false;
   }
 }
 
-void ApplicationManager::stopApplication(ApplicationInfoInterface* app) {
-  DLOG("ApplicationManager::stopProcess (this=%p, application=%p)", this, app);
+bool ApplicationManager::stopApplication(const QString &appId) {
+  DLOG("ApplicationManager::stopProcess (this=%p, application=%p)", this, qPrintable(appId));
 
-  Application *application = qobject_cast<Application*>(app);
-  if (application != nullptr) {
-    const qint64 kPid = application->pid();
-    if (pidHash_.remove(kPid) > 0) {
-      remove(application);
-      delete application;
-      killProcess(kPid);
-    }
+  Application *application = this->findApplication(appId);
+  if (application == nullptr)
+    return false;
+
+  const qint64 kPid = application->pid();
+  if (pidHash_.remove(kPid) > 0) {
+    remove(application);
+    application->deleteLater();
+    killProcess(kPid);
   }
+  return true;
 }
 
 void ApplicationManager::add(Application* application) {
   DASSERT(application != NULL);
-  DLOG("ApplicationListModel::add (this=%p, application='%s')", this,
-       application->name().toLatin1().data());
+  DLOG("ApplicationListModel::add (this=%p, application='%s')", this, qPrintable(application->name()));
+
 #if !defined(QT_NO_DEBUG)
   for (int i = 0; i < applications_.size(); i++)
     ASSERT(applications_.at(i) != application);
@@ -577,8 +588,8 @@ void ApplicationManager::add(Application* application) {
 
 void ApplicationManager::remove(Application *application) {
   DASSERT(application != NULL);
-  DLOG("ApplicationListModel::remove (this=%p, application='%s')", this,
-       application->name().toLatin1().data());
+  DLOG("ApplicationListModel::remove (this=%p, application='%s')", this, qPrintable(application->name()));
+
   int i = applications_.indexOf(application);
   if (i != -1) {
     beginRemoveRows(QModelIndex(), i, i);
@@ -590,6 +601,7 @@ void ApplicationManager::remove(Application *application) {
 
 Application* ApplicationManager::findFromTimerId(int timerId) {
   DLOG("ApplicationListModel::findFromTimerId (this=%p, timerId=%d)", this, timerId);
+
   const int kSize = applications_.size();
   for (int i = 0; i < kSize; i++)
     if (applications_[i]->timerId() == timerId)
