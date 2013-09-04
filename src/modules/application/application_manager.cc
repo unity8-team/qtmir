@@ -358,24 +358,31 @@ void ApplicationManager::customEvent(QEvent* event) {
     }
 
     case TaskEvent::kUnfocusApplication: {
-      DLOG("handling unfocus application task");
+      LOG("handling unfocus application task");
       // Reset the currently focused application.
       Application* application = pidHash_.value(taskEvent->id_);
       if (application != NULL && application->focused()) {
         application->setFocused(false);
-        //TODO(greyback) move application to top-most unfocused position in applications_ list
+
+        //TODO(greyback) move application to top-most unfocused position in applications_ list??
+//        int index = applications_.indexOf(application);
+//        if (index == 0 && applications_.at(1)->focused()) {
+//            applications_.move(index, 1);
+//        }
         emit focusedApplicationIdChanged();
       }
       break;
     }
 
     case TaskEvent::kFocusApplication: {
-      DLOG("handling focus application task");
+      LOG("handling focus application task");
       // Update the currently focused application.
       Application* application = pidHash_.value(taskEvent->id_);
       if (application != NULL && application->focused()) {
         application->setFocused(true);
-        //TODO(greyback) move application to top of applications_ list
+        //move application to top of applications_ list
+        int index = applications_.indexOf(application);
+        applications_.move(index, applications_.count());
         emit focusedApplicationIdChanged();
       }
       break;
@@ -470,11 +477,11 @@ QString ApplicationManager::focusedApplicationId() const {
   return QString();
 }
 
-bool ApplicationManager::startApplication(const QString &appId, const QStringList &arguments) {
+Application *ApplicationManager::startApplication(const QString &appId, const QStringList &arguments) {
     return startApplication(appId, NoFlag, arguments);
 }
 
-bool ApplicationManager::startApplication(const QString &appId, ApplicationManager::ExecFlags flags,
+Application *ApplicationManager::startApplication(const QString &appId, ApplicationManager::ExecFlags flags,
                                                   const QStringList &arguments) {
   DLOG("ApplicationManager::startProcess (this=%p, flags=%d)", this, (int) flags);
   // Load desktop file.
@@ -550,9 +557,9 @@ bool ApplicationManager::startApplication(const QString &appId, ApplicationManag
     pidHash_.insert(pid, application);
 
     add(application);
-    return true;
+    return application;
   } else {
-    return false;
+    return nullptr;
   }
 }
 

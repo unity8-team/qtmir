@@ -84,6 +84,7 @@ class ApplicationManager : public ApplicationManagerInterface {
     NoFlag = 0x0,
     ForceMainStage = 0x1,
   };
+  Q_DECLARE_FLAGS(ExecFlags, Flag)
   enum Roles { // Q_ENUM of inherited Roles doesn't work?!?!?!
       RoleAppId = Qt::UserRole,
       RoleName,
@@ -93,7 +94,6 @@ class ApplicationManager : public ApplicationManagerInterface {
       RoleState,
       RoleFocused,
   };
-  Q_DECLARE_FLAGS(ExecFlags, Flag)
 
   // QObject methods.
   void customEvent(QEvent* event);
@@ -115,8 +115,8 @@ class ApplicationManager : public ApplicationManagerInterface {
   Q_INVOKABLE bool focusApplication(const QString &appId) override;
   Q_INVOKABLE void focusFavoriteApplication(FavoriteApplication application);
   Q_INVOKABLE void unfocusCurrentApplication() override;
-  Q_INVOKABLE bool startApplication(const QString &appId, const QStringList &arguments = QStringList()) override;
-  Q_INVOKABLE bool startApplication(const QString &appId, ExecFlags flags, const QStringList &arguments = QStringList());
+  Q_INVOKABLE Application *startApplication(const QString &appId, const QStringList &arguments = QStringList()) override;
+  Q_INVOKABLE Application *startApplication(const QString &appId, ExecFlags flags, const QStringList &arguments = QStringList());
   Q_INVOKABLE bool stopApplication(const QString &appId) override;
 
   QString focusedApplicationId() const override;
