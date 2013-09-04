@@ -243,7 +243,7 @@ Application *ApplicationManager::get(int row) const {
 }
 
 Application *ApplicationManager::findApplication(const QString &appId) const {
-  DLOG("ApplicationManager::findApplication (this=%p, appId=%d)", this, qPrintable(appId));
+  DLOG("ApplicationManager::findApplication (this=%p, appId=%s)", this, qPrintable(appId));
   for (Application *app : applications_) {
     if (app->appId() == appId) {
       return app;
