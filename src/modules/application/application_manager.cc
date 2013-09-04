@@ -347,7 +347,7 @@ void ApplicationManager::customEvent(QEvent* event) {
 
         if (application->focused()) {
           application->setFocused(false);
-          emit focusedApplicationIdChanged(); //TODO(greyback) call after app removed from list??
+          emit focusedApplicationIdChanged();
         }
         remove(application);
         application->deleteLater();
@@ -358,31 +358,25 @@ void ApplicationManager::customEvent(QEvent* event) {
     }
 
     case TaskEvent::kUnfocusApplication: {
-      LOG("handling unfocus application task");
+      DLOG("handling unfocus application task");
       // Reset the currently focused application.
       Application* application = pidHash_.value(taskEvent->id_);
-      if (application != NULL && application->focused()) {
+      if (application != NULL) {
         application->setFocused(false);
-
-        //TODO(greyback) move application to top-most unfocused position in applications_ list??
-//        int index = applications_.indexOf(application);
-//        if (index == 0 && applications_.at(1)->focused()) {
-//            applications_.move(index, 1);
-//        }
         emit focusedApplicationIdChanged();
       }
       break;
     }
 
     case TaskEvent::kFocusApplication: {
-      LOG("handling focus application task");
+      DLOG("handling focus application task");
       // Update the currently focused application.
       Application* application = pidHash_.value(taskEvent->id_);
-      if (application != NULL && application->focused()) {
+      if (application != NULL) {
         application->setFocused(true);
         //move application to top of applications_ list
         int index = applications_.indexOf(application);
-        applications_.move(index, applications_.count());
+        this->move(index, 0);
         emit focusedApplicationIdChanged();
       }
       break;
