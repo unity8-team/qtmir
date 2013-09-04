@@ -43,7 +43,7 @@ QString DesktopData::file() const {
 }
 
 bool DesktopData::load() {
-    DLOG("DesktopData::load (this=%p, desktopFile='%s')", this, qPrintable(appId_));
+    DLOG("DesktopData::load (this=%p, appId='%s')", this, qPrintable(appId_));
 
     const struct { const char* const name; int size; unsigned int flag; } kEntryNames[] = {
         { "Name=", sizeof("Name=") - 1, 1 << DesktopData::kNameIndex },

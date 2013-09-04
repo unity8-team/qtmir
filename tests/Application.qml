@@ -29,11 +29,10 @@
 //    }
 //
 // Here is how to start a new process:
-//    ApplicationManager.startProcess("/usr/share/applications/snowshoe.desktop")
+//    ApplicationManager.startProcess("snowshoe")
 //
 // In order to pass additional arguments, a second optional argument can be used:
-//    ApplicationManager.startProcess("/usr/share/applications/snowshoe.desktop",
-//                                    [ "http://www.ubuntu.com" ])
+//    ApplicationManager.startProcess("snowshoe", [ "http://www.ubuntu.com" ])
 //
 // An application can be stopped by using:
 //     ApplicationManager.stopProcess(application)
@@ -48,7 +47,7 @@
 //         --desktop_file_hint=/usr/share/applications/goodhope.desktop --stage_hint=main_stage
 
 import QtQuick 2.0
-import Ubuntu.Application 0.1
+import Unity.Application 0.1
 
 Rectangle {
     id: surface
