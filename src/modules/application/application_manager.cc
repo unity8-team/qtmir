@@ -326,7 +326,7 @@ void ApplicationManager::customEvent(QEvent* event) {
               desktopData, kPid, Application::MainStage, Application::Running, -1);
           pidHash_.insert(kPid, application);
           DLOG("desktopFile loaded, storing '%s' (%d) in the application list", qPrintable(desktopData->name()), kPid);
-          add(application); //TODO(greyback) - where is new app added in list, top??
+          add(application);
         } else {
           DLOG("unknown application, not storing in the application lists");
           delete desktopData;
@@ -345,11 +345,10 @@ void ApplicationManager::customEvent(QEvent* event) {
           killTimer(application->timerId());
         }
 
+        remove(application);
         if (application->focused()) {
-          application->setFocused(false);
           emit focusedApplicationIdChanged();
         }
-        remove(application);
         application->deleteLater();
       } else {
         DLOG("Unknown application, not stored in the application lists");
