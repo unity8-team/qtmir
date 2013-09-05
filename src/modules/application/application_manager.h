@@ -37,9 +37,7 @@
 // local
 #include "application.h"
 
-using namespace unity::shell::application;
-
-class ApplicationManager : public ApplicationManagerInterface {
+class ApplicationManager : public unity::shell::application::ApplicationManagerInterface {
   Q_OBJECT
   Q_ENUMS(Roles) //inherited, but want to expose to QML
   Q_ENUMS(SurfaceRole)

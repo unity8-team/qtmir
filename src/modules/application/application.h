@@ -23,9 +23,7 @@
 
 class DesktopData;
 
-using namespace unity::shell::application;
-
-class Application : public ApplicationInfoInterface {
+class Application : public unity::shell::application::ApplicationInfoInterface {
   Q_OBJECT
 
   Q_PROPERTY(bool fullscreen READ fullscreen NOTIFY fullscreenChanged)

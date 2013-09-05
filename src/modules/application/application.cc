@@ -17,6 +17,8 @@
 #include "desktopdata.h"
 #include "logging.h"
 
+using namespace unity::shell::application;
+
 Application::Application(
     DesktopData* desktopData, qint64 pid, Application::Stage stage, Application::State state,
     int timerId)

@@ -27,6 +27,8 @@
 
 #include <QRegularExpression>
 
+using namespace unity::shell::application;
+
 // Size of the side stage in grid units.
 const int kSideStageWidth = 40;
 
