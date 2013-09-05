@@ -576,7 +576,7 @@ bool ApplicationManager::stopApplication(const QString &appId) {
 
 void ApplicationManager::add(Application* application) {
   DASSERT(application != NULL);
-  DLOG("ApplicationListModel::add (this=%p, application='%s')", this, qPrintable(application->name()));
+  DLOG("ApplicationManager::add (this=%p, application='%s')", this, qPrintable(application->name()));
 
 #if !defined(QT_NO_DEBUG)
   for (int i = 0; i < applications_.size(); i++)
@@ -590,7 +590,7 @@ void ApplicationManager::add(Application* application) {
 
 void ApplicationManager::remove(Application *application) {
   DASSERT(application != NULL);
-  DLOG("ApplicationListModel::remove (this=%p, application='%s')", this, qPrintable(application->name()));
+  DLOG("ApplicationManager::remove (this=%p, application='%s')", this, qPrintable(application->name()));
 
   int i = applications_.indexOf(application);
   if (i != -1) {
@@ -602,7 +602,7 @@ void ApplicationManager::remove(Application *application) {
 }
 
 Application* ApplicationManager::findFromTimerId(int timerId) {
-  DLOG("ApplicationListModel::findFromTimerId (this=%p, timerId=%d)", this, timerId);
+  DLOG("ApplicationManager::findFromTimerId (this=%p, timerId=%d)", this, timerId);
 
   const int kSize = applications_.size();
   for (int i = 0; i < kSize; i++)
