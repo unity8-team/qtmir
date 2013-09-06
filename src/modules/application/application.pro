@@ -30,6 +30,6 @@ CONFIG += plugin
 
 LIBS += -lubuntu_application_api
 
-target.files += libubuntuapplicationplugin.so qmldir
+target.files += libubuntuapplicationplugin.so qmldir OSKController.qml
 target.path += $$[QT_INSTALL_IMPORTS]/Ubuntu/Application
 INSTALLS += target
