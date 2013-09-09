@@ -39,7 +39,6 @@
 
 class ApplicationManager : public unity::shell::application::ApplicationManagerInterface {
   Q_OBJECT
-  Q_ENUMS(Roles) //inherited, but want to expose to QML
   Q_ENUMS(SurfaceRole)
   Q_ENUMS(StageHint)
   Q_ENUMS(FormFactorHint)
@@ -83,15 +82,6 @@ class ApplicationManager : public unity::shell::application::ApplicationManagerI
     ForceMainStage = 0x1,
   };
   Q_DECLARE_FLAGS(ExecFlags, Flag)
-  enum Roles { // Q_ENUM of inherited Roles doesn't work?!?!?!
-      RoleAppId = Qt::UserRole,
-      RoleName,
-      RoleComment,
-      RoleIcon,
-      RoleStage,
-      RoleState,
-      RoleFocused,
-  };
 
   // QObject methods.
   void customEvent(QEvent* event);
