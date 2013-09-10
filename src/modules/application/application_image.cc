@@ -129,7 +129,7 @@ void ApplicationImage::scheduleUpdate() {
     emit readyChanged();
   }
   if (source_ != NULL && source_->state() == Application::Running)
-    ubuntu_ui_session_snapshot_running_session_with_id(source_->handle(), snapshotCallback, this);
+    ubuntu_ui_session_snapshot_running_session_with_id(source_->pid(), snapshotCallback, this);
   else {
     update();
   }

@@ -31,67 +31,32 @@
 */
 #undef Bool
 
-class Application;
-class ApplicationListModel;
+// unity-api
+#include <unity/shell/application/ApplicationManagerInterface.h>
 
-class DesktopData {
- public:
-  DesktopData(QString desktopFile);
-  ~DesktopData();
+// local
+#include "application.h"
 
-  QString file() const { return file_; }
-  QString name() const { return entries_[kNameIndex]; }
-  QString comment() const { return entries_[kCommentIndex]; }
-  QString icon() const { return entries_[kIconIndex]; }
-  QString exec() const { return entries_[kExecIndex]; }
-  QString path() const { return entries_[kPathIndex]; }
-  QString stageHint() const { return entries_[kStageHintIndex]; }
-  bool loaded() const { return loaded_; }
-
- private:
-  static const int kNameIndex = 0,
-    kCommentIndex = 1,
-    kIconIndex = 2,
-    kExecIndex = 3,
-    kPathIndex = 4,
-    kStageHintIndex = 5,
-    kNumberOfEntries = 6;
-
-  bool loadDesktopFile(QString desktopFile);
-
-  QString file_;
-  QVector<QString> entries_;
-  bool loaded_;
-};
-
-class ApplicationManager : public QObject {
+class ApplicationManager : public unity::shell::application::ApplicationManagerInterface {
   Q_OBJECT
-  Q_ENUMS(Role)
+  Q_ENUMS(SurfaceRole)
   Q_ENUMS(StageHint)
   Q_ENUMS(FormFactorHint)
   Q_ENUMS(FavoriteApplication)
   Q_FLAGS(ExecFlags)
-  
+
   // FIXME(kaleo, loicm): That keyboard API might need a cleaner design.
   Q_PROPERTY(int keyboardHeight READ keyboardHeight NOTIFY keyboardHeightChanged)
   Q_PROPERTY(bool keyboardVisible READ keyboardVisible NOTIFY keyboardVisibleChanged)
 
-  Q_PROPERTY(int sideStageWidth READ sideStageWidth)
-  Q_PROPERTY(ApplicationListModel* mainStageApplications READ mainStageApplications
-             NOTIFY mainStageApplicationsChanged)
-  Q_PROPERTY(ApplicationListModel* sideStageApplications READ sideStageApplications
-             NOTIFY sideStageApplicationsChanged)
-  Q_PROPERTY(Application* mainStageFocusedApplication READ mainStageFocusedApplication
-             NOTIFY mainStageFocusedApplicationChanged)
-  Q_PROPERTY(Application* sideStageFocusedApplication READ sideStageFocusedApplication
-             NOTIFY sideStageFocusedApplicationChanged)
+  Q_PROPERTY(int sideStageWidth READ sideStageWidth CONSTANT)
 
  public:
-  ApplicationManager();
+  ApplicationManager(QObject *parent = nullptr);
   ~ApplicationManager();
 
   // Mapping enums to Ubuntu Platform API enums.
-  enum Role {
+  enum SurfaceRole {
     Dash = U_DASH_ROLE, Default = U_MAIN_ROLE, Indicators = U_INDICATOR_ROLE,
     Notifications = U_NOTIFICATIONS_ROLE, Greeter = U_GREETER_ROLE,
     Launcher = U_LAUNCHER_ROLE, OnScreenKeyboard = U_ON_SCREEN_KEYBOARD_ROLE,
@@ -112,7 +77,7 @@ class ApplicationManager : public QObject {
     PhoneApplication = PHONE_APP, DialerApplication = DIALER_APP,
     MessagingApplication = MESSAGING_APP, AddressbookApplication = ADDRESSBOOK_APP
   };
-  enum Flag { 
+  enum Flag {
     NoFlag = 0x0,
     ForceMainStage = 0x1,
   };
@@ -125,17 +90,24 @@ class ApplicationManager : public QObject {
   int keyboardHeight() const;
   bool keyboardVisible() const;
   int sideStageWidth() const;
-  ApplicationListModel* mainStageApplications() const;
-  ApplicationListModel* sideStageApplications() const;
-  Application* mainStageFocusedApplication() const;
-  Application* sideStageFocusedApplication() const;
 
-  Q_INVOKABLE void focusApplication(int handle);
+  // QAbstractItemModel methods.
+  int rowCount(const QModelIndex& parent = QModelIndex()) const override;
+  QVariant data(const QModelIndex& index, int role) const override;
+  Q_INVOKABLE Application *get(int index) const override;
+  Q_INVOKABLE Application *findApplication(const QString &appId) const override;
+
+  Q_INVOKABLE void move(int from, int to);
+
+  // Application control methods
+  Q_INVOKABLE bool focusApplication(const QString &appId) override;
   Q_INVOKABLE void focusFavoriteApplication(FavoriteApplication application);
-  Q_INVOKABLE void unfocusCurrentApplication(StageHint stageHint);
-  Q_INVOKABLE Application* startProcess(QString desktopFile, ExecFlags flags, QStringList arguments = QStringList());
-  Q_INVOKABLE void stopProcess(Application* application);
-  Q_INVOKABLE void startWatcher() {}
+  Q_INVOKABLE void unfocusCurrentApplication() override;
+  Q_INVOKABLE Application *startApplication(const QString &appId, const QStringList &arguments = QStringList()) override;
+  Q_INVOKABLE Application *startApplication(const QString &appId, ExecFlags flags, const QStringList &arguments = QStringList());
+  Q_INVOKABLE bool stopApplication(const QString &appId) override;
+
+  QString focusedApplicationId() const override;
 
   QEvent::Type eventType() { return eventType_; }
   QEvent::Type keyboardGeometryEventType() { return keyboardGeometryEventType_; }
@@ -143,21 +115,18 @@ class ApplicationManager : public QObject {
  Q_SIGNALS:
   void keyboardHeightChanged();
   void keyboardVisibleChanged();
-  void mainStageApplicationsChanged();
-  void sideStageApplicationsChanged();
-  void mainStageFocusedApplicationChanged();
-  void sideStageFocusedApplicationChanged();
   void focusRequested(FavoriteApplication favoriteApplication);
 
  private:
   void killProcess(qint64 pid);
 
+  void add(Application *application);
+  void remove(Application* application);
+  Application* findFromTimerId(int timerId);
+
   int keyboardHeight_;
   bool keyboardVisible_;
-  ApplicationListModel* mainStageApplications_;
-  ApplicationListModel* sideStageApplications_;
-  Application* mainStageFocusedApplication_;
-  Application* sideStageFocusedApplication_;
+  QList<Application*> applications_;
   QHash<int,Application*> pidHash_;
   QEvent::Type eventType_;
   QEvent::Type keyboardGeometryEventType_;

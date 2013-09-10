@@ -14,16 +14,20 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "application.h"
-#include "application_manager.h"
+#include "desktopdata.h"
 #include "logging.h"
+
+using namespace unity::shell::application;
 
 Application::Application(
     DesktopData* desktopData, qint64 pid, Application::Stage stage, Application::State state,
     int timerId)
-    : desktopData_(desktopData)
+    : ApplicationInfoInterface(desktopData->appId())
+    , desktopData_(desktopData)
     , pid_(pid)
     , stage_(stage)
     , state_(state)
+    , focused_(false)
     , fullscreen_(false)
     , timerId_(timerId) {
   DASSERT(desktopData != NULL);
@@ -37,8 +41,8 @@ Application::~Application() {
   delete desktopData_;
 }
 
-QString Application::desktopFile() const {
-  return desktopData_->file();
+QString Application::appId() const {
+  return desktopData_->appId();
 }
 
 QString Application::name() const {
@@ -49,7 +53,7 @@ QString Application::comment() const {
   return desktopData_->comment();
 }
 
-QString Application::icon() const {
+QUrl Application::icon() const {
   return desktopData_->icon();
 }
 
@@ -57,7 +61,7 @@ QString Application::exec() const {
   return desktopData_->exec();
 }
 
-qint64 Application::handle() const {
+qint64 Application::pid() const {
   return pid_;
 }
 
@@ -69,6 +73,10 @@ Application::State Application::state() const {
   return state_;
 }
 
+bool Application::focused() const {
+  return focused_;
+}
+
 bool Application::fullscreen() const {
   return fullscreen_;
 }
@@ -77,7 +85,7 @@ void Application::setStage(Application::Stage stage) {
   DLOG("Application::setStage (this=%p, stage=%d)", this, static_cast<int>(stage));
   if (stage_ != stage) {
     stage_ = stage;
-    emit stageChanged();
+    emit stageChanged(stage);
   }
 }
 
@@ -85,14 +93,22 @@ void Application::setState(Application::State state) {
   DLOG("Application::setState (this=%p, state=%d)", this, static_cast<int>(state));
   if (state_ != state) {
     state_ = state;
-    emit stateChanged();
+    emit stateChanged(state);
   }
+}
+
+void Application::setFocused(bool focused) {
+    DLOG("Application::setFocused (this=%p, focused=%d)", this, static_cast<int>(focused));
+    if (focused_ != focused) {
+      focused_ = focused;
+      emit focusedChanged(focused);
+    }
 }
 
 void Application::setFullscreen(bool fullscreen) {
   DLOG("Application::setFullscreen (this=%p, fullscreen=%s)", this, fullscreen ? "yes" : "no");
   if (fullscreen_ != fullscreen) {
     fullscreen_ = fullscreen;
-    emit fullscreenChanged();
+    emit fullscreenChanged(fullscreen);
   }
 }

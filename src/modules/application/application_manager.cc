@@ -16,8 +16,8 @@
 // FIXME(loicm) Desktop file loading should be executed on a dedicated I/O thread.
 
 #include "application_manager.h"
-#include "application_list_model.h"
 #include "application.h"
+#include "desktopdata.h"
 #include "logging.h"
 #include <sys/types.h>
 #include <signal.h>
@@ -27,9 +27,7 @@
 
 #include <QRegularExpression>
 
-// Retrieves the size of an array at compile time.
-#define ARRAY_SIZE(a) \
-    ((sizeof(a) / sizeof(*(a))) / static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))))
+using namespace unity::shell::application;
 
 // Size of the side stage in grid units.
 const int kSideStageWidth = 40;
@@ -41,20 +39,19 @@ class TaskEvent : public QEvent {
  public:
   enum Task { kAddApplication = 0, kRemoveApplication, kUnfocusApplication, kFocusApplication,
               kRequestFocus, kRequestFullscreen };
-  TaskEvent(char* desktopFile, int id, int stage, int task, QEvent::Type type)
+  TaskEvent(QString appId, int id, int stage, int task, QEvent::Type type)
       : QEvent(type)
-      , desktopFile_(desktopFile)
+      , appId_(appId)
       , id_(id)
       , stage_(stage)
       , task_(task) {
-    DLOG("TaskEvent::TaskEvent (this=%p, desktopFile='%s', id=%d, stage=%d, task=%d, type=%d)",
-         this, desktopFile, id, stage, task, type);
+    DLOG("TaskEvent::TaskEvent (this=%p, appId='%s', id=%d, stage=%d, task=%d, type=%d)",
+         this, qPrintable(appId), id, stage, task, type);
   }
   ~TaskEvent() {
     DLOG("TaskEvent::~TaskEvent");
-    delete [] desktopFile_;
   }
-  char* desktopFile_;
+  QString appId_;
   int id_;
   int stage_;
   int task_;
@@ -79,12 +76,14 @@ class KeyboardGeometryEvent : public QEvent {
 static void continueTask(int pid, void* context)
 {
   DLOG("continueTask(pid=%d, context=%p)", pid, context);
+  Q_UNUSED(context)
   kill(pid, SIGCONT);
 }
 
 static void suspendTask(int pid, void* context)
 {
   DLOG("suspendTask(pid=%d, context=%p)", pid, context);
+  Q_UNUSED(context)
   kill(pid, SIGSTOP);
 }
 
@@ -93,8 +92,15 @@ static void sessionBornCallback(ubuntu_ui_session_properties session, void* cont
   DASSERT(context != NULL);
   // Post a task to be executed on the ApplicationManager thread (GUI thread).
   ApplicationManager* manager = static_cast<ApplicationManager*>(context);
+
+  // Determine appId from the absolute path to the desktop file of the application
+  QString appId = QString(ubuntu_ui_session_properties_get_desktop_file_hint(session))
+          .split(QLatin1String("/"))
+          .last()
+          .remove(QRegularExpression("\\.desktop$"));
+
   QCoreApplication::postEvent(manager, new TaskEvent(
-      qstrdup(ubuntu_ui_session_properties_get_desktop_file_hint(session)),
+      appId,
       ubuntu_ui_session_properties_get_application_instance_id(session),
       ubuntu_ui_session_properties_get_application_stage_hint(session),
       TaskEvent::kAddApplication, manager->eventType()));
@@ -106,7 +112,7 @@ static void sessionDiedCallback(ubuntu_ui_session_properties session, void* cont
   // Post a task to be executed on the ApplicationManager thread (GUI thread).
   ApplicationManager* manager = static_cast<ApplicationManager*>(context);
   QCoreApplication::postEvent(manager, new TaskEvent(
-      NULL, ubuntu_ui_session_properties_get_application_instance_id(session),
+      QString(), ubuntu_ui_session_properties_get_application_instance_id(session),
       ubuntu_ui_session_properties_get_application_stage_hint(session),
       TaskEvent::kRemoveApplication, manager->eventType()));
 }
@@ -117,7 +123,7 @@ static void sessionUnfocusedCallback(ubuntu_ui_session_properties session, void*
   // Post a task to be executed on the ApplicationManager thread (GUI thread).
   ApplicationManager* manager = static_cast<ApplicationManager*>(context);
   QCoreApplication::postEvent(manager, new TaskEvent(
-      NULL, ubuntu_ui_session_properties_get_application_instance_id(session),
+      QString(), ubuntu_ui_session_properties_get_application_instance_id(session),
       ubuntu_ui_session_properties_get_application_stage_hint(session),
       TaskEvent::kUnfocusApplication, manager->eventType()));
 }
@@ -128,7 +134,7 @@ static void sessionFocusedCallback(ubuntu_ui_session_properties session, void* c
   // Post a task to be executed on the ApplicationManager thread (GUI thread).
   ApplicationManager* manager = static_cast<ApplicationManager*>(context);
   QCoreApplication::postEvent(manager, new TaskEvent(
-      NULL, ubuntu_ui_session_properties_get_application_instance_id(session),
+      QString(), ubuntu_ui_session_properties_get_application_instance_id(session),
       ubuntu_ui_session_properties_get_application_stage_hint(session),
       TaskEvent::kFocusApplication, manager->eventType()));
 }
@@ -140,7 +146,7 @@ static void sessionRequestedFullscreenCallback(
   // Post a task to be executed on the ApplicationManager thread (GUI thread).
   ApplicationManager* manager = static_cast<ApplicationManager*>(context);
   QCoreApplication::postEvent(manager, new TaskEvent(
-      NULL, ubuntu_ui_session_properties_get_application_instance_id(session), 0,
+      QString(), ubuntu_ui_session_properties_get_application_instance_id(session), 0,
       TaskEvent::kRequestFullscreen, manager->eventType()));
 }
 
@@ -150,7 +156,7 @@ static void sessionRequestedCallback(ubuntu_ui_well_known_application applicatio
   // Post a task to be executed on the ApplicationManager thread (GUI thread).
   ApplicationManager* manager = static_cast<ApplicationManager*>(context);
   QCoreApplication::postEvent(manager, new TaskEvent(
-      NULL, static_cast<int>(application), 0, TaskEvent::kRequestFocus, manager->eventType()));
+      QString(), static_cast<int>(application), 0, TaskEvent::kRequestFocus, manager->eventType()));
 }
 
 static void keyboardGeometryChanged(int x, int y, int width, int height, void* context) {
@@ -163,108 +169,10 @@ static void keyboardGeometryChanged(int x, int y, int width, int height, void* c
                                   manager->keyboardGeometryEventType()));
 }
 
-DesktopData::DesktopData(QString desktopFile)
-    : file_(desktopFile)
-    , entries_(DesktopData::kNumberOfEntries, "") {
-  DLOG("DesktopData::DesktopData (this=%p, desktopFile='%s')", this, desktopFile.toLatin1().data());
-  DASSERT(desktopFile != NULL);
-  loaded_ = loadDesktopFile(desktopFile);
-}
-
-DesktopData::~DesktopData() {
-  DLOG("DesktopData::~DesktopData");
-  entries_.clear();
-}
-
-bool DesktopData::loadDesktopFile(QString desktopFile) {
-  DLOG("DesktopData::loadDesktopFile (this=%p, desktopFile='%s')",
-       this, desktopFile.toLatin1().data());
-  DASSERT(desktopFile != NULL);
-  const struct { const char* const name; int size; unsigned int flag; } kEntryNames[] = {
-    { "Name=", sizeof("Name=") - 1, 1 << DesktopData::kNameIndex },
-    { "Comment=", sizeof("Comment=") - 1, 1 << DesktopData::kCommentIndex },
-    { "Icon=", sizeof("Icon=") - 1, 1 << DesktopData::kIconIndex },
-    { "Exec=", sizeof("Exec=") - 1, 1 << DesktopData::kExecIndex },
-    { "Path=", sizeof("Path=") - 1, 1 << DesktopData::kPathIndex },
-    { "X-Ubuntu-StageHint=", sizeof("X-Ubuntu-StageHint=") - 1, 1 << DesktopData::kStageHintIndex }
-  };
-  const unsigned int kAllEntriesMask =
-      (1 << DesktopData::kNameIndex) | (1 << DesktopData::kCommentIndex)
-      | (1 << DesktopData::kIconIndex) | (1 << DesktopData::kExecIndex)
-      | (1 << DesktopData::kPathIndex) | (1 << DesktopData::kStageHintIndex);
-  const unsigned int kMandatoryEntriesMask =
-      (1 << DesktopData::kNameIndex) | (1 << DesktopData::kIconIndex)
-      | (1 << DesktopData::kExecIndex);
-  const int kEntriesCount = ARRAY_SIZE(kEntryNames);
-  const int kBufferSize = 256;
-  static char buffer[kBufferSize];
-  QFile file(desktopFile);
-
-  // Open file.
-  if (!file.open(QFile::ReadOnly | QIODevice::Text)) {
-    DLOG("can't open file: %s", file.errorString().toLatin1().data());
-    return false;
-  }
-
-  // Validate "magic key" (standard group header).
-  if (file.readLine(buffer, kBufferSize) != -1) {
-    if (strncmp(buffer, "[Desktop Entry]", sizeof("[Desktop Entry]" - 1))) {
-      DLOG("not a desktop file");
-      return false;
-    }
-  }
-
-  int length;
-  unsigned int entryFlags = 0;
-  while ((length = file.readLine(buffer, kBufferSize)) != -1) {
-    // Skip empty lines.
-    if (length > 1) {
-      // Stop when reaching unsupported next group header.
-      if (buffer[0] == '[') {
-        DLOG("reached next group header, leaving loop");
-        break;
-      }
-      // Lookup entries ignoring duplicates if any.
-      for (int i = 0; i < kEntriesCount; i++) {
-        if (!strncmp(buffer, kEntryNames[i].name, kEntryNames[i].size)) {
-          if (~entryFlags & kEntryNames[i].flag) {
-            buffer[length-1] = '\0';
-            entries_[i] = QString::fromLatin1(&buffer[kEntryNames[i].size]);
-            entryFlags |= kEntryNames[i].flag;
-            break;
-          }
-        }
-      }
-      // Stop when matching the right number of entries.
-      if (entryFlags == kAllEntriesMask) {
-        break;
-      }
-    }
-  }
-
-  // Check that the mandatory entries are set.
-  if ((entryFlags & kMandatoryEntriesMask) == kMandatoryEntriesMask) {
-    DLOG("loaded desktop file with name='%s', comment='%s', icon='%s', exec='%s', path='%s', stagehint='%s'",
-         entries_[DesktopData::kNameIndex].toLatin1().data(),
-         entries_[DesktopData::kCommentIndex].toLatin1().data(),
-         entries_[DesktopData::kIconIndex].toLatin1().data(),
-         entries_[DesktopData::kExecIndex].toLatin1().data(),
-         entries_[DesktopData::kPathIndex].toLatin1().data(),
-         entries_[DesktopData::kStageHintIndex].toLatin1().data());
-    return true;
-  } else {
-    DLOG("not a valid desktop file, missing mandatory entries in the standard group header");
-    return false;
-  }
-}
-
-ApplicationManager::ApplicationManager()
-    : keyboardHeight_(0)
+ApplicationManager::ApplicationManager(QObject* parent)
+    : ApplicationManagerInterface(parent)
+    , keyboardHeight_(0)
     , keyboardVisible_(false)
-    , mainStageApplications_(new ApplicationListModel())
-    , sideStageApplications_(new ApplicationListModel())
-    , mainStageFocusedApplication_(NULL)
-    , sideStageFocusedApplication_(NULL)
     , pidHash_()
     , eventType_(static_cast<QEvent::Type>(QEvent::registerEventType()))
     , keyboardGeometryEventType_(static_cast<QEvent::Type>(QEvent::registerEventType())) {
@@ -282,7 +190,7 @@ ApplicationManager::ApplicationManager()
         continueTask, suspendTask, this
     };
     ubuntu_ui_install_task_controller(&controller);
-    
+
     once = true;
   }
   DLOG("ApplicationManager::ApplicationManager (this=%p)", this);
@@ -291,8 +199,74 @@ ApplicationManager::ApplicationManager()
 ApplicationManager::~ApplicationManager() {
   DLOG("ApplicationManager::~ApplicationManager");
   pidHash_.clear();
-  delete mainStageApplications_;
-  delete sideStageApplications_;
+  for (auto app : applications_) {
+      delete app;
+  }
+  applications_.clear();
+}
+
+int ApplicationManager::rowCount(const QModelIndex& parent) const {
+  DLOG("ApplicationManager::rowCount (this=%p)", this);
+  return !parent.isValid() ? applications_.size() : 0;
+}
+
+QVariant ApplicationManager::data(const QModelIndex& index, int role) const {
+  DLOG("ApplicationManager::data (this=%p, role=%d)", this, role);
+  if (index.row() < 0 || index.row() >= applications_.size())
+    return QVariant();
+
+  auto app = applications_.at(index.row());
+  switch(role) {
+  case RoleAppId:
+      return app->appId();
+  case RoleName:
+      return app->name();
+  case RoleComment:
+      return app->comment();
+  case RoleIcon:
+      return app->icon();
+  case RoleStage:
+      return app->stage();
+  case RoleState:
+      return app->state();
+  case RoleFocused:
+      return app->focused();
+  default:
+      return QVariant();
+  }
+}
+
+Application *ApplicationManager::get(int row) const {
+  DLOG("ApplicationManager::get (this=%p, row=%d)", this, row);
+  if (row < 0 || row >= applications_.size())
+    return nullptr;
+
+  return applications_.at(row);
+}
+
+Application *ApplicationManager::findApplication(const QString &appId) const {
+  DLOG("ApplicationManager::findApplication (this=%p, appId=%s)", this, qPrintable(appId));
+  for (Application *app : applications_) {
+    if (app->appId() == appId) {
+      return app;
+    }
+  }
+  return nullptr;
+}
+
+void ApplicationManager::move(int from, int to) {
+  DLOG("ApplicationManager::move (this=%p, from=%d, to=%d)", this, from, to);
+  if (from == to) return;
+
+  if (from >= 0 && from < applications_.size() && to >= 0 && to < applications_.size()) {
+      QModelIndex parent;
+    /* When moving an item down, the destination index needs to be incremented
+       by one, as explained in the documentation:
+       http://qt-project.org/doc/qt-5.0/qtcore/qabstractitemmodel.html#beginMoveRows */
+    beginMoveRows(parent, from, from, parent, to + (to > from ? 1 : 0));
+    applications_.move(from, to);
+    endMoveRows();
+  }
 }
 
 void ApplicationManager::killProcess(qint64 pid) {
@@ -339,39 +313,22 @@ void ApplicationManager::customEvent(QEvent* event) {
       const int kPid = taskEvent->id_;
       Application* application = pidHash_.value(kPid, NULL);
       if (application) {
-        DLOG("got a match in the application lists, setting '%s' (%d) to running",
-             application->name().toLatin1().data(), kPid);
+        DLOG("got a match in the application lists, setting '%s' (%d) to running", qPrintable(application->name()), kPid);
 #if !defined(QT_NO_DEBUG)
         // Ensure we're in sync with Ubuntu Platform.
-        if (taskEvent->stage_ == U_MAIN_STAGE) {
-          ASSERT(mainStageApplications_->contains(application));
-          ASSERT(application->stage() == Application::MainStage);
-        } else if (taskEvent->stage_ == U_SIDE_STAGE) {
-          ASSERT(sideStageApplications_->contains(application));
-          ASSERT(application->stage() == Application::SideStage);
-        } else {
-          NOT_REACHED();
-        }
+        ASSERT(applications_.contains(application));
 #endif
         application->setState(Application::Running);
         killTimer(application->timerId());
       } else {
         DLOG("didn't get a match in the application lists, loading the desktop file");
-        DesktopData* desktopData = new DesktopData(taskEvent->desktopFile_);
+        DesktopData* desktopData = new DesktopData(taskEvent->appId_);
         if (desktopData->loaded()) {
           Application* application = new Application(
               desktopData, kPid, Application::MainStage, Application::Running, -1);
           pidHash_.insert(kPid, application);
-          if (taskEvent->stage_ != U_SIDE_STAGE) {
-            DLOG("desktopFile loaded, storing '%s' (%d) in the main stage application list",
-                 desktopData->name().toLatin1().data(), kPid);
-            mainStageApplications_->add(application);
-          } else {
-            DLOG("desktopFile loaded, storing '%s' (%d) in the side stage application list",
-                 desktopData->name().toLatin1().data(), kPid);
-            application->setStage(Application::SideStage);
-            sideStageApplications_->add(application);
-          }
+          DLOG("desktopFile loaded, storing '%s' (%d) in the application list", qPrintable(desktopData->name()), kPid);
+          add(application);
         } else {
           DLOG("unknown application, not storing in the application lists");
           delete desktopData;
@@ -385,27 +342,16 @@ void ApplicationManager::customEvent(QEvent* event) {
       const int kPid = taskEvent->id_;
       Application* application = pidHash_.take(kPid);
       if (application != NULL) {
-        DLOG("removing application '%s' (%d) from the application lists",
-             application->name().toLatin1().data(), kPid);
+        DLOG("removing application '%s' (%d) from the application lists", qPrintable(application->name()), kPid);
         if (application->state() == Application::Starting) {
           killTimer(application->timerId());
         }
-        if (application->stage() == Application::MainStage) {
-          mainStageApplications_->remove(application);
-          DASSERT(sideStageFocusedApplication_ != application);
-          if (mainStageFocusedApplication_ == application) {
-            mainStageFocusedApplication_ = NULL;
-            emit mainStageFocusedApplicationChanged();
-          }
-        } else if (application->stage() == Application::SideStage) {
-          sideStageApplications_->remove(application);
-          DASSERT(mainStageFocusedApplication_ != application);
-          if (sideStageFocusedApplication_ == application) {
-            sideStageFocusedApplication_ = NULL;
-            emit sideStageFocusedApplicationChanged();
-          }
+
+        remove(application);
+        if (application->focused()) {
+          emit focusedApplicationIdChanged();
         }
-        delete application;
+        application->deleteLater();
       } else {
         DLOG("Unknown application, not stored in the application lists");
       }
@@ -417,16 +363,8 @@ void ApplicationManager::customEvent(QEvent* event) {
       // Reset the currently focused application.
       Application* application = pidHash_.value(taskEvent->id_);
       if (application != NULL) {
-        if (mainStageFocusedApplication_ == application) {
-          DASSERT(taskEvent->stage_ == U_MAIN_STAGE);
-          mainStageFocusedApplication_ = NULL;
-          emit mainStageFocusedApplicationChanged();
-        }
-        else if (sideStageFocusedApplication_ == application) {
-          DASSERT(taskEvent->stage_ == U_SIDE_STAGE);
-          sideStageFocusedApplication_ = NULL;
-          emit sideStageFocusedApplicationChanged();
-        }
+        application->setFocused(false);
+        emit focusedApplicationIdChanged();
       }
       break;
     }
@@ -436,17 +374,11 @@ void ApplicationManager::customEvent(QEvent* event) {
       // Update the currently focused application.
       Application* application = pidHash_.value(taskEvent->id_);
       if (application != NULL) {
-        if (application->stage() == Application::MainStage) {
-          if (mainStageFocusedApplication_ != application) {
-            mainStageFocusedApplication_ = application;
-            emit mainStageFocusedApplicationChanged();
-          }
-        } else if (application->stage() == Application::SideStage) {
-          if (sideStageFocusedApplication_ != application) {
-            sideStageFocusedApplication_ = application;
-            emit sideStageFocusedApplicationChanged();
-          }
-        }
+        application->setFocused(true);
+        //move application to top of applications_ list
+        int index = applications_.indexOf(application);
+        this->move(index, 0);
+        emit focusedApplicationIdChanged();
       }
       break;
     }
@@ -475,29 +407,17 @@ void ApplicationManager::customEvent(QEvent* event) {
 
 void ApplicationManager::timerEvent(QTimerEvent* event) {
   DLOG("ApplicationManager::timerEvent (this=%p, event=%p)", this, event);
-  Application* application;
-  ApplicationListModel* applications;
 
-  // Get the application with the time id and store the applications list it comes from.
   const int kTimerId = event->timerId();
-  application = mainStageApplications_->findFromTimerId(kTimerId);
-  if (application != NULL) {
-    applications = mainStageApplications_;
-  } else {
-    application = sideStageApplications_->findFromTimerId(kTimerId);
-    if (application != NULL) {
-      applications = sideStageApplications_;
-    }
-  }
+  Application* application = findFromTimerId(kTimerId);
 
   // Remove application from list and kill it.
   if (application != NULL) {
-    const qint64 kPid = application->handle();
-    DLOG("application '%s' (%lld) hasn't been matched, killing it",
-         application->name().toLatin1().data(), kPid);
+    const qint64 kPid = application->pid();
+    DLOG("application '%s' (%lld) hasn't been matched, killing it", qPrintable(application->name()), kPid);
     DASSERT(pidHash_.contains(kPid));
     pidHash_.remove(kPid);
-    applications->remove(application);
+    remove(application);
     delete application;
     killProcess(kPid);
   }
@@ -519,29 +439,14 @@ int ApplicationManager::sideStageWidth() const {
   return kSideStageWidth;
 }
 
-ApplicationListModel* ApplicationManager::mainStageApplications() const {
-  DLOG("ApplicationManager::mainStageApplications (this=%p)", this);
-  return mainStageApplications_;
-}
+bool ApplicationManager::focusApplication(const QString &appId) {
+  Application *application = this->findApplication(appId);
+  if (application == nullptr)
+    return false;
 
-ApplicationListModel* ApplicationManager::sideStageApplications() const {
-  DLOG("ApplicationManager::sideStageApplications (this=%p)", this);
-  return sideStageApplications_;
-}
-
-Application* ApplicationManager::mainStageFocusedApplication() const {
-  DLOG("ApplicationManager::mainStageFocusedApplication (this=%p)", this);
-  return mainStageFocusedApplication_;
-}
-
-Application* ApplicationManager::sideStageFocusedApplication() const {
-  DLOG("ApplicationManager::sideStageFocusedApplication (this=%p)", this);
-  return sideStageFocusedApplication_;
-}
-
-void ApplicationManager::focusApplication(int handle) {
-  DLOG("ApplicationManager::focusApplication (this=%p, handle=%d)", this, handle);
-  ubuntu_ui_session_focus_running_session_with_id(handle);
+  DLOG("ApplicationManager::focusApplication (this=%p, app_pid=%lld)", this, application->pid());
+  ubuntu_ui_session_focus_running_session_with_id(application->pid());
+  return true;
 }
 
 void ApplicationManager::focusFavoriteApplication(
@@ -552,22 +457,36 @@ void ApplicationManager::focusFavoriteApplication(
       static_cast<ubuntu_ui_well_known_application>(application));
 }
 
-void ApplicationManager::unfocusCurrentApplication(ApplicationManager::StageHint stageHint) {
-  DLOG("ApplicationManager::unfocusCurrentApplication (this=%p, stageHint=%d)", this,
-       static_cast<int>(stageHint));
+void ApplicationManager::unfocusCurrentApplication() {
+  DLOG("ApplicationManager::unfocusCurrentApplication (this=%p)", this);
   // FIXME(loicm): Add that once supported in Ubuntu Platform API.
   // ubuntu_ui_session_unfocus_running_sessions(static_cast<StageHint>(stageHint));
   ubuntu_ui_session_unfocus_running_sessions();
 }
 
-Application* ApplicationManager::startProcess(QString desktopFile, ApplicationManager::ExecFlags flags, QStringList arguments) {
+QString ApplicationManager::focusedApplicationId() const {
+  for (Application *app : applications_) {
+    if (app->focused())
+      return app->appId();
+  }
+  return QString();
+}
+
+Application *ApplicationManager::startApplication(const QString &appId, const QStringList &arguments) {
+    return startApplication(appId, NoFlag, arguments);
+}
+
+Application *ApplicationManager::startApplication(const QString &appId, ApplicationManager::ExecFlags flags,
+                                                  const QStringList &arguments) {
   DLOG("ApplicationManager::startProcess (this=%p, flags=%d)", this, (int) flags);
   // Load desktop file.
-  DesktopData* desktopData = new DesktopData(desktopFile);
+  DesktopData* desktopData = new DesktopData(appId);
   if (!desktopData->loaded()) {
     delete desktopData;
     return NULL;
   }
+
+  QStringList argumentsCopy = arguments;
 
   // Format arguments.
   // FIXME(loicm) Special field codes are simply ignored for now.
@@ -585,22 +504,19 @@ Application* ApplicationManager::startProcess(QString desktopFile, ApplicationMa
         continue;
       }
     }
-    arguments.prepend(execArguments[i]);
+    argumentsCopy.prepend(execArguments[i]);
   }
-  arguments.append(QString("--desktop_file_hint=") + desktopData->file());
+  argumentsCopy.append(QString("--desktop_file_hint=") + desktopData->file());
   if (flags.testFlag(ApplicationManager::ForceMainStage))
-    arguments.append(QString("--stage_hint=main_stage"));
+    argumentsCopy.append(QString("--stage_hint=main_stage"));
   else if (desktopData->stageHint() == "SideStage")
-    arguments.append(QString("--stage_hint=side_stage"));
+    argumentsCopy.append(QString("--stage_hint=side_stage"));
 
 #if !defined(QT_NO_DEBUG)
-  LOG("starting process '%s' with arguments:", exec.toLatin1().data());
-  for (int i = 0; i < arguments.size(); i++)
-    LOG("  '%s'", arguments[i].toLatin1().data());
+  LOG("starting process '%s' with arguments:", qPrintable(exec));
+  for (int i = 0; i < argumentsCopy.size(); i++)
+    LOG("  '%s'", qPrintable(argumentsCopy[i]));
 #endif
-
-  // get the appId for the process which is the .desktop file name without the extension
-  QString appId = desktopData->file().split(QLatin1String("/")).last().remove(QRegularExpression("\\.desktop$"));
 
   // Start process.
   bool result;
@@ -614,46 +530,83 @@ Application* ApplicationManager::startProcess(QString desktopFile, ApplicationMa
     if (passwd)
       path = passwd->pw_dir;
   }
-  DLOG("current working directory: '%s'", path.toLatin1().data());
+  DLOG("current working directory: '%s'", qPrintable(path));
   QByteArray envSetAppId = QString("APP_ID=%1").arg(appId).toLocal8Bit();
   putenv(envSetAppId.data()); // envSetAppId must be available and unmodified until the env var is unset
-  result = QProcess::startDetached(exec, arguments, path, &pid);
+  result = QProcess::startDetached(exec, argumentsCopy, path, &pid);
   QByteArray envClearAppId = QString("APP_ID").toLocal8Bit();
   putenv(envClearAppId.data()); // now it's safe to deallocate envSetAppId.
   DLOG_IF(result == false, "process failed to start");
   if (result == true) {
-    DLOG("started process with pid %lld, adding '%s' to application lists",
-         pid, desktopData->name().toLatin1().data());
+    DLOG("started process with pid %lld, adding '%s' to application lists", pid, qPrintable(desktopData->name()));
+
+    //decide stage
+    Application::Stage stage = Application::MainStage;
+    if (desktopData->stageHint() == "SideStage" && !flags.testFlag(ApplicationManager::ForceMainStage)) {
+        stage = Application::SideStage;
+    }
+
     Application* application = new Application(
-        desktopData, pid, Application::MainStage, Application::Starting,
+        desktopData, pid, stage, Application::Starting,
         startTimer(kTimeBeforeClosingProcess));
     pidHash_.insert(pid, application);
-    if (flags.testFlag(ApplicationManager::ForceMainStage) || desktopData->stageHint() != "SideStage") {
-      mainStageApplications_->add(application);
-    } else {
-      application->setStage(Application::SideStage);
-      sideStageApplications_->add(application);
-    }
+
+    add(application);
     return application;
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
-void ApplicationManager::stopProcess(Application* application) {
-  DLOG("ApplicationManager::stopProcess (this=%p, application=%p)", this, application);
-  if (application != NULL) {
-    const qint64 kPid = application->handle();
-    if (pidHash_.remove(kPid) > 0) {
-      if (application->stage() == Application::MainStage) {
-        mainStageApplications_->remove(application);
-      } else if (application->stage() == Application::SideStage) {
-        sideStageApplications_->remove(application);
-      } else {
-        DNOT_REACHED();
-      }
-      delete application;
-      killProcess(kPid);
-    }
+bool ApplicationManager::stopApplication(const QString &appId) {
+  DLOG("ApplicationManager::stopProcess (this=%p, application=%p)", this, qPrintable(appId));
+
+  Application *application = this->findApplication(appId);
+  if (application == nullptr)
+    return false;
+
+  const qint64 kPid = application->pid();
+  if (pidHash_.remove(kPid) > 0) {
+    remove(application);
+    application->deleteLater();
+    killProcess(kPid);
   }
+  return true;
+}
+
+void ApplicationManager::add(Application* application) {
+  DASSERT(application != NULL);
+  DLOG("ApplicationManager::add (this=%p, application='%s')", this, qPrintable(application->name()));
+
+#if !defined(QT_NO_DEBUG)
+  for (int i = 0; i < applications_.size(); i++)
+    ASSERT(applications_.at(i) != application);
+#endif
+  beginInsertRows(QModelIndex(), applications_.size(), applications_.size());
+  applications_.append(application);
+  endInsertRows();
+  emit countChanged();
+}
+
+void ApplicationManager::remove(Application *application) {
+  DASSERT(application != NULL);
+  DLOG("ApplicationManager::remove (this=%p, application='%s')", this, qPrintable(application->name()));
+
+  int i = applications_.indexOf(application);
+  if (i != -1) {
+    beginRemoveRows(QModelIndex(), i, i);
+    applications_.removeAt(i);
+    endRemoveRows();
+    emit countChanged();
+  }
+}
+
+Application* ApplicationManager::findFromTimerId(int timerId) {
+  DLOG("ApplicationManager::findFromTimerId (this=%p, timerId=%d)", this, timerId);
+
+  const int kSize = applications_.size();
+  for (int i = 0; i < kSize; i++)
+    if (applications_[i]->timerId() == timerId)
+      return applications_[i];
+  return NULL;
 }

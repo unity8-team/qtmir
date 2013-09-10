@@ -18,53 +18,40 @@
 
 #include <QtCore/QtCore>
 
+// unity-api
+#include <unity/shell/application/ApplicationInfoInterface.h>
+
 class DesktopData;
 
-class Application : public QObject {
+class Application : public unity::shell::application::ApplicationInfoInterface {
   Q_OBJECT
-  Q_ENUMS(Stage)
-  Q_ENUMS(State)
-  Q_PROPERTY(QString desktopFile READ desktopFile NOTIFY desktopFileChanged)
-  Q_PROPERTY(QString name READ name NOTIFY nameChanged)
-  Q_PROPERTY(QString comment READ comment NOTIFY commentChanged)
-  Q_PROPERTY(QString icon READ icon NOTIFY iconChanged)
-  Q_PROPERTY(QString exec READ exec NOTIFY execChanged)
-  Q_PROPERTY(qint64 handle READ handle NOTIFY handleChanged)
-  Q_PROPERTY(Stage stage READ stage NOTIFY stageChanged)
-  Q_PROPERTY(State state READ state NOTIFY stateChanged)
+
   Q_PROPERTY(bool fullscreen READ fullscreen NOTIFY fullscreenChanged)
 
  public:
-  enum Stage { MainStage, SideStage };
-  enum State { Starting, Running };
-
   Application(DesktopData* desktopData, qint64 pid, Stage stage, State state, int timerId);
   ~Application();
 
-  QString desktopFile() const;
-  QString name() const;
-  QString comment() const;
-  QString icon() const;
-  QString exec() const;
-  qint64 handle() const;
-  Stage stage() const;
-  State state() const;
+  QString appId() const override;
+  QString name() const override;
+  QString comment() const override;
+  QUrl icon() const override;
+  Stage stage() const override;
+  State state() const override;
+  bool focused() const override;
   bool fullscreen() const;
 
+  // used internally, not for QML
+  QString exec() const;
+  qint64 pid() const;
+
  Q_SIGNALS:
-  void desktopFileChanged();
-  void nameChanged();
-  void commentChanged();
-  void iconChanged();
-  void execChanged();
-  void handleChanged();
-  void stageChanged();
-  void stateChanged();
-  void fullscreenChanged();
+  void fullscreenChanged(bool fullscreen);
 
  private:
   void setStage(Stage stage);
   void setState(State state);
+  void setFocused(bool focused);
   void setFullscreen(bool fullscreen);
   int timerId() const { return timerId_; }
 
@@ -72,11 +59,11 @@ class Application : public QObject {
   qint64 pid_;
   Stage stage_;
   State state_;
+  bool focused_;
   bool fullscreen_;
   int timerId_;
 
   friend class ApplicationManager;
-  friend class ApplicationListModel;
 };
 
 Q_DECLARE_METATYPE(Application*)
