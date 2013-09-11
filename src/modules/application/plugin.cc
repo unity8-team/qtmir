@@ -36,8 +36,12 @@ class UbuntuApplicationPlugin : public QQmlExtensionPlugin {
   virtual void registerTypes(const char* uri) {
     DLOG("UbuntuApplicationPlugin::registerTypes (this=%p, uri='%s')", this, uri);
     ASSERT(QLatin1String(uri) == QLatin1String("Unity.Application"));
+    qmlRegisterUncreatableType<unity::shell::application::ApplicationManagerInterface>(
+      uri, 0, 1, "ApplicationManagerInterface", "Abstract Interface. Cannot be created in QML");
     qmlRegisterSingletonType<ApplicationManager>(
         uri, 0, 1, "ApplicationManager", applicationManagerSingleton);
+    qmlRegisterUncreatableType<unity::shell::application::ApplicationInfoInterface>(
+      uri, 0, 1, "ApplicationInfoInterface", "Abstract Interface. Cannot be created in QML");
     qmlRegisterUncreatableType<Application>(
         uri, 0, 1, "ApplicationInfo", "ApplicationInfo can't be instantiated");
     qmlRegisterExtendedType<QQuickWindow, ApplicationWindow>(uri, 0, 1, "Window");
