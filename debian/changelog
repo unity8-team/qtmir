@@ -1,3 +1,17 @@
+qtubuntu (0.52+13.10.20130910.7-0ubuntu1) saucy; urgency=low
+
+  [ Gerry Boland ]
+  * Add fake OSKController component, for compatibility with unity-mir.
+  * Implement ApplicationManager API as defined in unity-api. This
+    requires renaming QML plugin to Unity.Application, removing the
+    ApplicationListModel class and supplying just one model of
+    applications running.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 172
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 10 Sep 2013 23:30:45 +0000
+
 qtubuntu (0.52+13.10.20130821-0ubuntu1) saucy; urgency=low
 
   [ Timo Jyrinki ]
