@@ -1,3 +1,16 @@
+qtubuntu (0.52+13.10.20130912.1-0ubuntu1) saucy; urgency=low
+
+  [ Michael Zanetti ]
+  * register application interface types with QML.
+
+  [ Gerry Boland ]
+  * Fix click package execution, and correct icon path.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 175
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 12 Sep 2013 22:45:06 +0000
+
 qtubuntu (0.52+13.10.20130910.7-0ubuntu1) saucy; urgency=low
 
   [ Gerry Boland ]
