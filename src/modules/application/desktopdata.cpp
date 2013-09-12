@@ -16,6 +16,7 @@
 #include "desktopdata.h"
 
 #include <QFile>
+#include <QDir>
 
 #include "logging.h"
 
@@ -23,10 +24,9 @@
 #define ARRAY_SIZE(a) \
     ((sizeof(a) / sizeof(*(a))) / static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))))
 
-const QString desktopFilePath = "/usr/share/applications/";
-
 DesktopData::DesktopData(QString appId)
     : appId_(appId)
+    , file_(findDesktopFile(appId))
     , entries_(DesktopData::kNumberOfEntries, "") {
     DLOG("DesktopData::DesktopData (this=%p, appId='%s')", this, appId.toLatin1().data());
     DASSERT(appId != NULL);
@@ -38,12 +38,44 @@ DesktopData::~DesktopData() {
     entries_.clear();
 }
 
-QString DesktopData::file() const {
-    return desktopFilePath + appId_ + ".desktop";
+QString DesktopData::findDesktopFile(const QString &appId) const
+{
+    int dashPos = -1;
+    QString helper = appId;
+
+    QStringList searchDirs;
+    searchDirs << QDir::homePath() + "/.local/share/applications";
+    searchDirs << "/usr/share/applications";
+
+#ifdef TEST_MODE
+    searchDirs << "";
+#endif
+
+    do {
+        if (dashPos != -1) {
+            helper = helper.replace(dashPos, 1, '/');
+        }
+
+        Q_FOREACH(const QString &searchDir, searchDirs) {
+            QFileInfo fileInfo(QDir(searchDir), helper + ".desktop");
+            if (fileInfo.exists()) {
+                return fileInfo.absoluteFilePath();
+            }
+        }
+
+        dashPos = helper.indexOf("-");
+    } while (dashPos != -1);
+
+    return QString();
 }
 
 bool DesktopData::load() {
     DLOG("DesktopData::load (this=%p, appId='%s')", this, qPrintable(appId_));
+
+    if (this->file().isNull() || this->file().isEmpty()) {
+        DLOG("No desktop file found for appId: %s", qPrintable(appId_));
+        return false;
+    }
 
     const struct { const char* const name; int size; unsigned int flag; } kEntryNames[] = {
         { "Name=", sizeof("Name=") - 1, 1 << DesktopData::kNameIndex },
