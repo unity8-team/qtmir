@@ -26,7 +26,7 @@ public:
     ~DesktopData();
 
     QString appId() const { return appId_; }
-    QString file() const;
+    QString file() const { return file_; };
     QString name() const { return entries_[kNameIndex]; }
     QString comment() const { return entries_[kCommentIndex]; }
     QUrl icon() const { return QUrl(entries_[kIconIndex]); }
@@ -34,6 +34,7 @@ public:
     QString path() const { return entries_[kPathIndex]; }
     QString stageHint() const { return entries_[kStageHintIndex]; }
     bool loaded() const { return loaded_; }
+    QString findDesktopFile(const QString &appId) const;
 
 private:
     static const int kNameIndex = 0,
@@ -47,6 +48,7 @@ private:
     bool load();
 
     QString appId_;
+    QString file_;
     QVector<QString> entries_;
     bool loaded_;
 };

@@ -54,7 +54,16 @@ QString Application::comment() const {
 }
 
 QUrl Application::icon() const {
-  return desktopData_->icon();
+  QString iconString = desktopData_->icon().toString();
+  QString pathString = desktopData_->path();
+
+  if (QFileInfo(iconString).exists()) {
+    return desktopData_->icon();
+  } else if (QFileInfo(pathString + '/' + iconString).exists()) {
+    return QUrl(pathString + '/' + iconString);
+  } else {
+    return QUrl("image://theme/" + iconString);
+  }
 }
 
 QString Application::exec() const {
