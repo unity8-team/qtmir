@@ -19,6 +19,7 @@ SOURCES = integration.cc \
           window.cc \
           input.cc \
           theme.cc \
+          platformservices.cc \
           clipboard.cc
 
 HEADERS = integration.h \
@@ -30,6 +31,7 @@ HEADERS = integration.h \
           input.h \
           logging.h \
           theme.h \
+          platformservices.h \
           clipboard.h
 
 CONFIG += static create_prl egl qpa/genericunixfontdatabase

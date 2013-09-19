@@ -20,6 +20,7 @@
 #include "context.h"
 #include "logging.h"
 #include "theme.h"
+#include "platformservices.h"
 #include <QtPlatformSupport/private/qgenericunixfontdatabase_p.h>
 #include <QtPlatformSupport/private/qgenericunixeventdispatcher_p.h>
 #include <QtGui/private/qguiapplication_p.h>
@@ -28,7 +29,8 @@
 QUbuntuBaseIntegration::QUbuntuBaseIntegration()
     : eventDispatcher_(createUnixEventDispatcher())
     , nativeInterface_(new QUbuntuBaseNativeInterface())
-    , fontDb_(new QGenericUnixFontDatabase()) {
+    , fontDb_(new QGenericUnixFontDatabase())
+    , platformServices_(new QUbuntuBasePlatformServices()) {
   QGuiApplicationPrivate::instance()->setEventDispatcher(eventDispatcher_);
   DLOG("QUbuntuBaseIntegration::QUbuntuBaseIntegration (this=%p)", this);
 }
