@@ -337,6 +337,12 @@ void QUbuntuBaseInput::postEvent(QWindow* window, const void* event) {
   DLOG("QUbuntuBaseInput::postEvent (this=%p, window=%p, event=%p)", this, window, event);
   QCoreApplication::postEvent(this, new QUbuntuBaseEvent(
       window, reinterpret_cast<const Event*>(event), eventType_));
+
+  if ((window->flags() && Qt::WindowTransparentForInput) && window->parent()) {
+    DLOG("QUbuntuBaseInput::postEvent (this=%p, window=%p, event=%p)", this, window->parent(), event);
+    QCoreApplication::postEvent(this, new QUbuntuBaseEvent(
+        window->parent(), reinterpret_cast<const Event*>(event), eventType_));
+  }
 }
 
 void QUbuntuBaseInput::dispatchMotionEvent(QWindow* window, const void* ev) {
