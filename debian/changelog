@@ -1,3 +1,13 @@
+qtubuntu (0.52+13.10.20130919-0ubuntu1) saucy; urgency=low
+
+  [ Albert Astals ]
+  * Implement the backend for QDesktopServices::openUrl . (LP: #1186556)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 177
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>   Thu, 19 Sep 2013 14:09:32 +0000
+
 qtubuntu (0.52+13.10.20130912.1-0ubuntu1) saucy; urgency=low
 
   [ Michael Zanetti ]
