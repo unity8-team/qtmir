@@ -1,3 +1,13 @@
+qtubuntu (0.52+13.10.20130920-0ubuntu1) saucy; urgency=low
+
+  [ Ricardo Mendoza ]
+  * If window has a parent, send duplicate events to it.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 180
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 20 Sep 2013 04:25:44 +0000
+
 qtubuntu (0.52+13.10.20130919-0ubuntu1) saucy; urgency=low
 
   [ Albert Astals ]
@@ -6,7 +16,7 @@ qtubuntu (0.52+13.10.20130919-0ubuntu1) saucy; urgency=low
   [ Ubuntu daily release ]
   * Automatic snapshot from revision 177
 
- -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 19 Sep 2013 14:09:32 +0000
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 18 Sep 2013 14:09:32 +0000
 
 qtubuntu (0.52+13.10.20130912.1-0ubuntu1) saucy; urgency=low
 
