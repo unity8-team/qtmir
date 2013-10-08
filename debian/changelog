@@ -1,3 +1,16 @@
+qtubuntu (0.52+13.10.20131008-0ubuntu1) saucy; urgency=low
+
+  [ Loïc Minier ]
+  * Add Vcs-Bzr field with lp:qtubuntu.
+
+  [ Robert Carr ]
+  * Map the volume up and down keys to keysyms in mir. (LP: #1233245)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 184
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 08 Oct 2013 12:14:42 +0000
+
 qtubuntu (0.52+13.10.20130920-0ubuntu1) saucy; urgency=low
 
   [ Ricardo Mendoza ]
