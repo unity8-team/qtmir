@@ -1,3 +1,16 @@
+qtubuntu (0.52+13.10.20131009-0ubuntu1) saucy; urgency=low
+
+  [ Alexandros Frantzis ]
+  * Release the EGL window surface before releasing the attached native
+    window Otherwise, if the native window is released first, as was
+    previously happening, the EGL platform may try to access the freed
+    native window, leading to memory errors and crashes. (LP: #1237052)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 186
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 09 Oct 2013 20:27:39 +0000
+
 qtubuntu (0.52+13.10.20131008-0ubuntu1) saucy; urgency=low
 
   [ Loïc Minier ]
