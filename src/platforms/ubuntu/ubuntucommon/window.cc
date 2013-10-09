@@ -56,6 +56,7 @@ QUbuntuWindow::QUbuntuWindow(
 
 QUbuntuWindow::~QUbuntuWindow() {
   DLOG("QUbuntuWindow::~QUbuntuWindow");
+  destroyEGLSurface();
   ua_ui_window_destroy(window_);
 }
 
@@ -115,7 +116,7 @@ void QUbuntuWindow::createWindow() {
       ua_ui_window_move(window_, geometry.x(), geometry.y());
 
   ASSERT(window_ != NULL);
-  createSurface(ua_ui_window_get_native_type(window_));
+  createEGLSurface(ua_ui_window_get_native_type(window_));
   if (state_ == Qt::WindowFullScreen) {
     ua_ui_window_request_fullscreen(window_);
   }

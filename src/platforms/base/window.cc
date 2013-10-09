@@ -20,7 +20,8 @@
 
 QUbuntuBaseWindow::QUbuntuBaseWindow(QWindow* w, QUbuntuBaseScreen* screen)
     : QPlatformWindow(w)
-    , screen_(screen) {
+    , screen_(screen)
+    , eglSurface_(EGL_NO_SURFACE) {
   DASSERT(screen != NULL);
   static int id = 1;
   id_ = id++;
@@ -29,11 +30,18 @@ QUbuntuBaseWindow::QUbuntuBaseWindow(QWindow* w, QUbuntuBaseScreen* screen)
 
 QUbuntuBaseWindow::~QUbuntuBaseWindow() {
   DLOG("QUbuntuBaseWindow::~QUbuntuBaseWindow");
-  eglDestroySurface(screen_->eglDisplay(), eglSurface_);
 }
 
-void QUbuntuBaseWindow::createSurface(EGLNativeWindowType nativeWindow) {
-  DLOG("QUbuntuBaseWindow::createSurface (this=%p, nativeWindow=%p)", this, reinterpret_cast<void*>(nativeWindow));
+void QUbuntuBaseWindow::createEGLSurface(EGLNativeWindowType nativeWindow) {
+  DLOG("QUbuntuBaseWindow::createEGLSurface (this=%p, nativeWindow=%p)", this, reinterpret_cast<void*>(nativeWindow));
   ASSERT((eglSurface_ = eglCreateWindowSurface(
       screen_->eglDisplay(), screen_->eglConfig(), nativeWindow, NULL)) != EGL_NO_SURFACE);
+}
+
+void QUbuntuBaseWindow::destroyEGLSurface() {
+  DLOG("QUbuntuBaseWindow::destroyEGLSurface (this=%p)", this);
+  if (eglSurface_ != EGL_NO_SURFACE) {
+    eglDestroySurface(screen_->eglDisplay(), eglSurface_);
+    eglSurface_ = EGL_NO_SURFACE;
+  }
 }
