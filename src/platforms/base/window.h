@@ -30,7 +30,8 @@ class QUbuntuBaseWindow : public QPlatformWindow {
   WId winId() const { return id_; }
 
   // New methods.
-  void createSurface(EGLNativeWindowType nativeWindow);
+  void createEGLSurface(EGLNativeWindowType nativeWindow);
+  void destroyEGLSurface();
   EGLSurface eglSurface() const { return eglSurface_; }
 
  private:

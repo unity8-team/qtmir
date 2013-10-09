@@ -35,13 +35,14 @@ QUbuntuLegacyWindow::QUbuntuLegacyWindow(QWindow* w, QUbuntuLegacyScreen* screen
   //   "QUbuntuLegacyWindow"
   // };
   ASSERT((sfSurface_ = sf_surface_create(screen->sfClient(), &parameters)) != NULL);
-  createSurface(sf_surface_get_egl_native_window(sfSurface_));
+  createEGLSurface(sf_surface_get_egl_native_window(sfSurface_));
   setWindowState(window()->windowState());
   DLOG("QUbuntuLegacyWindow::QUbuntuLegacyWindow (this=%p, w=%p, screen=%p)", this, w, screen);
 }
 
 QUbuntuLegacyWindow::~QUbuntuLegacyWindow() {
   DLOG("QUbuntuLegacyWindow::~QUbuntuLegacyWindow");
+  destroyEGLSurface();
   // FIXME(loicm) Invalid because the struct is forward declarated, we need a way to clean the
   //     handle correctly.
   // delete sfSurface_;
