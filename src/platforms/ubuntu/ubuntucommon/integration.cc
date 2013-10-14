@@ -71,6 +71,9 @@ QUbuntuIntegration::QUbuntuIntegration(QUbuntuInputAdaptorFactory *input_factory
   // Create new application instance
   instance_ = u_application_instance_new_from_description_with_options(desc_, options_);
 
+  if (instance_ == NULL)
+    qFatal("QUbuntu: Could not create application instance");
+
   // Create default screen.
   screen_ = new QUbuntuScreen(options_);
   screenAdded(screen_);
