@@ -100,8 +100,10 @@ static const uint32_t KeyTable[] = {
 
   XKB_KEY_Mode_switch,             Qt::Key_Mode_switch,
   XKB_KEY_script_switch,           Qt::Key_Mode_switch,
-  XKB_KEY_XF86AudioRaiseVolume,     Qt::Key_VolumeUp,
-  XKB_KEY_XF86AudioLowerVolume,     Qt::Key_VolumeDown,
+  XKB_KEY_XF86AudioRaiseVolume,    Qt::Key_VolumeUp,
+  XKB_KEY_XF86AudioLowerVolume,    Qt::Key_VolumeDown,
+  XKB_KEY_XF86PowerOff,            Qt::Key_PowerOff,
+  XKB_KEY_XF86PowerDown,           Qt::Key_PowerDown,
 
   0,                          0
 };
