@@ -33,7 +33,7 @@ static void eventCallback(Event* event, void* context) {
 }
 
 QUbuntuLegacyInput::QUbuntuLegacyInput(QUbuntuLegacyIntegration* integration)
-    : QUbuntuBaseInput(integration, MAX_POINTER_COUNT)
+    : QUbuntuBaseInput(integration)
     , stopping_(0) {
   config_.enable_touch_point_visualization = false;
   config_.default_layer_for_touch_point_visualization = 1;

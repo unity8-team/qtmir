@@ -24,7 +24,7 @@ class QUbuntuBaseInput : public QObject {
   Q_OBJECT
 
  public:
-  QUbuntuBaseInput(QUbuntuBaseIntegration* integration, int maxPointCount);
+  QUbuntuBaseInput(QUbuntuBaseIntegration* integration);
   ~QUbuntuBaseInput();
 
   // QObject methods.
@@ -46,7 +46,6 @@ class QUbuntuBaseInput : public QObject {
  private:
   QUbuntuBaseIntegration* integration_;
   QTouchDevice* touchDevice_;
-  QList<QWindowSystemInterface::TouchPoint> touchPoints_;
   const QByteArray eventFilterType_;
   const QEvent::Type eventType_;
 };

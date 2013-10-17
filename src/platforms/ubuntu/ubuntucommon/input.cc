@@ -19,7 +19,7 @@
 #include <ubuntu/application/ui/input/event.h>
 
 QUbuntuInput::QUbuntuInput(QUbuntuIntegration* integration)
-    : QUbuntuBaseInput(integration, UBUNTU_APPLICATION_UI_INPUT_EVENT_MAX_POINTER_COUNT)
+    : QUbuntuBaseInput(integration)
     , sessionType_(0) {
   DLOG("QUbuntuInput::QUbuntuInput (this=%p integration=%p)", this, integration);
 }
