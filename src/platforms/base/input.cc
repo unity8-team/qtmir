@@ -266,12 +266,11 @@ class QUbuntuBaseEvent : public QEvent {
   Event nativeEvent_;
 };
 
-QUbuntuBaseInput::QUbuntuBaseInput(QUbuntuBaseIntegration* integration, int maxPointCount)
+QUbuntuBaseInput::QUbuntuBaseInput(QUbuntuBaseIntegration* integration)
     : integration_(integration)
     , eventFilterType_(static_cast<QUbuntuBaseNativeInterface*>(
         integration->nativeInterface())->genericEventFilterType())
     , eventType_(static_cast<QEvent::Type>(QEvent::registerEventType())) {
-  DASSERT(maxPointCount > 0);
 
   // Initialize touch device.
   touchDevice_ = new QTouchDevice();
@@ -281,23 +280,12 @@ QUbuntuBaseInput::QUbuntuBaseInput(QUbuntuBaseIntegration* integration, int maxP
       QTouchDevice::NormalizedPosition);
   QWindowSystemInterface::registerTouchDevice(touchDevice_);
 
-  // Initialize touch points.
-  touchPoints_.reserve(maxPointCount);
-  for (int i = 0; i < maxPointCount; i++) {
-    QWindowSystemInterface::TouchPoint tp;
-    tp.id = i;
-    tp.state = Qt::TouchPointReleased;
-    touchPoints_ << tp;
-  }
-
-  DLOG("QUbuntuBaseInput::QUbuntuBaseInput (this=%p, integration=%p, maxPointCount=%d)", this,
-       integration, maxPointCount);
+  DLOG("QUbuntuBaseInput::QUbuntuBaseInput (this=%p, integration=%p)", this, integration);
 }
 
 QUbuntuBaseInput::~QUbuntuBaseInput() {
   DLOG("QUbuntuBaseInput::~QUbuntuBaseInput");
   // touchDevice_ isn't cleaned up on purpose as it crashes or asserts on "Bus Error".
-  touchPoints_.clear();
 }
 
 void QUbuntuBaseInput::customEvent(QEvent* event) {
@@ -381,73 +369,54 @@ void QUbuntuBaseInput::dispatchMotionEvent(QWindow* window, const void* ev) {
   //     needs to be fixed as soon as the compat input lib adds query support.
   const float kMaxPressure = 1.28;
   const QRect kWindowGeometry = window->geometry();
+  QList<QWindowSystemInterface::TouchPoint> touchPoints;
+
+
+  // TODO: Is it worth setting the Qt::TouchPointStationary ones? Currently they are left
+  //       as Qt::TouchPointMoved
+  const int kPointerCount = event->details.motion.pointer_count;
+  for (int i = 0; i < kPointerCount; ++i) {
+    QWindowSystemInterface::TouchPoint touchPoint;
+
+    const float kX = event->details.motion.pointer_coordinates[i].raw_x;
+    const float kY = event->details.motion.pointer_coordinates[i].raw_y;
+    const float kW = event->details.motion.pointer_coordinates[i].touch_major;
+    const float kH = event->details.motion.pointer_coordinates[i].touch_minor;
+    const float kP = event->details.motion.pointer_coordinates[i].pressure;
+    touchPoint.id = event->details.motion.pointer_coordinates[i].id;
+    touchPoint.normalPosition = QPointF(kX / kWindowGeometry.width(), kY / kWindowGeometry.height());
+    touchPoint.area = QRectF(kX - (kW / 2.0), kY - (kH / 2.0), kW, kH);
+    touchPoint.pressure = kP / kMaxPressure;
+    touchPoint.state = Qt::TouchPointMoved;
+
+    touchPoints.append(touchPoint);
+  }
 
   switch (event->action & ISCL_MOTION_EVENT_ACTION_MASK) {
-    case ISCL_MOTION_EVENT_ACTION_MOVE: {
-      int eventIndex = 0;
-      const int kPointerCount = event->details.motion.pointer_count;
-      for (int touchIndex = 0; eventIndex < kPointerCount; touchIndex++) {
-        if (touchPoints_[touchIndex].state != Qt::TouchPointReleased) {
-          const float kX = event->details.motion.pointer_coordinates[eventIndex].raw_x;
-          const float kY = event->details.motion.pointer_coordinates[eventIndex].raw_y;
-          const float kW = event->details.motion.pointer_coordinates[eventIndex].touch_major;
-          const float kH = event->details.motion.pointer_coordinates[eventIndex].touch_minor;
-          const float kP = event->details.motion.pointer_coordinates[eventIndex].pressure;
-          touchPoints_[touchIndex].area = QRectF(kX - (kW / 2.0), kY - (kH / 2.0), kW, kH);
-          touchPoints_[touchIndex].normalPosition = QPointF(
-              kX / kWindowGeometry.width(), kY / kWindowGeometry.height());
-          touchPoints_[touchIndex].pressure = kP / kMaxPressure;
-          touchPoints_[touchIndex].state = Qt::TouchPointMoved;
-          eventIndex++;
-        }
-      }
+    case ISCL_MOTION_EVENT_ACTION_MOVE:
+      // No extra work needed.
       break;
-    }
 
-    case ISCL_MOTION_EVENT_ACTION_DOWN: {
-      const int kTouchIndex = event->details.motion.pointer_coordinates[0].id;
-      const float kX = event->details.motion.pointer_coordinates[0].raw_x;
-      const float kY = event->details.motion.pointer_coordinates[0].raw_y;
-      const float kW = event->details.motion.pointer_coordinates[0].touch_major;
-      const float kH = event->details.motion.pointer_coordinates[0].touch_minor;
-      const float kP = event->details.motion.pointer_coordinates[0].pressure;
-      touchPoints_[kTouchIndex].state = Qt::TouchPointPressed;
-      touchPoints_[kTouchIndex].area = QRectF(kX - (kW / 2.0), kY - (kH / 2.0), kW, kH);
-      touchPoints_[kTouchIndex].normalPosition = QPointF(
-          kX / kWindowGeometry.width(), kY / kWindowGeometry.height());
-      touchPoints_[kTouchIndex].pressure = kP / kMaxPressure;
+    case ISCL_MOTION_EVENT_ACTION_DOWN:
+      touchPoints[0].state = Qt::TouchPointPressed;
       break;
-    }
 
-    case ISCL_MOTION_EVENT_ACTION_UP: {
-      const int kTouchIndex = event->details.motion.pointer_coordinates[0].id;
-      touchPoints_[kTouchIndex].state = Qt::TouchPointReleased;
+    case ISCL_MOTION_EVENT_ACTION_UP:
+      touchPoints[0].state = Qt::TouchPointReleased;
       break;
-    }
 
     case ISCL_MOTION_EVENT_ACTION_POINTER_DOWN: {
-      const int eventIndex = (event->action & ISCL_MOTION_EVENT_ACTION_POINTER_INDEX_MASK) >>
+      const int index = (event->action & ISCL_MOTION_EVENT_ACTION_POINTER_INDEX_MASK) >>
           ISCL_MOTION_EVENT_ACTION_POINTER_INDEX_SHIFT;
-      const int kTouchIndex = event->details.motion.pointer_coordinates[eventIndex].id;
-      const float kX = event->details.motion.pointer_coordinates[eventIndex].raw_x;
-      const float kY = event->details.motion.pointer_coordinates[eventIndex].raw_y;
-      const float kW = event->details.motion.pointer_coordinates[eventIndex].touch_major;
-      const float kH = event->details.motion.pointer_coordinates[eventIndex].touch_minor;
-      const float kP = event->details.motion.pointer_coordinates[eventIndex].pressure;
-      touchPoints_[kTouchIndex].state = Qt::TouchPointPressed;
-      touchPoints_[kTouchIndex].area = QRectF(kX - (kW / 2.0), kY - (kH / 2.0), kW, kH);
-      touchPoints_[kTouchIndex].normalPosition = QPointF(
-          kX / kWindowGeometry.width(), kY / kWindowGeometry.height());
-      touchPoints_[kTouchIndex].pressure = kP / kMaxPressure;
+      touchPoints[index].state = Qt::TouchPointPressed;
       break;
     }
 
     case ISCL_MOTION_EVENT_ACTION_CANCEL:
     case ISCL_MOTION_EVENT_ACTION_POINTER_UP: {
-      const int kEventIndex = (event->action & ISCL_MOTION_EVENT_ACTION_POINTER_INDEX_MASK) >>
+      const int index = (event->action & ISCL_MOTION_EVENT_ACTION_POINTER_INDEX_MASK) >>
           ISCL_MOTION_EVENT_ACTION_POINTER_INDEX_SHIFT;
-      const int kTouchIndex = event->details.motion.pointer_coordinates[kEventIndex].id;
-      touchPoints_[kTouchIndex].state = Qt::TouchPointReleased;
+      touchPoints[index].state = Qt::TouchPointReleased;
       break;
     }
 
@@ -456,13 +425,12 @@ void QUbuntuBaseInput::dispatchMotionEvent(QWindow* window, const void* ev) {
     case ISCL_MOTION_EVENT_ACTION_SCROLL:
     case ISCL_MOTION_EVENT_ACTION_HOVER_ENTER:
     case ISCL_MOTION_EVENT_ACTION_HOVER_EXIT:
-    default: {
+    default:
       DLOG("unhandled motion event action %d", event->action & ISCL_MOTION_EVENT_ACTION_MASK);
-    }
   }
 
   // Touch event propagation.
-  handleTouchEvent(window, event->details.motion.event_time / 1000000, touchDevice_, touchPoints_);
+  handleTouchEvent(window, event->details.motion.event_time / 1000000, touchDevice_, touchPoints);
 }
 
 void QUbuntuBaseInput::handleTouchEvent(
