@@ -135,7 +135,7 @@ void InputFilterArea::disableInputTrap() {
   disconnectFromAscendantsChanges();
 }
 
-QRect InputFilterArea::relativeToAbsoluteGeometry(QRectF relativeGeometry) {
+QRect InputFilterArea::relativeToAbsoluteGeometry(const QRectF & relativeGeometry) {
   if (parentItem()) {
     return parentItem()->mapRectToScene(relativeGeometry).toRect();
   } else {
