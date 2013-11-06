@@ -68,8 +68,7 @@ bool QUbuntuBaseIntegration::hasCapability(QPlatformIntegration::Capability cap)
 }
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
-QAbstractEventDispatcher *QUbuntuBaseIntegration::createEventDispatcher() const
-{
+QAbstractEventDispatcher *QUbuntuBaseIntegration::createEventDispatcher() const {
     return createUnixEventDispatcher();
 }
 #endif
