@@ -47,7 +47,7 @@ class InputFilterArea : public QQuickItem {
   void setInputTrap(const QRect & geometry);
   void enableInputTrap();
   void disableInputTrap();
-  QRect relativeToAbsoluteGeometry(QRectF relativeGeometry);
+  QRect relativeToAbsoluteGeometry(const QRectF &relativeGeometry);
 
   bool blockInput_;
   unsigned int trapHandle_;
