@@ -27,7 +27,11 @@ class QUbuntuBaseIntegration : public QPlatformIntegration {
 
   // QPlatformIntegration methods.
   bool hasCapability(QPlatformIntegration::Capability cap) const;
+#if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
   QAbstractEventDispatcher* guiThreadEventDispatcher() const { return eventDispatcher_; }
+#else
+  QAbstractEventDispatcher *createEventDispatcher() const;
+#endif
   QPlatformNativeInterface* nativeInterface() const { return nativeInterface_; }
   QPlatformServices *services() const { return platformServices_; }
   QPlatformBackingStore* createPlatformBackingStore(QWindow* window) const;
@@ -38,8 +42,10 @@ class QUbuntuBaseIntegration : public QPlatformIntegration {
   QPlatformTheme* createPlatformTheme(const QString& name) const;
 
  private:
-  QAbstractEventDispatcher* eventDispatcher_;
   QPlatformNativeInterface* nativeInterface_;
+#if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
+  QAbstractEventDispatcher* eventDispatcher_;
+#endif
   QPlatformFontDatabase* fontDb_;
   QPlatformServices* platformServices_;
 };

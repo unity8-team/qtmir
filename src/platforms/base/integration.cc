@@ -27,11 +27,15 @@
 #include <QtGui/QOpenGLContext>
 
 QUbuntuBaseIntegration::QUbuntuBaseIntegration()
-    : eventDispatcher_(createUnixEventDispatcher())
-    , nativeInterface_(new QUbuntuBaseNativeInterface())
+    : nativeInterface_(new QUbuntuBaseNativeInterface())
+#if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
+    , eventDispatcher_(createUnixEventDispatcher())
+#endif
     , fontDb_(new QGenericUnixFontDatabase())
     , platformServices_(new QUbuntuBasePlatformServices()) {
+#if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
   QGuiApplicationPrivate::instance()->setEventDispatcher(eventDispatcher_);
+#endif
   DLOG("QUbuntuBaseIntegration::QUbuntuBaseIntegration (this=%p)", this);
 }
 
@@ -62,6 +66,12 @@ bool QUbuntuBaseIntegration::hasCapability(QPlatformIntegration::Capability cap)
     }
   }
 }
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
+QAbstractEventDispatcher *QUbuntuBaseIntegration::createEventDispatcher() const {
+    return createUnixEventDispatcher();
+}
+#endif
 
 QPlatformBackingStore* QUbuntuBaseIntegration::createPlatformBackingStore(QWindow* window) const {
   DLOG("QUbuntuBaseIntegration::createPlatformBackingStore (this=%p, window=%p)", this, window);
