@@ -13,8 +13,9 @@ CONFIG(debug) {
 
 SOURCES = main.cc
 
-CONFIG += plugin link_prl
+CONFIG += plugin link_prl link_pkgconfig
 
+PKGCONFIG += egl
 INCLUDEPATH += ../../ ../
 LIBS += -L../ubuntucommon -lqubuntucommon -lubuntu_application_api -L../../base -lubuntubase
 

@@ -13,8 +13,9 @@ CONFIG(debug) {
 
 SOURCES = main.cc 
 
-CONFIG += plugin link_prl
+CONFIG += plugin link_prl link_pkgconfig
 
+PKGCONFIG += egl
 INCLUDEPATH += ../../../ ../../ ../
 LIBS += -Wl,--whole-archive -L../../../base -lubuntubase -L../../ubuntucommon -lqubuntucommon  -L../ubuntumircommon -lqubuntumircommon -Wl,--no-whole-archive -lubuntu_application_api_mirclient
 
