@@ -1,7 +1,7 @@
 TARGET = qubuntumircommon
 TEMPLATE = lib
 
-QT += core-private gui-private platformsupport-private sensors-private
+QT += core-private gui-private
 
 DEFINES += MESA_EGL_NO_X11_HEADERS
 QMAKE_CXXFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden

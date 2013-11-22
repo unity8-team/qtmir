@@ -1,7 +1,7 @@
 TARGET = unityapplicationplugin
 TEMPLATE = lib
 
-QT += quick-private qml-private
+QT += quick
 CONFIG += link_pkgconfig
 
 # CONFIG += c++11 # only enables C++0x
