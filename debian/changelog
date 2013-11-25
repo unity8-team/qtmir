@@ -1,3 +1,28 @@
+qtubuntu (0.52+14.04.20131125-0ubuntu1) trusty; urgency=low
+
+  [ Daniel d'Andrada ]
+  * Make no assumptions on pointer ids Code was assuming that it ranged
+    from 0 to maximumSimultaneousTouches, but that won't hold in the
+    future. Also fixes bogus behavior when tapping with two fingers,
+    where you would get TouchBegin twice and the first touch point on
+    staying on "pressed" state on the second TouchEvent. (LP: #1228336)
+
+  [ Albert Astals ]
+  * Pass QRectF as const reference instead of copying it .
+  * Don't include the QtQml catch-all header Include only the ones we
+    need .
+  * Adapt to the Qt 5.2 way of creating the event dispatcher . (LP:
+    #1246498)
+  * Link against EGL since we use it It was probably being pulled by a
+    dependency before .
+  * Remove unused -private . (LP: #1254051)
+  * Do not include the catch-all QtQuick include .
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 197
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 25 Nov 2013 14:32:22 +0000
+
 qtubuntu (0.52+13.10.20131016-0ubuntu1) saucy; urgency=low
 
   [ Michał Sawicz ]
