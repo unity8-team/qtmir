@@ -14,7 +14,9 @@
 // this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "qmlscene_ubuntu.h"
-#include <QtQuick>
+#include <QtCore/QFileInfo>
+#include <QtGui/QGuiApplication>
+#include <QtQuick/QQuickView>
 #include <QtQml/qqmlengine.h>
 #include <qpa/qplatformnativeinterface.h>
 #include <cstdio>
