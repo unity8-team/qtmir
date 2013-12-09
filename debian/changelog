@@ -1,4 +1,4 @@
-qtubuntu (0.52+14.04.20131125-0ubuntu1) trusty; urgency=low
+qtubuntu (0.52+14.04.20131209-0ubuntu1~smw1) UNRELEASED; urgency=low
 
   [ Daniel d'Andrada ]
   * Make no assumptions on pointer ids Code was assuming that it ranged
@@ -20,6 +20,9 @@ qtubuntu (0.52+14.04.20131125-0ubuntu1) trusty; urgency=low
 
   [ Ubuntu daily release ]
   * Automatic snapshot from revision 197
+
+  [ Stephen M. Webb ]
+  * Split packaging into -android and -desktop variants (lp: #1246851)
 
  -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 25 Nov 2013 14:32:22 +0000
 
