@@ -3,12 +3,18 @@
 
 export DPKG_GENSYMBOLS_CHECK_LEVEL=4
 
+ANDROID_DIR = build-android
+DESKTOP_DIR = build-desktop
+
 %:
-	dh $@ --parallel
+	dh $@ --builddirectory=$(ANDROID_DIR) --parallel
+	dh $@ --builddirectory=$(DESKTOP_DIR) --parallel
 
 override_dh_auto_configure:
-	dh_auto_configure -- "CONFIG+=mirserver" "CONFIG+=mirclient" "CONFIG+=hybris" "QMAKE_CXXFLAGS=-g"
+	mkdir -p $(ANDROID_DIR) && dh_auto_configure -- "CONFIG+=mirserver" "CONFIG+=mirclient" "CONFIG+=hybris" "QMAKE_CXXFLAGS=-g" $(CURDIR)
+	mkdir -p $(DESKTOP_DIR) && dh_auto_configure -- "CONFIG+=mirserver" "CONFIG+=mirclient" "QMAKE_CXXFLAGS=-g" $(CURDIR)
 
 override_dh_install:
 	rm -f debian/*/usr/lib/*/qt5/examples/qtubuntu/qmlscene-ubuntu
 	dh_install --fail-missing
+
