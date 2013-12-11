@@ -105,6 +105,7 @@ void QUbuntuWindow::createWindow() {
   ua_ui_window_properties_set_titlen(wprops_, title.data(), title.size());
   ua_ui_window_properties_set_role(wprops_, static_cast<UAUiWindowRole>(role));
   ua_ui_window_properties_set_input_cb_and_ctx(wprops_, &eventCallback, this);
+  ua_ui_window_properties_set_dimensions(wprops_, geometry.width(), geometry.height());
 
   // Create platform window
   window_ = ua_ui_window_new_for_application_with_properties(uainstance_, wprops_);
