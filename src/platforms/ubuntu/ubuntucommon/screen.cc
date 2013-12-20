@@ -51,6 +51,9 @@ const int kDefaultGridUnit = 8;
 // FIXME(loicm) Hard-coded to 40 grid units for now.
 const int kSideStageWidth = 40;
 
+// Lifted from shell to determine form factor
+const int kTabletMinSize = 60;
+
 QUbuntuScreen::QUbuntuScreen(UApplicationOptions *options) {
   // Retrieve units from the environment.
   int gridUnit = kDefaultGridUnit;
@@ -83,7 +86,10 @@ QUbuntuScreen::QUbuntuScreen(UApplicationOptions *options) {
   ua_ui_display_destroy(display);
 
   // Store geometries depending on the stage hint.
-  const UAUiStage kStageHint = static_cast<UAUiStage>(u_application_options_get_stage(options));
+  UAUiStage kStageHint = static_cast<UAUiStage>(u_application_options_get_stage(options));
+  if (kScreenWidth/gridUnit < kTabletMinSize)
+    kStageHint = U_MAIN_STAGE;
+
   DASSERT(kStageHint == U_MAIN_STAGE || kStageHint == U_SIDE_STAGE);
   if (kStageHint != U_SIDE_STAGE) {
     geometry_ = QRect(0, 0, kScreenWidth, kScreenHeight);
