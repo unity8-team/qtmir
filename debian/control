@@ -30,8 +30,10 @@ Section: libs
 Package: qtubuntu-android
 Architecture: any
 Multi-Arch: same
+Conflicts: qtubuntu-desktop
 Replaces: qthybris (<< 0.37),
           qtubuntu (<< 0.52),
+          qtubuntu-desktop
 Breaks: qthybris (<< 0.37)
 Provides: qtubuntu-shell,
           qtubuntu,
@@ -39,12 +41,36 @@ Depends: ${misc:Depends},
          ${shlibs:Depends},
          libqt5sensors5,
          qtubuntu-sensors,
-Description: Qt plugins for Ubuntu Platform API
- QtUbuntu is a set of Qt5 components for the Ubuntu Platform API. It
- contains a QPA (Qt Platform Abstraction) plugin based on the Ubuntu
- Platform API and a legacy QPA plugin based on the compatibility
- layers. It also provides Qt bindings for Ubuntu Platform API features
- that are not exposed through the QPA plugins.
+Description: Qt plugins for Ubuntu Platform API (mobile)
+ QtUbuntu is a set of Qt5 components for the Ubuntu Platform API. It contains a
+ QPA (Qt Platform Abstraction) plugin based on the Ubuntu Platform API and a
+ legacy QPA plugin based on the compatibility layers. It also provides Qt
+ bindings for Ubuntu Platform API features that are not exposed through the QPA
+ plugins.
+ .
+ This variant of the package is for Android-based phones and tablets.
+
+Package: qtubuntu-desktop
+Architecture: any
+Multi-Arch: same
+Conflicts: qtubuntu-android
+Replaces: qtubuntu (<< 0.52),
+          qtubuntu-android
+Breaks: qthybris (<< 0.37)
+Provides: qtubuntu-shell,
+          qtubuntu,
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+         libqt5sensors5,
+         qtubuntu-sensors,
+Description: Qt plugins for Ubuntu Platform API (desktop)
+ QtUbuntu is a set of Qt5 components for the Ubuntu Platform API. It contains a
+ QPA (Qt Platform Abstraction) plugin based on the Ubuntu Platform API and a
+ legacy QPA plugin based on the compatibility layers. It also provides Qt
+ bindings for Ubuntu Platform API features that are not exposed through the QPA
+ plugins.
+ .
+ This variant of the package is for GNU-based desktops.
 
 Package: qthybris
 Depends: ${misc:Depends},
