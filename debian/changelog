@@ -1,3 +1,9 @@
+qtubuntu (0.53-0ubuntu1) trusty; urgency=low
+
+  * Specify surface size on creation.
+
+ -- Ricardo Mendoza <ricardo.mendoza@canonical.com>  Tue, 10 Dec 2013 23:31:28 -0500
+
 qtubuntu (0.52+14.04.20131125-0ubuntu1) trusty; urgency=low
 
   [ Daniel d'Andrada ]
