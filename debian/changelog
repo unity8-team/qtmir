@@ -1,3 +1,14 @@
+qtubuntu (0.53+14.04.20140114.1-0ubuntu1) trusty; urgency=low
+
+  [ Stephen M. Webb ]
+  * provide two binary deb variants: Touch and Desktop (lp: #1246851).
+    (LP: #1246851)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 200
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 14 Jan 2014 10:37:06 +0000
+
 qtubuntu (0.53-0ubuntu1) trusty; urgency=low
 
   * Specify surface size on creation.
