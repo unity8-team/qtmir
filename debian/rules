@@ -5,16 +5,33 @@ export DPKG_GENSYMBOLS_CHECK_LEVEL=4
 
 ANDROID_DIR = build-android
 DESKTOP_DIR = build-desktop
+TMP1_DIR = $(CURDIR)/debian/tmp1
+TMP2_DIR = $(CURDIR)/debian/tmp2
 
 %:
-	dh $@ --builddirectory=$(ANDROID_DIR) --parallel
-	dh $@ --builddirectory=$(DESKTOP_DIR) --parallel
+	dh $@
+
+override_dh_clean:
+	rm -rf $(TMP1_DIR)
+	rm -rf $(TMP2_DIR)
+	dh_clean
 
 override_dh_auto_configure:
-	mkdir -p $(ANDROID_DIR) && dh_auto_configure -- "CONFIG+=mirserver" "CONFIG+=mirclient" "CONFIG+=hybris" "QMAKE_CXXFLAGS=-g" $(CURDIR)
-	mkdir -p $(DESKTOP_DIR) && dh_auto_configure -- "CONFIG+=mirserver" "CONFIG+=mirclient" "QMAKE_CXXFLAGS=-g" $(CURDIR)
+	mkdir -p $(ANDROID_DIR) && dh_auto_configure -B$(ANDROID_DIR) -- "CONFIG+=mirserver" "CONFIG+=mirclient" "CONFIG+=hybris" "QMAKE_CXXFLAGS=-g" $(CURDIR)
+	mkdir -p $(DESKTOP_DIR) && dh_auto_configure -B$(DESKTOP_DIR) -- "CONFIG+=mirserver" "CONFIG+=mirclient" "QMAKE_CXXFLAGS=-g" $(CURDIR)
+
+override_dh_auto_build:
+	dh_auto_build -B$(ANDROID_DIR)
+	dh_auto_build -B$(DESKTOP_DIR)
+
+override_dh_auto_install:
+	rm -f debian/*/usr/lib/*/qt5/examples/qtubuntu/qmlscene-ubuntu
+	mkdir -p $(TMP1_DIR) && cd $(ANDROID_DIR) && INSTALL_ROOT=$(TMP1_DIR) make install
+	cd $(CURDIR)
+	mkdir -p $(TMP2_DIR) && cd $(DESKTOP_DIR) && INSTALL_ROOT=$(TMP2_DIR) make install
+	cd $(CURDIR)
 
 override_dh_install:
-	rm -f debian/*/usr/lib/*/qt5/examples/qtubuntu/qmlscene-ubuntu
-	dh_install --fail-missing
+	dh_install --sourcedir=$(TMP1_DIR) -pqtubuntu-android
+	dh_install --sourcedir=$(TMP2_DIR) -pqtubuntu-desktop
 
