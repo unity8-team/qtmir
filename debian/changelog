@@ -1,3 +1,14 @@
+qtubuntu (0.53+14.04.20140131-0ubuntu1) trusty; urgency=low
+
+  [ CI bot ]
+  * Flushing trunk
+
+  [ Ricardo Mendoza ]
+  * Clean up build rules to allow for correct building of multiple
+    binary packages from the same source. (LP: #1271464)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 31 Jan 2014 12:39:46 +0000
+
 qtubuntu (0.53+14.04.20140114.1-0ubuntu1) trusty; urgency=low
 
   [ Stephen M. Webb ]
