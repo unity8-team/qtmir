@@ -37,7 +37,8 @@ static void printOpenGLESConfig() {
 }
 #endif
 
-QUbuntuBaseContext::QUbuntuBaseContext(QUbuntuBaseScreen* screen) {
+QUbuntuBaseContext::QUbuntuBaseContext(QUbuntuBaseScreen* screen,
+                                       QUbuntuBaseContext* share) {
   DASSERT(screen != NULL);
   eglDisplay_ = screen->eglDisplay();
   screen_ = screen;
@@ -49,7 +50,8 @@ QUbuntuBaseContext::QUbuntuBaseContext(QUbuntuBaseScreen* screen) {
   attribs.append(EGL_NONE);
   ASSERT(eglBindAPI(EGL_OPENGL_ES_API) == EGL_TRUE);
   ASSERT((eglContext_ = eglCreateContext(
-      eglDisplay_, screen->eglConfig(), EGL_NO_CONTEXT, attribs.constData())) != EGL_NO_CONTEXT);
+      eglDisplay_, screen->eglConfig(), share ? share->eglContext() : EGL_NO_CONTEXT,
+      attribs.constData())) != EGL_NO_CONTEXT);
 
   DLOG("QUbuntuBaseContext::QUbuntuBaseContext (this=%p, screen=%p)", this, screen);
 }
