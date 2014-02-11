@@ -31,6 +31,7 @@ class QUbuntuBaseScreen : public QPlatformScreen {
 
   // New methods.
   QSurfaceFormat surfaceFormat() const { return surfaceFormat_; }
+  EGLNativeDisplayType nativeDisplay() const { return nativeDisplay_; }
   EGLDisplay eglDisplay() const { return eglDisplay_; }
   EGLConfig eglConfig() const { return eglConfig_; }
 
@@ -38,6 +39,7 @@ class QUbuntuBaseScreen : public QPlatformScreen {
   QImage::Format format_;
   int depth_;
   QSurfaceFormat surfaceFormat_;
+  EGLNativeDisplayType nativeDisplay_;
   EGLDisplay eglDisplay_;
   EGLConfig eglConfig_;
 };

@@ -80,7 +80,8 @@ QUbuntuBaseScreen::QUbuntuBaseScreen()
   ASSERT(eglBindAPI(EGL_OPENGL_ES_API) == EGL_TRUE);
 
   UAUiDisplay* u_display = ua_ui_display_new_with_index(0);
-  ASSERT((eglDisplay_ = eglGetDisplay(ua_ui_display_get_native_type(u_display))) != EGL_NO_DISPLAY);
+  nativeDisplay_ = ua_ui_display_get_native_type(u_display);
+  ASSERT((eglDisplay_ = eglGetDisplay(nativeDisplay_)) != EGL_NO_DISPLAY);
   ua_ui_display_destroy(u_display);
   ASSERT(eglInitialize(eglDisplay_, NULL, NULL) == EGL_TRUE);
 

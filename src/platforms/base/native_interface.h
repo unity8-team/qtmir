@@ -20,13 +20,14 @@
 
 class QUbuntuBaseNativeInterface : public QPlatformNativeInterface {
  public:
-  enum ResourceType { EglDisplay, EglContext, NativeOrientation };
+  enum ResourceType { EglDisplay, EglContext, NativeOrientation, Display };
 
   QUbuntuBaseNativeInterface();
   ~QUbuntuBaseNativeInterface();
 
   // QPlatformNativeInterface methods.
   void* nativeResourceForContext(const QByteArray& resourceString, QOpenGLContext* context);
+  void* nativeResourceForScreen(const QByteArray& resourceString, QScreen* screen);
   void* nativeResourceForWindow(const QByteArray& resourceString, QWindow* window);
 
   // New methods.

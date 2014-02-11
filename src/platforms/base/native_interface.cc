@@ -35,6 +35,7 @@ class QUbuntuBaseResourceMap : public QMap<QByteArray, QUbuntuBaseNativeInterfac
     insert("egldisplay", QUbuntuBaseNativeInterface::EglDisplay);
     insert("eglcontext", QUbuntuBaseNativeInterface::EglContext);
     insert("nativeorientation", QUbuntuBaseNativeInterface::NativeOrientation);
+    insert("display", QUbuntuBaseNativeInterface::Display);
   }
 };
 
@@ -65,6 +66,22 @@ void* QUbuntuBaseNativeInterface::nativeResourceForContext(
   if (kResourceType == QUbuntuBaseNativeInterface::EglContext)
     return static_cast<QUbuntuBaseContext*>(context->handle())->eglContext();
   else
+    return NULL;
+}
+
+void* QUbuntuBaseNativeInterface::nativeResourceForScreen(
+    const QByteArray& resourceString, QScreen* screen) {
+  DLOG("QUbuntuBaseNativeInterface::nativeResourceForScreen (this=%p, resourceString=%s, "
+       "screen=%p)", this, resourceString.constData(), screen);
+  const QByteArray kLowerCaseResource = resourceString.toLower();
+  if (!ubuntuResourceMap()->contains(kLowerCaseResource))
+    return NULL;
+  const ResourceType kResourceType = ubuntuResourceMap()->value(kLowerCaseResource);
+  if (kResourceType == QUbuntuBaseNativeInterface::Display) {
+    if (!screen)
+      screen = QGuiApplication::primaryScreen();
+    return static_cast<QUbuntuBaseScreen*>(screen->handle())->nativeDisplay();
+  } else
     return NULL;
 }
 
