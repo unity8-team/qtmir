@@ -1,3 +1,10 @@
+qtubuntu (0.53+14.04.20140221-0ubuntu1) trusty; urgency=low
+
+  [ Michał Sawicz ]
+  * Increase the side stage threshold to 100GU.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 21 Feb 2014 09:11:59 +0000
+
 qtubuntu (0.53+14.04.20140131-0ubuntu1) trusty; urgency=low
 
   [ CI bot ]
