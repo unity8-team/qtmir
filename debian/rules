@@ -17,8 +17,8 @@ override_dh_clean:
 	dh_clean
 
 override_dh_auto_configure:
-	mkdir -p $(ANDROID_DIR) && dh_auto_configure -B$(ANDROID_DIR) -- "CONFIG+=mirserver" "CONFIG+=mirclient" "CONFIG+=hybris" "QMAKE_CXXFLAGS=-g" $(CURDIR)
-	mkdir -p $(DESKTOP_DIR) && dh_auto_configure -B$(DESKTOP_DIR) -- "CONFIG+=mirserver" "CONFIG+=mirclient" "QMAKE_CXXFLAGS=-g" $(CURDIR)
+	mkdir -p $(ANDROID_DIR) && dh_auto_configure -B$(ANDROID_DIR) -- "CONFIG+=mirserver" "CONFIG+=mirclient" "CONFIG+=hybris" $(CURDIR)
+	mkdir -p $(DESKTOP_DIR) && dh_auto_configure -B$(DESKTOP_DIR) -- "CONFIG+=mirserver" "CONFIG+=mirclient" "QMAKE_CXXFLAGS=-DQTUBUNTU_USE_OPENGL" $(CURDIR)
 
 override_dh_auto_build:
 	dh_auto_build -B$(ANDROID_DIR)
