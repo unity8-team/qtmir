@@ -52,7 +52,7 @@ const int kDefaultGridUnit = 8;
 const int kSideStageWidth = 40;
 
 // Lifted from shell to determine form factor
-const int kTabletMinSize = 60;
+const int kTabletMinSize = 100;
 
 QUbuntuScreen::QUbuntuScreen(UApplicationOptions *options) {
   // Retrieve units from the environment.
