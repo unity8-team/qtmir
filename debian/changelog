@@ -1,3 +1,13 @@
+qtubuntu (0.53+14.04.20140318-0ubuntu1) trusty; urgency=low
+
+  [ Chris Coulson ]
+  * Pass the EGL share context to eglCreateContext (lp: #1278470) (LP:
+    #1278470)
+  * Implement QPlatformNativeInterface::nativeResourceForScreen() for
+    accessing the native display handle (lp: #1278868) (LP: #1278868)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 18 Mar 2014 20:20:51 +0000
+
 qtubuntu (0.53+14.04.20140304-0ubuntu1) trusty; urgency=low
 
   * New rebuild forced
