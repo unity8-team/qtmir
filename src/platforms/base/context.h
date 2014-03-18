@@ -21,7 +21,8 @@
 
 class QUbuntuBaseContext : public QPlatformOpenGLContext {
  public:
-  QUbuntuBaseContext(QUbuntuBaseScreen* screen);
+  QUbuntuBaseContext(QUbuntuBaseScreen* screen,
+                     QUbuntuBaseContext* share);
   ~QUbuntuBaseContext();
 
   // QPlatformOpenGLContext methods.

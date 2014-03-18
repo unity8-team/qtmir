@@ -88,7 +88,9 @@ QPlatformOpenGLContext* QUbuntuBaseIntegration::createPlatformOpenGLContext(
 QPlatformOpenGLContext* QUbuntuBaseIntegration::createPlatformOpenGLContext(
     QOpenGLContext* context) {
   DLOG("QUbuntuBaseIntegration::createPlatformOpenGLContext (this=%p, context=%p)", this, context);
-  return new QUbuntuBaseContext(static_cast<QUbuntuBaseScreen*>(context->screen()->handle()));
+  return new QUbuntuBaseContext(
+      static_cast<QUbuntuBaseScreen*>(context->screen()->handle()),
+      static_cast<QUbuntuBaseContext*>(context->shareHandle()));
 }
 
 QStringList QUbuntuBaseIntegration::themeNames() const {

@@ -46,7 +46,8 @@ static EGLenum api_in_use()
 #endif
 }
 
-QUbuntuBaseContext::QUbuntuBaseContext(QUbuntuBaseScreen* screen) {
+QUbuntuBaseContext::QUbuntuBaseContext(QUbuntuBaseScreen* screen,
+                                       QUbuntuBaseContext* share) {
   DASSERT(screen != NULL);
   eglDisplay_ = screen->eglDisplay();
   screen_ = screen;
@@ -58,7 +59,8 @@ QUbuntuBaseContext::QUbuntuBaseContext(QUbuntuBaseScreen* screen) {
   attribs.append(EGL_NONE);
   ASSERT(eglBindAPI(api_in_use()) == EGL_TRUE);
   ASSERT((eglContext_ = eglCreateContext(
-      eglDisplay_, screen->eglConfig(), EGL_NO_CONTEXT, attribs.constData())) != EGL_NO_CONTEXT);
+      eglDisplay_, screen->eglConfig(), share ? share->eglContext() : EGL_NO_CONTEXT,
+      attribs.constData())) != EGL_NO_CONTEXT);
 
   DLOG("QUbuntuBaseContext::QUbuntuBaseContext (this=%p, screen=%p)", this, screen);
 }
