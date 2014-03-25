@@ -1,3 +1,0 @@
-module Unity.Application
-plugin unityapplicationplugin
-OSKController 0.1 OSKController.qml
