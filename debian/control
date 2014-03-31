@@ -35,6 +35,7 @@ Replaces: qthybris (<< 0.37),
           qtubuntu-desktop
 Breaks: qthybris (<< 0.37),
         unity8 (<< 7.85),
+        ubuntu-touch-session (<< 0.107),
 Provides: qtubuntu,
 Depends: ${misc:Depends},
          ${shlibs:Depends},
