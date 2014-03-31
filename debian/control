@@ -33,7 +33,8 @@ Conflicts: qtubuntu-desktop
 Replaces: qthybris (<< 0.37),
           qtubuntu (<< 0.52),
           qtubuntu-desktop
-Breaks: qthybris (<< 0.37)
+Breaks: qthybris (<< 0.37),
+        unity8 (<< 7.85),
 Provides: qtubuntu,
 Depends: ${misc:Depends},
          ${shlibs:Depends},
@@ -54,7 +55,8 @@ Multi-Arch: same
 Conflicts: qtubuntu-android
 Replaces: qtubuntu (<< 0.52),
           qtubuntu-android
-Breaks: qthybris (<< 0.37)
+Breaks: qthybris (<< 0.37),
+        unity8 (<< 7.85),
 Provides: qtubuntu,
 Depends: ${misc:Depends},
          ${shlibs:Depends},
