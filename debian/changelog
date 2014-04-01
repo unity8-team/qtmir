@@ -1,4 +1,4 @@
-qtubuntu (0.54-0ubuntu1) trusty; urgency=medium
+qtubuntu (0.54-0ubuntu1) UNRELEASED; urgency=medium
 
   * Drop Unity.Application module.
 
