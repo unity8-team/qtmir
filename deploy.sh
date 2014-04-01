@@ -4,8 +4,6 @@ adb push src/platforms/ubuntu/libqubuntu.so /data/ubuntu/usr/lib/arm-linux-gnuea
 adb push src/platforms/ubuntu/libqubuntumir.so /data/ubuntu/usr/lib/arm-linux-gnueabihf/qt5/plugins/platforms
 adb push src/platforms/ubuntu/libqubuntumirserver.so /data/ubuntu/usr/lib/arm-linux-gnueabihf/qt5/plugins/platforms
 adb push src/platforms/ubuntulegacy/libqubuntulegacy.so /data/ubuntu/usr/lib/arm-linux-gnueabihf/qt5/plugins/platforms
-adb push src/modules/application/libubuntuapplicationplugin.so /data/ubuntu/usr/lib/arm-linux-gnueabihf/qt5/imports/Ubuntu/Application
-adb push src/modules/application/qmldir /data/ubuntu/usr/lib/arm-linux-gnueabihf/qt5/imports/Ubuntu/Application
 adb push tests/qmlscene_ubuntu/qmlscene-ubuntu /data/ubuntu/usr/bin
 adb push tests/clipboard/clipboard /data/ubuntu/usr/lib/arm-linux-gnueabihf/qt5/tests
 adb push tests/Logo.qml /data/ubuntu/usr/lib/arm-linux-gnueabihf/qt5/tests

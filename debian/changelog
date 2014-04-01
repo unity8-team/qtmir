@@ -1,3 +1,9 @@
+qtubuntu (0.54-0ubuntu1) UNRELEASED; urgency=medium
+
+  * Drop Unity.Application module.
+
+ -- Michael Zanetti <michael.zanetti@canonical.com>  Tue, 25 Mar 2014 20:30:15 +0100
+
 qtubuntu (0.53+14.04.20140318-0ubuntu1) trusty; urgency=low
 
   [ Chris Coulson ]
