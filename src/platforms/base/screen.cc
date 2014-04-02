@@ -96,6 +96,9 @@ QUbuntuBaseScreen::QUbuntuBaseScreen()
     surfaceFormat_.setSamples(4);
     DLOG("setting MSAA to 4 samples");
   }
+#ifdef QTUBUNTU_USE_OPENGL
+  surfaceFormat_.setRenderableType(QSurfaceFormat::OpenGL);
+#endif
   eglConfig_ = q_configFromGLFormat(eglDisplay_, surfaceFormat_, true);
 #if !defined(QT_NO_DEBUG)
   printEglConfig(eglDisplay_, eglConfig_);
