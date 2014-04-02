@@ -1,3 +1,10 @@
+qtubuntu (0.54+14.04.20140402-0ubuntu1) trusty; urgency=low
+
+  [ Stephen M. Webb ]
+  * Force the OpenGL surface format in qtubuntu-desktop. (LP: #1295309)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 02 Apr 2014 20:51:14 +0000
+
 qtubuntu (0.54+14.04.20140401-0ubuntu1) trusty; urgency=medium
 
   [ Michael Zanetti ]
