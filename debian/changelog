@@ -1,3 +1,9 @@
+qtubuntu (0.54+14.04.20140402-0ubuntu2) trusty; urgency=medium
+
+  * No-change rebuild for shlib changes in qtbase and qtdeclarative.
+
+ -- Ricardo Salveti de Araujo <ricardo.salveti@canonical.com>  Mon, 14 Apr 2014 13:09:40 -0300
+
 qtubuntu (0.54+14.04.20140402-0ubuntu1) trusty; urgency=low
 
   [ Stephen M. Webb ]
