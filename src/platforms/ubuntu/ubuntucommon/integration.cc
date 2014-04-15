@@ -19,7 +19,7 @@
 #include "clipboard.h"
 #include "input_adaptor_factory.h"
 #include "base/logging.h"
-#include <QtCore/QCoreApplication>
+#include <QGuiApplication>
 #include <qpa/qplatformnativeinterface.h>
 #include <qpa/qplatforminputcontextfactory_p.h>
 #include <qpa/qplatforminputcontext.h>
@@ -35,6 +35,11 @@ static void resumedCallback(const UApplicationOptions *options, void* context) {
   QUbuntuIntegration* integration = static_cast<QUbuntuIntegration*>(context);
   integration->screen()->toggleSensors(true);
   QCoreApplication::postEvent(QCoreApplication::instance(), new QEvent(QEvent::ApplicationActivate));
+
+  Q_FOREACH(QWindow *window, QGuiApplication::allWindows()) {
+    QGuiApplication::postEvent(window, new QEvent(QEvent::Show));
+    QGuiApplication::postEvent(window, new QEvent(QEvent::Expose)); // tells Qt the surface contents are stale, please render a new frame
+  }
 }
 
 static void aboutToStopCallback(UApplicationArchive *archive, void* context) {
@@ -43,6 +48,11 @@ static void aboutToStopCallback(UApplicationArchive *archive, void* context) {
   QUbuntuIntegration* integration = static_cast<QUbuntuIntegration*>(context);
   integration->screen()->toggleSensors(false);
   integration->inputContext()->hideInputPanel();
+
+  Q_FOREACH(QWindow *window, QGuiApplication::allWindows()) {
+    QGuiApplication::postEvent(window, new QEvent(QEvent::Hide));
+  }
+
   QCoreApplication::postEvent(QCoreApplication::instance(), new QEvent(QEvent::ApplicationDeactivate));
 }
 
