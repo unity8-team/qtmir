@@ -36,10 +36,9 @@ static void resumedCallback(const UApplicationOptions *options, void* context) {
   integration->screen()->toggleSensors(true);
   QCoreApplication::postEvent(QCoreApplication::instance(), new QEvent(QEvent::ApplicationActivate));
 
-/*  Q_FOREACH(QWindow *window, QGuiApplication::allWindows()) {
+  Q_FOREACH(QWindow *window, QGuiApplication::allWindows()) {
     QGuiApplication::postEvent(window, new QEvent(QEvent::Show));
-    QGuiApplication::postEvent(window, new QEvent(QEvent::Expose)); // tells Qt the surface contents are stale, please render a new frame
-  }*/
+  }
 }
 
 static void aboutToStopCallback(UApplicationArchive *archive, void* context) {
@@ -49,9 +48,9 @@ static void aboutToStopCallback(UApplicationArchive *archive, void* context) {
   integration->screen()->toggleSensors(false);
   integration->inputContext()->hideInputPanel();
 
-/*  Q_FOREACH(QWindow *window, QGuiApplication::allWindows()) {
+  Q_FOREACH(QWindow *window, QGuiApplication::allWindows()) {
     QGuiApplication::postEvent(window, new QEvent(QEvent::Hide));
-  }*/
+  }
 
   QCoreApplication::postEvent(QCoreApplication::instance(), new QEvent(QEvent::ApplicationDeactivate));
 }
