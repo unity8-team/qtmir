@@ -37,7 +37,7 @@ static void resumedCallback(const UApplicationOptions *options, void* context) {
   QCoreApplication::postEvent(QCoreApplication::instance(), new QEvent(QEvent::ApplicationActivate));
 
   Q_FOREACH(QWindow *window, QGuiApplication::allWindows()) {
-    QGuiApplication::postEvent(window, new QEvent(QEvent::Show));
+    QGuiApplication::postEvent(window, new QExposeEvent( window->geometry() ));
   }
 }
 
@@ -49,7 +49,7 @@ static void aboutToStopCallback(UApplicationArchive *archive, void* context) {
   integration->inputContext()->hideInputPanel();
 
   Q_FOREACH(QWindow *window, QGuiApplication::allWindows()) {
-    QGuiApplication::postEvent(window, new QEvent(QEvent::Hide));
+    QGuiApplication::postEvent(window, new QExposeEvent( QRegion() ));
   }
 
   QCoreApplication::postEvent(QCoreApplication::instance(), new QEvent(QEvent::ApplicationDeactivate));

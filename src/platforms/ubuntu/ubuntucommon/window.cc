@@ -24,6 +24,7 @@
 #include "base/logging.h"
 #include <qpa/qwindowsysteminterface.h>
 #include <ubuntu/application/ui/window.h>
+#include <QRegion>
 
 static void eventCallback(void* context, const Event* event) {
   DLOG("eventCallback (context=%p, event=%p)", context, event);
@@ -215,11 +216,15 @@ void QUbuntuWindow::setExposed(const bool exposed) {
 }
 
 void QUbuntuWindow::windowEvent(QEvent *event) {
-  if (event->type() == QEvent::Hide) {
-    // hiding window causes Qt to release the GL context and its resources, which is a bit severe
-    // Instead can use the exposure system to stop the rendering loop, but hold onto the resources
-    setExposed(false);
-  } else if (event->type() == QEvent::Show) {
-    setExposed(true);
+  if (event->type() == QEvent::Expose) {
+    QRegion region = static_cast<QExposeEvent *>(event)->region();
+
+    if (region.isEmpty()) {
+      // hiding window causes Qt to release the GL context and its resources, which is a bit severe
+      // Instead can use the exposure system to stop the rendering loop, but hold onto the resources
+      setExposed(false);
+    } else {
+      setExposed(true);
+    }
   }
 }
