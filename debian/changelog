@@ -1,3 +1,17 @@
+qtubuntu (0.54+14.10.20140430.1-0ubuntu1) utopic; urgency=low
+
+  [ Gerry Boland ]
+  * Lifecycle events emit expose events to safely stop & resume the
+    renderer threads. We don't use hide/show directly as hide causes Qt
+    to stop the renderer, but then release the GL context and its
+    resources. Expose events just stop & resume the renderer without
+    altering the context.
+
+  [ Ubuntu daily release ]
+  * New rebuild forced
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 30 Apr 2014 13:31:36 +0000
+
 qtubuntu (0.54+14.04.20140402-0ubuntu2) trusty; urgency=medium
 
   * No-change rebuild for shlib changes in qtbase and qtdeclarative.
