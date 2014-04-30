@@ -24,6 +24,7 @@
 #include "base/logging.h"
 #include <qpa/qwindowsysteminterface.h>
 #include <ubuntu/application/ui/window.h>
+#include <QRegion>
 
 static void eventCallback(void* context, const Event* event) {
   DLOG("eventCallback (context=%p, event=%p)", context, event);
@@ -41,7 +42,9 @@ QUbuntuWindow::QUbuntuWindow(
     , systemSession_(systemSession)
     , uainstance_(instance)
     , screen_(screen)
-    , isShell_(isShell) {
+    , isShell_(isShell)
+    , exposed_(false)
+{
   if (!systemSession) {
     // Non-system sessions can't resize the window geometry.
     geometry_ = screen->availableGeometry();
@@ -183,12 +186,45 @@ void QUbuntuWindow::setGeometry(const QRect& rect) {
 void QUbuntuWindow::setVisible(bool visible) {
   DLOG("QUbuntuWindow::setVisible (this=%p, visible=%s)", this, visible ? "true" : "false");
   if (isShell_ == false)
-      screen_->toggleSensors(visible);
+    screen_->toggleSensors(visible);
+
+  setExposed(visible);
 
   if (visible) {
     ua_ui_window_show(window_);
-    QWindowSystemInterface::handleExposeEvent(window(), QRect());
   } else {
     ua_ui_window_hide(window_);
+  }
+}
+
+bool QUbuntuWindow::isExposed() const {
+  return exposed_;
+}
+
+void QUbuntuWindow::setExposed(const bool exposed) {
+  DLOG("QUbuntuWindow::setExposed (this=%p, exposed=%s)", this, exposed ? "true" : "false");
+
+  if (exposed_ == exposed)
+    return;
+
+  exposed_ = exposed;
+  if (exposed_) {
+    QWindowSystemInterface::handleExposeEvent(window(), geometry());
+  } else {
+    QWindowSystemInterface::handleExposeEvent(window(), QRect());
+  }
+}
+
+void QUbuntuWindow::windowEvent(QEvent *event) {
+  if (event->type() == QEvent::Expose) {
+    QRegion region = static_cast<QExposeEvent *>(event)->region();
+
+    if (region.isEmpty()) {
+      // hiding window causes Qt to release the GL context and its resources, which is a bit severe
+      // Instead can use the exposure system to stop the rendering loop, but hold onto the resources
+      setExposed(false);
+    } else {
+      setExposed(true);
+    }
   }
 }

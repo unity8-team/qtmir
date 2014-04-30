@@ -34,12 +34,15 @@ class QUbuntuWindow : public QUbuntuBaseWindow {
   void setGeometry(const QRect&);
   void setWindowState(Qt::WindowState state);
   void setVisible(bool visible);
+  bool isExposed() const;
+  void windowEvent(QEvent *event);
 
   QUbuntuInput* input_;
 
  private:
   void createWindow();
   void moveResize(const QRect& rect);
+  void setExposed(const bool exposed);
 
   UAUiWindow* window_;
   Qt::WindowState state_;
@@ -49,6 +52,7 @@ class QUbuntuWindow : public QUbuntuBaseWindow {
   UAUiWindowProperties* wprops_;
   QUbuntuScreen* screen_;
   bool isShell_;
+  bool exposed_;
 };
 
 #endif  // QUBUNTUWINDOW_H
