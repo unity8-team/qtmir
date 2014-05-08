@@ -27,7 +27,7 @@ Standards-Version: 3.9.4
 Section: libs
 
 Package: qtubuntu-android
-Architecture: any
+Architecture: armhf
 Multi-Arch: same
 Conflicts: qtubuntu-desktop
 Replaces: qthybris (<< 0.37),
@@ -51,7 +51,7 @@ Description: Qt plugins for Ubuntu Platform API (mobile)
  This variant of the package is for Android-based phones and tablets.
 
 Package: qtubuntu-desktop
-Architecture: any
+Architecture: i386 amd64 arm64 powerpc ppc64el
 Multi-Arch: same
 Conflicts: qtubuntu-android
 Replaces: qtubuntu (<< 0.52),
