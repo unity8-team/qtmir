@@ -1,4 +1,4 @@
-qtubuntu (0.54+14.10.20140430.1-0ubuntu3) UNRELEASED; urgency=medium
+qtubuntu (0.54+14.10.20140430.1-0ubuntu3) utopic; urgency=medium
 
   * Moving back qtubuntu-desktop's arch to any, as there's no easy way to
     guarantee that the package is broken on armhf
