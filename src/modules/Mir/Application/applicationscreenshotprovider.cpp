@@ -19,7 +19,7 @@
 #include "application_manager.h"
 #include "application.h"
 
-// unity-mir
+// QPA-mirserver
 #include "logging.h"
 
 // mir

@@ -19,7 +19,7 @@
 // local
 #include "taskcontroller.h"
 
-// unity-mir
+// QPA-mirserver
 #include <logging.h>
 
 // Qt

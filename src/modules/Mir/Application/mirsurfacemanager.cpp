@@ -21,7 +21,7 @@
 #include "mirsurfacemanager.h"
 #include "application_manager.h"
 
-// unity-mir
+// QPA mirserver
 #include "nativeinterface.h"
 #include "mirserverconfiguration.h"
 #include "sessionlistener.h"
