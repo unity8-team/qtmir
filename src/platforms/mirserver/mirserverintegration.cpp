@@ -36,8 +36,6 @@
 #include <private/qguiapplication_p.h>
 #endif
 
-#include <QDebug>
-
 // Mir
 #include <mir/graphics/display.h>
 #include <mir/graphics/display_buffer.h>
@@ -51,7 +49,7 @@
 #include "qmirserver.h"
 #include "mirserverconfiguration.h"
 #include "miropenglcontext.h"
-#include "dbusscreen.h"
+#include "logging.h"
 #include "../common/ubuntutheme.h"
 
 namespace mg = mir::graphics;
@@ -87,8 +85,6 @@ MirServerIntegration::MirServerIntegration()
 #endif
 
     QPlatformInputContextFactory::create();
-
-    m_dbusScreen = new DBusScreen(m_mirConfig);
 }
 
 MirServerIntegration::~MirServerIntegration()
@@ -134,13 +130,13 @@ QPlatformWindow *MirServerIntegration::createPlatformWindow(QWindow *window) con
 
 QPlatformBackingStore *MirServerIntegration::createPlatformBackingStore(QWindow *window) const
 {
-    qDebug() << "createPlatformBackingStore" << window;
+    qCDebug(QTMIR_MIR_MESSAGES) << "createPlatformBackingStore" << window;
     return nullptr;
 }
 
 QPlatformOpenGLContext *MirServerIntegration::createPlatformOpenGLContext(QOpenGLContext *context) const
 {
-    qDebug() << "createPlatformOpenGLContext" << context;
+    qCDebug(QTMIR_MIR_MESSAGES) << "createPlatformOpenGLContext" << context;
     return new MirOpenGLContext(m_mirConfig, context->format());
 }
 
@@ -169,7 +165,7 @@ void MirServerIntegration::initialize()
     {SIGINT, SIGTERM},
     [&](int)
     {
-        qDebug() << "Signal caught, stopping Mir server..";
+        qCritical() << "Signal caught, stopping Mir server..";
         QCoreApplication::quit();
     });
 }

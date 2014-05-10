@@ -37,7 +37,6 @@ class Application : public unity::shell::application::ApplicationInfoInterface {
     Q_PROPERTY(QString desktopFile READ desktopFile CONSTANT)
     Q_PROPERTY(QString exec READ exec CONSTANT)
     Q_PROPERTY(bool fullscreen READ fullscreen NOTIFY fullscreenChanged)
-    Q_PROPERTY(Stage stage READ stage WRITE setStage NOTIFY stageChanged)
 
 public:
     Application(const QString &appId, State state, const QStringList &arguments, QObject *parent = 0);
@@ -50,20 +49,16 @@ public:
     QString comment() const override;
     QUrl icon() const override;
     Stage stage() const override;
+    Stages supportedStages() const override;
     State state() const override;
     bool focused() const override;
-    QUrl screenshot() const override;
 
-    void setStage(Stage stage);
-
-    QImage screenshotImage() const;
-    void updateScreenshot();
+    bool setStage(Stage stage) override;
 
     bool isValid() const;
     QString desktopFile() const;
     QString exec() const;
     bool fullscreen() const;
-    std::shared_ptr<mir::scene::Session> session() const;
 
 public Q_SLOTS:
     void suspend();
@@ -72,7 +67,6 @@ public Q_SLOTS:
 
 Q_SIGNALS:
     void fullscreenChanged();
-    void stageChanged(Stage stage);
 
 private:
     pid_t pid() const;
@@ -80,12 +74,14 @@ private:
     void setState(State state);
     void setFocused(bool focus);
     void setFullscreen(bool fullscreen);
+    std::shared_ptr<mir::scene::Session> session() const;
     void setSession(const std::shared_ptr<mir::scene::Session>& session);
     void setSessionName(const QString& name);
 
     DesktopFileReader* m_desktopData;
     qint64 m_pid;
     Stage m_stage;
+    Stages m_supportedStages;
     State m_state;
     bool m_focused;
     QUrl m_screenshot;
@@ -97,7 +93,7 @@ private:
     QTimer* m_suspendTimer;
 
     friend class ApplicationManager;
-    friend class ApplicationListModel;
+    friend class ApplicationScreenshotProvider;
     friend class MirSurfaceManager;
 };
 

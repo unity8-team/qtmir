@@ -44,8 +44,8 @@ Application::Application(DesktopFileReader *desktopFileReader, State state,
     , m_arguments(arguments)
     , m_suspendTimer(new QTimer(this))
 {
-    DLOG("Application::Application (this=%p, appId=%s, state=%d", this, qPrintable(desktopFileReader->appId()),
-         static_cast<int>(state));
+    qCDebug(QTMIR_APPLICATIONS) << "Application::Application - this=" << this << "appId=" << desktopFileReader->appId()
+                                << "state=" << state;
 
     m_suspendTimer->setSingleShot(true);
     connect(m_suspendTimer, SIGNAL(timeout()), this, SLOT(suspend()));
@@ -53,7 +53,7 @@ Application::Application(DesktopFileReader *desktopFileReader, State state,
 
 Application::~Application()
 {
-    DLOG("Application::~Application");
+    qCDebug(QTMIR_APPLICATIONS) << "Application::~Application";
     delete m_desktopData;
 }
 
@@ -106,6 +106,11 @@ Application::Stage Application::stage() const
     return m_stage;
 }
 
+Application::Stages Application::supportedStages() const
+{
+    return m_supportedStages;
+}
+
 Application::State Application::state() const
 {
     return m_state;
@@ -114,11 +119,6 @@ Application::State Application::state() const
 bool Application::focused() const
 {
     return m_focused;
-}
-
-QUrl Application::screenshot() const
-{
-    return m_screenshot;
 }
 
 bool Application::fullscreen() const
@@ -143,7 +143,7 @@ void Application::setPid(pid_t pid)
 
 void Application::setSession(const std::shared_ptr<mir::scene::Session>& session)
 {
-    DLOG("Application::setSession (this=%p, session=%p)", this, session.get());
+    qCDebug(QTMIR_APPLICATIONS) << "Application::setSession - this=" << this << "session=" << session.get();
 
     // TODO(greyback) what if called with new surface?
     m_session = session;
@@ -151,49 +151,33 @@ void Application::setSession(const std::shared_ptr<mir::scene::Session>& session
 
 void Application::setSessionName(const QString& name)
 {
-    DLOG("Application::setSessionName (this=%p, name=%s)", this, name.toLatin1().constData());
+    qCDebug(QTMIR_APPLICATIONS) << "Application::setSessionName - this=" << this << "name=" << name;
     if (m_session) {
-        LOG("Application::setSessionName should not be called once session exists");
+        qCritical() << "Application::setSessionName should not be called once session exists";
         return;
     }
     m_sessionName = name;
 }
 
-void Application::setStage(Application::Stage stage)
+bool Application::setStage(Application::Stage stage)
 {
-    DLOG("Application::setStage (this=%p, stage=%d)", this, static_cast<int>(stage));
+    qCDebug(QTMIR_APPLICATIONS) << "Application::setStage - this=" << this << "stage=" << stage;
+
     if (m_stage != stage) {
+        if (stage | m_supportedStages) {
+            return false;
+        }
+
         m_stage = stage;
         Q_EMIT stageChanged(stage);
+        return true;
     }
-}
-
-QImage Application::screenshotImage() const
-{
-    return m_screenshotImage;
-}
-
-void Application::updateScreenshot()
-{
-    session()->take_snapshot(
-        [&](mir::scene::Snapshot const& snapshot)
-        {
-            DLOG("ApplicationScreenshotProvider - Mir snapshot ready with size %d x %d",
-                 snapshot.size.height.as_int(), snapshot.size.width.as_int());
-
-            m_screenshotImage = QImage( (const uchar*)snapshot.pixels, // since we mirror, no need to offset starting position
-                            snapshot.size.width.as_int(),
-                            snapshot.size.height.as_int(),
-                            QImage::Format_ARGB32_Premultiplied).mirrored();
-
-            m_screenshot = QString("image://application/%1/%2").arg(m_desktopData->appId()).arg(QDateTime::currentMSecsSinceEpoch());
-            Q_EMIT screenshotChanged(m_screenshot);
-        });
+    return true;
 }
 
 void Application::setState(Application::State state)
 {
-    DLOG("Application::setState (this=%p, state=%d)", this, static_cast<int>(state));
+    qCDebug(QTMIR_APPLICATIONS) << "Application::setState - this=" << this << "state=" << state;
     if (m_state != state) {
         switch (state)
         {
@@ -229,7 +213,7 @@ void Application::setState(Application::State state)
 
 void Application::setFocused(bool focused)
 {
-    DLOG("Application::setFocused (this=%p, focus=%s)", this, focused ? "yes" : "no");
+    qCDebug(QTMIR_APPLICATIONS) << "Application::setFocused - this=" << this << "focused=" << focused;
     if (m_focused != focused) {
         m_focused = focused;
         Q_EMIT focusedChanged(focused);
@@ -238,7 +222,7 @@ void Application::setFocused(bool focused)
 
 void Application::setFullscreen(bool fullscreen)
 {
-    DLOG("Application::setFullscreen (this=%p, fullscreen=%s)", this, fullscreen ? "yes" : "no");
+    qCDebug(QTMIR_APPLICATIONS) << "Application::setFullscreen - this=" << this << "fullscreen=" << fullscreen;
     if (m_fullscreen != fullscreen) {
         m_fullscreen = fullscreen;
         Q_EMIT fullscreenChanged();
@@ -247,18 +231,18 @@ void Application::setFullscreen(bool fullscreen)
 
 void Application::suspend()
 {
-    DLOG("Application::suspend (this=%p, appId=%s)", this, qPrintable(appId()));
+    qCDebug(QTMIR_APPLICATIONS) << "Application::suspend - this=" << this << "appId=" << appId();
     TaskController::singleton()->suspend(appId());
 }
 
 void Application::resume()
 {
-    DLOG("Application::resume (this=%p, appId=%s)", this, qPrintable(appId()));
+    qCDebug(QTMIR_APPLICATIONS) << "Application::resume - this=" << this << "appId=" << appId();
     TaskController::singleton()->resume(appId());
 }
 
 void Application::respawn()
 {
-    DLOG("Application::respawn (this=%p)", this);
+    qCDebug(QTMIR_APPLICATIONS) << "Application::respawn - this=" << this << "appId=" << appId();
     TaskController::singleton()->start(appId(), m_arguments);
 }

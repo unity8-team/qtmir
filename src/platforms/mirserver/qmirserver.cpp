@@ -17,9 +17,10 @@
 // Qt
 #include <QObject>
 #include <QCoreApplication>
-#include <QDebug>
+#include <qloggingcategory.h>
 
 // local
+#include "logging.h"
 #include "qmirserver.h"
 #include "mirserverconfiguration.h"
 
@@ -28,6 +29,10 @@ QMirServer::QMirServer(MirServerConfiguration *config, QObject *parent)
     : QObject(parent)
     , m_mirServer(new MirServerWorker(*config))
 {
+#if QT_VERSION < QT_VERSION_CHECK(5, 3, 0)
+    QLoggingCategory::setFilterRules(QString(qgetenv("QT_LOGGING_RULES")));
+#endif
+
     m_mirServer->moveToThread(&m_mirThread);
 
     connect(this, &QMirServer::run, m_mirServer, &MirServerWorker::run);

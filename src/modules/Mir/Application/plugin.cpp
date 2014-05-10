@@ -25,13 +25,13 @@
 #include "mirsurfaceitem.h"
 #include "ubuntukeyboardinfo.h"
 
-// unity-mir
+// QPA mirserver
 #include "logging.h"
 
 static QObject* applicationManagerSingleton(QQmlEngine* engine, QJSEngine* scriptEngine) {
     Q_UNUSED(engine);
     Q_UNUSED(scriptEngine);
-    DLOG("applicationManagerSingleton (engine=%p, scriptEngine=%p)", engine, scriptEngine);
+    qCDebug(QTMIR_APPLICATIONS) << "applicationManagerSingleton - engine=" << engine << "scriptEngine=" << scriptEngine;
 
     return ApplicationManager::singleton();
 }
@@ -39,7 +39,8 @@ static QObject* applicationManagerSingleton(QQmlEngine* engine, QJSEngine* scrip
 static QObject* surfaceManagerSingleton(QQmlEngine* engine, QJSEngine* scriptEngine) {
     Q_UNUSED(engine);
     Q_UNUSED(scriptEngine);
-    DLOG("surfaceManagerSingleton (engine=%p, scriptEngine=%p)", engine, scriptEngine);
+    qCDebug(QTMIR_APPLICATIONS) << "surfaceManagerSingleton - engine=" << engine << "scriptEngine=" << scriptEngine;
+
     return MirSurfaceManager::singleton();
 }
 
@@ -49,8 +50,8 @@ class UnityApplicationPlugin : public QQmlExtensionPlugin {
 
     virtual void registerTypes(const char* uri)
     {
-        DLOG("UnityApplicationPlugin::registerTypes (this=%p, uri='%s')", this, uri);
-        ASSERT(QLatin1String(uri) == QLatin1String("Mir.Application"));
+        qCDebug(QTMIR_APPLICATIONS) << "UnityApplicationPlugin::registerTypes - this=" << this << "uri=" << uri;
+        Q_ASSERT(QLatin1String(uri) == QLatin1String("Mir"));
 
         qRegisterMetaType<ApplicationManager*>("ApplicationManager*"); //need for queueing signals
 

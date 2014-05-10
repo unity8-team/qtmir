@@ -28,7 +28,6 @@
 #include "display.h"
 #include "nativeinterface.h"
 
-class DBusScreen;
 
 class MirServerIntegration : public QPlatformIntegration
 {
@@ -70,7 +69,6 @@ private:
 #if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
     QAbstractEventDispatcher* eventDispatcher_;
 #endif
-    DBusScreen *m_dbusScreen;
 };
 
 #endif // MIRSERVERINTEGRATION_H

@@ -18,8 +18,8 @@ PKGCONFIG += mircommon mirserver mirclient egl
 
 SOURCES += \
     qteventfeeder.cpp \
-    plugin.cpp \
     qmirserver.cpp \
+    plugin.cpp \
     sessionauthorizer.cpp \
     sessionlistener.cpp \
     surfaceconfigurator.cpp \
@@ -33,14 +33,13 @@ SOURCES += \
     mirserverintegration.cpp \
     miropenglcontext.cpp \
     nativeinterface.cpp \
-    dbusscreen.cpp \
     qtcompositor.cpp \
     ../common/ubuntutheme.cpp
 
 HEADERS += \
     qteventfeeder.h \
-    plugin.h \
     qmirserver.h \
+    plugin.h \
     sessionauthorizer.h \
     sessionlistener.h \
     surfaceconfigurator.h \
@@ -56,7 +55,6 @@ HEADERS += \
     mirserverintegration.h \
     miropenglcontext.h \
     nativeinterface.h \
-    dbusscreen.h \
     qtcompositor.h \
     ../common/ubuntutheme.h
 

@@ -39,7 +39,7 @@ QImage ApplicationScreenshotProvider::requestImage(const QString &imageId, QSize
 {
     // We ignore requestedSize here intentionally to avoid keeping scaled copies around
     Q_UNUSED(requestedSize)
-
+/*
     DLOG("ApplicationScreenshotProvider::requestImage (this=%p, id=%s)", this, imageId.toLatin1().constData());
 
     QString appId = imageId.split('/').first();
@@ -63,5 +63,6 @@ QImage ApplicationScreenshotProvider::requestImage(const QString &imageId, QSize
     size->setWidth(image.width());
     size->setHeight(image.height());
 
-    return image;
+    return image;*/
+    return QImage();
 }

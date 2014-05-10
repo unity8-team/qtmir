@@ -28,6 +28,8 @@
 #include "surfaceconfigurator.h"
 #include "logging.h"
 
+Q_LOGGING_CATEGORY(QTMIR_SURFACES, "qtmir.surfaces")
+
 namespace ms = mir::scene;
 
 MirSurfaceManager *MirSurfaceManager::the_surface_manager = nullptr;
@@ -43,14 +45,14 @@ MirSurfaceManager* MirSurfaceManager::singleton()
 MirSurfaceManager::MirSurfaceManager(QObject *parent)
     : QAbstractListModel(parent)
 {
-    DLOG("MirSurfaceManager::MirSurfaceManager (this=%p)", this);
+    qCDebug(QTMIR_SURFACES) << "MirSurfaceManager::MirSurfaceManager - this=" << this;
 
     m_roleNames.insert(RoleSurface, "surface");
 
     NativeInterface *nativeInterface = dynamic_cast<NativeInterface*>(QGuiApplication::platformNativeInterface());
 
     if (!nativeInterface) {
-        LOG("ERROR: Unity.Application QML plugin requires use of the 'mirserver' QPA plugin");
+        qCritical("ERROR: Unity.Application QML plugin requires use of the 'mirserver' QPA plugin");
         QGuiApplication::quit();
         return;
     }
@@ -69,15 +71,17 @@ MirSurfaceManager::MirSurfaceManager(QObject *parent)
 
 MirSurfaceManager::~MirSurfaceManager()
 {
-    DLOG("MirSurfaceManager::~MirSurfaceManager (this=%p)", this);
+    qCDebug(QTMIR_SURFACES) << "MirSurfaceManager::~MirSurfaceManager - this=" << this;
 
     m_mirSurfaceToItemHash.clear();
 }
 
-void MirSurfaceManager::onSessionCreatedSurface(mir::scene::Session const* session,
-        std::shared_ptr<mir::scene::Surface> const& surface)
+void MirSurfaceManager::onSessionCreatedSurface(const mir::scene::Session *session,
+                                                const std::shared_ptr<mir::scene::Surface> &surface)
 {
-    DLOG("MirSurfaceManager::onSessionCreatedSurface (this=%p) with surface name '%s'", this, surface->name().c_str());
+    qCDebug(QTMIR_SURFACES) << "MirSurfaceManager::onSessionCreatedSurface - session=" << session
+                            << "surface=" << surface.get();
+
     ApplicationManager* appMgr = static_cast<ApplicationManager*>(ApplicationManager::singleton());
     Application* application = appMgr->findApplicationWithSession(session);
 
@@ -104,15 +108,16 @@ void MirSurfaceManager::onSessionCreatedSurface(mir::scene::Session const* sessi
             beginRemoveRows(QModelIndex(), i, i);
             m_surfaceItems.removeAt(i);
             endRemoveRows();
-            emit countChanged();
+            Q_EMIT countChanged();
         }
     });
 }
 
-void MirSurfaceManager::onSessionDestroyingSurface(mir::scene::Session const*,
-        std::shared_ptr<mir::scene::Surface> const& surface)
+void MirSurfaceManager::onSessionDestroyingSurface(const mir::scene::Session *session,
+                                                   const std::shared_ptr<mir::scene::Surface> &surface)
 {
-    DLOG("MirSurfaceManager::onSessionDestroyingSurface (this=%p) with surface name '%s'", this, surface->name().c_str());
+    qCDebug(QTMIR_SURFACES) << "MirSurfaceManager::onSessionDestroyingSurface - session=" << session
+                            << "surface=" << surface.get();
 
     auto it = m_mirSurfaceToItemHash.find(surface.get());
     if (it != m_mirSurfaceToItemHash.end()) {
@@ -128,19 +133,20 @@ void MirSurfaceManager::onSessionDestroyingSurface(mir::scene::Session const*,
             beginRemoveRows(QModelIndex(), i, i);
             m_surfaceItems.removeAt(i);
             endRemoveRows();
-            emit countChanged();
+            Q_EMIT countChanged();
         }
         return;
     }
 
-    DLOG("MirSurfaceManager::sessionDestroyingSurface: unable to find MirSurfaceItem corresponding to surface '%s'", surface->name().c_str());
+    qCritical() << "MirSurfaceManager::onSessionDestroyingSurface: unable to find MirSurfaceItem corresponding"
+                << "to surface=" << surface.get();
 }
 
 void MirSurfaceManager::onSurfaceAttributeChanged(const ms::Surface *surface,
-        const MirSurfaceAttrib attribute, const int value)
+                                                  const MirSurfaceAttrib attribute, const int value)
 {
-    DLOG("MirSurfaceManager::onSurfaceAttributeChanged (surface='%s', attrib=%d, value=%d)",
-         surface->name().c_str(), static_cast<int>(attribute), value);
+    qCDebug(QTMIR_SURFACES) << "MirSurfaceManager::onSurfaceAttributeChanged - surface=" << surface
+                            << "attrib=" << attribute << "value=" << value;
 
     auto it = m_mirSurfaceToItemHash.find(surface);
     if (it != m_mirSurfaceToItemHash.end()) {
@@ -172,22 +178,6 @@ QVariant MirSurfaceManager::data(const QModelIndex & index, int role) const
     }
 }
 
-void MirSurfaceManager::move(int from, int to) {
-    DLOG("MirSurfaceManager::move (this=%p, from=%d, to=%d)", this, from, to);
-    if (from == to) return;
-
-    if (from >= 0 && from < m_surfaceItems.count() && to >= 0 && to < m_surfaceItems.count()) {
-        QModelIndex parent;
-        /* When moving an item down, the destination index needs to be incremented
-           by one, as explained in the documentation:
-           http://qt-project.org/doc/qt-5.0/qtcore/qabstractitemmodel.html#beginMoveRows */
-        beginMoveRows(parent, from, from, parent, to + (to > from ? 1 : 0));
-        m_surfaceItems.move(from, to);
-        endMoveRows();
-    }
-    DLOG("MirSurfaceManager::move after (%s)", qPrintable(toString()));
-}
-
 int MirSurfaceManager::getIndexOfSurfaceWithAppId(const QString &appId) const
 {
     for (int i = 0; i < m_surfaceItems.count(); ++i) {
@@ -202,16 +192,4 @@ int MirSurfaceManager::getIndexOfSurfaceWithAppId(const QString &appId) const
 MirSurfaceItem* MirSurfaceManager::getSurface(int index)
 {
     return m_surfaceItems[index];
-}
-
-QString MirSurfaceManager::toString() const
-{
-    QString result;
-    for (int i = 0; i < m_surfaceItems.count(); ++i) {
-        if (i > 0) {
-            result.append(",");
-        }
-        result.append(m_surfaceItems.at(i)->application()->appId());
-    }
-    return result;
 }
