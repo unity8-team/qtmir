@@ -1,3 +1,13 @@
+qtubuntu (0.54+14.10.20140515.1-0ubuntu1) utopic; urgency=low
+
+  [ Ubuntu daily release ]
+  * New rebuild forced
+
+  [ Kevin Gunn ]
+  * rebuild only
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 15 May 2014 18:37:17 +0000
+
 qtubuntu (0.54+14.10.20140430.1-0ubuntu3) utopic; urgency=medium
 
   * Moving back qtubuntu-desktop's arch to any, as there's no easy way to
