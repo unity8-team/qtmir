@@ -19,7 +19,7 @@
 // local
 #include "taskcontroller.h"
 
-// unity-mir
+// QPA-mirserver
 #include <logging.h>
 
 // Qt
@@ -281,14 +281,14 @@ void ensureProcessIsUnlikelyToBeKilled(pid_t pid)
 {
     if (!OomScoreAdjuster::leastLikelyToBeKilled().applyForPid(pid))
         if (!OomAdjuster::leastLikelyToBeKilled().applyForPid(pid))
-            LOG("ensureProcessIsUnlikelyToBeKilled failed");
+            qCDebug(QTMIR_APPLICATIONS) << "ensureProcessIsUnlikelyToBeKilled failed for pid=" << pid;
 }
 
 void ensureProcessIsLikelyToBeKilled(pid_t pid)
 {
     if (!OomScoreAdjuster::mostLikelyToBeKilled().applyForPid(pid))
         if (!OomAdjuster::mostLikelyToBeKilled().applyForPid(pid))
-            LOG("ensureProcessIsLikelyToBeKilled failed");
+            qCDebug(QTMIR_APPLICATIONS) << "ensureProcessIsLikelyToBeKilled failed for pid=" << pid;
 }
 }
 
@@ -340,7 +340,7 @@ TaskController::TaskController(QObject *parent) :
         } else if (failureType == UPSTART_APP_LAUNCH_APP_FAILED_START_FAILURE) {
             Q_EMIT TaskController::singleton()->processStartReport(QString(appId), true);
         } else {
-            LOG("TaskController: unknown failure type returned from upstart-app-launch");
+            qCritical() << "TaskController: unknown failure type returned from upstart-app-launch";
         }
         Q_EMIT TaskController::singleton()->requestResume(QString(appId));
     };
@@ -365,7 +365,7 @@ TaskController::~TaskController()
 
 bool TaskController::start(const QString& appId, const QStringList& arguments)
 {
-    DLOG("TaskController::start appId='%s'", qPrintable(appId));
+    qCDebug(QTMIR_APPLICATIONS) << "TaskController::start - appId=" << appId;
     gchar ** upstartArgs = nullptr;
     bool result = false;
 
@@ -380,30 +380,34 @@ bool TaskController::start(const QString& appId, const QStringList& arguments)
                                                   static_cast<const gchar * const *>(upstartArgs));
     g_free(upstartArgs);
 
-    DLOG_IF(!result, "TaskController::startApplication appId='%s' FAILED", qPrintable(appId));
+    if (!result)
+        qCDebug(QTMIR_APPLICATIONS) << "TaskController::start - FAILED for appId=" << appId;
+
     return result;
 }
 
 bool TaskController::stop(const QString& appId)
 {
-    DLOG("TaskController::stop appId='%s'", qPrintable(appId));
+    qCDebug(QTMIR_APPLICATIONS) << "TaskController::stop - appId=" << appId;
     bool result = false;
 
     result = upstart_app_launch_stop_application(appId.toLatin1().constData());
 
-    DLOG_IF(!result, "TaskController::stopApplication appId='%s' FAILED", qPrintable(appId));
+    if (!result)
+        qCDebug(QTMIR_APPLICATIONS) << "TaskController::stop - FAILED for appId=" << appId;
+
     return result;
 }
 
 bool TaskController::appIdHasProcessId(const QString& appId, const quint64 pid)
 {
-    DLOG("TaskController::isApplicationPid appId='%s', pid=%lld", qPrintable(appId), pid);
+    qCDebug(QTMIR_APPLICATIONS) << "TaskController::appIdHasProcessId - appId=" << appId << "pid=" << pid;
     return upstart_app_launch_pid_in_app_id(pid, appId.toLatin1().constData());
 }
 
 bool TaskController::suspend(const QString& appId)
 {
-    DLOG("TaskController::suspend (this=%p, application=%p)", this, qPrintable(appId));
+    qCDebug(QTMIR_APPLICATIONS) << "TaskController::suspend - appId=" << appId;
     pid_t pid = upstart_app_launch_get_primary_pid(appId.toLatin1().constData());
 
     ensureProcessIsLikelyToBeKilled(pid);
@@ -421,7 +425,7 @@ bool TaskController::suspend(const QString& appId)
 
 bool TaskController::resume(const QString& appId)
 {
-    DLOG("TaskController::resume (this=%p, application=%p)", this, qPrintable(appId));
+    qCDebug(QTMIR_APPLICATIONS) << "TaskController::resume - appId=" << appId;
     pid_t pid = upstart_app_launch_get_primary_pid(appId.toLatin1().constData());
 
     ensureProcessIsUnlikelyToBeKilled(pid);

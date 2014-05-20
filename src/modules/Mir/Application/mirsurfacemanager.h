@@ -31,7 +31,6 @@
 #include "mirsurfaceitem.h"
 
 class ShellServerConfiguration;
-namespace mir { namespace shell { class Surface; }}
 namespace mir { namespace scene { class Surface; class Session; }}
 
 class MirSurfaceManager : public QAbstractListModel
@@ -57,7 +56,6 @@ public:
     QHash<int, QByteArray> roleNames() const override { return m_roleNames; }
 
     int count() const { return rowCount(); }
-    Q_INVOKABLE void move(int from, int to);
 
     Q_INVOKABLE int getIndexOfSurfaceWithAppId(const QString &appId) const;
     Q_INVOKABLE MirSurfaceItem* getSurface(int index);
@@ -70,14 +68,12 @@ Q_SIGNALS:
 //    void fullscreenSurfaceChanged();
 
 public Q_SLOTS:
-    void onSessionCreatedSurface(mir::scene::Session const* session, std::shared_ptr<mir::scene::Surface> const&);
-    void onSessionDestroyingSurface(mir::scene::Session const*, std::shared_ptr<mir::scene::Surface> const&);
+    void onSessionCreatedSurface(const mir::scene::Session *, const std::shared_ptr<mir::scene::Surface> &);
+    void onSessionDestroyingSurface(const mir::scene::Session *, const std::shared_ptr<mir::scene::Surface> &);
 
-    void onSurfaceAttributeChanged(mir::scene::Surface const*, MirSurfaceAttrib, int);
+    void onSurfaceAttributeChanged(const mir::scene::Surface *, MirSurfaceAttrib, int);
 
 private:
-    QString toString() const;
-
     QHash<const mir::scene::Surface *, MirSurfaceItem *> m_mirSurfaceToItemHash;
     QList<MirSurfaceItem*> m_surfaceItems;
     ShellServerConfiguration* m_mirServer;

@@ -23,7 +23,7 @@
 #include <QGuiApplication>
 #include <QWindow>
 
-#include <QDebug>
+#include "logging.h"
 
 QtCompositor::QtCompositor()
 {

@@ -17,13 +17,14 @@
 // local
 #include "desktopfilereader.h"
 
-// unity-mir
+// QPA mirserver
 #include "logging.h"
 
 // Qt
 #include <QFile>
 #include <QDir>
 #include <QStandardPaths>
+#include <QSettings>
 
 // Retrieves the size of an array at compile time.
 #define ARRAY_SIZE(a) \
@@ -33,8 +34,8 @@ DesktopFileReader::DesktopFileReader(const QString &appId)
     : appId_(appId)
     , entries_(DesktopFileReader::kNumberOfEntries, "")
 {
-    DLOG("DesktopFileReader::DesktopFileReader (this=%p, appId='%s')", this, appId.toLatin1().data());
-    DASSERT(appId != NULL);
+    qCDebug(QTMIR_APPLICATIONS) << "DesktopFileReader::DesktopFileReader - this=" << this << "appId=" << appId;
+    Q_ASSERT(appId != NULL);
 
     file_ = findDesktopFile(appId);
     loaded_ = loadDesktopFile(file_);
@@ -43,8 +44,9 @@ DesktopFileReader::DesktopFileReader(const QString &appId)
 DesktopFileReader::DesktopFileReader(const QFileInfo &desktopFile)
     : entries_(DesktopFileReader::kNumberOfEntries, "")
 {
-    DLOG("DesktopFileReader::DesktopFileReader (this=%p, desktopFile='%s')", this, desktopFile.absoluteFilePath().toLatin1().data());
-    DASSERT(desktopFile.exists());
+    qCDebug(QTMIR_APPLICATIONS) << "DesktopFileReader::DesktopFileReader - this=" << this << "desktopFile=" << desktopFile.absoluteFilePath();
+
+    Q_ASSERT(desktopFile.exists());
 
     appId_ = desktopFile.completeBaseName();
     file_ = desktopFile.absoluteFilePath();
@@ -53,14 +55,14 @@ DesktopFileReader::DesktopFileReader(const QFileInfo &desktopFile)
 
 DesktopFileReader::~DesktopFileReader()
 {
-    DLOG("DesktopFileReader::~DesktopFileReader");
+    qCDebug(QTMIR_APPLICATIONS) << "DesktopFileReader::~DesktopFileReader";
     entries_.clear();
 }
 
 
 QString DesktopFileReader::findDesktopFile(const QString &appId) const
 {
-    DLOG("DesktopFileReader::findDesktopFile (appId='%s')", appId.toLatin1().data());
+    qCDebug(QTMIR_APPLICATIONS) << "DesktopFileReader::findDesktopFile - appId=" << appId;
 
     int dashPos = -1;
     QString helper = appId;
@@ -83,15 +85,14 @@ QString DesktopFileReader::findDesktopFile(const QString &appId) const
 
 bool DesktopFileReader::loadDesktopFile(QString desktopFile)
 {
-    DLOG("DesktopFileReader::loadDesktopFile (this=%p, desktopFile='%s')",
-         this, desktopFile.toLatin1().data());
+    qCDebug(QTMIR_APPLICATIONS) << "DesktopFileReader::loadDesktopFile - this=" << this << "desktopFile=" << desktopFile;
 
     if (this->file().isNull() || this->file().isEmpty()) {
-        DLOG("No desktop file found for appId: %s", qPrintable(appId_));
+        qCritical() << "No desktop file found for appId:" << appId_;
         return false;
     }
 
-    DASSERT(desktopFile != NULL);
+    Q_ASSERT(desktopFile != NULL);
     const struct { const char* const name; int size; unsigned int flag; } kEntryNames[] = {
         { "Name=", sizeof("Name=") - 1, 1 << DesktopFileReader::kNameIndex },
         { "Comment=", sizeof("Comment=") - 1, 1 << DesktopFileReader::kCommentIndex },
@@ -114,14 +115,14 @@ bool DesktopFileReader::loadDesktopFile(QString desktopFile)
 
     // Open file.
     if (!file.open(QFile::ReadOnly | QIODevice::Text)) {
-        DLOG("can't open file: %s", file.errorString().toLatin1().data());
+        qCritical() << "Can't open file:" << file.errorString();
         return false;
     }
 
     // Validate "magic key" (standard group header).
     if (file.readLine(buffer, kBufferSize) != -1) {
         if (strncmp(buffer, "[Desktop Entry]", sizeof("[Desktop Entry]") - 1)) {
-            DLOG("not a desktop file");
+            qCritical() << "not a desktop file";
             return false;
         }
     }
@@ -133,7 +134,7 @@ bool DesktopFileReader::loadDesktopFile(QString desktopFile)
         if (length > 1) {
             // Stop when reaching unsupported next group header.
             if (buffer[0] == '[') {
-                DLOG("reached next group header, leaving loop");
+                qCritical() << "reached next group header, leaving loop";
                 break;
             }
             // Lookup entries ignoring duplicates if any.
@@ -141,7 +142,7 @@ bool DesktopFileReader::loadDesktopFile(QString desktopFile)
                 if (!strncmp(buffer, kEntryNames[i].name, kEntryNames[i].size)) {
                     if (~entryFlags & kEntryNames[i].flag) {
                         buffer[length-1] = '\0';
-                        entries_[i] = QString::fromLatin1(&buffer[kEntryNames[i].size]);
+                        entries_[i] = QString::fromUtf8(&buffer[kEntryNames[i].size]);
                         entryFlags |= kEntryNames[i].flag;
                         break;
                     }
@@ -156,8 +157,8 @@ bool DesktopFileReader::loadDesktopFile(QString desktopFile)
 
     // Check that the mandatory entries are set.
     if ((entryFlags & kMandatoryEntriesMask) == kMandatoryEntriesMask) {
-        DLOG("loaded desktop file with name='%s', comment='%s', icon='%s', exec='%s', path='%s', stagehint='%s'",
-             entries_[DesktopFileReader::kNameIndex].toLatin1().data(),
+        qDebug("loaded desktop file with name='%s', comment='%s', icon='%s', exec='%s', path='%s', stagehint='%s'",
+                entries_[DesktopFileReader::kNameIndex].toLatin1().data(),
                 entries_[DesktopFileReader::kCommentIndex].toLatin1().data(),
                 entries_[DesktopFileReader::kIconIndex].toLatin1().data(),
                 entries_[DesktopFileReader::kExecIndex].toLatin1().data(),
@@ -165,7 +166,7 @@ bool DesktopFileReader::loadDesktopFile(QString desktopFile)
                 entries_[DesktopFileReader::kStageHintIndex].toLatin1().data());
         return true;
     } else {
-        DLOG("not a valid desktop file, missing mandatory entries in the standard group header");
+        qCritical() << "not a valid desktop file, missing mandatory entries in the standard group header";
         return false;
     }
 }

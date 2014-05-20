@@ -205,7 +205,7 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     , m_firstFrameDrawn(false)
     , m_textureProvider(nullptr)
 {
-    DLOG("MirSurfaceItem::MirSurfaceItem");
+    qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::MirSurfaceItem";
 
     m_surfaceObserver = std::make_shared<MirSurfaceObserver>();
     m_surfaceObserver->setListener(this);
@@ -237,7 +237,7 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
 
 MirSurfaceItem::~MirSurfaceItem()
 {
-    DLOG("MirSurfaceItem::~MirSurfaceItem(this=%p)", this);
+    qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::~MirSurfaceItem - this=" << this;
     QMutexLocker locker(&m_mutex);
     if (m_textureProvider)
         m_textureProvider->deleteLater();
@@ -246,7 +246,7 @@ MirSurfaceItem::~MirSurfaceItem()
 // For QML to destroy this surface
 void MirSurfaceItem::release()
 {
-    DLOG("MirSurfaceItem::release(this=%p)", this);
+    qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::release - this=" << this;
     this->deleteLater();
 }
 

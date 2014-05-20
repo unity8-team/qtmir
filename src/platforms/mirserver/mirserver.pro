@@ -18,8 +18,8 @@ PKGCONFIG += mircommon mirserver mirclient egl xkbcommon
 
 SOURCES += \
     qteventfeeder.cpp \
-    plugin.cpp \
     qmirserver.cpp \
+    plugin.cpp \
     sessionauthorizer.cpp \
     sessionlistener.cpp \
     surfaceconfigurator.cpp \
@@ -38,8 +38,8 @@ SOURCES += \
 
 HEADERS += \
     qteventfeeder.h \
-    plugin.h \
     qmirserver.h \
+    plugin.h \
     sessionauthorizer.h \
     sessionlistener.h \
     surfaceconfigurator.h \

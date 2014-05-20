@@ -42,7 +42,7 @@ public:
     QPlatformOpenGLContext *createPlatformOpenGLContext(QOpenGLContext *context) const override;
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
-    QAbstractEventDispatcher* guiThreadEventDispatcher() const override { return eventDispatcher_; }
+    QAbstractEventDispatcher* guiThreadEventDispatcher() const override { return m_eventDispatcher.data(); }
     void initialize();
 #else
     QAbstractEventDispatcher *createEventDispatcher() const override;
