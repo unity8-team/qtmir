@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2013-2014 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -25,30 +25,35 @@
 
 // mir
 #include <mir/scene/session.h>
+#include <mir/scene/snapshot.h>
 
-Application::Application(const QString &appId, Application::State state,
-                         const QStringList &arguments, QObject *parent)
-    : Application(new DesktopFileReader(appId), state, arguments, parent)
+namespace qtmir
 {
-}
 
-Application::Application(DesktopFileReader *desktopFileReader, State state,
-                         const QStringList &arguments, QObject *parent)
+Application::Application(const QSharedPointer<TaskController>& taskController,
+                         DesktopFileReader *desktopFileReader,
+                         State state,
+                         const QStringList &arguments,
+                         QObject *parent)
     : ApplicationInfoInterface(desktopFileReader->appId(), parent)
+    , m_taskController(taskController)
     , m_desktopData(desktopFileReader)
     , m_pid(0)
     , m_stage((m_desktopData->stageHint() == "SideStage") ? Application::SideStage : Application::MainStage)
     , m_state(state)
     , m_focused(false)
+    , m_canBeResumed(true)
     , m_fullscreen(false)
     , m_arguments(arguments)
     , m_suspendTimer(new QTimer(this))
 {
-    qCDebug(QTMIR_APPLICATIONS) << "Application::Application - this=" << this << "appId=" << desktopFileReader->appId()
-                                << "state=" << state;
+    qCDebug(QTMIR_APPLICATIONS) << "Application::Application - appId=" << desktopFileReader->appId() << "state=" << state;
 
     m_suspendTimer->setSingleShot(true);
     connect(m_suspendTimer, SIGNAL(timeout()), this, SLOT(suspend()));
+
+    // FIXME(greyback) need to save long appId internally until upstart-app-launch can hide it from us
+    m_longAppId = desktopFileReader->file().remove(QRegExp(".desktop$")).split('/').last();
 }
 
 Application::~Application()
@@ -121,6 +126,11 @@ bool Application::focused() const
     return m_focused;
 }
 
+QUrl Application::screenshot() const
+{
+    return m_screenshot;
+}
+
 bool Application::fullscreen() const
 {
     return m_fullscreen;
@@ -129,6 +139,16 @@ bool Application::fullscreen() const
 std::shared_ptr<mir::scene::Session> Application::session() const
 {
     return m_session;
+}
+
+bool Application::canBeResumed() const
+{
+    return m_canBeResumed;
+}
+
+void Application::setCanBeResumed(const bool resume)
+{
+    m_canBeResumed = resume;
 }
 
 pid_t Application::pid() const
@@ -143,7 +163,7 @@ void Application::setPid(pid_t pid)
 
 void Application::setSession(const std::shared_ptr<mir::scene::Session>& session)
 {
-    qCDebug(QTMIR_APPLICATIONS) << "Application::setSession - this=" << this << "session=" << session.get();
+    qCDebug(QTMIR_APPLICATIONS) << "Application::setSession - appId=" << appId() << "session=" << session.get();
 
     // TODO(greyback) what if called with new surface?
     m_session = session;
@@ -151,7 +171,7 @@ void Application::setSession(const std::shared_ptr<mir::scene::Session>& session
 
 void Application::setSessionName(const QString& name)
 {
-    qCDebug(QTMIR_APPLICATIONS) << "Application::setSessionName - this=" << this << "name=" << name;
+    qCDebug(QTMIR_APPLICATIONS) << "Application::setSessionName - appId=" << appId() << "name=" << name;
     if (m_session) {
         qCritical() << "Application::setSessionName should not be called once session exists";
         return;
@@ -159,9 +179,9 @@ void Application::setSessionName(const QString& name)
     m_sessionName = name;
 }
 
-bool Application::setStage(Application::Stage stage)
+bool Application::setStage(const Application::Stage stage)
 {
-    qCDebug(QTMIR_APPLICATIONS) << "Application::setStage - this=" << this << "stage=" << stage;
+    qCDebug(QTMIR_APPLICATIONS) << "Application::setStage - appId=" << appId() << "stage=" << stage;
 
     if (m_stage != stage) {
         if (stage | m_supportedStages) {
@@ -175,9 +195,32 @@ bool Application::setStage(Application::Stage stage)
     return true;
 }
 
+QImage Application::screenshotImage() const
+{
+    return m_screenshotImage;
+}
+
+void Application::updateScreenshot()
+{
+    session()->take_snapshot(
+        [&](mir::scene::Snapshot const& snapshot)
+        {
+            qCDebug(QTMIR_APPLICATIONS) << "ApplicationScreenshotProvider - Mir snapshot ready with size"
+                                        << snapshot.size.height.as_int() << "x" << snapshot.size.width.as_int();
+
+            m_screenshotImage = QImage( (const uchar*)snapshot.pixels, // since we mirror, no need to offset starting position
+                            snapshot.size.width.as_int(),
+                            snapshot.size.height.as_int(),
+                            QImage::Format_ARGB32_Premultiplied).mirrored();
+
+            m_screenshot = QString("image://application/%1/%2").arg(m_desktopData->appId()).arg(QDateTime::currentMSecsSinceEpoch());
+            Q_EMIT screenshotChanged(m_screenshot);
+        });
+}
+
 void Application::setState(Application::State state)
 {
-    qCDebug(QTMIR_APPLICATIONS) << "Application::setState - this=" << this << "state=" << state;
+    qCDebug(QTMIR_APPLICATIONS) << "Application::setState - appId=" << appId() << "state=" << state;
     if (m_state != state) {
         switch (state)
         {
@@ -213,7 +256,7 @@ void Application::setState(Application::State state)
 
 void Application::setFocused(bool focused)
 {
-    qCDebug(QTMIR_APPLICATIONS) << "Application::setFocused - this=" << this << "focused=" << focused;
+    qCDebug(QTMIR_APPLICATIONS) << "Application::setFocused - appId=" << appId() << "focused=" << focused;
     if (m_focused != focused) {
         m_focused = focused;
         Q_EMIT focusedChanged(focused);
@@ -222,7 +265,7 @@ void Application::setFocused(bool focused)
 
 void Application::setFullscreen(bool fullscreen)
 {
-    qCDebug(QTMIR_APPLICATIONS) << "Application::setFullscreen - this=" << this << "fullscreen=" << fullscreen;
+    qCDebug(QTMIR_APPLICATIONS) << "Application::setFullscreen - appId=" << appId() << "fullscreen=" << fullscreen;
     if (m_fullscreen != fullscreen) {
         m_fullscreen = fullscreen;
         Q_EMIT fullscreenChanged();
@@ -231,18 +274,25 @@ void Application::setFullscreen(bool fullscreen)
 
 void Application::suspend()
 {
-    qCDebug(QTMIR_APPLICATIONS) << "Application::suspend - this=" << this << "appId=" << appId();
-    TaskController::singleton()->suspend(appId());
+    qCDebug(QTMIR_APPLICATIONS) << "Application::suspend - appId=" << appId();
+    m_taskController->suspend(longAppId());
 }
 
 void Application::resume()
 {
-    qCDebug(QTMIR_APPLICATIONS) << "Application::resume - this=" << this << "appId=" << appId();
-    TaskController::singleton()->resume(appId());
+    qCDebug(QTMIR_APPLICATIONS) << "Application::resume - appId=" << appId();
+    m_taskController->resume(longAppId());
 }
 
 void Application::respawn()
 {
-    qCDebug(QTMIR_APPLICATIONS) << "Application::respawn - this=" << this << "appId=" << appId();
-    TaskController::singleton()->start(appId(), m_arguments);
+    qCDebug(QTMIR_APPLICATIONS) << "Application::respawn - appId=" << appId();
+    m_taskController->start(appId(), m_arguments);
 }
+
+QString Application::longAppId() const
+{
+    return m_longAppId;
+}
+
+} // namespace qtmir

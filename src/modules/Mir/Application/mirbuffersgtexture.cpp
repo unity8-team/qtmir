@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2013-2014 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -25,7 +25,9 @@
 #include <mir/geometry/size.h>
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
+#define foreach Q_FOREACH
 #include <private/qqmlprofilerservice_p.h>
+#undef foreach
 #include <QElapsedTimer>
 static QElapsedTimer qsg_renderer_timer;
 static bool qsg_render_timing = !qgetenv("QSG_RENDER_TIMING").isEmpty();
@@ -111,5 +113,5 @@ void MirBufferSGTexture::bind()
                     QQmlProfilerService::SceneGraphTexturePrepare,
                     bindTime);
     }
-#endif
 }
+#endif

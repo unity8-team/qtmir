@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2013-2014 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -30,8 +30,11 @@
 // local
 #include "mirsurfaceitem.h"
 
-class ShellServerConfiguration;
 namespace mir { namespace scene { class Surface; class Session; }}
+
+namespace qtmir {
+
+class ShellServerConfiguration;
 
 class MirSurfaceManager : public QAbstractListModel
 {
@@ -80,5 +83,7 @@ private:
     static MirSurfaceManager *the_surface_manager;
     QHash<int, QByteArray> m_roleNames;
 };
+
+} // namespace qtmir
 
 #endif // MIR_SURFACE_MANAGER_H

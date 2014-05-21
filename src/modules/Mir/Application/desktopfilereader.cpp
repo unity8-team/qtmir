@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2013-2014 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -16,39 +16,37 @@
 
 // local
 #include "desktopfilereader.h"
-
-// QPA mirserver
 #include "logging.h"
 
 // Qt
 #include <QFile>
-#include <QDir>
-#include <QStandardPaths>
-#include <QSettings>
+
+namespace qtmir
+{
+
+DesktopFileReader::Factory::Factory()
+{
+}
+
+DesktopFileReader::Factory::~Factory()
+{
+}
+
+DesktopFileReader* DesktopFileReader::Factory::createInstance(const QString &appId, const QFileInfo& fi)
+{
+    return new DesktopFileReader(appId, fi);
+}
 
 // Retrieves the size of an array at compile time.
 #define ARRAY_SIZE(a) \
     ((sizeof(a) / sizeof(*(a))) / static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))))
 
-DesktopFileReader::DesktopFileReader(const QString &appId)
+DesktopFileReader::DesktopFileReader(const QString &appId, const QFileInfo &desktopFile)
     : appId_(appId)
     , entries_(DesktopFileReader::kNumberOfEntries, "")
 {
     qCDebug(QTMIR_APPLICATIONS) << "DesktopFileReader::DesktopFileReader - this=" << this << "appId=" << appId;
-    Q_ASSERT(appId != NULL);
 
-    file_ = findDesktopFile(appId);
-    loaded_ = loadDesktopFile(file_);
-}
-
-DesktopFileReader::DesktopFileReader(const QFileInfo &desktopFile)
-    : entries_(DesktopFileReader::kNumberOfEntries, "")
-{
-    qCDebug(QTMIR_APPLICATIONS) << "DesktopFileReader::DesktopFileReader - this=" << this << "desktopFile=" << desktopFile.absoluteFilePath();
-
-    Q_ASSERT(desktopFile.exists());
-
-    appId_ = desktopFile.completeBaseName();
     file_ = desktopFile.absoluteFilePath();
     loaded_ = loadDesktopFile(file_);
 }
@@ -58,30 +56,6 @@ DesktopFileReader::~DesktopFileReader()
     qCDebug(QTMIR_APPLICATIONS) << "DesktopFileReader::~DesktopFileReader";
     entries_.clear();
 }
-
-
-QString DesktopFileReader::findDesktopFile(const QString &appId) const
-{
-    qCDebug(QTMIR_APPLICATIONS) << "DesktopFileReader::findDesktopFile - appId=" << appId;
-
-    int dashPos = -1;
-    QString helper = appId;
-    QString desktopFile;
-
-    do {
-        if (dashPos != -1) {
-            helper = helper.replace(dashPos, 1, '/');
-        }
-
-        desktopFile = QStandardPaths::locate(QStandardPaths::ApplicationsLocation, QString("%1.desktop").arg(helper));
-        if (!desktopFile.isEmpty()) return desktopFile;
-
-        dashPos = helper.indexOf("-");
-    } while (dashPos != -1);
-
-    return QString();
-}
-
 
 bool DesktopFileReader::loadDesktopFile(QString desktopFile)
 {
@@ -115,14 +89,14 @@ bool DesktopFileReader::loadDesktopFile(QString desktopFile)
 
     // Open file.
     if (!file.open(QFile::ReadOnly | QIODevice::Text)) {
-        qCritical() << "Can't open file:" << file.errorString();
+        qWarning() << "Can't open file:" << file.errorString();
         return false;
     }
 
     // Validate "magic key" (standard group header).
     if (file.readLine(buffer, kBufferSize) != -1) {
         if (strncmp(buffer, "[Desktop Entry]", sizeof("[Desktop Entry]") - 1)) {
-            qCritical() << "not a desktop file";
+            qWarning() << "not a desktop file, unable to read it";
             return false;
         }
     }
@@ -134,7 +108,7 @@ bool DesktopFileReader::loadDesktopFile(QString desktopFile)
         if (length > 1) {
             // Stop when reaching unsupported next group header.
             if (buffer[0] == '[') {
-                qCritical() << "reached next group header, leaving loop";
+                qWarning() << "reached next group header, leaving loop";
                 break;
             }
             // Lookup entries ignoring duplicates if any.
@@ -158,15 +132,17 @@ bool DesktopFileReader::loadDesktopFile(QString desktopFile)
     // Check that the mandatory entries are set.
     if ((entryFlags & kMandatoryEntriesMask) == kMandatoryEntriesMask) {
         qDebug("loaded desktop file with name='%s', comment='%s', icon='%s', exec='%s', path='%s', stagehint='%s'",
-                entries_[DesktopFileReader::kNameIndex].toLatin1().data(),
-                entries_[DesktopFileReader::kCommentIndex].toLatin1().data(),
-                entries_[DesktopFileReader::kIconIndex].toLatin1().data(),
-                entries_[DesktopFileReader::kExecIndex].toLatin1().data(),
-                entries_[DesktopFileReader::kPathIndex].toLatin1().data(),
-                entries_[DesktopFileReader::kStageHintIndex].toLatin1().data());
+                qPrintable(entries_[DesktopFileReader::kNameIndex]),
+                qPrintable(entries_[DesktopFileReader::kCommentIndex]),
+                qPrintable(entries_[DesktopFileReader::kIconIndex]),
+                qPrintable(entries_[DesktopFileReader::kExecIndex]),
+                qPrintable(entries_[DesktopFileReader::kPathIndex]),
+                qPrintable(entries_[DesktopFileReader::kStageHintIndex]));
         return true;
     } else {
-        qCritical() << "not a valid desktop file, missing mandatory entries in the standard group header";
+        qWarning() << "not a valid desktop file, missing mandatory entries in the standard group header";
         return false;
     }
 }
+
+} // namespace qtmir

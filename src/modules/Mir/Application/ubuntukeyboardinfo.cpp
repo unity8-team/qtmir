@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2013-2014 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -17,6 +17,8 @@
 #include "ubuntukeyboardinfo.h"
 
 #include <QDir>
+
+namespace qtmir {
 
 namespace {
     const int gConnectionAttemptIntervalMs = 5000;
@@ -149,5 +151,6 @@ void UbuntuKeyboardInfo::buildSocketFilePath()
     } else {
         m_socketFilePath = QDir("/tmp").filePath(gServerName);
     }
-
 }
+
+} // namespace qtmir

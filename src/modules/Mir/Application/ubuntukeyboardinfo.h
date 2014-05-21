@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2013-2014 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -19,6 +19,8 @@
 
 #include <QLocalSocket>
 #include <QTimer>
+
+namespace qtmir {
 
 // Temporary solution to get information about the onscreen keyboard
 // This shouldn't be needed once the OSK is a properly sized surface
@@ -74,5 +76,7 @@ private:
     // Path to the socket file created by ubuntu-keyboard
     QString m_socketFilePath;
 };
+
+} // namespace qtmir
 
 #endif // UBUNTU_KEYBOARD_INFO_H

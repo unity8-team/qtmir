@@ -29,11 +29,7 @@
 
 // local
 #include "application.h"
-
-class MirServerConfiguration;
-class DBusWindowStack;
-class MirSurfaceManager;
-class TaskController;
+#include "desktopfilereader.h"
 
 namespace mir {
     namespace scene {
@@ -42,14 +38,35 @@ namespace mir {
     }
 }
 
+class MirServerConfiguration;
+
+namespace qtmir
+{
+
+class DBusWindowStack;
+class MirSurfaceManager;
+class ProcInfo;
+class TaskController;
+
 class ApplicationManager : public unity::shell::application::ApplicationManagerInterface
 {
     Q_OBJECT
 
 public:
+    class Factory
+    {
+    public:
+        ApplicationManager* create();
+    };
+
     static ApplicationManager* singleton();
 
-    explicit ApplicationManager(QObject *parent = 0);
+    explicit ApplicationManager(
+            const QSharedPointer<MirServerConfiguration>& mirConfig,
+            const QSharedPointer<TaskController>& taskController,
+            const QSharedPointer<DesktopFileReader::Factory>& desktopFileReaderFactory,
+            const QSharedPointer<ProcInfo>& processInfo,
+            QObject *parent = 0);
     virtual ~ApplicationManager();
 
     // ApplicationManagerInterface
@@ -57,6 +74,8 @@ public:
     Q_INVOKABLE bool stopApplication(const QString &appId) override;
     Q_INVOKABLE bool suspendApplication(const QString &appId) override;
     Q_INVOKABLE bool resumeApplication(const QString &appId) override;
+
+    Q_INVOKABLE bool updateScreenshot(const QString &appId);
 
     Q_INVOKABLE Application* get(int index) const override;
     Q_INVOKABLE Application* findApplication(const QString &appId) const override;
@@ -78,13 +97,17 @@ public Q_SLOTS:
     void onSessionCreatedSurface(const mir::scene::Session *session,
                                  const std::shared_ptr<mir::scene::Surface> &surface);
 
-    void onProcessStartReportReceived(const QString &appId, const bool failure);
-    void onProcessStopped(const QString& appId, const bool unexpected);
-    void onFocusRequested(const QString& appId);
-    void onResumeRequested(const QString& appId);
+    void onProcessFailed(const QString &appId, const bool duringStartup);
+    void onProcessStarting(const QString &appId);
+    void onProcessStopped(const QString &appId);
+    void onFocusRequested(const QString &appId);
+    void onResumeRequested(const QString &appId);
 
 Q_SIGNALS:
     void focusRequested(const QString &appId);
+
+private Q_SLOTS:
+    void screenshotUpdated();
 
 private:
     void setFocused(Application *application);
@@ -92,23 +115,29 @@ private:
     void remove(Application *application);
     void move(const int from, const int to);
     QList<Application*> list() const;
-    Application* findApplicationWithSession(const std::shared_ptr<mir::scene::Session> &session);
-    Application* findApplicationWithSession(const mir::scene::Session *session);
-    Application* findApplicationWithPid(const qint64 pid);
+    Application* findApplicationWithSession(const std::shared_ptr<mir::scene::Session> &session) const;
+    Application* findApplicationWithSession(const mir::scene::Session *session) const;
+    Application* findApplicationWithPid(const qint64 pid) const;
+    QModelIndex findIndex(const Application *application) const;
 
+
+    QSharedPointer<MirServerConfiguration> m_mirConfig;
     QList<Application*> m_applications;
     QString m_focusedApplicationId;
     QStringList m_lifecycleExceptions;
-    QSharedPointer<MirServerConfiguration> m_mirConfig;
-    DBusWindowStack* m_dbusWindowStack;
-    QScopedPointer<TaskController> m_taskController;
-    static ApplicationManager* the_application_manager;
+    DBusWindowStack *m_dbusWindowStack;
+    QSharedPointer<TaskController> m_taskController;
+    QSharedPointer<DesktopFileReader::Factory> m_desktopFileReaderFactory;
+    QSharedPointer<ProcInfo> m_procInfo;
+    static ApplicationManager *the_application_manager;
     bool m_suspended;
 
     friend class DBusWindowStack;
     friend class MirSurfaceManager;
 };
 
-Q_DECLARE_METATYPE(ApplicationManager*)
+} // namespace qtmir
+
+Q_DECLARE_METATYPE(qtmir::ApplicationManager*)
 
 #endif // APPLICATIONMANAGER_H

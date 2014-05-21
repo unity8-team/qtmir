@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2013-2014 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -30,6 +30,8 @@
 #include <mir_toolkit/common.h>
 
 #include "ubuntukeyboardinfo.h"
+
+namespace qtmir {
 
 class MirSurfaceManager;
 class QSGMirSurfaceNode;
@@ -157,6 +159,8 @@ private:
     friend class MirSurfaceManager;
 };
 
-Q_DECLARE_METATYPE(MirSurfaceItem*)
+} // namespace qtmir
+
+Q_DECLARE_METATYPE(qtmir::MirSurfaceItem*)
 
 #endif // MIRSURFACEITEM_H

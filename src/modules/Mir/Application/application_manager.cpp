@@ -16,9 +16,12 @@
 
 // local
 #include "application_manager.h"
+#include "proc_info.h"
 #include "application.h"
 #include "desktopfilereader.h"
 #include "dbuswindowstack.h"
+#include "taskcontroller.h"
+#include "upstart/applicationcontroller.h"
 
 // QPA mirserver
 #include "mirserverconfiguration.h"
@@ -36,61 +39,132 @@
 // Qt
 #include <QGuiApplication>
 
+// std
+#include <csignal>
+
 Q_LOGGING_CATEGORY(QTMIR_APPLICATIONS, "qtmir.applications")
 
 namespace ms = mir::scene;
 
 using namespace unity::shell::application;
 
-ApplicationManager *ApplicationManager::the_application_manager = nullptr;
 
-ApplicationManager* ApplicationManager::singleton()
+namespace qtmir
 {
-    if (!the_application_manager) {
-        the_application_manager = new ApplicationManager();
+
+namespace {
+
+// FIXME: To be removed once shell has fully adopted short appIds!!
+QString toShortAppIdIfPossible(const QString &appId) {
+    QRegExp longAppIdMask("[a-z0-9][a-z0-9+.-]+_[a-zA-Z0-9+.-]+_[0-9][a-zA-Z0-9.+:~-]*");
+    if (longAppIdMask.exactMatch(appId)) {
+        qWarning() << "WARNING: long App ID encountered:" << appId;
+        // input string a long AppId, chop the version string off the end
+        QStringList parts = appId.split("_");
+        return QString("%1_%2").arg(parts.first()).arg(parts.at(1));
     }
-    return the_application_manager;
+    return appId;
 }
 
-ApplicationManager::ApplicationManager(QObject *parent)
-:   ApplicationManagerInterface(parent)
-,   m_lifecycleExceptions(QStringList() << "com.ubuntu.music")
-,   m_taskController(TaskController::singleton())
+void connectToSessionListener(ApplicationManager * manager, SessionListener * listener)
 {
-    qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::ApplicationManager (this=%p)" << this;
+    QObject::connect(listener, &SessionListener::sessionStarting,
+                     manager, &ApplicationManager::onSessionStarting);
+    QObject::connect(listener, &SessionListener::sessionStopping,
+                     manager, &ApplicationManager::onSessionStopping);
+    QObject::connect(listener, &SessionListener::sessionCreatedSurface,
+                     manager, &ApplicationManager::onSessionCreatedSurface);
+}
 
+void connectToSessionAuthorizer(ApplicationManager * manager, SessionAuthorizer * authorizer)
+{
+    QObject::connect(authorizer, &SessionAuthorizer::requestAuthorizationForSession,
+                     manager, &ApplicationManager::authorizeSession, Qt::BlockingQueuedConnection);
+}
+
+void connectToTaskController(ApplicationManager * manager, TaskController * controller)
+{
+    QObject::connect(controller, &TaskController::processStarting,
+                     manager, &ApplicationManager::onProcessStarting);
+    QObject::connect(controller, &TaskController::processStopped,
+                     manager, &ApplicationManager::onProcessStopped);
+    QObject::connect(controller, &TaskController::processFailed,
+                     manager, &ApplicationManager::onProcessFailed);
+    QObject::connect(controller, &TaskController::requestFocus,
+                     manager, &ApplicationManager::onFocusRequested);
+    QObject::connect(controller, &TaskController::requestResume,
+                     manager, &ApplicationManager::onResumeRequested);
+}
+
+} // namespace
+
+
+
+ApplicationManager* ApplicationManager::Factory::Factory::create()
+{
     NativeInterface *nativeInterface = dynamic_cast<NativeInterface*>(QGuiApplication::platformNativeInterface());
-
-    m_mirConfig = nativeInterface->m_mirConfig;
 
     if (!nativeInterface) {
         qCritical() << "ERROR: Unity.Application QML plugin requires use of the 'mirserver' QPA plugin";
         QGuiApplication::quit();
-        return;
+        return nullptr;
     }
+
+    auto mirConfig = nativeInterface->m_mirConfig;
 
     SessionListener *sessionListener = static_cast<SessionListener*>(nativeInterface->nativeResourceForIntegration("SessionListener"));
     SessionAuthorizer *sessionAuthorizer = static_cast<SessionAuthorizer*>(nativeInterface->nativeResourceForIntegration("SessionAuthorizer"));
 
-    QObject::connect(sessionListener, &SessionListener::sessionStarting,
-                     this, &ApplicationManager::onSessionStarting);
-    QObject::connect(sessionListener, &SessionListener::sessionStopping,
-                     this, &ApplicationManager::onSessionStopping);
-    QObject::connect(sessionListener, &SessionListener::sessionCreatedSurface,
-                     this, &ApplicationManager::onSessionCreatedSurface);
-    QObject::connect(sessionAuthorizer, &SessionAuthorizer::requestAuthorizationForSession,
-                     this, &ApplicationManager::authorizeSession, Qt::BlockingQueuedConnection);
+    QSharedPointer<upstart::ApplicationController> appController(new upstart::ApplicationController());
+    QSharedPointer<TaskController> taskController(new TaskController(nullptr, appController));
+    QSharedPointer<DesktopFileReader::Factory> fileReaderFactory(new DesktopFileReader::Factory());
+    QSharedPointer<ProcInfo> procInfo(new ProcInfo());
 
-    QObject::connect(m_taskController.data(), &TaskController::processStartReport,
-                     this, &ApplicationManager::onProcessStartReportReceived);
-    QObject::connect(m_taskController.data(), &TaskController::processStopped,
-                     this, &ApplicationManager::onProcessStopped);
-    QObject::connect(m_taskController.data(), &TaskController::requestFocus,
-                     this, &ApplicationManager::onFocusRequested);
-    QObject::connect(m_taskController.data(), &TaskController::requestResume,
-                     this, &ApplicationManager::onResumeRequested);
+    // FIXME: We should use a QSharedPointer to wrap this ApplicationManager object, which requires us
+    // to use the data() method to pass the raw pointer to the QML engine. However the QML engine appears
+    // to take ownership of the object, and deletes it when it wants to. This conflicts with the purpose
+    // of the QSharedPointer, and a double-delete results. Trying QQmlEngine::setObjectOwnership on the
+    // object no effect, which it should. Need to investigate why.
+    ApplicationManager* appManager = new ApplicationManager(
+                                             mirConfig,
+                                             taskController,
+                                             fileReaderFactory,
+                                             procInfo
+                                         );
 
-    m_dbusWindowStack = new DBusWindowStack(this);
+    connectToSessionListener(appManager, sessionListener);
+    connectToSessionAuthorizer(appManager, sessionAuthorizer);
+    connectToTaskController(appManager, taskController.data());
+
+    return appManager;
+}
+
+
+ApplicationManager* ApplicationManager::singleton()
+{
+    static ApplicationManager* instance;
+    if (!instance) {
+        Factory appFactory;
+        instance = appFactory.create();
+    }
+    return instance;
+}
+
+ApplicationManager::ApplicationManager(
+        const QSharedPointer<MirServerConfiguration>& mirConfig,
+        const QSharedPointer<TaskController>& taskController,
+        const QSharedPointer<DesktopFileReader::Factory>& desktopFileReaderFactory,
+        const QSharedPointer<ProcInfo>& procInfo,
+        QObject *parent)
+    : ApplicationManagerInterface(parent)
+    , m_mirConfig(mirConfig)
+    , m_lifecycleExceptions(QStringList() << "com.ubuntu.music")
+    , m_dbusWindowStack(new DBusWindowStack(this))
+    , m_taskController(taskController)
+    , m_desktopFileReaderFactory(desktopFileReaderFactory)
+    , m_procInfo(procInfo)
+{
+    qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::ApplicationManager (this=%p)" << this;
 }
 
 ApplicationManager::~ApplicationManager()
@@ -122,6 +196,8 @@ QVariant ApplicationManager::data(const QModelIndex &index, int role) const
                 return QVariant::fromValue((int)application->state());
             case RoleFocused:
                 return QVariant::fromValue(application->focused());
+            case RoleScreenshot:
+                return QVariant::fromValue(application->screenshot());
             default:
                 return QVariant();
         }
@@ -139,8 +215,10 @@ Application* ApplicationManager::get(int index) const
     return m_applications.at(index);
 }
 
-Application* ApplicationManager::findApplication(const QString &appId) const
+Application* ApplicationManager::findApplication(const QString &inputAppId) const
 {
+    const QString appId = toShortAppIdIfPossible(inputAppId);
+
     for (Application *app : m_applications) {
         if (app->appId() == appId) {
             return app;
@@ -174,9 +252,16 @@ void ApplicationManager::setSuspended(bool suspended)
     }
 }
 
-bool ApplicationManager::suspendApplication(const QString &appId)
+/**
+ * @brief ApplicationManager::suspendApplication - suspend a running app, if permitted
+ * @param inputAppId
+ * @return True if application is running and can be lifecycle suspended, else false
+ */
+bool ApplicationManager::suspendApplication(const QString &inputAppId)
 {
+    const QString appId = toShortAppIdIfPossible(inputAppId);
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::suspendApplication - appId=" << appId;
+
     Application *application = findApplication(appId);
     if (application == nullptr)
         return false;
@@ -185,40 +270,76 @@ bool ApplicationManager::suspendApplication(const QString &appId)
     if (!m_lifecycleExceptions.filter(application->appId().section('_',0,0)).empty())
         return true;
 
-    if (application->state() == Application::Running)
-        application->setState(Application::Suspended);
+    if (application->state() != Application::Running)
+        return false;
 
+    application->setState(Application::Suspended);
     return true;
 }
 
-bool ApplicationManager::resumeApplication(const QString &appId)
+/**
+ * @brief ApplicationManager::resumeApplication - resumes a suspended application
+ * @param inputAppId
+ * @return True if application exists and is suspended or lifecycle stopped, else false
+ */
+bool ApplicationManager::resumeApplication(const QString &inputAppId)
 {
+    const QString appId = toShortAppIdIfPossible(inputAppId);
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::resumeApplication - appId=" << appId;
+
     Application *application = findApplication(appId);
 
     if (application == nullptr)
         return false;
 
-    if (application->state() != Application::Running)
-        application->setState(Application::Running);
+    if (application->state() == Application::Running || application->state() == Application::Starting)
+        return false;
 
+    application->setState(Application::Running);
     return true;
 }
 
-
-Application* ApplicationManager::startApplication(const QString &appId,
+/**
+ * @brief ApplicationManager::startApplication launches an application identified by an "application id" or appId.
+ *
+ * Note: due to an implementation detail, appIds come in two forms:
+ * * long appId: $(click_package)_$(application)_$(version)
+ * * short appId: $(click_package)_$(application)
+ * It is expected that the shell uses _only_ short appIds (but long appIds are accepted by this method for legacy
+ * reasons - but be warned, this ability will be removed)
+ *
+ * Unless stated otherwise, we always use short appIds in this API.
+ *
+ * @param inputAppId AppId of application to launch (long appId supported)
+ * @param arguments Command line arguments to pass to the application to be launched
+ * @return Pointer to Application object representing the launched process. If process already running, return nullptr
+ */
+Application* ApplicationManager::startApplication(const QString &inputAppId,
                                                   const QStringList &arguments)
 {
+    QString appId = toShortAppIdIfPossible(inputAppId);
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::startApplication - this=" << this << "appId" << qPrintable(appId);
 
-    if (!m_taskController->start(appId, arguments)) {
-        qCritical() << "Upstart failed to start application with appId" << appId;
+    Application *application = findApplication(appId);
+    if (application) {
+        qWarning() << "ApplicationManager::startApplication - application appId=" << appId << " already exists";
         return nullptr;
     }
 
-    Application* application = new Application(appId, Application::Starting, arguments, this);
+    if (!m_taskController->start(appId, arguments)) {
+        qWarning() << "Upstart failed to start application with appId" << appId;
+        return nullptr;
+    }
+
+    application = new Application(
+                m_taskController,
+                m_desktopFileReaderFactory->createInstance(appId, m_taskController->findDesktopFileForAppId(appId)),
+                Application::Starting,
+                arguments,
+                this);
+
     if (!application->isValid()) {
-        qCritical() << "Unable to instantiate application with appId" << appId;
+        qWarning() << "Unable to instantiate application with appId" << appId;
         return nullptr;
     }
 
@@ -226,32 +347,40 @@ Application* ApplicationManager::startApplication(const QString &appId,
     return application;
 }
 
-void ApplicationManager::onProcessStartReportReceived(const QString &appId, const bool failure)
+void ApplicationManager::onProcessStarting(const QString &appId)
 {
-    qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessStartReportReceived - appId=" << appId << "failure=" << failure;
-
-    if (failure) {
-        onProcessStopped(appId, true);
-    }
+    qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessStarting - appId=" << appId;
 
     Application *application = findApplication(appId);
-
-    if (!application) { // if shell did not start this application, but upstart did
-        application = new Application(appId, Application::Starting, QStringList(), this);
+    if (!application) { // then shell did not start this application, so upstart must have - add to list
+        application = new Application(
+                    m_taskController,
+                    m_desktopFileReaderFactory->createInstance(appId, m_taskController->findDesktopFileForAppId(appId)),
+                    Application::Starting,
+                    QStringList(), this);
         if (!application->isValid()) {
-            qCritical() << "Unable to instantiate application with appId" << appId;
+            qWarning() << "Unable to instantiate application with appId" << appId;
             return;
         }
+
         add(application);
+    }
+    else {
+        qWarning() << "ApplicationManager::onProcessStarting application already found with appId" << appId;
     }
 }
 
-bool ApplicationManager::stopApplication(const QString &appId)
+/**
+ * @brief ApplicationManager::stopApplication - stop a running application and remove from list
+ * @param inputAppId
+ * @return True if running application was stopped, false if application did not exist or could not be stopped
+ */
+bool ApplicationManager::stopApplication(const QString &inputAppId)
 {
+    const QString appId = toShortAppIdIfPossible(inputAppId);
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::stopApplication - appId=" << appId;
 
     Application *application = findApplication(appId);
-
     if (!application) {
         qCritical() << "No such running application with appId" << appId;
         return false;
@@ -260,20 +389,49 @@ bool ApplicationManager::stopApplication(const QString &appId)
     remove(application);
     m_dbusWindowStack->WindowDestroyed(0, appId);
 
-    bool result = m_taskController->stop(appId);
+    bool result = m_taskController->stop(application->longAppId());
 
-    if (!result) {
-        qCritical() << "FAILED to ask Upstart to stop application with appId" << appId;
+    if (!result && application->pid() > 0) {
+        qWarning() << "FAILED to ask Upstart to stop application with appId" << appId
+                   << "Sending SIGTERM to process:" << application->pid();
+        kill(application->pid(), SIGTERM);
+        result = true;
     }
-    delete application;
 
-    // FIXME(dandrader): lying here. The operation is async. So we will only know whether
-    // the focusing was successful once the server replies. Maybe the API in unity-api should
-    // reflect that?
+    delete application;
     return result;
 }
 
-void ApplicationManager::onProcessStopped(const QString &appId, const bool unexpected)
+void ApplicationManager::onProcessFailed(const QString &appId, const bool duringStartup)
+{
+    /* Applications fail if they fail to launch, crash or are killed. If failed to start, must
+     * immediately remove from list of applications. If crash or kill, instead we set flag on the
+     * Application to indicate it can be resumed.
+     */
+
+    qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessStopped - appId=" << appId << "duringStartup=" << duringStartup;
+
+    Application *application = findApplication(appId);
+    if (!application) {
+        qWarning() << "ApplicationManager::onProcessFailed - upstart reports failure of application" << appId
+                   << "that AppManager is not managing";
+        return;
+    }
+
+    Q_UNUSED(duringStartup); // FIXME(greyback) upstart reports app that fully started up & crashes as failing during startup??
+    if (application->state() == Application::Starting) {
+        remove(application);
+        m_dbusWindowStack->WindowDestroyed(0, application->appId());
+        delete application;
+    } else {
+        // We need to set flags on the Application to say the app can be resumed, and thus should not be removed
+        // from the list by onProcessStopped.
+        application->setCanBeResumed(true);
+        application->setPid(0);
+    }
+}
+
+void ApplicationManager::onProcessStopped(const QString &appId)
 {
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessStopped - appId=" << appId;
     Application *application = findApplication(appId);
@@ -284,25 +442,19 @@ void ApplicationManager::onProcessStopped(const QString &appId, const bool unexp
     if (application) {
         bool removeApplication = false;
 
-        if (application->state() == Application::Running || application->state() == Application::Starting) {
-            // Application probably crashed, else OOM killer struck. Either way state wasn't saved
-            // so just remove application
-            removeApplication = true;
-        } else if (application->state() == Application::Suspended) {
-            application->setState(Application::Stopped);
-            application->setSession(nullptr);
+        // The following scenario is the only time that we do NOT remove the application from the app list:
+        if ((application->state() == Application::Suspended || application->state() == Application::Stopped)
+                && application->pid() == 0 // i.e. onProcessFailed was called, which resets the PID of this application
+                && application->canBeResumed()) {
+            removeApplication = false;
         }
 
         if (removeApplication) {
+            qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessStopped - removing appId=" << appId;
             remove(application);
             m_dbusWindowStack->WindowDestroyed(0, application->appId());
             delete application;
         }
-    }
-
-    if (unexpected) {
-        // TODO: pop up a message box/notification?
-        qCritical() << "ApplicationManager::onProcessStopped - app with appId" << appId << "died unexpectedly";
     }
 }
 
@@ -331,8 +483,35 @@ void ApplicationManager::onResumeRequested(const QString& appId)
     }
 }
 
+bool ApplicationManager::updateScreenshot(const QString &inputAppId)
+{
+    const QString appId = toShortAppIdIfPossible(inputAppId);
 
-/************************************* Mir-side methods *************************************/
+    Application *application = findApplication(appId);
+
+    if (!application) {
+        qWarning() << "No such running application with appId=" << appId;
+        return false;
+    }
+
+    application->updateScreenshot();
+    QModelIndex appIndex = findIndex(application);
+    Q_EMIT dataChanged(appIndex, appIndex, QVector<int>() << RoleScreenshot);
+    return true;
+}
+
+void ApplicationManager::screenshotUpdated()
+{
+    if (sender()) {
+        Application *application = static_cast<Application*>(sender());
+        QModelIndex appIndex = findIndex(application);
+        Q_EMIT dataChanged(appIndex, appIndex, QVector<int>() << RoleScreenshot);
+
+        qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::screenshotUpdated: Received new screenshot for", application->appId();
+    } else {
+        qCDebug(QTMIR_APPLICATIONS) <<"ApplicationManager::screenshotUpdated: Received screenshotUpdated signal but application has disappeard.";
+    }
+}
 
 void ApplicationManager::authorizeSession(const quint64 pid, bool &authorized)
 {
@@ -350,47 +529,42 @@ void ApplicationManager::authorizeSession(const quint64 pid, bool &authorized)
     }
 
     /*
-     * Hack: Allow applications to be launched externally, but must be executed with the
-     * "desktop_file_hint" parameter attached. This exists until upstart-app-launch can
-     * notify shell it is starting an application and so shell should allow it. Also reads
-     * the --stage parameter to determine the desired stage
+     * Hack: Allow applications to be launched without being managed by upstart, where AppManager
+     * itself manages processes executed with a "--desktop_file_hint=/path/to/desktopFile.desktop"
+     * parameter attached. Also reads the --stage parameter to determine the desired stage
      */
-    QFile cmdline(QString("/proc/%1/cmdline").arg(pid));
-    if (!cmdline.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qCritical() << "ApplicationManager REJECTED connection from app with pid" << pid
-                    << "as unable to read the process command line";
+    std::unique_ptr<ProcInfo::CommandLine> info = m_procInfo->commandLine(pid);
+    if (!info) {
+        qWarning() << "ApplicationManager REJECTED connection from app with pid" << pid
+                   << "as unable to read the process command line";
         return;
     }
 
-    QByteArray command = cmdline.readLine().replace('\0', ' ');
-
-    // FIXME: special exception for the OSK - maliit-server - not very secure
-    if (command.startsWith("maliit-server") || command.startsWith("/usr/lib/arm-linux-gnueabihf/qt5/libexec/QtWebProcess")
-        || command.startsWith("/usr/bin/signon-ui")) {
+    if (info->startsWith("maliit-server") || info->contains("qt5/libexec/QtWebProcess")) {
         authorized = true;
         return;
     }
 
-    QString pattern = QRegularExpression::escape("--desktop_file_hint=") + "(\\S+)";
-    QRegularExpression regExp(pattern);
-    QRegularExpressionMatch regExpMatch = regExp.match(command);
+    boost::optional<QString> desktopFileName{ info->getParameter("--desktop_file_hint=") };
 
-    if (!regExpMatch.hasMatch()) {
+    if (!desktopFileName) {
         qCritical() << "ApplicationManager REJECTED connection from app with pid" << pid
                     << "as no desktop_file_hint specified";
         return;
     }
 
-    QString desktopFileName = regExpMatch.captured(1);
     qCDebug(QTMIR_APPLICATIONS) << "Process supplied desktop_file_hint, loading" << desktopFileName;
+
+    // Guess appId from the desktop file hint
+    QString appId = toShortAppIdIfPossible(desktopFileName.get().remove(QRegExp(".desktop$")).split('/').last());
 
     // FIXME: right now we support --desktop_file_hint=appId for historical reasons. So let's try that in
     // case we didn't get an existing .desktop file path
     DesktopFileReader* desktopData;
-    if (QFileInfo(desktopFileName).exists()) {
-        desktopData = new DesktopFileReader(QFileInfo(desktopFileName));
+    if (QFileInfo(desktopFileName.get()).exists()) {
+        desktopData = m_desktopFileReaderFactory->createInstance(appId, QFileInfo(desktopFileName.get()));
     } else {
-        desktopData = new DesktopFileReader(desktopFileName);
+        desktopData = m_desktopFileReaderFactory->createInstance(appId, m_taskController->findDesktopFileForAppId(appId));
     }
 
     if (!desktopData->loaded()) {
@@ -415,22 +589,20 @@ void ApplicationManager::authorizeSession(const quint64 pid, bool &authorized)
 
     // if stage supplied in CLI, fetch that
     Application::Stage stage = Application::MainStage;
-    pattern = QRegularExpression::escape("--stage=") + "(\\S+)";
-    regExp.setPattern(pattern);
-    regExpMatch = regExp.match(command);
+    boost::optional<QString> stageParam = info->getParameter("--stage_hint=");
 
-    if (regExpMatch.hasMatch() && regExpMatch.captured(1) == "side_stage") {
+    if (stageParam && stageParam.get() == "side_stage") {
         stage = Application::SideStage;
     }
 
     qCDebug(QTMIR_APPLICATIONS) << "New process with pid" << pid << "appeared, adding new application to the"
                                 << "application list with appId:" << desktopData->appId();
 
-    QString argStr(command.data());
-    QStringList arguments(argStr.split(' '));
-    application = new Application(desktopData, Application::Starting, arguments, this);
+    QStringList arguments(info->asStringList());
+    application = new Application(m_taskController, desktopData, Application::Starting, arguments, this);
     application->setPid(pid);
     application->setStage(stage);
+    application->setCanBeResumed(false);
     add(application);
     authorized = true;
 }
@@ -454,25 +626,30 @@ void ApplicationManager::onSessionStopping(std::shared_ptr<ms::Session> const& s
     // in case application closed not by hand of shell, check again here:
     Application* application = findApplicationWithSession(session);
     if (application) {
-        bool removeApplication = true;
-
-        if (application->state() != Application::Starting) {
-            application->setState(Application::Stopped);
-            application->setSession(nullptr);
+        /* Can remove the application from the running apps list immediately in these curcumstances:
+         *  1. application is not managed by upstart (this message from Mir is only notice the app has stopped, must do
+         *     it here)
+         *  2. application is managed by upstart, but has stopped before it managed to create a surface, we can assume
+         *     it crashed on startup, and thus cannot be resumed - so remove it.
+         *  3. application is managed by upstart and is in foreground (i.e. has Running state), if Mir reports the
+         *     application disconnects, it either crashed or stopped itself. Either case, remove it.
+         */
+        if (!application->canBeResumed()
+                || application->state() == Application::Starting
+                || application->state() == Application::Running) {
             m_dbusWindowStack->WindowDestroyed(0, application->appId());
-            // TODO - decide if app dying can be masked from user or not
-        }
-
-        if (removeApplication) {
             remove(application);
             delete application;
-            Q_EMIT focusedApplicationIdChanged();
+        } else {
+            // otherwise, we do not have enough information to make any changes to the model, so await events from
+            // upstart to go further, but set the app state
+            application->setState(Application::Stopped);
         }
     }
 }
 
 void ApplicationManager::onSessionCreatedSurface(ms::Session const* session,
-                                               std::shared_ptr<ms::Surface> const& surface)
+                                                 std::shared_ptr<ms::Surface> const& surface)
 {
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onSessionCreatedSurface - sessionName=" << session->name().c_str();
     Q_UNUSED(surface);
@@ -491,14 +668,16 @@ void ApplicationManager::setFocused(Application *application)
     move(m_applications.indexOf(application), 0);
     Q_EMIT focusedApplicationIdChanged();
     m_dbusWindowStack->FocusedWindowChanged(0, application->appId(), application->stage()); //FIXME(greyback) - SurfaceManager should do this
+    QModelIndex appIndex = findIndex(application);
+    Q_EMIT dataChanged(appIndex, appIndex, QVector<int>() << RoleFocused);
 }
 
-Application* ApplicationManager::findApplicationWithSession(const std::shared_ptr<ms::Session> &session)
+Application* ApplicationManager::findApplicationWithSession(const std::shared_ptr<ms::Session> &session) const
 {
     return findApplicationWithSession(session.get());
 }
 
-Application* ApplicationManager::findApplicationWithSession(const ms::Session *session)
+Application* ApplicationManager::findApplicationWithSession(const ms::Session *session) const
 {
     for (Application *app : m_applications) {
         if (app->session().get() == session) {
@@ -508,7 +687,7 @@ Application* ApplicationManager::findApplicationWithSession(const ms::Session *s
     return nullptr;
 }
 
-Application* ApplicationManager::findApplicationWithPid(const qint64 pid)
+Application* ApplicationManager::findApplicationWithPid(const qint64 pid) const
 {
     if (pid <= 0)
         return nullptr;
@@ -519,6 +698,17 @@ Application* ApplicationManager::findApplicationWithPid(const qint64 pid)
         }
     }
     return nullptr;
+}
+
+QModelIndex ApplicationManager::findIndex(const Application *application) const
+{
+    for (int i = 0; i < m_applications.size(); ++i) {
+        if (m_applications.at(i) == application) {
+            return index(i);
+        }
+    }
+
+    return QModelIndex();
 }
 
 void ApplicationManager::add(Application* application)
@@ -568,3 +758,5 @@ QList<Application*> ApplicationManager::list() const
 {
     return m_applications;
 }
+
+} // namespace qtmir

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2013-2014 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -22,39 +22,50 @@
 #include <QObject>
 
 #include "application.h"
+#include "applicationcontroller.h"
+#include "processcontroller.h"
 
-// upstart
-extern "C" {
-    #include "upstart-app-launch.h"
-}
+namespace qtmir
+{
 
 class TaskController : public QObject
 {
     Q_OBJECT
 public:
-    static TaskController* singleton();
+    TaskController(
+            QObject *parent,
+            const QSharedPointer<ApplicationController> &appController,
+            const QSharedPointer<ProcessController> &processController = QSharedPointer<ProcessController>(new ProcessController()));
     ~TaskController();
 
-    bool start(const QString& appId, const QStringList& args);
-    bool stop(const QString& appId);
+    bool start(const QString &appId, const QStringList &args);
+    bool stop(const QString &appId);
 
-    bool suspend(const QString& appId);
-    bool resume(const QString& appId);
+    bool suspend(const QString &appId);
+    bool resume(const QString &appId);
 
-    bool appIdHasProcessId(const QString& appId, const quint64 pid);
+    bool appIdHasProcessId(const QString &appId, const quint64 pid);
+    QFileInfo findDesktopFileForAppId(const QString &appId) const;
 
 Q_SIGNALS:
-    void processStartReport(const QString& appId, const bool failure);
-    void processStopped(const QString& appId, const bool unexpectedly);
-    void requestFocus(const QString& appId);
-    void requestResume(const QString& appId);
+    void processStarting(const QString &appId);
+    void processStopped(const QString &appId);
+    void processFailed(const QString &appId, const bool duringStartup);
+    void requestFocus(const QString &appId);
+    void requestResume(const QString &appId);
+
+private Q_SLOTS:
+    void onApplicationStarted(const QString &id);
+    void onApplicationFocusRequest(const QString &id);
+    void onApplicationResumeRequest(const QString &id);
+
+    void onApplicationError(const QString &id, ApplicationController::Error error);
 
 private:
-    TaskController(QObject *parent = 0);
-
-    static TaskController* m_theTaskController;
-    upstart_app_launch_app_observer_t preStartCallback, startedCallback, stopCallback, focusCallback, resumeCallback;
-    upstart_app_launch_app_failed_observer_t failureCallback;
+    QSharedPointer<ApplicationController> m_appController;
+    QSharedPointer<ProcessController> m_processController;
 };
+
+} // namespace qtmir
 
 #endif // TASKCONTROLLER_H

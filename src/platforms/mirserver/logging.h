@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2013-2014 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -22,4 +22,4 @@ Q_DECLARE_LOGGING_CATEGORY(QTMIR_APPLICATIONS)
 Q_DECLARE_LOGGING_CATEGORY(QTMIR_SURFACES)
 Q_DECLARE_LOGGING_CATEGORY(QTMIR_MIR_MESSAGES)
 
-#endif  // UBUNTU_APPLICATION_PLUGIN_LOGGING_H
+#endif // UBUNTU_APPLICATION_PLUGIN_LOGGING_H

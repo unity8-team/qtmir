@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2013-2014 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -23,24 +23,33 @@
 //Qt
 #include <QtCore/QtCore>
 #include <QImage>
+#include <QSharedPointer>
 
 // Unity API
 #include <unity/shell/application/ApplicationInfoInterface.h>
 
-class QImage;
-class DesktopFileReader;
-class TaskController;
 namespace mir { namespace scene { class Session; }}
 
-class Application : public unity::shell::application::ApplicationInfoInterface {
+namespace qtmir
+{
+
+class DesktopFileReader;
+class TaskController;
+
+class Application : public unity::shell::application::ApplicationInfoInterface
+{
     Q_OBJECT
     Q_PROPERTY(QString desktopFile READ desktopFile CONSTANT)
     Q_PROPERTY(QString exec READ exec CONSTANT)
     Q_PROPERTY(bool fullscreen READ fullscreen NOTIFY fullscreenChanged)
+    Q_PROPERTY(Stage stage READ stage WRITE setStage NOTIFY stageChanged)
 
 public:
-    Application(const QString &appId, State state, const QStringList &arguments, QObject *parent = 0);
-    Application(DesktopFileReader *desktopFileReader, State state, const QStringList &arguments, QObject *parent = 0);
+    Application(const QSharedPointer<TaskController>& taskController,
+                DesktopFileReader *desktopFileReader,
+                State state,
+                const QStringList &arguments,
+                QObject *parent = 0);
     virtual ~Application();
 
     // ApplicationInfoInterface
@@ -52,13 +61,22 @@ public:
     Stages supportedStages() const override;
     State state() const override;
     bool focused() const override;
+    QUrl screenshot() const override;
 
-    bool setStage(Stage stage) override;
+    bool setStage(const Stage stage) override;
+
+    QImage screenshotImage() const;
+    void updateScreenshot();
+
+    bool canBeResumed() const;
+    void setCanBeResumed(const bool);
 
     bool isValid() const;
     QString desktopFile() const;
     QString exec() const;
     bool fullscreen() const;
+    std::shared_ptr<::mir::scene::Session> session() const;
+    pid_t pid() const;
 
 public Q_SLOTS:
     void suspend();
@@ -67,18 +85,20 @@ public Q_SLOTS:
 
 Q_SIGNALS:
     void fullscreenChanged();
+    void stageChanged(Stage stage);
 
 private:
-    pid_t pid() const;
+    QString longAppId() const;
     void setPid(pid_t pid);
     void setState(State state);
     void setFocused(bool focus);
     void setFullscreen(bool fullscreen);
-    std::shared_ptr<mir::scene::Session> session() const;
-    void setSession(const std::shared_ptr<mir::scene::Session>& session);
+    void setSession(const std::shared_ptr<::mir::scene::Session>& session);
     void setSessionName(const QString& name);
 
+    QSharedPointer<TaskController> m_taskController;
     DesktopFileReader* m_desktopData;
+    QString m_longAppId;
     qint64 m_pid;
     Stage m_stage;
     Stages m_supportedStages;
@@ -86,6 +106,7 @@ private:
     bool m_focused;
     QUrl m_screenshot;
     QImage m_screenshotImage;
+    bool m_canBeResumed;
     bool m_fullscreen;
     std::shared_ptr<mir::scene::Session> m_session;
     QString m_sessionName;
@@ -93,10 +114,11 @@ private:
     QTimer* m_suspendTimer;
 
     friend class ApplicationManager;
-    friend class ApplicationScreenshotProvider;
     friend class MirSurfaceManager;
 };
 
-Q_DECLARE_METATYPE(Application*)
+} // namespace qtmir
+
+Q_DECLARE_METATYPE(qtmir::Application*)
 
 #endif  // APPLICATION_H

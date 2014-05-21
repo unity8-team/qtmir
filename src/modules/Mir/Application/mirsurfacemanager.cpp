@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2013-2014 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -31,6 +31,8 @@
 Q_LOGGING_CATEGORY(QTMIR_SURFACES, "qtmir.surfaces")
 
 namespace ms = mir::scene;
+
+namespace qtmir {
 
 MirSurfaceManager *MirSurfaceManager::the_surface_manager = nullptr;
 
@@ -91,7 +93,7 @@ void MirSurfaceManager::onSessionCreatedSurface(const mir::scene::Session *sessi
     beginInsertRows(QModelIndex(), 0, 0);
     m_surfaceItems.prepend(qmlSurface);
     endInsertRows();
-    emit countChanged();
+    Q_EMIT countChanged();
 
     // Only notify QML of surface creation once it has drawn its first frame.
     connect(qmlSurface, &MirSurfaceItem::surfaceFirstFrameDrawn, [&](MirSurfaceItem *item) {
@@ -193,3 +195,5 @@ MirSurfaceItem* MirSurfaceManager::getSurface(int index)
 {
     return m_surfaceItems[index];
 }
+
+} // namespace qtmir
