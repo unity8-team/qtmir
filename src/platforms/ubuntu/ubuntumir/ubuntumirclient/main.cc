@@ -37,8 +37,10 @@ QStringList QUbuntuMirClientIntegrationPlugin::keys() const {
 QPlatformIntegration* QUbuntuMirClientIntegrationPlugin::create(
     const QString& system, const QStringList& paramList) {
   Q_UNUSED(paramList);
-  if (system.toLower() == "ubuntumirclient")
+  if (system.toLower() == "ubuntumirclient") {
+    setenv("UBUNTU_PLATFORM_API_BACKEND", "touch_mirclient", 1);
     return new QUbuntuMirIntegration();
+  }
   return 0;
 }
 
