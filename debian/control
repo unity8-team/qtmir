@@ -10,7 +10,7 @@ Build-Depends: debhelper (>= 9),
                libgles2-mesa-dev,
                libglib2.0-dev,
                libhybris-dev,
-               libplatform-api1-dev (>= 0.20),
+               libubuntu-application-api-dev (>= 2.0.0),
                libudev-dev,
                libxrender-dev,
                libxkbcommon-dev,
@@ -41,6 +41,7 @@ Depends: ${misc:Depends},
          ${shlibs:Depends},
          libqt5sensors5,
          qtubuntu-sensors,
+         ubuntu-application-api2-touch,
 Description: Qt plugins for Ubuntu Platform API (mobile)
  QtUbuntu is a set of Qt5 components for the Ubuntu Platform API. It contains a
  QPA (Qt Platform Abstraction) plugin based on the Ubuntu Platform API and a
@@ -63,6 +64,7 @@ Depends: ${misc:Depends},
          ${shlibs:Depends},
          libqt5sensors5,
          qtubuntu-sensors,
+         ubuntu-application-api2-desktop,
 Description: Qt plugins for Ubuntu Platform API (desktop)
  QtUbuntu is a set of Qt5 components for the Ubuntu Platform API. It contains a
  QPA (Qt Platform Abstraction) plugin based on the Ubuntu Platform API and a
