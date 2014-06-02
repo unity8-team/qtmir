@@ -91,7 +91,8 @@ QUbuntuIntegration::QUbuntuIntegration(QUbuntuInputAdaptorFactory *input_factory
   // it is only valid right now because the shell doesnt use them
   screen_->toggleSensors(false);
   isShell_ = false;
-  if (args.contains("unity8") || args.contains("/usr/bin/unity8"))
+  if (args.contains("unity8") || args.contains("/usr/bin/unity8") ||
+      args.contains("unity8-greeter") || args.contains("/usr/bin/unity8-greeter"))
     isShell_ = true;
 
   // Initialize input.
