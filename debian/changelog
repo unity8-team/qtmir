@@ -1,3 +1,13 @@
+qtubuntu (0.54+14.10.20140612-0ubuntu1) utopic; urgency=low
+
+  [ Ubuntu daily release ]
+  * New rebuild forced
+
+  [ Ricardo Mendoza ]
+  * Migrate to Platform API v2
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 12 Jun 2014 10:39:50 +0000
+
 qtubuntu (0.54+14.10.20140526.1-0ubuntu1) utopic; urgency=low
 
   [ Michael Terry ]
