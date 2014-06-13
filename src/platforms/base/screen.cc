@@ -98,6 +98,8 @@ QUbuntuBaseScreen::QUbuntuBaseScreen()
   }
 #ifdef QTUBUNTU_USE_OPENGL
   surfaceFormat_.setRenderableType(QSurfaceFormat::OpenGL);
+#else
+  surfaceFormat_.setRenderableType(QSurfaceFormat::OpenGLES);
 #endif
   eglConfig_ = q_configFromGLFormat(eglDisplay_, surfaceFormat_, true);
 #if !defined(QT_NO_DEBUG)
