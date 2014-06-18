@@ -8,11 +8,8 @@
 1. Description
 --------------
 
-  QtUbuntu is a set of Qt5 components for the Ubuntu Platform API. It
-  contains a QPA (Qt Platform Abstraction) plugin based on the Ubuntu
-  Platform API and a legacy QPA plugin based on the compatibility
-  layers. It also provides Qt bindings for Ubuntu Platform API
-  features that are not exposed through the QPA plugins.
+  QtUbuntu contains a QPA (Qt Platform Abstraction) plugin based on the Ubuntu
+  Platform API
 
 
 2 Running
@@ -23,13 +20,8 @@
   "-platformpluginpath" command line switch, the following commands
   can be used to run with the Ubuntu QPA plugin:
 
-    $ qmlscene -platform ubuntu Foo.qml
-    $ QT_QPA_PLATFORM=ubuntu qmlscene Foo.qml
-
-  and the following ones to run with the Ubuntu legacy QPA plugin:
-
-    $ qmlscene -platform ubuntulegacy Foo.qml
-    $ QT_QPA_PLATFORM=ubuntulegacy qmlscene Foo.qml
+    $ qmlscene -platform ubuntumirclient Foo.qml
+    $ QT_QPA_PLATFORM=ubuntumirclient qmlscene Foo.qml
 
   The QPA plugins expose the following environment variables:
 
@@ -43,9 +35,6 @@
                                  rendering.
 
     QTUBUNTU_NO_INPUT: Disables touchscreen and buttons.
-
-    QTUBUNTU_INPUT_DELAY: Specifies a delay in milliseconds for input
-                          initialization (ubuntulegacy plugin only).
 
     QTUBUNTU_ICON_THEME: Specifies the default icon theme name.
 
@@ -97,30 +86,3 @@
   [1] http://doc-snapshot.qt-project.org/5.0/qabstractnativeeventfilter.html
   [2] http://doc-snapshot.qt-project.org/5.0/qcoreapplication.html#installNativeEventFilter
 
-
-5. QPA properties
------------------
-
-  The QPA plugin for Ubuntu looks for a "session" dynamic property on
-  the QPlatformNativeInterface object in order to know the session
-  type to request. That property can be set to an integer representing
-  a SessionType specified in the Ubuntu Platform API before the first
-  window is shown. In order to request a system session type, the
-  following code can be used:
-
-    #include <qpa/qplatformnativeinterface.h>
-    ...
-    QPlatformNativeInterface* native = QGuiApplication::platformNativeInterface();
-    native->setProperty("session", static_cast<int>(USER_SESSION_TYPE));
-
-  The plugin also looks for "role" and "opaque" dynamic properties on
-  the QWindow object. The "role" property can be set to an integer
-  representing a SurfaceRole and the "opaque" property can be set to 0
-  or 1 to specify whether or not the surface shoud be considered
-  opaque by the compositor. Note that these properties must be set
-  before the window is shown. In order to request a launcher role and
-  an opaque window, the following code can be used:
-
-    QQuickView* view = new QQuickView();
-    view->setProperty("role", static_cast<int>(LAUNCHER_ACTOR_ROLE));
-    view->setProperty("opaque", 1);
