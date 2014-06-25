@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2014 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -14,32 +14,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ubuntuplatformservices.h"
+#include "services.h"
 
 #include <QUrl>
 
-#include <ubuntu/application/url_dispatcher/service.h>
-#include <ubuntu/application/url_dispatcher/session.h>
+#include <url-dispatcher.h>
 
-bool UbuntuPlatformServices::openUrl(const QUrl &url)
+bool Services::openUrl(const QUrl &url)
 {
     return callDispatcher(url);
 }
 
-bool UbuntuPlatformServices::openDocument(const QUrl &url)
+bool Services::openDocument(const QUrl &url)
 {
     return callDispatcher(url);
 }
 
-bool UbuntuPlatformServices::callDispatcher(const QUrl &url)
+bool Services::callDispatcher(const QUrl &qUrl)
 {
-    UAUrlDispatcherSession* session = ua_url_dispatcher_session();
-    if (!session)
-        return false;
+    const char *url = qUrl.toEncoded().constData();
 
-    ua_url_dispatcher_session_open(session, url.toEncoded().constData(), NULL, NULL);
-
-    free(session);
+    url_dispatch_send(url, nullptr /*dispatch_callback*/, nullptr /*callback_data*/);
 
     // We are returning true here because the other option
     // is spawning a nested event loop and wait for the

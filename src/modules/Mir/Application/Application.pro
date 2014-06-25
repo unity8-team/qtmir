@@ -2,20 +2,22 @@ TARGET = mirapplicationplugin
 TEMPLATE = lib
 
 QT       += core quick dbus
-QT       += qml-private core-private
+QT       += quick-private qml-private core-private
 QT       += gui-private # annoyingly needed by included NativeInterface
-CONFIG   += link_pkgconfig plugin no_keywords
+CONFIG   += link_pkgconfig plugin debug no_keywords
 
 # CONFIG += c++11 # only enables C++0x
-QMAKE_CXXFLAGS = -std=c++11 -fvisibility=hidden -fvisibility-inlines-hidden
-QMAKE_CXXFLAGS_RELEASE += -Werror     # so no stop on warning in debug builds
+QMAKE_CXXFLAGS = -std=c++11 -fvisibility=hidden -fvisibility-inlines-hidden -Werror -Wall
 QMAKE_LFLAGS = -std=c++11 -Wl,-no-undefined
 
-PKGCONFIG += mircommon mirclient mirserver glib-2.0 process-cpp upstart-app-launch-2
+PKGCONFIG += mircommon mirclient mirserver glib-2.0 process-cpp ubuntu-app-launch-2
 
 INCLUDEPATH += ../../../platforms/mirserver
 LIBS += -L../../../platforms/mirserver -lqpa-mirserver
 QMAKE_RPATHDIR += $$[QT_INSTALL_PLUGINS]/platforms # where libqpa-mirserver.so is installed
+
+# workaround subdir depends not being aggressive enough
+PRE_TARGETDEPS += $${OUT_PWD}/../../../platforms/mirserver/libqpa-mirserver.so
 
 TARGET = $$qtLibraryTarget($$TARGET)
 uri = Mir.Application
@@ -35,6 +37,7 @@ SOURCES += application_manager.cpp \
     processcontroller.cpp \
     proc_info.cpp \
     upstart/applicationcontroller.cpp
+    windowscreenshotprovider.cpp
 
 HEADERS += application_manager.h \
     applicationcontroller.h \
@@ -53,6 +56,8 @@ HEADERS += application_manager.h \
     processcontroller.h \
     proc_info.h \
     upstart/applicationcontroller.h
+    mirbuffersgtexture.h
+    windowscreenshotprovider.h
 
 installPath = $$[QT_INSTALL_QML]/$$replace(uri, \\., /)
 

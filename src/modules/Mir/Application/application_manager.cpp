@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2013,2014 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -41,8 +41,6 @@
 
 // std
 #include <csignal>
-
-Q_LOGGING_CATEGORY(QTMIR_APPLICATIONS, "qtmir.applications")
 
 namespace ms = mir::scene;
 
@@ -198,6 +196,10 @@ QVariant ApplicationManager::data(const QModelIndex &index, int role) const
                 return QVariant::fromValue(application->focused());
             case RoleScreenshot:
                 return QVariant::fromValue(application->screenshot());
+            case RoleSurface:
+                return QVariant::fromValue(application->surface());
+            case RoleFullscreen:
+                return QVariant::fromValue(application->fullscreen());
             default:
                 return QVariant();
         }
@@ -352,12 +354,13 @@ void ApplicationManager::onProcessStarting(const QString &appId)
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessStarting - appId=" << appId;
 
     Application *application = findApplication(appId);
-    if (!application) { // then shell did not start this application, so upstart must have - add to list
+    if (!application) { // then shell did not start this application, so ubuntu-app-launch must have - add to list
         application = new Application(
                     m_taskController,
                     m_desktopFileReaderFactory->createInstance(appId, m_taskController->findDesktopFileForAppId(appId)),
                     Application::Starting,
                     QStringList(), this);
+
         if (!application->isValid()) {
             qWarning() << "Unable to instantiate application with appId" << appId;
             return;
@@ -436,9 +439,9 @@ void ApplicationManager::onProcessStopped(const QString &appId)
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessStopped - appId=" << appId;
     Application *application = findApplication(appId);
 
-    // if shell did not stop the application, but upstart says it died, we assume the process has been
+    // if shell did not stop the application, but ubuntu-app-launch says it died, we assume the process has been
     // killed, so it can be respawned later. Only exception is if that application is focused or running
-    // as then it most likely crashed. Update this logic when upstart gives some failure info.
+    // as then it most likely crashed. Update this logic when ubuntu-app-launch gives some failure info.
     if (application) {
         bool removeApplication = false;
 
@@ -476,7 +479,7 @@ void ApplicationManager::onResumeRequested(const QString& appId)
         return;
     }
 
-    // If app Stopped, trust that upstart-app-launch respawns it itself, and AppManager will
+    // If app Stopped, trust that ubuntu-app-launch respawns it itself, and AppManager will
     // be notified of that through the onProcessStartReportReceived slot. Else resume.
     if (application->state() == Application::Suspended) {
         application->setState(Application::Running);
@@ -531,7 +534,8 @@ void ApplicationManager::authorizeSession(const quint64 pid, bool &authorized)
     /*
      * Hack: Allow applications to be launched without being managed by upstart, where AppManager
      * itself manages processes executed with a "--desktop_file_hint=/path/to/desktopFile.desktop"
-     * parameter attached. Also reads the --stage parameter to determine the desired stage
+     * parameter attached. This exists until ubuntu-app-launch can notify shell any application is
+     * and so shell should allow it. Also reads the --stage parameter to determine the desired stage
      */
     std::unique_ptr<ProcInfo::CommandLine> info = m_procInfo->commandLine(pid);
     if (!info) {
@@ -716,8 +720,8 @@ void ApplicationManager::add(Application* application)
     Q_ASSERT(application != NULL);
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::add - appId=" << application->appId();
 
-    beginInsertRows(QModelIndex(), m_applications.size(), m_applications.size());
-    m_applications.append(application);
+    beginInsertRows(QModelIndex(), 0, 0);
+    m_applications.prepend(application);
     endInsertRows();
     Q_EMIT countChanged();
     Q_EMIT applicationAdded(application->appId());

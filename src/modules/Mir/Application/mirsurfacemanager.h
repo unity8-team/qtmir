@@ -23,6 +23,7 @@
 // Qt
 #include <QAbstractListModel>
 #include <QHash>
+#include <QMutex>
 
 // Mir
 #include <mir_toolkit/common.h>
@@ -60,7 +61,6 @@ public:
 
     int count() const { return rowCount(); }
 
-    Q_INVOKABLE int getIndexOfSurfaceWithAppId(const QString &appId) const;
     Q_INVOKABLE MirSurfaceItem* getSurface(int index);
 
 Q_SIGNALS:
@@ -82,6 +82,7 @@ private:
     ShellServerConfiguration* m_mirServer;
     static MirSurfaceManager *the_surface_manager;
     QHash<int, QByteArray> m_roleNames;
+    QMutex m_mutex;
 };
 
 } // namespace qtmir

@@ -16,8 +16,10 @@
 
 // Qt
 #include <QGuiApplication>
+#include <QMutexLocker>
 
 // local
+#include "debughelpers.h"
 #include "mirsurfacemanager.h"
 #include "application_manager.h"
 
@@ -82,28 +84,43 @@ void MirSurfaceManager::onSessionCreatedSurface(const mir::scene::Session *sessi
                                                 const std::shared_ptr<mir::scene::Surface> &surface)
 {
     qCDebug(QTMIR_SURFACES) << "MirSurfaceManager::onSessionCreatedSurface - session=" << session
-                            << "surface=" << surface.get();
+                            << "surface=" << surface.get() << "surface.name=" << surface->name().c_str();
 
     ApplicationManager* appMgr = static_cast<ApplicationManager*>(ApplicationManager::singleton());
-    Application* application = appMgr->findApplicationWithSession(session);
 
+    Application* application = appMgr->findApplicationWithSession(session);
     auto qmlSurface = new MirSurfaceItem(surface, application);
-    m_mirSurfaceToItemHash.insert(surface.get(), qmlSurface);
+    {
+        QMutexLocker lock(&m_mutex);
+        m_mirSurfaceToItemHash.insert(surface.get(), qmlSurface);
+    }
 
     beginInsertRows(QModelIndex(), 0, 0);
     m_surfaceItems.prepend(qmlSurface);
     endInsertRows();
     Q_EMIT countChanged();
 
+    if (application)
+        application->setSurface(qmlSurface);
+
     // Only notify QML of surface creation once it has drawn its first frame.
-    connect(qmlSurface, &MirSurfaceItem::surfaceFirstFrameDrawn, [&](MirSurfaceItem *item) {
+    connect(qmlSurface, &MirSurfaceItem::firstFrameDrawn, [&](MirSurfaceItem *item) {
         Q_EMIT surfaceCreated(item);
+
+        QMutexLocker lock(&m_mutex);
+        beginInsertRows(QModelIndex(), 0, 0);
+        m_surfaceItems.prepend(item);
+        endInsertRows();
+        Q_EMIT countChanged();
     });
 
     // clean up after MirSurfaceItem is destroyed
     connect(qmlSurface, &MirSurfaceItem::destroyed, [&](QObject *item) {
         auto mirSurfaceItem = static_cast<MirSurfaceItem*>(item);
-        m_mirSurfaceToItemHash.remove(m_mirSurfaceToItemHash.key(mirSurfaceItem));
+        {
+            QMutexLocker lock(&m_mutex);
+            m_mirSurfaceToItemHash.remove(m_mirSurfaceToItemHash.key(mirSurfaceItem));
+        }
 
         int i = m_surfaceItems.indexOf(mirSurfaceItem);
         if (i != -1) {
@@ -119,7 +136,7 @@ void MirSurfaceManager::onSessionDestroyingSurface(const mir::scene::Session *se
                                                    const std::shared_ptr<mir::scene::Surface> &surface)
 {
     qCDebug(QTMIR_SURFACES) << "MirSurfaceManager::onSessionDestroyingSurface - session=" << session
-                            << "surface=" << surface.get();
+                            << "surface=" << surface.get() << "surface.name=" << surface->name().c_str();
 
     auto it = m_mirSurfaceToItemHash.find(surface.get());
     if (it != m_mirSurfaceToItemHash.end()) {
@@ -127,8 +144,11 @@ void MirSurfaceManager::onSessionDestroyingSurface(const mir::scene::Session *se
         MirSurfaceItem* item = it.value();
         Q_EMIT item->surfaceDestroyed();
 
-        // delete *it; // do not delete actual MirSurfaceItem as QML has ownership of that object.
-        m_mirSurfaceToItemHash.erase(it);
+        {
+            QMutexLocker lock(&m_mutex);
+            m_mirSurfaceToItemHash.remove(m_mirSurfaceToItemHash.key(item));
+        }
+//        m_mirSurfaceToItemHash.erase(it);
 
         int i = m_surfaceItems.indexOf(item);
         if (i != -1) {
@@ -141,22 +161,20 @@ void MirSurfaceManager::onSessionDestroyingSurface(const mir::scene::Session *se
     }
 
     qCritical() << "MirSurfaceManager::onSessionDestroyingSurface: unable to find MirSurfaceItem corresponding"
-                << "to surface=" << surface.get();
+                << "to surface=" << surface.get() << "surface.name=" << surface->name().c_str();
 }
 
+// NB: Surface might be a dangling pointer here, so refrain from dereferencing it.
 void MirSurfaceManager::onSurfaceAttributeChanged(const ms::Surface *surface,
                                                   const MirSurfaceAttrib attribute, const int value)
 {
     qCDebug(QTMIR_SURFACES) << "MirSurfaceManager::onSurfaceAttributeChanged - surface=" << surface
-                            << "attrib=" << attribute << "value=" << value;
+                            << mirSurfaceAttribAndValueToString(attribute, value);
 
+    QMutexLocker lock(&m_mutex);
     auto it = m_mirSurfaceToItemHash.find(surface);
     if (it != m_mirSurfaceToItemHash.end()) {
         it.value()->setAttribute(attribute, value);
-        if (attribute == mir_surface_attrib_state &&
-                value == mir_surface_state_fullscreen) {
-            it.value()->application()->setFullscreen(static_cast<bool>(value));
-        }
     }
 }
 
@@ -178,17 +196,6 @@ QVariant MirSurfaceManager::data(const QModelIndex & index, int role) const
     } else {
         return QVariant();
     }
-}
-
-int MirSurfaceManager::getIndexOfSurfaceWithAppId(const QString &appId) const
-{
-    for (int i = 0; i < m_surfaceItems.count(); ++i) {
-        MirSurfaceItem *surfaceItem = m_surfaceItems[i];
-        if (surfaceItem->application()->appId() == appId) {
-            return i;
-        }
-    }
-    return -1;
 }
 
 MirSurfaceItem* MirSurfaceManager::getSurface(int index)

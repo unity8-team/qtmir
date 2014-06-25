@@ -21,8 +21,10 @@
 
 // Qt
 #include <QMutex>
+#include <QPointer>
 #include <QSet>
 #include <QQuickItem>
+#include <QTimer>
 
 // mir
 #include <mir/scene/surface.h>
@@ -67,10 +69,10 @@ class MirSurfaceItem : public QQuickItem
     Q_PROPERTY(Type type READ type NOTIFY typeChanged)
     Q_PROPERTY(State state READ state NOTIFY stateChanged)
     Q_PROPERTY(QString name READ name NOTIFY nameChanged)
-    Q_PROPERTY(Application* application READ application CONSTANT)
 
 public:
-    explicit MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface, Application* application,
+    explicit MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
+                            QPointer<Application> application,
                             QQuickItem *parent = 0);
     ~MirSurfaceItem();
 
@@ -95,24 +97,32 @@ public:
     };
 
     //getters
-    Application* application() const;
     Type type() const;
     State state() const;
     QString name() const;
+    Application *application() const;
+
+    Q_INVOKABLE void release();
 
     // Item surface/texture management
     bool isTextureProvider() const { return true; }
     QSGTextureProvider *textureProvider() const;
+
+    void stopFrameDropper();
+    void startFrameDropper();
+
+    bool isFirstFrameDrawn() const { return m_firstFrameDrawn; }
+
+    void setApplication(Application *app);
+
+    void onApplicationStateChanged();
 
 Q_SIGNALS:
     void typeChanged();
     void stateChanged();
     void nameChanged();
     void surfaceDestroyed();
-    void surfaceFirstFrameDrawn(MirSurfaceItem *); // so MirSurfaceManager can notify QML
-
-public Q_SLOTS:
-    void release(); // For QML to destroy this surface
+    void firstFrameDrawn(MirSurfaceItem *item);
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;
@@ -129,6 +139,11 @@ protected:
 
 private Q_SLOTS:
     void surfaceDamaged();
+    void dropPendingBuffers();
+    void scheduleTextureUpdate();
+
+    void scheduleMirSurfaceSizeUpdate();
+    void updateMirSurfaceSize();
 
 private:
     bool updateTexture();
@@ -142,12 +157,16 @@ private:
     void setSurfaceValid(const bool);
 
     bool hasTouchInsideUbuntuKeyboard(QTouchEvent *event);
+    void syncSurfaceSizeWithItemSize();
+
+    bool clientIsRunning() const;
+
+    QString appId();
 
     QMutex m_mutex;
 
     std::shared_ptr<mir::scene::Surface> m_surface;
-    Application* m_application;
-    int m_pendingClientBuffersCount;
+    QPointer<Application> m_application;
     bool m_firstFrameDrawn;
 
     QMirSurfaceTextureProvider *m_textureProvider;
@@ -155,6 +174,10 @@ private:
     static UbuntuKeyboardInfo *m_ubuntuKeyboardInfo;
 
     std::shared_ptr<MirSurfaceObserver> m_surfaceObserver;
+
+    QTimer m_frameDropperTimer;
+
+    QTimer m_updateMirSurfaceSizeTimer;
 
     friend class MirSurfaceManager;
 };

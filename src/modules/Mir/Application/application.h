@@ -28,28 +28,45 @@
 // Unity API
 #include <unity/shell/application/ApplicationInfoInterface.h>
 
+// local
+#include "mirsurfaceitem.h"
+
 namespace mir { namespace scene { class Session; }}
 
 namespace qtmir
 {
 
+class ApplicationManager;
 class DesktopFileReader;
 class TaskController;
 
 class Application : public unity::shell::application::ApplicationInfoInterface
 {
+    Q_FLAGS(Orientation SupportedOrientations)
+
     Q_OBJECT
     Q_PROPERTY(QString desktopFile READ desktopFile CONSTANT)
     Q_PROPERTY(QString exec READ exec CONSTANT)
     Q_PROPERTY(bool fullscreen READ fullscreen NOTIFY fullscreenChanged)
     Q_PROPERTY(Stage stage READ stage WRITE setStage NOTIFY stageChanged)
+    Q_PROPERTY(SupportedOrientations supportedOrientations READ supportedOrientations CONSTANT)
+    Q_PROPERTY(MirSurfaceItem* surface READ surface NOTIFY surfaceChanged)
 
 public:
+    // Matching Qt::ScreenOrientation values for convenience
+    enum Orientation {
+        PortraitOrientation = 0x1,
+        LandscapeOrientation = 0x2,
+        InvertedPortraitOrientation = 0x4,
+        InvertedLandscapeOrientation = 0x8
+    };
+    Q_DECLARE_FLAGS(SupportedOrientations, Orientation)
+
     Application(const QSharedPointer<TaskController>& taskController,
                 DesktopFileReader *desktopFileReader,
                 State state,
                 const QStringList &arguments,
-                QObject *parent = 0);
+                ApplicationManager *parent);
     virtual ~Application();
 
     // ApplicationInfoInterface
@@ -65,6 +82,8 @@ public:
 
     bool setStage(const Stage stage) override;
 
+    MirSurfaceItem* surface() const;
+
     QImage screenshotImage() const;
     void updateScreenshot();
 
@@ -75,8 +94,10 @@ public:
     QString desktopFile() const;
     QString exec() const;
     bool fullscreen() const;
-    std::shared_ptr<::mir::scene::Session> session() const;
+    std::shared_ptr<mir::scene::Session> session() const;
     pid_t pid() const;
+
+    SupportedOrientations supportedOrientations() const;
 
 public Q_SLOTS:
     void suspend();
@@ -86,6 +107,13 @@ public Q_SLOTS:
 Q_SIGNALS:
     void fullscreenChanged();
     void stageChanged(Stage stage);
+    void surfaceChanged();
+
+    void surfaceDestroyed(MirSurfaceItem *surface);
+
+private Q_SLOTS:
+    void discardSurface();
+    void emitSurfaceChanged();
 
 private:
     QString longAppId() const;
@@ -93,9 +121,17 @@ private:
     void setState(State state);
     void setFocused(bool focus);
     void setFullscreen(bool fullscreen);
-    void setSession(const std::shared_ptr<::mir::scene::Session>& session);
+    void setSession(const std::shared_ptr<mir::scene::Session>& session);
     void setSessionName(const QString& name);
+    void setSurface(MirSurfaceItem *surface);
 
+    void updateFullscreenProperty();
+
+    // FIXME: This is a hack. Remove once we have a real implementation for knowning
+    // the supported orientations of an app
+    void deduceSupportedOrientationsFromAppId();
+
+    ApplicationManager* m_appMgr;
     QSharedPointer<TaskController> m_taskController;
     DesktopFileReader* m_desktopData;
     QString m_longAppId;
@@ -112,13 +148,17 @@ private:
     QString m_sessionName;
     QStringList m_arguments;
     QTimer* m_suspendTimer;
+    SupportedOrientations m_supportedOrientations;
+    MirSurfaceItem *m_surface;
 
     friend class ApplicationManager;
     friend class MirSurfaceManager;
+    friend class MirSurfaceItem;
 };
 
 } // namespace qtmir
 
 Q_DECLARE_METATYPE(qtmir::Application*)
+Q_DECLARE_OPERATORS_FOR_FLAGS(qtmir::Application::SupportedOrientations)
 
 #endif  // APPLICATION_H

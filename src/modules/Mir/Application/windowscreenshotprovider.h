@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2014 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -14,20 +14,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UBUNTU_PLATFORM_SERVICES_H
-#define UBUNTU_PLATFORM_SERVICES_H
+#ifndef WINDOW_SCREENSHOT_PROVIDER_H_
+#define WINDOW_SCREENSHOT_PROVIDER_H_
 
-#include <qpa/qplatformservices.h>
-#include <QtPlatformSupport/private/qgenericunixfontdatabase_p.h>
-#include <QtPlatformSupport/private/qgenericunixeventdispatcher_p.h>
+#include <QQuickImageProvider>
 
-class UbuntuPlatformServices : public QPlatformServices {
+class WindowScreenshotProvider : public QQuickImageProvider
+{
 public:
-    bool openUrl(const QUrl &url) override;
-    bool openDocument(const QUrl &url) override;
+    WindowScreenshotProvider();
 
-private:
-    bool callDispatcher(const QUrl &url);
+    // id is ignored for now
+    QImage requestImage(const QString &id, QSize *size, const QSize &requestedSize) override;
 };
 
-#endif // UBUNTU_PLATFORM_SERVICES_H
+#endif // WINDOW_SCREENSHOT_PROVIDER_H_

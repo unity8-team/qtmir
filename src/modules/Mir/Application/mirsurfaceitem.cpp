@@ -22,6 +22,7 @@
  */
 
 // local
+#include "application.h"
 #include "debughelpers.h"
 #include "mirbuffersgtexture.h"
 #include "mirsurfaceitem.h"
@@ -77,7 +78,7 @@ MirEvent createMirEvent(QTouchEvent *qtEvent)
 
     // Hardcoding it for now
     // TODO: Gather this info from a QTouchDevice-derived class created by QtEventFeeder
-    mirEvent.motion.device_id = 0; 
+    mirEvent.motion.device_id = 0;
     mirEvent.motion.source_id = 0x00001002; // AINPUT_SOURCE_TOUCHSCREEN; https://bugs.launchpad.net/bugs/1311687
 
     // NB: it's assumed that touch points are pressed and released
@@ -198,12 +199,11 @@ void MirSurfaceObserver::frame_posted() {
 UbuntuKeyboardInfo *MirSurfaceItem::m_ubuntuKeyboardInfo = nullptr;
 
 MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
-                               Application* application,
+                               QPointer<Application> application,
                                QQuickItem *parent)
     : QQuickItem(parent)
     , m_surface(surface)
     , m_application(application)
-    , m_pendingClientBuffersCount(0)
     , m_firstFrameDrawn(false)
     , m_textureProvider(nullptr)
 {
@@ -235,12 +235,24 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     // might create a less error-prone API design (concern: QML forgets to call "release()"
     // for a surface, and thus Mir will not release the surface buffers etc.)
     QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
+
+    connect(&m_frameDropperTimer, &QTimer::timeout,
+            this, &MirSurfaceItem::dropPendingBuffers);
+    m_frameDropperTimer.setInterval(200);
+    m_frameDropperTimer.setSingleShot(false);
+
+    m_updateMirSurfaceSizeTimer.setSingleShot(true);
+    m_updateMirSurfaceSizeTimer.setInterval(1);
+    connect(&m_updateMirSurfaceSizeTimer, &QTimer::timeout, this, &MirSurfaceItem::updateMirSurfaceSize);
+    connect(this, &QQuickItem::widthChanged, this, &MirSurfaceItem::scheduleMirSurfaceSizeUpdate);
+    connect(this, &QQuickItem::heightChanged, this, &MirSurfaceItem::scheduleMirSurfaceSizeUpdate);
 }
 
 MirSurfaceItem::~MirSurfaceItem()
 {
     qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::~MirSurfaceItem - this=" << this;
     QMutexLocker locker(&m_mutex);
+    m_surface->remove_observer(m_surfaceObserver);
     if (m_textureProvider)
         m_textureProvider->deleteLater();
 }
@@ -249,12 +261,17 @@ MirSurfaceItem::~MirSurfaceItem()
 void MirSurfaceItem::release()
 {
     qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::release - this=" << this;
-    this->deleteLater();
+    if (m_application) {
+        m_application->setSurface(nullptr);
+    }
+    if (!parent()) {
+        deleteLater();
+    }
 }
 
 Application* MirSurfaceItem::application() const
 {
-    return m_application;
+    return m_application.data();
 }
 
 MirSurfaceItem::Type MirSurfaceItem::type() const
@@ -293,31 +310,24 @@ void MirSurfaceItem::surfaceDamaged()
 {
     if (!m_firstFrameDrawn) {
         m_firstFrameDrawn = true;
-        Q_EMIT surfaceFirstFrameDrawn(this);
+        Q_EMIT firstFrameDrawn(this);
     }
 
-    m_mutex.lock();
-    ++m_pendingClientBuffersCount;
-    m_mutex.unlock();
-
-    update(); // Notifies QML engine that this needs redrawing, schedules call to updatePaintItem
+    if (clientIsRunning()) {
+        scheduleTextureUpdate();
+    }
 }
 
 bool MirSurfaceItem::updateTexture()    // called by rendering thread (scene graph)
 {
+    QMutexLocker locker(&m_mutex);
     ensureProvider();
-    bool textureIsOutdated;
     bool textureUpdated = false;
 
-    m_mutex.lock();
-    if (m_pendingClientBuffersCount > 0) {
-        textureIsOutdated = true;
-        --m_pendingClientBuffersCount;
-    }
-    m_mutex.unlock();
+    std::unique_ptr<mg::Renderable> renderable =
+        m_surface->compositor_snapshot((void*)123/*user_id*/);
 
-    if (textureIsOutdated) {
-        std::unique_ptr<mg::Renderable> renderable = m_surface->compositor_snapshot((void*)123/*user_id*/);
+    if (renderable->buffers_ready_for_compositor() > 0) {
         if (!m_textureProvider->t) {
             m_textureProvider->t = new MirBufferSGTexture(renderable->buffer());
         } else {
@@ -329,12 +339,10 @@ bool MirSurfaceItem::updateTexture()    // called by rendering thread (scene gra
         textureUpdated = true;
     }
 
-    m_mutex.lock();
-    textureIsOutdated = m_pendingClientBuffersCount > 0;
-    m_mutex.unlock();
-
-    if (textureIsOutdated) {
+    if (renderable->buffers_ready_for_compositor() > 0) {
         QTimer::singleShot(0, this, SLOT(update()));
+        // restart the frame dropper so that we have enough time to render the next frame.
+        m_frameDropperTimer.start();
     }
 
     m_textureProvider->smooth = smooth();
@@ -462,6 +470,124 @@ void MirSurfaceItem::setAttribute(const MirSurfaceAttrib attribute, const int /*
     default:
         break;
     }
+}
+
+void MirSurfaceItem::scheduleMirSurfaceSizeUpdate()
+{
+    if (clientIsRunning() && !m_updateMirSurfaceSizeTimer.isActive()) {
+        m_updateMirSurfaceSizeTimer.start();
+    }
+}
+
+void MirSurfaceItem::updateMirSurfaceSize()
+{
+    int mirWidth = m_surface->size().width.as_int();
+    int mirHeight = m_surface->size().height.as_int();
+
+    int qmlWidth = (int)width();
+    int qmlHeight = (int)height();
+
+    bool mirSizeIsDifferent = qmlWidth != mirWidth || qmlHeight != mirHeight;
+
+    #if !defined(QT_NO_DEBUG)
+    const char *didResize = clientIsRunning() && mirSizeIsDifferent ? "surface resized" : "surface NOT resized";
+    qDebug() << "MirSurfaceItem::updateMirSurfaceSize"
+            << "appId =" << appId()
+            << ", old (" << mirWidth << "," << mirHeight << ")"
+            << ", new (" << qmlWidth << "," << qmlHeight << ")"
+            << didResize;
+    #endif
+
+    if (clientIsRunning() && mirSizeIsDifferent) {
+        mir::geometry::Size newMirSize(qmlWidth, qmlHeight);
+        m_surface->resize(newMirSize);
+        setImplicitSize(qmlWidth, qmlHeight);
+    }
+}
+
+void MirSurfaceItem::dropPendingBuffers()
+{
+    QMutexLocker locker(&m_mutex);
+
+    std::unique_ptr<mg::Renderable> renderable =
+        m_surface->compositor_snapshot((void*)123/*user_id*/);
+
+    while (renderable->buffers_ready_for_compositor() > 0) {
+        m_surface->compositor_snapshot((void*)123/*user_id*/)->buffer();
+        qDebug() << "MirSurfaceItem::dropPendingBuffers()"
+            << "appId =" << appId()
+            << "buffer dropped."
+            << renderable->buffers_ready_for_compositor()
+            << "left.";
+    }
+}
+
+void MirSurfaceItem::stopFrameDropper()
+{
+    qDebug() << "MirSurfaceItem::stopFrameDropper appId = " << appId();
+    QMutexLocker locker(&m_mutex);
+    m_frameDropperTimer.stop();
+}
+
+void MirSurfaceItem::startFrameDropper()
+{
+    qDebug() << "MirSurfaceItem::startFrameDropper appId = " << appId();
+    QMutexLocker locker(&m_mutex);
+    if (!m_frameDropperTimer.isActive()) {
+        m_frameDropperTimer.start();
+    }
+}
+
+void MirSurfaceItem::scheduleTextureUpdate()
+{
+    QMutexLocker locker(&m_mutex);
+
+    // Notify QML engine that this needs redrawing, schedules call to updatePaintItem
+    update();
+    // restart the frame dropper so that we have enough time to render the next frame.
+    m_frameDropperTimer.start();
+}
+
+QString MirSurfaceItem::appId()
+{
+    if (m_application) {
+        return m_application->appId();
+    } else {
+        return QString();
+    }
+}
+
+void MirSurfaceItem::setApplication(Application *app)
+{
+    m_application = app;
+}
+
+void MirSurfaceItem::onApplicationStateChanged()
+{
+    if (m_application->state() == Application::Running) {
+        syncSurfaceSizeWithItemSize();
+    }
+}
+
+void MirSurfaceItem::syncSurfaceSizeWithItemSize()
+{
+    int mirWidth = m_surface->size().width.as_int();
+    int mirHeight = m_surface->size().width.as_int();
+
+    if ((int)width() != mirWidth || (int)height() != mirHeight) {
+        qDebug("MirSurfaceItem::syncSurfaceSizeWithItemSize()");
+        mir::geometry::Size newMirSize((int)width(), (int)height());
+        m_surface->resize(newMirSize);
+        setImplicitSize(width(), height());
+    }
+}
+
+bool MirSurfaceItem::clientIsRunning() const
+{
+    return (m_application &&
+            (m_application->state() == Application::Running
+             || m_application->state() == Application::Starting))
+        || !m_application;
 }
 
 } // namespace qtmir

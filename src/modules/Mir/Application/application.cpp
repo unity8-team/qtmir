@@ -34,8 +34,9 @@ Application::Application(const QSharedPointer<TaskController>& taskController,
                          DesktopFileReader *desktopFileReader,
                          State state,
                          const QStringList &arguments,
-                         QObject *parent)
+                         ApplicationManager *parent)
     : ApplicationInfoInterface(desktopFileReader->appId(), parent)
+    , m_appMgr(parent)
     , m_taskController(taskController)
     , m_desktopData(desktopFileReader)
     , m_pid(0)
@@ -46,20 +47,24 @@ Application::Application(const QSharedPointer<TaskController>& taskController,
     , m_fullscreen(false)
     , m_arguments(arguments)
     , m_suspendTimer(new QTimer(this))
+    , m_surface(nullptr)
 {
     qCDebug(QTMIR_APPLICATIONS) << "Application::Application - appId=" << desktopFileReader->appId() << "state=" << state;
 
     m_suspendTimer->setSingleShot(true);
     connect(m_suspendTimer, SIGNAL(timeout()), this, SLOT(suspend()));
 
-    // FIXME(greyback) need to save long appId internally until upstart-app-launch can hide it from us
+    // FIXME(greyback) need to save long appId internally until ubuntu-app-launch can hide it from us
     m_longAppId = desktopFileReader->file().remove(QRegExp(".desktop$")).split('/').last();
+
+    deduceSupportedOrientationsFromAppId();
 }
 
 Application::~Application()
 {
     qCDebug(QTMIR_APPLICATIONS) << "Application::~Application";
     delete m_desktopData;
+    delete m_surface;
 }
 
 bool Application::isValid() const
@@ -190,6 +195,9 @@ bool Application::setStage(const Application::Stage stage)
 
         m_stage = stage;
         Q_EMIT stageChanged(stage);
+
+        QModelIndex appIndex = m_appMgr->findIndex(this);
+        Q_EMIT m_appMgr->dataChanged(appIndex, appIndex, QVector<int>() << ApplicationManager::RoleStage);
         return true;
     }
     return true;
@@ -202,7 +210,10 @@ QImage Application::screenshotImage() const
 
 void Application::updateScreenshot()
 {
-    session()->take_snapshot(
+    if (!m_session)
+        return;
+
+    m_session->take_snapshot(
         [&](mir::scene::Snapshot const& snapshot)
         {
             qCDebug(QTMIR_APPLICATIONS) << "ApplicationScreenshotProvider - Mir snapshot ready with size"
@@ -245,12 +256,23 @@ void Application::setState(Application::State state)
         case Application::Stopped:
             if (m_suspendTimer->isActive())
                 m_suspendTimer->stop();
+            if (m_surface) {
+                m_surface->stopFrameDropper();
+            }
             break;
         default:
             break;
         }
         m_state = state;
         Q_EMIT stateChanged(state);
+
+        QModelIndex appIndex = m_appMgr->findIndex(this);
+        Q_EMIT m_appMgr->dataChanged(appIndex, appIndex, QVector<int>() << ApplicationManager::RoleState);
+
+        // FIXME: Make this a signal-slot connection
+        if (m_surface) {
+            m_surface->onApplicationStateChanged();
+        }
     }
 }
 
@@ -260,6 +282,8 @@ void Application::setFocused(bool focused)
     if (m_focused != focused) {
         m_focused = focused;
         Q_EMIT focusedChanged(focused);
+        QModelIndex appIndex = m_appMgr->findIndex(this);
+        Q_EMIT m_appMgr->dataChanged(appIndex, appIndex, QVector<int>() << ApplicationManager::RoleFocused);
     }
 }
 
@@ -269,18 +293,28 @@ void Application::setFullscreen(bool fullscreen)
     if (m_fullscreen != fullscreen) {
         m_fullscreen = fullscreen;
         Q_EMIT fullscreenChanged();
+        QModelIndex appIndex = m_appMgr->findIndex(this);
+        Q_EMIT m_appMgr->dataChanged(appIndex, appIndex, QVector<int>() << ApplicationManager::RoleFullscreen);
     }
 }
 
 void Application::suspend()
 {
     qCDebug(QTMIR_APPLICATIONS) << "Application::suspend - appId=" << appId();
+    if (m_surface) {
+        m_surface->stopFrameDropper();
+    } else {
+        qDebug() << "Application::suspend - no surface to call stopFrameDropper() on!";
+    }
     m_taskController->suspend(longAppId());
 }
 
 void Application::resume()
 {
     qCDebug(QTMIR_APPLICATIONS) << "Application::resume - appId=" << appId();
+    if (m_surface) {
+        m_surface->startFrameDropper();
+    }
     m_taskController->resume(longAppId());
 }
 
@@ -293,6 +327,93 @@ void Application::respawn()
 QString Application::longAppId() const
 {
     return m_longAppId;
+}
+
+Application::SupportedOrientations Application::supportedOrientations() const
+{
+    return m_supportedOrientations;
+}
+
+void Application::deduceSupportedOrientationsFromAppId()
+{
+    if (appId() == "dialer-app") {
+        m_supportedOrientations = PortraitOrientation;
+    } else {
+        m_supportedOrientations = PortraitOrientation
+            | LandscapeOrientation
+            | InvertedPortraitOrientation
+            | InvertedLandscapeOrientation;
+    }
+}
+
+MirSurfaceItem* Application::surface() const
+{
+    // Only notify QML of surface creation once it has drawn its first frame.
+    if (m_surface && m_surface->isFirstFrameDrawn()) {
+        return m_surface;
+    } else {
+        return nullptr;
+    }
+}
+
+void Application::setSurface(MirSurfaceItem *newSurface)
+{
+    qCDebug(QTMIR_APPLICATIONS) << "Application::setSurface - appId=" << appId() << "surface=" << newSurface;
+
+    if (newSurface == m_surface) {
+        return;
+    }
+
+    if (m_surface) {
+        m_surface->disconnect(this);
+        m_surface->setApplication(nullptr);
+        m_surface->setParent(nullptr);
+    }
+
+    MirSurfaceItem *previousSurface = surface();
+    m_surface = newSurface;
+
+    if (newSurface) {
+        m_surface->setParent(this);
+        m_surface->setApplication(this);
+
+        // Only notify QML of surface creation once it has drawn its first frame.
+        if (!surface()) {
+            connect(newSurface, &MirSurfaceItem::firstFrameDrawn,
+                    this, &Application::emitSurfaceChanged);
+        }
+
+        connect(newSurface, &MirSurfaceItem::surfaceDestroyed,
+                this, &Application::discardSurface);
+
+        connect(newSurface, &MirSurfaceItem::stateChanged,
+            this, &Application::updateFullscreenProperty);
+    }
+
+    if (previousSurface != surface()) {
+        emitSurfaceChanged();
+    }
+
+    updateFullscreenProperty();
+}
+
+void Application::emitSurfaceChanged()
+{
+    Q_EMIT surfaceChanged();
+    QModelIndex appIndex = m_appMgr->findIndex(this);
+    Q_EMIT m_appMgr->dataChanged(appIndex, appIndex, QVector<int>() << ApplicationManager::RoleSurface);
+}
+
+void Application::discardSurface()
+{
+    MirSurfaceItem *discardedSurface = m_surface;
+    setSurface(nullptr);
+    delete discardedSurface;
+}
+
+void Application::updateFullscreenProperty()
+{
+    setFullscreen(m_surface && m_surface->state() == MirSurfaceItem::Fullscreen);
 }
 
 } // namespace qtmir

@@ -51,12 +51,18 @@ class TaskController;
 class ApplicationManager : public unity::shell::application::ApplicationManagerInterface
 {
     Q_OBJECT
+    Q_ENUMS(MoreRoles)
 
 public:
     class Factory
     {
     public:
         ApplicationManager* create();
+    };
+
+    enum MoreRoles {
+        RoleSurface = RoleScreenshot+1,
+        RoleFullscreen,
     };
 
     static ApplicationManager* singleton();
@@ -75,7 +81,7 @@ public:
     Q_INVOKABLE bool suspendApplication(const QString &appId) override;
     Q_INVOKABLE bool resumeApplication(const QString &appId) override;
 
-    Q_INVOKABLE bool updateScreenshot(const QString &appId);
+    Q_INVOKABLE bool updateScreenshot(const QString &appId) override;
 
     Q_INVOKABLE Application* get(int index) const override;
     Q_INVOKABLE Application* findApplication(const QString &appId) const override;
@@ -105,6 +111,8 @@ public Q_SLOTS:
 
 Q_SIGNALS:
     void focusRequested(const QString &appId);
+    void topmostApplicationChanged(Application *application);
+    void emptyChanged();
 
 private Q_SLOTS:
     void screenshotUpdated();
@@ -120,8 +128,11 @@ private:
     Application* findApplicationWithPid(const qint64 pid) const;
     QModelIndex findIndex(const Application *application) const;
 
+    void suspendApplication(Application *application);
+    void resumeApplication(Application *application);
 
     QSharedPointer<MirServerConfiguration> m_mirConfig;
+
     QList<Application*> m_applications;
     QString m_focusedApplicationId;
     QStringList m_lifecycleExceptions;
@@ -132,6 +143,7 @@ private:
     static ApplicationManager *the_application_manager;
     bool m_suspended;
 
+    friend class Application;
     friend class DBusWindowStack;
     friend class MirSurfaceManager;
 };

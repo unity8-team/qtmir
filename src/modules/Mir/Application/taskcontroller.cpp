@@ -94,6 +94,7 @@ bool TaskController::stop(const QString& appId)
     auto result = m_appController->stopApplicationWithAppId(appId);
     if (!result)
         qCDebug(QTMIR_APPLICATIONS) << "TaskController::stopApplication - FAILED to stop appId=" << appId;
+
     return result;
 }
 
@@ -115,7 +116,7 @@ bool TaskController::suspend(const QString& appId)
     m_processController->oomController()->ensureProcessLikelyToBeKilled(pid);
 
     if (pid) {
-        // We do assume that the app was launched by upstart and with that,
+        // We do assume that the app was launched by ubuntu-app-launch and with that,
         // in its own process group. For that, we interpret the pid as pgid and
         // sigstop the complete process group on suspend.
         return m_processController->sigStopProcessGroupForPid(pid);
@@ -132,12 +133,13 @@ bool TaskController::resume(const QString& appId)
     m_processController->oomController()->ensureProcessUnlikelyToBeKilled(pid);
 
     if (pid) {
-        // We do assume that the app was launched by upstart and with that,
+        // We do assume that the app was launched by ubuntu-app-launch and with that,
         // in its own process group. For that, we interpret the pid as pgid and
         // sigcont the complete process group on resume.
         return m_processController->sigContinueProcessGroupForPid(pid);
         return true;
     } else {
+        qCDebug(QTMIR_APPLICATIONS) << "TaskController::resume - couldn't find PID to resume for appId=" << appId;
         return false;
     }
 }

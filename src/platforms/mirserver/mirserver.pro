@@ -9,20 +9,23 @@ CONFIG += no_keywords  # "signals" clashes with Mir
 CONFIG += qpa/genericunixfontdatabase
 
 # CONFIG += c++11 # only enables C++0x
-QMAKE_CXXFLAGS = -std=c++11
-QMAKE_CXXFLAGS_RELEASE += -Werror  # so no stop on warning in debug builds
+QMAKE_CXXFLAGS = -std=c++11 -Werror -Wall
 QMAKE_LFLAGS = -std=c++11 -Wl,-no-undefined
 
 CONFIG   += link_pkgconfig
-PKGCONFIG += mircommon mirserver mirclient egl xkbcommon
+PKGCONFIG += mircommon mirserver mirclient egl xkbcommon url-dispatcher-1
+
+LIBS += -lboost_system
 
 SOURCES += \
+    connectioncreator.cpp \
     qteventfeeder.cpp \
     qmirserver.cpp \
     plugin.cpp \
     sessionauthorizer.cpp \
     sessionlistener.cpp \
     surfaceconfigurator.cpp \
+    messageprocessor.cpp \
     mirinputdispatcherconfiguration.cpp \
     mirplacementstrategy.cpp \
     mirserverconfiguration.cpp \
@@ -34,9 +37,13 @@ SOURCES += \
     miropenglcontext.cpp \
     nativeinterface.cpp \
     qtcompositor.cpp \
-    ../common/ubuntutheme.cpp
+    services.cpp \
+    ../common/ubuntutheme.cpp \
+    unityprotobufservice.cpp \
+    unityrpc.cpp
 
 HEADERS += \
+    connectioncreator.h \
     qteventfeeder.h \
     qmirserver.h \
     plugin.h \
@@ -44,6 +51,7 @@ HEADERS += \
     sessionlistener.h \
     surfaceconfigurator.h \
     logging.h \
+    messageprocessor.h \
     mirinputdispatcherconfiguration.h \
     mirglconfig.h \
     mirplacementstrategy.h \
@@ -56,8 +64,10 @@ HEADERS += \
     miropenglcontext.h \
     nativeinterface.h \
     qtcompositor.h \
-    ../common/ubuntutheme.h
-
+    services.h \
+    ../common/ubuntutheme.h \
+    unityprotobufservice.h \
+    unityrpc.h
 
 # Installation path
 target.path +=  $$[QT_INSTALL_PLUGINS]/platforms

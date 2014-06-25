@@ -24,10 +24,14 @@
 #include <mir/graphics/buffer.h>
 #include <mir/geometry/size.h>
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
-#define foreach Q_FOREACH
-#include <private/qqmlprofilerservice_p.h>
-#undef foreach
+#if QT_VERSION >= QT_VERSION_CHECK(5, 3, 0)
+#define emit Q_EMIT
+#define signals Q_SIGNALS
+#define slots Q_SLOTS
+#include <private/qquickprofiler_p.h>
+#undef emit
+#undef signals
+#undef slots
 #include <QElapsedTimer>
 static QElapsedTimer qsg_renderer_timer;
 static bool qsg_render_timing = !qgetenv("QSG_RENDER_TIMING").isEmpty();
@@ -66,6 +70,9 @@ void MirBufferSGTexture::freeBuffer()
 void MirBufferSGTexture::setBuffer(std::shared_ptr<mir::graphics::Buffer> buffer)
 {
     m_mirBuffer = buffer;
+    mg::Size size = buffer->size();
+    m_height = size.height.as_int();
+    m_width = size.width.as_int();
 }
 
 int MirBufferSGTexture::textureId() const
@@ -86,8 +93,8 @@ bool MirBufferSGTexture::hasAlphaChannel() const
 
 void MirBufferSGTexture::bind()
 {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
-    bool profileFrames = qsg_render_timing || QQmlProfilerService::enabled;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 3, 0)
+    bool profileFrames = qsg_render_timing || QQuickProfiler::enabled;
     if (profileFrames)
         qsg_renderer_timer.start();
 #endif
@@ -96,7 +103,7 @@ void MirBufferSGTexture::bind()
     updateBindOptions(true/* force */);
     m_mirBuffer->bind_to_texture();
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 3, 0)
     qint64 bindTime = 0;
     if (profileFrames)
         bindTime = qsg_renderer_timer.nsecsElapsed();
@@ -108,10 +115,11 @@ void MirBufferSGTexture::bind()
                (int) qsg_renderer_timer.elapsed());
     }
 
-    if (QQmlProfilerService::enabled) {
-        QQmlProfilerService::sceneGraphFrame(
-                    QQmlProfilerService::SceneGraphTexturePrepare,
-                    bindTime);
-    }
+    Q_QUICK_SG_PROFILE1(QQuickProfiler::SceneGraphTexturePrepare, (
+            bindTime,  // bind (all this does)
+            0,  // convert (not relevant)
+            0,  // swizzle (not relevant)
+            0,  // upload (not relevant)
+            0)); // mipmap (not used ever...)
 }
 #endif

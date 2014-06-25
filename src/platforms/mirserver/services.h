@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2014 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -14,25 +14,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UBUNTU_CLIPBOARD_H
-#define UBUNTU_CLIPBOARD_H
+#ifndef MIRSERVER_SERVICES_H
+#define MIRSERVER_SERVICES_H
 
-#include <qpa/qplatformclipboard.h>
+#include <qpa/qplatformservices.h>
 
-class UbuntuClipboard : public QPlatformClipboard
-{
+class Services : public QPlatformServices {
 public:
-    UbuntuClipboard();
-    virtual ~UbuntuClipboard();
-
-    // QPlatformClipboard methods.
-    QMimeData* mimeData(QClipboard::Mode mode = QClipboard::Clipboard) override;
-    void setMimeData(QMimeData* data, QClipboard::Mode mode = QClipboard::Clipboard) override;
-    bool supportsMode(QClipboard::Mode mode) const override;
-    bool ownsMode(QClipboard::Mode mode) const override;
+    bool openUrl(const QUrl &url) override;
+    bool openDocument(const QUrl &url) override;
 
 private:
-    QMimeData* mMimeData;
+    bool callDispatcher(const QUrl &url);
 };
 
-#endif // UBUNTU_CLIPBOARD_H
+#endif // MIRSERVER_SERVICES_H
