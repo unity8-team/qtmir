@@ -246,6 +246,7 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     connect(&m_updateMirSurfaceSizeTimer, &QTimer::timeout, this, &MirSurfaceItem::updateMirSurfaceSize);
     connect(this, &QQuickItem::widthChanged, this, &MirSurfaceItem::scheduleMirSurfaceSizeUpdate);
     connect(this, &QQuickItem::heightChanged, this, &MirSurfaceItem::scheduleMirSurfaceSizeUpdate);
+    connect(this, &QQuickItem::activeFocusChanged, this, &MirSurfaceItem::onActiveFocusChanged);
 }
 
 MirSurfaceItem::~MirSurfaceItem()
@@ -560,6 +561,13 @@ QString MirSurfaceItem::appId()
 void MirSurfaceItem::setApplication(Application *app)
 {
     m_application = app;
+}
+
+void MirSurfaceItem::onActiveFocusChanged(bool activeFocus)
+{
+    if (m_application) {
+        m_application->setFocused(activeFocus);
+    }
 }
 
 void MirSurfaceItem::onApplicationStateChanged()

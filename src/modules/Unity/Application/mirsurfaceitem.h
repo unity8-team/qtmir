@@ -145,6 +145,8 @@ private Q_SLOTS:
     void scheduleMirSurfaceSizeUpdate();
     void updateMirSurfaceSize();
 
+    void onActiveFocusChanged(bool activeFocus);
+
 private:
     bool updateTexture();
     void ensureProvider();
