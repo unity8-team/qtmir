@@ -49,9 +49,9 @@ public:
         RoleSurface = Qt::UserRole,
     };
 
-    static MirSurfaceManager* singleton();
+    static MirSurfaceManager* singleton(QJSEngine* jsEngine);
 
-    MirSurfaceManager(QObject *parent = 0);
+    MirSurfaceManager(QJSEngine* jsEngine, QObject *parent = 0);
     ~MirSurfaceManager();
 
     // from QAbstractItemModel
@@ -83,6 +83,7 @@ private:
     static MirSurfaceManager *the_surface_manager;
     QHash<int, QByteArray> m_roleNames;
     QMutex m_mutex;
+    QJSEngine* m_jsEngine;
 };
 
 } // namespace qtmir

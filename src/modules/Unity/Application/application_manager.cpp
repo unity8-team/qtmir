@@ -47,8 +47,9 @@
 
 namespace ms = mir::scene;
 
-using namespace unity::shell::application;
+Q_LOGGING_CATEGORY(QTMIR_APPLICATIONS, "qtmir.applications")
 
+using namespace unity::shell::application;
 
 namespace qtmir
 {
@@ -646,8 +647,10 @@ void ApplicationManager::determineSizeForNewSurface(mir::scene::Session const *s
         QJSValue argument = m_jsEngine->newObject();
         argument.setProperty("width", size.width());
         argument.setProperty("height", size.height());
-        if (application)
-            argument.setProperty("application", application);
+        if (application) {
+            QJSValue jsApp = m_jsEngine->newQObject(application);
+            argument.setProperty("application", jsApp);
+        }
 
         QJSValue output = m_surfaceSizer.call(QJSValueList() << argument);
         if (output.isObject()) {

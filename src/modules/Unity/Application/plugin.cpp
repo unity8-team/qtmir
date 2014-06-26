@@ -42,7 +42,7 @@ static QObject* surfaceManagerSingleton(QQmlEngine* engine, QJSEngine* scriptEng
     Q_UNUSED(scriptEngine);
     qCDebug(QTMIR_APPLICATIONS) << "surfaceManagerSingleton - engine=" << engine << "scriptEngine=" << scriptEngine;
 
-    return qtmir::MirSurfaceManager::singleton();
+    return qtmir::MirSurfaceManager::singleton(scriptEngine);
 }
 
 class UnityApplicationPlugin : public QQmlExtensionPlugin {

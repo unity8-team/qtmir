@@ -37,16 +37,17 @@ namespace qtmir {
 
 MirSurfaceManager *MirSurfaceManager::the_surface_manager = nullptr;
 
-MirSurfaceManager* MirSurfaceManager::singleton()
+MirSurfaceManager* MirSurfaceManager::singleton(QJSEngine *jsEngine)
 {
     if (!the_surface_manager) {
-        the_surface_manager = new MirSurfaceManager();
+        the_surface_manager = new MirSurfaceManager(jsEngine);
     }
     return the_surface_manager;
 }
 
-MirSurfaceManager::MirSurfaceManager(QObject *parent)
+MirSurfaceManager::MirSurfaceManager(QJSEngine* jsEngine, QObject *parent)
     : QAbstractListModel(parent)
+    , m_jsEngine(jsEngine)
 {
     qCDebug(QTMIR_SURFACES) << "MirSurfaceManager::MirSurfaceManager - this=" << this;
 
@@ -85,7 +86,7 @@ void MirSurfaceManager::onSessionCreatedSurface(const mir::scene::Session *sessi
     qCDebug(QTMIR_SURFACES) << "MirSurfaceManager::onSessionCreatedSurface - session=" << session
                             << "surface=" << surface.get() << "surface.name=" << surface->name().c_str();
 
-    ApplicationManager* appMgr = static_cast<ApplicationManager*>(ApplicationManager::singleton());
+    ApplicationManager* appMgr = static_cast<ApplicationManager*>(ApplicationManager::singleton(m_jsEngine));
 
     Application* application = appMgr->findApplicationWithSession(session);
     auto qmlSurface = new MirSurfaceItem(surface, application);
