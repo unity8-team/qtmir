@@ -69,10 +69,10 @@ public:
     static ApplicationManager* singleton(QJSEngine *jsEngine);
 
     explicit ApplicationManager(
-            const QSharedPointer<MirServerConfiguration>& mirConfig,
-            const QSharedPointer<TaskController>& taskController,
-            const QSharedPointer<DesktopFileReader::Factory>& desktopFileReaderFactory,
-            const QSharedPointer<ProcInfo>& processInfo,
+            const QSharedPointer<MirServerConfiguration> &mirConfig,
+            const QSharedPointer<TaskController> &taskController,
+            const QSharedPointer<DesktopFileReader::Factory> &desktopFileReaderFactory,
+            const QSharedPointer<ProcInfo> &processInfo,
             QJSEngine *jsEngine,
             QObject *parent = 0);
     virtual ~ApplicationManager();
@@ -90,6 +90,8 @@ public:
 
     Q_INVOKABLE void registerSurfaceSizer(const QJSValue slot);
     Q_INVOKABLE void deregisterSurfaceSizer();
+
+    Q_INVOKABLE bool moveToFront(const QString &appId);
 
     QString focusedApplicationId() const override;
     bool suspended() const override;

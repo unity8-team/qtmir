@@ -418,13 +418,49 @@ bool ApplicationManager::stopApplication(const QString &inputAppId)
     return result;
 }
 
+/**
+ * @brief ApplicationManager::moveToFront - move application to be the first entry of the model
+ * @param inputAppId
+ * @return True if application exists, else false
+ */
+bool ApplicationManager::moveToFront(const QString &inputAppId)
+{
+    const QString appId = toShortAppIdIfPossible(inputAppId);
+    qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::moveToFront - appId=" << appId;
+
+    Application *application = findApplication(appId);
+    if (!application) {
+        qCritical() << "No such running application with appId" << appId;
+        return false;
+    }
+    int from = m_applications.indexOf(application);
+    move(from, 0);
+    return true;
+}
+
+/**
+ * @brief ApplicationManager::registerSurfaceSizer - register a JS function to decide surface geometry
+ * @param slot
+ * Use this to register a Javascript function which is called whenever an application is asking Mir for
+ * a new surface. The function is passed an object which has three properties:
+ *     application - the Application object
+ *     width - the requested surface width
+ *     height - the rquested surface height
+ * To override the width and/or height, this function must return an object with width & height properties
+ * set to the desired values. Otherwise the application requested geometry will be used.
+ */
 void ApplicationManager::registerSurfaceSizer(const QJSValue slot)
 {
     if (slot.isCallable()) {
         m_surfaceSizer = slot;
+    } else {
+        qDebug() << "ERROR: Attempting to pass a non-function to registerSurfaceSizer, is ignored";
     }
 }
 
+/**
+ * @brief ApplicationManager::deregisterSurfaceSizer - deregister the JS function surface geometry decider
+ */
 void ApplicationManager::deregisterSurfaceSizer()
 {
     m_surfaceSizer = QJSValue::UndefinedValue;
