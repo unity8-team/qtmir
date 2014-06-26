@@ -47,7 +47,7 @@ MirServerConfiguration::the_placement_strategy()
     return shell_placement_strategy(
         [this]
         {
-            return std::make_shared<MirPlacementStrategy>(the_shell_display_layout());
+            return std::make_shared<MirPlacementStrategy>();
         });
 }
 

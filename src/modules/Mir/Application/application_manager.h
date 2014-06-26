@@ -39,6 +39,7 @@ namespace mir {
 }
 
 class MirServerConfiguration;
+class QJSEngine;
 
 namespace qtmir
 {
@@ -57,7 +58,7 @@ public:
     class Factory
     {
     public:
-        ApplicationManager* create();
+        ApplicationManager* create(QJSEngine *jsEngine);
     };
 
     enum MoreRoles {
@@ -65,13 +66,14 @@ public:
         RoleFullscreen,
     };
 
-    static ApplicationManager* singleton();
+    static ApplicationManager* singleton(QJSEngine *jsEngine);
 
     explicit ApplicationManager(
             const QSharedPointer<MirServerConfiguration>& mirConfig,
             const QSharedPointer<TaskController>& taskController,
             const QSharedPointer<DesktopFileReader::Factory>& desktopFileReaderFactory,
             const QSharedPointer<ProcInfo>& processInfo,
+            QJSEngine *jsEngine,
             QObject *parent = 0);
     virtual ~ApplicationManager();
 
@@ -86,6 +88,9 @@ public:
     Q_INVOKABLE Application* get(int index) const override;
     Q_INVOKABLE Application* findApplication(const QString &appId) const override;
 
+    Q_INVOKABLE void registerSurfaceSizer(const QJSValue slot);
+    Q_INVOKABLE void deregisterSurfaceSizer();
+
     QString focusedApplicationId() const override;
     bool suspended() const override;
     void setSuspended(bool suspended) override;
@@ -96,6 +101,7 @@ public:
 
 public Q_SLOTS:
     void authorizeSession(const quint64 pid, bool &authorized);
+    void determineSizeForNewSurface(mir::scene::Session const *session, QSize &size);
 
     void onSessionStarting(const std::shared_ptr<mir::scene::Session> &session);
     void onSessionStopping(const std::shared_ptr<mir::scene::Session> &session);
@@ -140,6 +146,8 @@ private:
     QSharedPointer<TaskController> m_taskController;
     QSharedPointer<DesktopFileReader::Factory> m_desktopFileReaderFactory;
     QSharedPointer<ProcInfo> m_procInfo;
+    QJSValue m_surfaceSizer;
+    QJSEngine *m_jsEngine;
     static ApplicationManager *the_application_manager;
     bool m_suspended;
 

@@ -34,7 +34,7 @@ static QObject* applicationManagerSingleton(QQmlEngine* engine, QJSEngine* scrip
     Q_UNUSED(scriptEngine);
     qCDebug(QTMIR_APPLICATIONS) << "applicationManagerSingleton - engine=" << engine << "scriptEngine=" << scriptEngine;
 
-    return qtmir::ApplicationManager::singleton();
+    return qtmir::ApplicationManager::singleton(scriptEngine);
 }
 
 static QObject* surfaceManagerSingleton(QQmlEngine* engine, QJSEngine* scriptEngine) {

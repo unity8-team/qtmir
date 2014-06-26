@@ -19,24 +19,23 @@
 
 #include <mir/scene/placement_strategy.h>
 
-#include <memory>
+// Qt
+#include <QObject>
+#include <QSize>
 
-namespace mir {
-    namespace shell {
-        class DisplayLayout;
-    }
-}
-
-class MirPlacementStrategy : public mir::scene::PlacementStrategy
+class MirPlacementStrategy : public QObject, public mir::scene::PlacementStrategy
 {
+    Q_OBJECT
 public:
-    MirPlacementStrategy(std::shared_ptr<mir::shell::DisplayLayout> const& display_layout);
+    MirPlacementStrategy();
 
-    mir::scene::SurfaceCreationParameters place(mir::scene::Session const& session,
-            mir::scene::SurfaceCreationParameters const& request_parameters) override;
+    mir::scene::SurfaceCreationParameters place(mir::scene::Session const &session,
+            mir::scene::SurfaceCreationParameters const &request_parameters) override;
+
+Q_SIGNALS:
+    void requestSizeForSurface(const mir::scene::Session *session, QSize &size);
 
 private:
-    std::shared_ptr<mir::shell::DisplayLayout> const m_displayLayout;
 };
 
 #endif //  MIRSERVERQPA_MIR_PLACEMENT_STRATEGY_H

@@ -25,6 +25,7 @@
 
 // QPA mirserver
 #include "mirserverconfiguration.h"
+#include "mirplacementstrategy.h"
 #include "nativeinterface.h"
 #include "sessionlistener.h"
 #include "sessionauthorizer.h"
@@ -38,6 +39,8 @@
 
 // Qt
 #include <QGuiApplication>
+#include <QJSEngine>
+#include <QJSValue>
 
 // std
 #include <csignal>
@@ -64,7 +67,7 @@ QString toShortAppIdIfPossible(const QString &appId) {
     return appId;
 }
 
-void connectToSessionListener(ApplicationManager * manager, SessionListener * listener)
+void connectToSessionListener(ApplicationManager *manager, SessionListener *listener)
 {
     QObject::connect(listener, &SessionListener::sessionStarting,
                      manager, &ApplicationManager::onSessionStarting);
@@ -74,13 +77,19 @@ void connectToSessionListener(ApplicationManager * manager, SessionListener * li
                      manager, &ApplicationManager::onSessionCreatedSurface);
 }
 
-void connectToSessionAuthorizer(ApplicationManager * manager, SessionAuthorizer * authorizer)
+void connectToSessionAuthorizer(ApplicationManager *manager, SessionAuthorizer *authorizer)
 {
     QObject::connect(authorizer, &SessionAuthorizer::requestAuthorizationForSession,
                      manager, &ApplicationManager::authorizeSession, Qt::BlockingQueuedConnection);
 }
 
-void connectToTaskController(ApplicationManager * manager, TaskController * controller)
+void connectToPlacementStrategy(ApplicationManager *manager, MirPlacementStrategy *strategy)
+{
+    QObject::connect(strategy, &MirPlacementStrategy::requestSizeForSurface,
+                     manager, &ApplicationManager::determineSizeForNewSurface, Qt::BlockingQueuedConnection);
+}
+
+void connectToTaskController(ApplicationManager *manager, TaskController *controller)
 {
     QObject::connect(controller, &TaskController::processStarting,
                      manager, &ApplicationManager::onProcessStarting);
@@ -98,7 +107,7 @@ void connectToTaskController(ApplicationManager * manager, TaskController * cont
 
 
 
-ApplicationManager* ApplicationManager::Factory::Factory::create()
+ApplicationManager* ApplicationManager::Factory::Factory::create(QJSEngine *jsEngine)
 {
     NativeInterface *nativeInterface = dynamic_cast<NativeInterface*>(QGuiApplication::platformNativeInterface());
 
@@ -127,7 +136,8 @@ ApplicationManager* ApplicationManager::Factory::Factory::create()
                                              mirConfig,
                                              taskController,
                                              fileReaderFactory,
-                                             procInfo
+                                             procInfo,
+                                             jsEngine
                                          );
 
     connectToSessionListener(appManager, sessionListener);
@@ -138,12 +148,12 @@ ApplicationManager* ApplicationManager::Factory::Factory::create()
 }
 
 
-ApplicationManager* ApplicationManager::singleton()
+ApplicationManager* ApplicationManager::singleton(QJSEngine *jsEngine)
 {
     static ApplicationManager* instance;
     if (!instance) {
         Factory appFactory;
-        instance = appFactory.create();
+        instance = appFactory.create(jsEngine);
     }
     return instance;
 }
@@ -153,6 +163,7 @@ ApplicationManager::ApplicationManager(
         const QSharedPointer<TaskController>& taskController,
         const QSharedPointer<DesktopFileReader::Factory>& desktopFileReaderFactory,
         const QSharedPointer<ProcInfo>& procInfo,
+        QJSEngine *jsEngine,
         QObject *parent)
     : ApplicationManagerInterface(parent)
     , m_mirConfig(mirConfig)
@@ -161,6 +172,7 @@ ApplicationManager::ApplicationManager(
     , m_taskController(taskController)
     , m_desktopFileReaderFactory(desktopFileReaderFactory)
     , m_procInfo(procInfo)
+    , m_jsEngine(jsEngine)
 {
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::ApplicationManager (this=%p)" << this;
 }
@@ -405,6 +417,19 @@ bool ApplicationManager::stopApplication(const QString &inputAppId)
     return result;
 }
 
+void ApplicationManager::registerSurfaceSizer(const QJSValue slot)
+{
+    if (slot.isCallable()) {
+        m_surfaceSizer = slot;
+    }
+}
+
+void ApplicationManager::deregisterSurfaceSizer()
+{
+    m_surfaceSizer = QJSValue::UndefinedValue;
+}
+
+
 void ApplicationManager::onProcessFailed(const QString &appId, const bool duringStartup)
 {
     /* Applications fail if they fail to launch, crash or are killed. If failed to start, must
@@ -609,6 +634,33 @@ void ApplicationManager::authorizeSession(const quint64 pid, bool &authorized)
     application->setCanBeResumed(false);
     add(application);
     authorized = true;
+}
+
+void ApplicationManager::determineSizeForNewSurface(mir::scene::Session const *session, QSize &size)
+{
+    Application* application = findApplicationWithSession(session);
+    qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::determineSizeForNewSurface - application=" << application
+                                << "session=" << session << "name=" << (session?(session->name().c_str()):"null");
+
+    if (m_surfaceSizer.isCallable()) {
+        QJSValue argument = m_jsEngine->newObject();
+        argument.setProperty("width", size.width());
+        argument.setProperty("height", size.height());
+        if (application)
+            argument.setProperty("application", application);
+
+        QJSValue output = m_surfaceSizer.call(QJSValueList() << argument);
+        if (output.isObject()) {
+            QJSValue width = output.property("width");
+            QJSValue height = output.property("height");
+            if (width.isNumber())
+                size.setWidth(width.toInt());
+            if (height.isNumber())
+                size.setHeight(height.toInt());
+        } else {
+            qDebug() << "ApplicationManager::determineSizeForNewSurface - unrecognised object returned from JS callback";
+        }
+    }
 }
 
 void ApplicationManager::onSessionStarting(std::shared_ptr<ms::Session> const& session)
