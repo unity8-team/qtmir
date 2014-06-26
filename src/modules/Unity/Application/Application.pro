@@ -36,7 +36,7 @@ SOURCES += application_manager.cpp \
     mirbuffersgtexture.cpp \
     processcontroller.cpp \
     proc_info.cpp \
-    upstart/applicationcontroller.cpp
+    upstart/applicationcontroller.cpp \
     windowscreenshotprovider.cpp
 
 HEADERS += application_manager.h \
@@ -55,8 +55,8 @@ HEADERS += application_manager.h \
     mirbuffersgtexture.h \
     processcontroller.h \
     proc_info.h \
-    upstart/applicationcontroller.h
-    mirbuffersgtexture.h
+    upstart/applicationcontroller.h \
+    mirbuffersgtexture.h \
     windowscreenshotprovider.h
 
 installPath = $$[QT_INSTALL_QML]/$$replace(uri, \\., /)
