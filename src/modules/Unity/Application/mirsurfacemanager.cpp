@@ -19,7 +19,6 @@
 #include <QMutexLocker>
 
 // local
-#include "debughelpers.h"
 #include "mirsurfacemanager.h"
 #include "application_manager.h"
 
@@ -169,7 +168,7 @@ void MirSurfaceManager::onSurfaceAttributeChanged(const ms::Surface *surface,
                                                   const MirSurfaceAttrib attribute, const int value)
 {
     qCDebug(QTMIR_SURFACES) << "MirSurfaceManager::onSurfaceAttributeChanged - surface=" << surface
-                            << mirSurfaceAttribAndValueToString(attribute, value);
+                            << "attribute=" << static_cast<int>(attribute) << "value=" << value;
 
     QMutexLocker lock(&m_mutex);
     auto it = m_mirSurfaceToItemHash.find(surface);
