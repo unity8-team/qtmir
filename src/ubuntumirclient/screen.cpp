@@ -109,12 +109,12 @@ UbuntuScreen::UbuntuScreen()
         mSurfaceFormat.setSamples(4);
         DLOG("ubuntumirclient: setting MSAA to 4 samples");
     }
-    mEglConfig = q_configFromGLFormat(mEglDisplay, mSurfaceFormat, true);
 #ifdef QTUBUNTU_USE_OPENGL
     mSurfaceFormat.setRenderableType(QSurfaceFormat::OpenGL);
 #else
     mSurfaceFormat.setRenderableType(QSurfaceFormat::OpenGLES);
 #endif
+    mEglConfig = q_configFromGLFormat(mEglDisplay, mSurfaceFormat, true);
 
     #if !defined(QT_NO_DEBUG)
     printEglConfig(mEglDisplay, mEglConfig);
