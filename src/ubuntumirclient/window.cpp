@@ -229,6 +229,13 @@ void UbuntuWindow::handleSurfaceResize(int width, int height)
     }
 }
 
+void UbuntuWindow::handleSurfaceFocusChange(bool focused)
+{
+    LOG("UbuntuWindow::handleSurfaceFocusChange(focused=%s)", focused ? "true" : "false");
+    QWindow *activatedWindow = focused ? window() : nullptr;
+    QWindowSystemInterface::handleWindowActivated(activatedWindow, Qt::ActiveWindowFocusReason);
+}
+
 void UbuntuWindow::handleBufferResize(int width, int height)
 {
     DLOG("UbuntuWindow::handleBufferResize(width=%d, height=%d)", width, height);

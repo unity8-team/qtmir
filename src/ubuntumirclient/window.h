@@ -40,6 +40,7 @@ public:
     // New methods.
     void* eglSurface() const;
     void handleSurfaceResize(int width, int height);
+    void handleSurfaceFocusChange(bool focused);
     void onBuffersSwapped_threadSafe(int newBufferWidth, int newBufferHeight);
 
     UbuntuWindowPrivate* priv() { return d; }

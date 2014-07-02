@@ -175,6 +175,8 @@ static const char* nativeEventTypeToStr(int eventType)
     case RESIZE_EVENT_TYPE:
         return "RESIZE_EVENT_TYPE";
         break;
+    case SURFACE_EVENT_TYPE:
+        return "SURFACE_EVENT_TYPE";
     default:
         return "INVALID!";
     }
@@ -211,6 +213,11 @@ void UbuntuInput::customEvent(QEvent* event)
     case RESIZE_EVENT_TYPE:
         ubuntuEvent->window->handleSurfaceResize(nativeEvent->details.resize.width,
                                                  nativeEvent->details.resize.height);
+        break;
+    case SURFACE_EVENT_TYPE:
+        if (nativeEvent->details.surface.attribute == SURFACE_ATTRIBUTE_FOCUS) {
+            ubuntuEvent->window->handleSurfaceFocusChange(nativeEvent->details.surface.value == 1);
+        }
         break;
     default:
         DLOG("unhandled event type %d", nativeEvent->type);
