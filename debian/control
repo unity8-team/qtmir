@@ -3,13 +3,11 @@ Priority: optional
 Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
 Build-Depends: debhelper (>= 9),
                libatspi2.0-dev,
-               libdbus-1-dev,
                libegl1-mesa-dev,
                libfontconfig1-dev,
                libfreetype6-dev,
                libgles2-mesa-dev,
                libglib2.0-dev,
-               libhybris-dev,
                libubuntu-application-api-dev (>= 2.2.0),
                libudev-dev,
                libxrender-dev,
@@ -18,7 +16,6 @@ Build-Depends: debhelper (>= 9),
                qtbase5-private-dev,
                qtdeclarative5-dev,
                libqt5sensors5-dev,
-               zlib1g-dev,
 # if you don't have have commit access to this branch but would like to upload
 # directly to Ubuntu, don't worry: your changes will be merged back into the
 # upstream branch
