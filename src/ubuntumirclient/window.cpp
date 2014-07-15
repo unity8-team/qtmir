@@ -55,7 +55,7 @@ public:
     QMutex mutex;
 };
 
-static void eventCallback(void* context, const Event* event)
+static void eventCallback(void* context, const WindowEvent* event)
 {
     DLOG("eventCallback (context=%p, event=%p)", context, event);
     DASSERT(context != NULL);

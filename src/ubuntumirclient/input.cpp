@@ -130,12 +130,12 @@ static const QEvent::Type kEventType[] = {
 class UbuntuEvent : public QEvent
 {
 public:
-    UbuntuEvent(UbuntuWindow* window, const Event* event, QEvent::Type type)
+    UbuntuEvent(UbuntuWindow* window, const WindowEvent* event, QEvent::Type type)
         : QEvent(type), window(window) {
-        memcpy(&nativeEvent, event, sizeof(Event));
+        memcpy(&nativeEvent, event, sizeof(WindowEvent));
     }
     UbuntuWindow* window;
-    Event nativeEvent;
+    WindowEvent nativeEvent;
 };
 
 UbuntuInput::UbuntuInput(UbuntuClientIntegration* integration)
@@ -163,20 +163,17 @@ UbuntuInput::~UbuntuInput()
 static const char* nativeEventTypeToStr(int eventType)
 {
     switch (eventType) {
-    case MOTION_EVENT_TYPE:
-        return "MOTION_EVENT_TYPE";
+    case MOTION_WEVENT_TYPE:
+        return "MOTION_WEVENT_TYPE";
         break;
-    case KEY_EVENT_TYPE:
-        return "KEY_EVENT_TYPE";
+    case KEY_WEVENT_TYPE:
+        return "KEY_WEVENT_TYPE";
         break;
-    case HW_SWITCH_EVENT_TYPE:
-        return "HW_SWITCH_EVENT_TYPE";
+    case RESIZE_WEVENT_TYPE:
+        return "RESIZE_WEVENT_TYPE";
         break;
-    case RESIZE_EVENT_TYPE:
-        return "RESIZE_EVENT_TYPE";
-        break;
-    case SURFACE_EVENT_TYPE:
-        return "SURFACE_EVENT_TYPE";
+    case SURFACE_WEVENT_TYPE:
+        return "SURFACE_WEVENT_TYPE";
     default:
         return "INVALID!";
     }
@@ -187,7 +184,7 @@ void UbuntuInput::customEvent(QEvent* event)
 {
     DASSERT(QThread::currentThread() == thread());
     UbuntuEvent* ubuntuEvent = static_cast<UbuntuEvent*>(event);
-    Event *nativeEvent = &ubuntuEvent->nativeEvent;
+    WindowEvent *nativeEvent = &ubuntuEvent->nativeEvent;
 
     // Event filtering.
     long result;
@@ -201,22 +198,19 @@ void UbuntuInput::customEvent(QEvent* event)
 
     // Event dispatching.
     switch (nativeEvent->type) {
-    case MOTION_EVENT_TYPE:
+    case MOTION_WEVENT_TYPE:
         dispatchMotionEvent(ubuntuEvent->window->window(), nativeEvent);
         break;
-    case KEY_EVENT_TYPE:
+    case KEY_WEVENT_TYPE:
         dispatchKeyEvent(ubuntuEvent->window->window(), nativeEvent);
         break;
-    case HW_SWITCH_EVENT_TYPE:
-        dispatchHWSwitchEvent(ubuntuEvent->window->window(), nativeEvent);
+    case RESIZE_WEVENT_TYPE:
+        ubuntuEvent->window->handleSurfaceResize(nativeEvent->resize.width,
+                                                 nativeEvent->resize.height);
         break;
-    case RESIZE_EVENT_TYPE:
-        ubuntuEvent->window->handleSurfaceResize(nativeEvent->details.resize.width,
-                                                 nativeEvent->details.resize.height);
-        break;
-    case SURFACE_EVENT_TYPE:
-        if (nativeEvent->details.surface.attribute == SURFACE_ATTRIBUTE_FOCUS) {
-            ubuntuEvent->window->handleSurfaceFocusChange(nativeEvent->details.surface.value == 1);
+    case SURFACE_WEVENT_TYPE:
+        if (nativeEvent->surface.attribute == SURFACE_ATTRIBUTE_FOCUS) {
+            ubuntuEvent->window->handleSurfaceFocusChange(nativeEvent->surface.value == 1);
         }
         break;
     default:
@@ -229,43 +223,43 @@ void UbuntuInput::postEvent(UbuntuWindow* platformWindow, const void* event)
     QWindow *window = platformWindow->window();
 
     QCoreApplication::postEvent(this, new UbuntuEvent(
-            platformWindow, reinterpret_cast<const Event*>(event), mEventType));
+            platformWindow, reinterpret_cast<const WindowEvent*>(event), mEventType));
 
     if ((window->flags() && Qt::WindowTransparentForInput) && window->parent()) {
         QCoreApplication::postEvent(this, new UbuntuEvent(
                     static_cast<UbuntuWindow*>(platformWindow->QPlatformWindow::parent()),
-                    reinterpret_cast<const Event*>(event), mEventType));
+                    reinterpret_cast<const WindowEvent*>(event), mEventType));
     }
 }
 
 void UbuntuInput::dispatchMotionEvent(QWindow* window, const void* ev)
 {
-    const Event* event = reinterpret_cast<const Event*>(ev);
+    const WindowEvent* event = reinterpret_cast<const WindowEvent*>(ev);
 
     #if (LOG_EVENTS != 0)
     // Motion event logging.
     LOG("MOTION device_id:%d source_id:%d action:%d flags:%d meta_state:%d edge_flags:%d "
             "button_state:%d x_offset:%.2f y_offset:%.2f x_precision:%.2f y_precision:%.2f "
-            "down_time:%lld event_time:%lld pointer_count:%d {", event->details.motion.device_id,
-            event->details.motion.source_id, event->details.motion.action,
-            event->details.motion.flags, event->details.motion.meta_state,
-            event->details.motion.edge_flags, event->details.motion.button_state,
-            event->details.motion.x_offset, event->details.motion.y_offset,
-            event->details.motion.x_precision, event->details.motion.y_precision,
-            event->details.motion.down_time, event->details.motion.event_time,
-            event->details.motion.pointer_count);
-    for (size_t i = 0; i < event->details.motion.pointer_count; i++) {
+            "down_time:%lld event_time:%lld pointer_count:%d {", event->motion.device_id,
+            event->motion.source_id, event->motion.action,
+            event->motion.flags, event->motion.meta_state,
+            event->motion.edge_flags, event->motion.button_state,
+            event->motion.x_offset, event->motion.y_offset,
+            event->motion.x_precision, event->motion.y_precision,
+            event->motion.down_time, event->motion.event_time,
+            event->motion.pointer_count);
+    for (size_t i = 0; i < event->motion.pointer_count; i++) {
         LOG("  id:%d x:%.2f y:%.2f rx:%.2f ry:%.2f maj:%.2f min:%.2f sz:%.2f press:%.2f",
-                event->details.motion.pointer_coordinates[i].id,
-                event->details.motion.pointer_coordinates[i].x,
-                event->details.motion.pointer_coordinates[i].y,
-                event->details.motion.pointer_coordinates[i].raw_x,
-                event->details.motion.pointer_coordinates[i].raw_y,
-                event->details.motion.pointer_coordinates[i].touch_major,
-                event->details.motion.pointer_coordinates[i].touch_minor,
-                event->details.motion.pointer_coordinates[i].size,
-                event->details.motion.pointer_coordinates[i].pressure
-                // event->details.motion.pointer_coordinates[i].orientation  -> Always 0.0.
+                event->motion.pointer_coordinates[i].id,
+                event->motion.pointer_coordinates[i].x,
+                event->motion.pointer_coordinates[i].y,
+                event->motion.pointer_coordinates[i].raw_x,
+                event->motion.pointer_coordinates[i].raw_y,
+                event->motion.pointer_coordinates[i].touch_major,
+                event->motion.pointer_coordinates[i].touch_minor,
+                event->motion.pointer_coordinates[i].size,
+                event->motion.pointer_coordinates[i].pressure
+                // event->motion.pointer_coordinates[i].orientation  -> Always 0.0.
            );
     }
     LOG("}");
@@ -280,16 +274,16 @@ void UbuntuInput::dispatchMotionEvent(QWindow* window, const void* ev)
 
     // TODO: Is it worth setting the Qt::TouchPointStationary ones? Currently they are left
     //       as Qt::TouchPointMoved
-    const int kPointerCount = event->details.motion.pointer_count;
+    const int kPointerCount = event->motion.pointer_count;
     for (int i = 0; i < kPointerCount; ++i) {
         QWindowSystemInterface::TouchPoint touchPoint;
 
-        const float kX = event->details.motion.pointer_coordinates[i].raw_x;
-        const float kY = event->details.motion.pointer_coordinates[i].raw_y;
-        const float kW = event->details.motion.pointer_coordinates[i].touch_major;
-        const float kH = event->details.motion.pointer_coordinates[i].touch_minor;
-        const float kP = event->details.motion.pointer_coordinates[i].pressure;
-        touchPoint.id = event->details.motion.pointer_coordinates[i].id;
+        const float kX = event->motion.pointer_coordinates[i].raw_x;
+        const float kY = event->motion.pointer_coordinates[i].raw_y;
+        const float kW = event->motion.pointer_coordinates[i].touch_major;
+        const float kH = event->motion.pointer_coordinates[i].touch_minor;
+        const float kP = event->motion.pointer_coordinates[i].pressure;
+        touchPoint.id = event->motion.pointer_coordinates[i].id;
         touchPoint.normalPosition = QPointF(kX / kWindowGeometry.width(), kY / kWindowGeometry.height());
         touchPoint.area = QRectF(kX - (kW / 2.0), kY - (kH / 2.0), kW, kH);
         touchPoint.pressure = kP / kMaxPressure;
@@ -298,7 +292,7 @@ void UbuntuInput::dispatchMotionEvent(QWindow* window, const void* ev)
         touchPoints.append(touchPoint);
     }
 
-    switch (event->details.motion.action & U_MOTION_ACTION_MASK) {
+    switch (event->motion.action & U_MOTION_ACTION_MASK) {
     case U_MOTION_ACTION_MOVE:
         // No extra work needed.
         break;
@@ -312,7 +306,7 @@ void UbuntuInput::dispatchMotionEvent(QWindow* window, const void* ev)
         break;
 
     case U_MOTION_ACTION_POINTER_DOWN: {
-        const int index = (event->details.motion.action & U_MOTION_ACTION_POINTER_INDEX_MASK) >>
+        const int index = (event->motion.action & U_MOTION_ACTION_POINTER_INDEX_MASK) >>
             U_MOTION_ACTION_POINTER_INDEX_SHIFT;
         touchPoints[index].state = Qt::TouchPointPressed;
         break;
@@ -320,7 +314,7 @@ void UbuntuInput::dispatchMotionEvent(QWindow* window, const void* ev)
 
     case U_MOTION_ACTION_CANCEL:
     case U_MOTION_ACTION_POINTER_UP: {
-        const int index = (event->details.motion.action & U_MOTION_ACTION_POINTER_INDEX_MASK) >>
+        const int index = (event->motion.action & U_MOTION_ACTION_POINTER_INDEX_MASK) >>
             U_MOTION_ACTION_POINTER_INDEX_SHIFT;
         touchPoints[index].state = Qt::TouchPointReleased;
         break;
@@ -332,10 +326,10 @@ void UbuntuInput::dispatchMotionEvent(QWindow* window, const void* ev)
     case U_MOTION_ACTION_HOVER_ENTER:
     case U_MOTION_ACTION_HOVER_EXIT:
     default:
-        DLOG("unhandled motion event action %d", event->details.motion.action & U_MOTION_ACTION_MASK);
+        DLOG("unhandled motion event action %d", event->motion.action & U_MOTION_ACTION_MASK);
     }
 
-    QWindowSystemInterface::handleTouchEvent(window, event->details.motion.event_time / 1000000,
+    QWindowSystemInterface::handleTouchEvent(window, event->motion.event_time / 1000000,
             mTouchDevice, touchPoints);
 }
 
@@ -359,24 +353,24 @@ static uint32_t translateKeysym(uint32_t sym, char *string, size_t size)
 
 void UbuntuInput::dispatchKeyEvent(QWindow* window, const void* ev)
 {
-    const Event* event = reinterpret_cast<const Event*>(ev);
+    const WindowEvent* event = reinterpret_cast<const WindowEvent*>(ev);
 
     #if (LOG_EVENTS != 0)
     // Key event logging.
     LOG("KEY device_id:%d source_id:%d action:%d flags:%d meta_state:%d key_code:%d "
             "scan_code:%d repeat_count:%d down_time:%lld event_time:%lld is_system_key:%d",
-            event->details.key.device_id, event->details.key.source_id,
-            event->details.key.action, event->details.key.flags, event->details.key.meta_state,
-            event->details.key.key_code, event->details.key.scan_code,
-            event->details.key.repeat_count, event->details.key.down_time,
-            event->details.key.event_time, event->details.key.is_system_key);
+            event->key.device_id, event->key.source_id,
+            event->key.action, event->key.flags, event->key.meta_state,
+            event->key.key_code, event->key.scan_code,
+            event->key.repeat_count, event->key.down_time,
+            event->key.event_time, event->key.is_system_key);
     #endif
 
-    ulong timestamp = event->details.key.event_time / 1000000;
-    xkb_keysym_t xk_sym = (xkb_keysym_t)event->details.key.key_code;
+    ulong timestamp = event->key.event_time / 1000000;
+    xkb_keysym_t xk_sym = (xkb_keysym_t)event->key.key_code;
 
     // Key modifier and unicode index mapping.
-    const int kMetaState = event->details.key.meta_state;
+    const int kMetaState = event->key.meta_state;
     Qt::KeyboardModifiers modifiers = Qt::NoModifier;
     if (kMetaState & U_KEY_MODIFIER_SHIFT) {
         modifiers |= Qt::ShiftModifier;
@@ -391,7 +385,7 @@ void UbuntuInput::dispatchKeyEvent(QWindow* window, const void* ev)
         modifiers |= Qt::MetaModifier;
     }
 
-    QEvent::Type keyType = event->details.key.action == U_KEY_ACTION_DOWN ? QEvent::KeyPress : QEvent::KeyRelease;
+    QEvent::Type keyType = event->key.action == U_KEY_ACTION_DOWN ? QEvent::KeyPress : QEvent::KeyRelease;
 
     char s[2];
     int sym = translateKeysym(xk_sym, s, sizeof(s));
@@ -408,23 +402,4 @@ void UbuntuInput::dispatchKeyEvent(QWindow* window, const void* ev)
     }
 
     QWindowSystemInterface::handleKeyEvent(window, timestamp, keyType, sym, modifiers, text);
-}
-
-void UbuntuInput::dispatchHWSwitchEvent(QWindow* window, const void* ev)
-{
-    Q_UNUSED(window);
-    Q_UNUSED(ev);
-
-    #if (LOG_EVENTS != 0)
-    // HW switch event logging.
-    const Event* event = reinterpret_cast<const Event*>(ev);
-    LOG("HWSWITCH device_id:%d source_id:%d action:%d flags:%d meta_state:%d event_time:%lld "
-            "policy_flags:%u switch_values:%d switch_mask:%d", event->device_id, event->source_id,
-            event->action, event->flags, event->meta_state, event->details.hw_switch.event_time,
-            event->details.hw_switch.policy_flags, event->details.hw_switch.switch_values,
-            event->details.hw_switch.switch_mask);
-    #endif
-
-    // FIXME(loicm) Not sure how to interpret that kind of event.
-    DLOG("hw switch events are not handled");
 }
