@@ -45,6 +45,11 @@ public:
 
     UbuntuWindowPrivate* priv() { return d; }
 
+    // Begin methods implemented as workaround for lp:1346633
+    bool isEmbedded(const QPlatformWindow *) const override { return true; }
+    QPoint mapToGlobal(const QPoint &position) const override;
+    // End methods implemented as workaround for lp:1346633
+
 public Q_SLOTS:
     void handleBufferResize(int width, int height);
     void forceRedraw();
