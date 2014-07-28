@@ -1,9 +1,13 @@
-qtubuntu (0.60) UNRELEASED; urgency=medium
+qtubuntu (0.60+14.10.20140728-0ubuntu1) utopic; urgency=medium
 
+  [ Gerry Boland ]
   * Major refactor: remove SurfaceFlinger & Mir in-server-process-client support, 
     flatten class hierarchy. Only Mir client QPA remains
 
- -- Gerry Boland <gerry.boland@canonical.com>  Mon, 30 Jun 2014 12:05:37 +0100
+  [ Ubuntu daily release ]
+  * New rebuild forced
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 28 Jul 2014 02:37:18 +0000
 
 qtubuntu (0.54+14.10.20140613-0ubuntu1) utopic; urgency=low
 
