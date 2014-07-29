@@ -290,10 +290,6 @@ bool ApplicationManager::requestFocusApplication(const QString &inputAppId)
         return false;
     }
 
-    if (application == m_focusedApplication) {
-        return true;
-    }
-
     // Update the screenshot for the currently focused app
     Application *currentlyFocusedApplication = findApplication(focusedApplicationId());
     if (currentlyFocusedApplication) {
