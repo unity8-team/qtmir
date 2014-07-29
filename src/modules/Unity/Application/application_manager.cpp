@@ -291,10 +291,9 @@ bool ApplicationManager::requestFocusApplication(const QString &inputAppId)
     }
 
     // Update the screenshot for the currently focused app
-    Application *currentlyFocusedApplication = findApplication(focusedApplicationId());
-    if (currentlyFocusedApplication) {
+    if (m_focusedApplication && application != m_focusedApplication) {
         m_nextFocusedAppId = appId;
-        currentlyFocusedApplication->updateScreenshot();
+        m_focusedApplication->updateScreenshot();
     } else {
         Q_EMIT focusRequested(appId);
     }
