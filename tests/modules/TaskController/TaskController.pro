@@ -1,5 +1,5 @@
 include(../../test-includes.pri)
-include(../common/common.pri)
+include(../../common/common.pri)
 
 TARGET = taskcontroller_test
 
