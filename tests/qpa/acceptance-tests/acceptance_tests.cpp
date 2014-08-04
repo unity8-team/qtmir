@@ -21,11 +21,52 @@
 #include <Unity/Application/taskcontroller.h>
 #include <Unity/Application/proc_info.h>
 #include <mirserverconfiguration.h>
+#include <qmirserver.h>
+
+//#include <mir_toolkit/mir_client_library.h>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-TEST(QPAAcceptance, client_may_connect_and_exit)
+#include "stub_graphics_platform.h"
+#include "mir_test_framework/deferred_in_process_server.h"
+
+namespace mg = mir::graphics;
+namespace mtf = mir_test_framework;
+
+namespace
+{
+
+static char const* argv[] = {
+    "acceptance-tests",
+};
+
+struct TestingServerConfiguration : public MirServerConfiguration
+{
+    TestingServerConfiguration()
+        : MirServerConfiguration(1, argv)
+    {
+    }
+    std::shared_ptr<mg::Platform> the_graphics_platform() override
+    {
+        return std::make_shared<StubPlatform>();
+    }
+};
+
+struct TestQPAServer : public mtf::DeferredInProcessServer
+{
+    TestingServerConfiguration conf;
+    mir::DefaultServerConfiguration& server_config() override
+    {
+        return conf;
+    }
+};
+
+}
+
+TEST_F(TestQPAServer, client_may_connect_and_exit)
 {
     using namespace testing;
+
+    start_server();
 }

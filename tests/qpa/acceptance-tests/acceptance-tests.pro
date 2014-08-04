@@ -8,6 +8,7 @@ INCLUDEPATH += \
 
 SOURCES += \
     acceptance_tests.cpp \
+    stub_graphics_platform.cpp \
     mir_test_framework/server_runner.cpp
 
 # need to link in the QPA plugin too for access to MirServerConfiguration
