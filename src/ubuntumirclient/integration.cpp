@@ -66,6 +66,7 @@ UbuntuClientIntegration::UbuntuClientIntegration()
     , mFontDb(new QGenericUnixFontDatabase)
     , mServices(new UbuntuPlatformServices)
     , mClipboard(new UbuntuClipboard)
+    , mScaleFactor(1.0)
 {
     setupOptions();
     setupDescription();
@@ -90,6 +91,19 @@ UbuntuClientIntegration::UbuntuClientIntegration()
         mInput = nullptr;
         mInputContext = nullptr;
     }
+
+    // compute the scale factor
+    const int defaultGridUnit = 8;
+    int gridUnit = defaultGridUnit;
+    QByteArray gridUnitString = qgetenv("GRID_UNIT_PX");
+    if (!gridUnitString.isEmpty()) {
+        bool ok;
+        gridUnit = gridUnitString.toInt(&ok);
+        if (!ok) {
+            gridUnit = defaultGridUnit;
+        }
+    }
+    mScaleFactor = static_cast<qreal>(gridUnit) / defaultGridUnit;
 }
 
 UbuntuClientIntegration::~UbuntuClientIntegration()
@@ -205,4 +219,17 @@ QPlatformTheme* UbuntuClientIntegration::createPlatformTheme(const QString& name
 {
     Q_UNUSED(name);
     return new UbuntuTheme;
+}
+
+QVariant UbuntuClientIntegration::styleHint(StyleHint hint) const
+{
+    switch (hint) {
+        case QPlatformIntegration::StartDragDistance: {
+            // default is 10 pixels (see QPlatformTheme::defaultThemeHint)
+            return 10.0 * mScaleFactor;
+        }
+        default:
+            break;
+    }
+    return QPlatformIntegration::styleHint(hint);
 }

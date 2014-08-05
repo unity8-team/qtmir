@@ -44,6 +44,7 @@ public:
     QPlatformFontDatabase* fontDatabase() const override { return mFontDb; }
     QStringList themeNames() const override;
     QPlatformTheme* createPlatformTheme(const QString& name) const override;
+    QVariant styleHint(StyleHint hint) const override;
     QPlatformServices *services() const override;
     QPlatformWindow* createPlatformWindow(QWindow* window) const override;
     QPlatformInputContext* inputContext() const override { return mInputContext; }
@@ -66,6 +67,7 @@ private:
     UbuntuInput* mInput;
     QPlatformInputContext* mInputContext;
     QPlatformClipboard* mClipboard;
+    qreal mScaleFactor;
 
     // Platform API stuff
     UApplicationOptions* mOptions;
