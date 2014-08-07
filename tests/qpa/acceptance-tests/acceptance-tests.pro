@@ -11,6 +11,9 @@ SOURCES += \
     stub_graphics_platform.cpp \
     mir_test_framework/server_runner.cpp
 
+#CONFIG += link_pkgconfig
+#PKG_CONFIG += mirclient
+
 # need to link in the QPA plugin too for access to MirServerConfiguration
 LIBS += -Wl,-rpath,$${PWD}/../../../src/platforms/mirserver \
     -L../../../src/platforms/mirserver -lqpa-mirserver

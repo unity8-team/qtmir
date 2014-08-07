@@ -23,7 +23,7 @@
 #include <mirserverconfiguration.h>
 #include <qmirserver.h>
 
-//#include <mir_toolkit/mir_client_library.h>
+#include <mir_toolkit/mir_client_library.h>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -60,6 +60,24 @@ struct TestQPAServer : public mtf::DeferredInProcessServer
     {
         return conf;
     }
+    
+    void launch_client(std::function<void(std::string)> const& client_exec)
+    {
+        auto thread = std::thread(client_exec, new_connection());
+        client_threads.push_back(std::move(thread));
+    }
+
+    void TearDown() override
+    {
+        for (auto &thread : client_threads)
+        {
+            if (thread.joinable())
+                thread.join();
+        }
+        DeferredInProcessServer::TearDown();
+    }
+
+    std::vector<std::thread> client_threads;
 };
 
 }
@@ -69,4 +87,12 @@ TEST_F(TestQPAServer, client_may_connect_and_exit)
     using namespace testing;
 
     start_server();
+    
+    launch_client([&](std::string const& connect_string) -> void
+    {
+        MirConnection *connection = mir_connect_sync(connect_string.c_str(),
+            __PRETTY_FUNCTION__);
+        ASSERT_TRUE(mir_connection_is_valid(connection));
+        mir_connection_release(connection);
+    });
 }

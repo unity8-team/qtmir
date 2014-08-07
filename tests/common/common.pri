@@ -1,5 +1,5 @@
 CONFIG += link_pkgconfig no_keywords # keywords clash with ProcessC++
-PKGCONFIG += mirserver process-cpp ubuntu-app-launch-2
+PKGCONFIG += mirserver mirclient process-cpp ubuntu-app-launch-2
 
 QT += quick testlib
 QMAKE_CXXFLAGS = -std=c++11
