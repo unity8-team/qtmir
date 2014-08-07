@@ -14,13 +14,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
 #include <Unity/Application/application_manager.h>
 
 #include <Unity/Application/applicationcontroller.h>
 #include <Unity/Application/taskcontroller.h>
 #include <Unity/Application/proc_info.h>
 #include <mirserverconfiguration.h>
+#include <sessionauthorizer.h>
 #include <qmirserver.h>
 
 #include <mir_toolkit/mir_client_library.h>
@@ -96,3 +96,52 @@ TEST_F(TestQPAServer, client_may_connect_and_exit)
         mir_connection_release(connection);
     });
 }
+
+namespace
+{
+
+class AuthorizationDenier : public QObject
+{
+    Q_OBJECT
+public:
+    AuthorizationDenier(QObject *parent = 0)
+        : QObject(parent)
+    {
+    }
+    ~AuthorizationDenier() = default;
+ 
+    void authorizeSession(quint64 const pid, bool& authorized)
+    {
+        (void) pid;
+        // Observe fail and toggle
+        authorized = false;
+    }
+};
+
+}
+
+TEST_F(TestQPAServer, session_authorizer_may_prevent_client_from_connecting)
+{
+    using namespace testing;
+
+    start_server();
+
+    AuthorizationDenier d(nullptr);
+    QObject::connect(conf.sessionAuthorizer(), &SessionAuthorizer::requestAuthorizationForSession,
+                     &d, &AuthorizationDenier::authorizeSession, Qt::DirectConnection);
+
+    launch_client([&](std::string const& connect_string) -> void
+    {
+        MirConnection *connection = mir_connect_sync(connect_string.c_str(),
+            __PRETTY_FUNCTION__);
+        // We should fail to connect!
+        ASSERT_FALSE(mir_connection_is_valid(connection));
+    });
+}
+
+// TODO: Could Test SessionListener and other things in server configuration
+// TODO: Test surface creation
+// TODO: Could add tests in a similar format with an active ApplicationManager instance
+
+// Must be at end
+#include "acceptance_tests.moc"

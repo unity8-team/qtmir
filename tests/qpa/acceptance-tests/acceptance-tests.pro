@@ -1,7 +1,7 @@
 include(../../test-includes.pri)
 include(../../common/common.pri)
 
-TARGET = qpa_acceptance_tests
+TARGET = qpa_mir_server_and_client_acceptance_tests
 
 INCLUDEPATH += \
     ../../../src/platforms/mirserver
