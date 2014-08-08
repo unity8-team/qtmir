@@ -41,6 +41,7 @@ class UbuntuWindowPrivate
 public:
     void createEGLSurface(EGLNativeWindowType nativeWindow);
     void destroyEGLSurface();
+    int panelHeight();
 
     UbuntuScreen* screen;
     EGLSurface eglSurface;
@@ -54,7 +55,6 @@ public:
     QSize bufferSize;
     QSize targetBufferSize;
     QMutex mutex;
-    int panelHeight; // FIXME - should be removed
 };
 
 static void eventCallback(void* context, const WindowEvent* event)
@@ -86,21 +86,6 @@ UbuntuWindow::UbuntuWindow(QWindow* w, UbuntuScreen* screen,
         window()->geometry() : screen->availableGeometry();
     createWindow();
     DLOG("UbuntuWindow::UbuntuWindow (this=%p, w=%p, screen=%p, input=%p)", this, w, screen, input);
-
-    // FIXME - in order to work around https://bugs.launchpad.net/mir/+bug/1346633
-    // we need to guess the panel height (3GU + 2DP)
-    const int defaultGridUnit = 8;
-    int gridUnit = defaultGridUnit;
-    QByteArray gridUnitString = qgetenv("GRID_UNIT_PX");
-    if (!gridUnitString.isEmpty()) {
-        bool ok;
-        gridUnit = gridUnitString.toInt(&ok);
-        if (!ok) {
-            gridUnit = defaultGridUnit;
-        }
-    }
-    qreal densityPixelRatio = static_cast<qreal>(gridUnit) / defaultGridUnit;
-    d->panelHeight = gridUnit * 3 + qFloor(densityPixelRatio) * 2;
 }
 
 UbuntuWindow::~UbuntuWindow()
@@ -131,6 +116,24 @@ void UbuntuWindowPrivate::destroyEGLSurface()
     }
 }
 
+// FIXME - in order to work around https://bugs.launchpad.net/mir/+bug/1346633
+// we need to guess the panel height (3GU + 2DP)
+int UbuntuWindowPrivate::panelHeight()
+{
+    const int defaultGridUnit = 8;
+    int gridUnit = defaultGridUnit;
+    QByteArray gridUnitString = qgetenv("GRID_UNIT_PX");
+    if (!gridUnitString.isEmpty()) {
+        bool ok;
+        gridUnit = gridUnitString.toInt(&ok);
+        if (!ok) {
+            gridUnit = defaultGridUnit;
+        }
+    }
+    qreal densityPixelRatio = static_cast<qreal>(gridUnit) / defaultGridUnit;
+    return gridUnit * 3 + qFloor(densityPixelRatio) * 2;
+}
+
 void UbuntuWindow::createWindow()
 {
     DLOG("UbuntuWindow::createWindow (this=%p)", this);
@@ -147,8 +150,10 @@ void UbuntuWindow::createWindow()
     flags |= static_cast<uint>(IS_OPAQUE_FLAG);
 
     const QByteArray title = (!window()->title().isNull()) ? window()->title().toUtf8() : "Window 1"; // legacy title
+    const int panelHeight = d->panelHeight();
 
     #if !defined(QT_NO_DEBUG)
+    LOG("panelHeight: '%d'", panelHeight);
     LOG("role: '%d'", role);
     LOG("flags: '%s'", (flags & static_cast<uint>(1)) ? "Opaque" : "NotOpaque");
     LOG("title: '%s'", title.constData());
@@ -162,9 +167,19 @@ void UbuntuWindow::createWindow()
     } else if (d->state == Qt::WindowMaximized) {
         printf("UbuntuWindow - maximized geometry\n");
         geometry = screen()->availableGeometry();
+        /*
+         * FIXME: Autopilot relies on being able to convert coordinates relative of the window
+         * into absolute screen coordinates. Mir does not allow this, see bug lp:1346633
+         * Until there's a correct way to perform this transformation agreed, this horrible hack
+         * guesses the transformation heuristically.
+         *
+         * Assumption: this method only used on phone devices!
+         */
+        geometry.setY(panelHeight);
     } else {
         printf("UbuntuWindow - regular geometry\n");
         geometry = d->geometry;
+        geometry.setY(panelHeight);
     }
 
     DLOG("[ubuntumirclient QPA] creating surface at (%d, %d) with size (%d, %d) with title '%s'\n",
@@ -378,22 +393,4 @@ void UbuntuWindow::onBuffersSwapped_threadSafe(int newBufferWidth, int newBuffer
             }
         }
     }
-}
-
-QPoint UbuntuWindow::mapToGlobal(const QPoint &position) const
-{
-    /*
-     * FIXME: Autopilot relies on being able to convert coordinates relative of the window
-     * into absolute screen coordinates. Mir does not allow this, see bug lp:1346633
-     * Until there's a correct way to perform this transformation agreed, this horrible hack
-     * guesses the transformation heuristically.
-     *
-     * Assumption: this method only used on phone devices!
-     */
-
-    if (d->state == Qt::WindowFullScreen)
-        return position;
-
-    // FIXME: update when enabling rotation in shell
-    return QPoint(position.x(), position.y() + d->panelHeight);
 }
