@@ -19,6 +19,8 @@
 
 #include <mir/scene/placement_strategy.h>
 
+#include <QObject>
+
 #include <memory>
 
 namespace mir {
@@ -27,16 +29,21 @@ namespace mir {
     }
 }
 
-class MirPlacementStrategy : public mir::scene::PlacementStrategy
+class MirPlacementStrategy : public QObject, public mir::scene::PlacementStrategy
 {
-public:
-    MirPlacementStrategy(std::shared_ptr<mir::shell::DisplayLayout> const& display_layout);
+    Q_OBJECT
 
-    mir::scene::SurfaceCreationParameters place(mir::scene::Session const& session,
-            mir::scene::SurfaceCreationParameters const& request_parameters) override;
+public:
+    MirPlacementStrategy(const std::shared_ptr<mir::shell::DisplayLayout> &displayLayout);
+
+    mir::scene::SurfaceCreationParameters place(const mir::scene::Session &session,
+            const mir::scene::SurfaceCreationParameters &requestParameters) override;
+
+Q_SIGNALS:
+    void sessionAboutToCreateSurface(const mir::scene::Session &session, QSize &surfaceGeometry); // requires Qt::BlockingQueuedConnection!!
 
 private:
-    std::shared_ptr<mir::shell::DisplayLayout> const m_displayLayout;
+    const std::shared_ptr<mir::shell::DisplayLayout> m_displayLayout;
 };
 
 #endif //  MIRSERVERQPA_MIR_PLACEMENT_STRATEGY_H

@@ -31,6 +31,7 @@ class SessionListener;
 class SessionAuthorizer;
 class SurfaceConfigurator;
 class PromptSessionListener;
+class MirPlacementStrategy;
 
 class MirServerConfiguration : public QObject, public mir::DefaultServerConfiguration
 {
@@ -40,6 +41,7 @@ class MirServerConfiguration : public QObject, public mir::DefaultServerConfigur
     Q_PROPERTY(SessionListener* sessionListener READ sessionListener CONSTANT)
     Q_PROPERTY(SurfaceConfigurator* surfaceConfigurator READ surfaceConfigurator CONSTANT)
     Q_PROPERTY(PromptSessionListener* promptSessionListener READ promptSessionListener CONSTANT)
+    Q_PROPERTY(MirPlacementStrategy* placementStrategy READ placementStrategy CONSTANT)
 
 public:
     MirServerConfiguration(int argc, char const* argv[], QObject* parent = 0);
@@ -64,6 +66,7 @@ public:
     SessionListener *sessionListener();
     PromptSessionListener *promptSessionListener();
     SurfaceConfigurator *surfaceConfigurator();
+    MirPlacementStrategy *placementStrategy();
 
 private:
     std::shared_ptr<unity::protobuf::UnityService> m_unityService;

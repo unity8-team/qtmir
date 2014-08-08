@@ -29,12 +29,14 @@ void *NativeInterface::nativeResourceForIntegration(const QByteArray &resource)
 
     if (resource == "SessionAuthorizer")
         result = m_mirConfig->sessionAuthorizer();
-    else if (resource == "SessionConfigurator")
+    else if (resource == "SurfaceConfigurator")
         result = m_mirConfig->surfaceConfigurator();
     else if (resource == "SessionListener")
         result = m_mirConfig->sessionListener();
     else if (resource == "PromptSessionListener")
         result = m_mirConfig->promptSessionListener();
+    else if (resource == "SurfacePlacementStrategy")
+        result = m_mirConfig->placementStrategy();
 
     return result;
 }

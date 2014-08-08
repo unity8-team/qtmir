@@ -67,7 +67,7 @@ void connectToPromptSessionListener(MirSurfaceManager * manager, PromptSessionLi
                      manager, &MirSurfaceManager::onPromptProviderRemoved);
 }
 
-MirSurfaceManager* MirSurfaceManager::singleton()
+MirSurfaceManager* MirSurfaceManager::singleton(QJSEngine *jsEngine)
 {
     if (!the_surface_manager) {
 
@@ -80,10 +80,10 @@ MirSurfaceManager* MirSurfaceManager::singleton()
         }
 
         SessionListener *sessionListener = static_cast<SessionListener*>(nativeInterface->nativeResourceForIntegration("SessionListener"));
-        SurfaceConfigurator *surfaceConfigurator = static_cast<SurfaceConfigurator*>(nativeInterface->nativeResourceForIntegration("SessionConfigurator"));
+        SurfaceConfigurator *surfaceConfigurator = static_cast<SurfaceConfigurator*>(nativeInterface->nativeResourceForIntegration("SurfaceConfigurator"));
         PromptSessionListener *promptSessionListener = static_cast<PromptSessionListener*>(nativeInterface->nativeResourceForIntegration("PromptSessionListener"));
 
-        the_surface_manager = new MirSurfaceManager(nativeInterface->m_mirConfig);
+        the_surface_manager = new MirSurfaceManager(nativeInterface->m_mirConfig, jsEngine);
 
         connectToSessionListener(the_surface_manager, sessionListener);
         connectToSurfaceConfigurator(the_surface_manager, surfaceConfigurator);
@@ -92,11 +92,12 @@ MirSurfaceManager* MirSurfaceManager::singleton()
     return the_surface_manager;
 }
 
-MirSurfaceManager::MirSurfaceManager(
-        const QSharedPointer<MirServerConfiguration>& mirConfig,
+MirSurfaceManager::MirSurfaceManager(const QSharedPointer<MirServerConfiguration>& mirConfig,
+        QJSEngine *jsEngine,
         QObject *parent)
     : QAbstractListModel(parent)
     , m_mirConfig(mirConfig)
+    , m_jsEngine(jsEngine)
 {
     qCDebug(QTMIR_SURFACES) << "MirSurfaceManager::MirSurfaceManager - this=" << this;
     setObjectName("qtmir::SurfaceManager");
@@ -122,7 +123,7 @@ void MirSurfaceManager::onSessionCreatedSurface(const mir::scene::Session *sessi
     qCDebug(QTMIR_SURFACES) << "MirSurfaceManager::onSessionCreatedSurface - session=" << session
                             << "surface=" << surface.get() << "surface.name=" << surface->name().c_str();
 
-    ApplicationManager* appMgr = static_cast<ApplicationManager*>(ApplicationManager::singleton());
+    ApplicationManager* appMgr = static_cast<ApplicationManager*>(ApplicationManager::singleton(m_jsEngine));
 
     Application* application = appMgr->findApplicationWithSession(session, false);
     auto qmlSurface = new MirSurfaceItem(surface, application);
@@ -198,7 +199,7 @@ void MirSurfaceManager::onSessionDestroyingSurface(const mir::scene::Session *se
 void MirSurfaceManager::onPromptProviderAdded(const mir::scene::PromptSession *promptSession,
                                               const std::shared_ptr<mir::scene::Session> &)
 {
-    ApplicationManager* appMgr = static_cast<ApplicationManager*>(ApplicationManager::singleton());
+    ApplicationManager* appMgr = static_cast<ApplicationManager*>(ApplicationManager::singleton(m_jsEngine));
     Application* application = appMgr->findApplicationWithPromptSession(promptSession);
 
     refreshPromptSessionSurfaces(application);
@@ -207,7 +208,7 @@ void MirSurfaceManager::onPromptProviderAdded(const mir::scene::PromptSession *p
 void MirSurfaceManager::onPromptProviderRemoved(const mir::scene::PromptSession *promptSession,
                                                 const std::shared_ptr<mir::scene::Session> &)
 {
-    ApplicationManager* appMgr = static_cast<ApplicationManager*>(ApplicationManager::singleton());
+    ApplicationManager* appMgr = static_cast<ApplicationManager*>(ApplicationManager::singleton(m_jsEngine));
     Application* application = appMgr->findApplicationWithPromptSession(promptSession);
 
     refreshPromptSessionSurfaces(application);
@@ -263,7 +264,7 @@ void getSurfaceDecendents(MirSurfaceItem* item, QList<MirSurfaceItem*>& surfaceC
 
 void MirSurfaceManager::refreshPromptSessionSurfaces(const mir::scene::Session* session)
 {
-    ApplicationManager* appMgr = static_cast<ApplicationManager*>(ApplicationManager::singleton());
+    ApplicationManager* appMgr = static_cast<ApplicationManager*>(ApplicationManager::singleton(m_jsEngine));
     Application* application = appMgr->findApplicationWithSession(session, true);
 
     refreshPromptSessionSurfaces(application);
