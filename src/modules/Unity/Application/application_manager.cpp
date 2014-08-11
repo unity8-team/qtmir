@@ -227,6 +227,7 @@ ApplicationManager::ApplicationManager(
 
     m_roleNames.insert(RoleSurface, "surface");
     m_roleNames.insert(RoleFullscreen, "fullscreen");
+    m_roleNames.insert(RoleApplication, "application");
 }
 
 ApplicationManager::~ApplicationManager()
@@ -264,6 +265,8 @@ QVariant ApplicationManager::data(const QModelIndex &index, int role) const
                 return QVariant::fromValue(application->surface());
             case RoleFullscreen:
                 return QVariant::fromValue(application->fullscreen());
+            case RoleApplication:
+                return QVariant::fromValue(application);
             default:
                 return QVariant();
         }
