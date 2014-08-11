@@ -29,6 +29,7 @@
 #include <thread>
 #include <condition_variable>
 #include <QSignalSpy>
+#include <QJSEngine>
 
 #include "mock_application_controller.h"
 #include "mock_desktop_file_reader.h"
@@ -95,6 +96,7 @@ public:
                   )
               )
         }
+        , jsEngine { new QJSEngine }
         , applicationManager{
             mirConfig,
             taskController,
@@ -102,7 +104,7 @@ public:
                 &desktopFileReaderFactory,
                 [](DesktopFileReader::Factory*){}),
             QSharedPointer<ProcInfo>(&procInfo,[](ProcInfo *){}),
-            nullptr
+            jsEngine
         }
     {
     }
@@ -144,6 +146,7 @@ public:
     testing::NiceMock<testing::MockDesktopFileReaderFactory> desktopFileReaderFactory;
     QSharedPointer<TestMirConfiguration> mirConfig;
     QSharedPointer<TaskController> taskController;
+    QJSEngine* jsEngine;
     ApplicationManager applicationManager;
 };
 
@@ -1840,6 +1843,90 @@ TEST_F(ApplicationManagerTests,unexpectedStopOfBackgroundWebapp)
 
     EXPECT_EQ(countSpy.count(), 0);
     EXPECT_EQ(removedSpy.count(), 0);
+}
+
+/*
+ * Test registerSurfaceSizerCallback functionality
+ */
+TEST_F(ApplicationManagerTests, registerSurfaceSizerFunctional)
+{
+    using namespace ::testing;
+    quint64 procId = 5551;
+    QSize requestedSurfaceSize(400, 250); // can be overridden
+
+    QJSValue callback = jsEngine->evaluate("(function(surface) { surface.width = 111; return surface; })");
+    bool res = applicationManager.registerSurfaceSizerCallback(callback);
+    EXPECT_TRUE(res);
+
+    const MockSession session("", procId);
+    applicationManager.onSessionAboutToCreateSurface(session, requestedSurfaceSize);
+
+    EXPECT_EQ(requestedSurfaceSize, QSize(111, 250));
+}
+
+/*
+ * Test deregisterSurfaceSizerCallback correctly removes the callback
+ */
+TEST_F(ApplicationManagerTests, deregisterSurfaceSizerWorks)
+{
+    using namespace ::testing;
+    quint64 procId = 5551;
+    QSize requestedSurfaceSize(400, 250); // can be overridden
+
+    QJSValue callback = jsEngine->evaluate("(function(surface) { surface.width = 111; return surface; })");
+    bool res = applicationManager.registerSurfaceSizerCallback(callback);
+    EXPECT_TRUE(res);
+
+    const MockSession session("", procId);
+
+    applicationManager.deregisterSurfaceSizerCallback();
+    applicationManager.onSessionAboutToCreateSurface(session, requestedSurfaceSize);
+
+    EXPECT_EQ(requestedSurfaceSize, QSize(400, 250)); // should be unchanged
+}
+
+/*
+ * Test registerSurfaceSizerCallback rejects an uncallable QJSValue (i.e. something that's not a function was passed)
+ */
+TEST_F(ApplicationManagerTests, registerSurfaceSizerRejectsNonCallableJSValues)
+{
+    using namespace ::testing;
+
+    QJSValue callback = jsEngine->evaluate("21");
+    bool res = applicationManager.registerSurfaceSizerCallback(callback);
+    EXPECT_FALSE(res);
+
+    callback = jsEngine->evaluate("true");
+    res = applicationManager.registerSurfaceSizerCallback(callback);
+    EXPECT_FALSE(res);
+
+    callback = jsEngine->evaluate("{}");
+    res = applicationManager.registerSurfaceSizerCallback(callback);
+    EXPECT_FALSE(res);
+
+    callback = jsEngine->evaluate("new Array()");
+    res = applicationManager.registerSurfaceSizerCallback(callback);
+    EXPECT_FALSE(res);
+}
+
+/*
+ * Test in case that registered SurfaceSizerCallback does not return a type with a 'width' (or 'height') property,
+ * we return the requested surface width/height unchanged
+ */
+TEST_F(ApplicationManagerTests, registeredSurfaceSizerDealswithBadReturns)
+{
+    using namespace ::testing;
+    quint64 procId = 5551;
+    QSize requestedSurfaceSize(400, 250); // can be overridden
+
+    QJSValue callback = jsEngine->evaluate("(function(surface) { var out = new Object(); out.height = 333; return out; })");
+    bool res = applicationManager.registerSurfaceSizerCallback(callback);
+    EXPECT_TRUE(res);
+
+    const MockSession session("", procId);
+    applicationManager.onSessionAboutToCreateSurface(session, requestedSurfaceSize);
+
+    EXPECT_EQ(requestedSurfaceSize, QSize(400, 333));
 }
 
 /*

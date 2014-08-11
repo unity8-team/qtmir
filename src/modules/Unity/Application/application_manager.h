@@ -101,8 +101,8 @@ public:
     Q_INVOKABLE bool stopApplication(const QString &appId) override;
     Q_INVOKABLE bool updateScreenshot(const QString &appId) override;
 
-    Q_INVOKABLE void registerSurfaceSizerCallback(const QJSValue slot);
-    Q_INVOKABLE void deregisterSurfaceSizerCallback();
+    Q_INVOKABLE bool registerSurfaceSizerCallback(const QJSValue &callback) override;
+    Q_INVOKABLE void deregisterSurfaceSizerCallback() override;
 
     // QAbstractListModel
     int rowCount(const QModelIndex & parent = QModelIndex()) const override;

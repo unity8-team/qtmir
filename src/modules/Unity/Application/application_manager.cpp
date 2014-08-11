@@ -319,10 +319,14 @@ QString ApplicationManager::focusedApplicationId() const
 
 /*!
  * \brief ApplicationManager::registerSurfaceSizerCallback
- * \param slot - A Javascript function to be called when an application is asking to create a new surface
+ * \param callback A Javascript function to be called when an application is asking to create a new surface
+ *
  * Registers a Javascript callback function which ApplicationManager will call when an application is asking
  * Mir to create a new surface. This allows a shell to override the surface width & height requested by
  * the application.
+ *
+ * Only one function can be registered as callback at any time - only the last registered function will be
+ * used as the callback.
  *
  * Warning: the function must live in the QML context thread!
  *
@@ -330,7 +334,7 @@ QString ApplicationManager::focusedApplicationId() const
  *
  * function surfaceSizer(surface) {
  *     surface.width = 400;
- *     if (surface.application && surface.appId == "dialer-app") {
+ *     if (surface.appId && surface.appId == "dialer-app") {
  *         surface.height = 300;
  *     }
  *     return surface;
@@ -343,14 +347,16 @@ QString ApplicationManager::focusedApplicationId() const
  *     ApplicationManager.deregisterSurfaceSizerCallback();
  * }
  */
-void ApplicationManager::registerSurfaceSizerCallback(const QJSValue slot)
+bool ApplicationManager::registerSurfaceSizerCallback(const QJSValue &callback)
 {
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::registerSurfaceSizerCallback";
 
-    if (slot.isCallable()) {
-        m_surfaceSizer = slot;
+    if (callback.isCallable()) {
+        m_surfaceSizer = callback;
+        return true;
     } else {
-        qWarning() << "registerSurfaceSizerCallback - attempted to register a non-function! Ignored";
+        qWarning() << "ApplicationManager::registerSurfaceSizerCallback - attempted to register a non-function! Ignored";
+        return false;
     }
 }
 
