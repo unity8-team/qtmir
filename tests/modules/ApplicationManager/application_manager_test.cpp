@@ -1846,6 +1846,21 @@ TEST_F(ApplicationManagerTests,unexpectedStopOfBackgroundWebapp)
 }
 
 /*
+ * Test requested surface size unchanged if no surfaceSizer registered
+ */
+TEST_F(ApplicationManagerTests, registerSurfaceSizeUnchangedWhenNoSizerCallbackRegistered)
+{
+    using namespace ::testing;
+    quint64 procId = 5551;
+    QSize requestedSurfaceSize(400, 250); // can be overridden
+
+    const MockSession session("", procId);
+    applicationManager.onSessionAboutToCreateSurface(session, requestedSurfaceSize);
+
+    EXPECT_EQ(requestedSurfaceSize, QSize(400, 250));
+}
+
+/*
  * Test registerSurfaceSizerCallback functionality
  */
 TEST_F(ApplicationManagerTests, registerSurfaceSizerFunctional)
