@@ -1,3 +1,12 @@
+qtubuntu (0.60+14.10.20140812-0ubuntu1) utopic; urgency=low
+
+  [ Florian Boucault ]
+  * Scale the minimum distance before drag
+    (QPlatformIntegration::StartDragDistance) taking into account the
+    grid unit definition (the scale factor).
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 12 Aug 2014 18:45:53 +0000
+
 qtubuntu (0.60+14.10.20140808.1-0ubuntu1) utopic; urgency=low
 
   [ Gerry Boland ]
