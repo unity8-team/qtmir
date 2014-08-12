@@ -1,3 +1,14 @@
+qtubuntu (0.60+14.10.20140808.1-0ubuntu1) utopic; urgency=low
+
+  [ Gerry Boland ]
+  * Workaround for bug 1346633 broke QGuiApplication::topLevelWindows(),
+    perform a different workaround. This workaround guesses the window
+    geometry relative to the screen (mainly setting y=panelHeight),
+    defining it using QPlatformWindow::setGeometry and then Qt uses it
+    to calculate mapToGlobal internally (LP: #1351024, #1346633)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 08 Aug 2014 14:10:40 +0000
+
 qtubuntu (0.60+14.10.20140728-0ubuntu1) utopic; urgency=medium
 
   [ Gerry Boland ]
