@@ -1,4 +1,4 @@
-qtmir (0.4.2) utopic; urgency=medium
+qtmir (0.4.2-0ubuntu1) UNRELEASED; urgency=medium
 
   * Add API to allow shell to override initial surface creation geometry
 
