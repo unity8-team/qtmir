@@ -20,19 +20,16 @@
 // Qt
 #include <QtGlobal>
 #include <QByteArray>
-#include <QDebug>
 
 // std
 #include <csignal>
 
 void MirServerStatusListener::paused()
 {
-    qDebug() << "PAUSE!";
 }
 
 void MirServerStatusListener::resumed()
 {
-    qDebug() << "RESUME!";
 }
 
 void MirServerStatusListener::started()
