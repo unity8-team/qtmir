@@ -218,7 +218,7 @@ ApplicationManager::ApplicationManager(
     , m_taskController(taskController)
     , m_desktopFileReaderFactory(desktopFileReaderFactory)
     , m_procInfo(procInfo)
-    , m_surfaceSizer(QJSValue::UndefinedValue)
+    , m_surfaceAboutToBeCreatedCallback(QJSValue::UndefinedValue)
     , m_jsEngine(jsEngine)
     , m_suspended(false)
 {
@@ -233,6 +233,7 @@ ApplicationManager::ApplicationManager(
 ApplicationManager::~ApplicationManager()
 {
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::~ApplicationManager";
+    m_surfaceAboutToBeCreatedCallback = QJSValue::UndefinedValue; //unset immediately to avoid racing on shutdown
 }
 
 int ApplicationManager::rowCount(const QModelIndex &parent) const
@@ -321,17 +322,14 @@ QString ApplicationManager::focusedApplicationId() const
 }
 
 /*!
- * \brief ApplicationManager::registerSurfaceSizerCallback
- * \param callback A Javascript function to be called when an application is asking to create a new surface
+ * \brief ApplicationManager::surfaceAboutToBeCreatedCallback
  *
  * Registers a Javascript callback function which ApplicationManager will call when an application is asking
- * Mir to create a new surface. This allows a shell to override the surface width & height requested by
- * the application.
+ * Mir to create a new surface. The function is passed a 'surface' object with properties width, height and
+ * appId. The shell can implement this function to return different width & height to override the geometry
+ * requested by the client.
  *
- * Only one function can be registered as callback at any time - only the last registered function will be
- * used as the callback.
- *
- * Warning: the function must live in the QML context thread!
+ * If shell attempts to register a non-function, it will be ignored and the callback disabled.
  *
  * Example QML:
  *
@@ -344,34 +342,31 @@ QString ApplicationManager::focusedApplicationId() const
  * }
  *
  * Component.onCompleted {
- *     ApplicationManager.registerSurfaceSizerCallback(surfaceSizer);
+ *     ApplicationManager.surfaceAboutToBeCreatedCallback = surfaceSizer;
  * }
  * Component.onDestruction {
- *     ApplicationManager.deregisterSurfaceSizerCallback();
+ *     ApplicationManager.surfaceAboutToBeCreatedCallback = null;
  * }
+ *
+ * Warning: the function must live in the QML context thread!
  */
-bool ApplicationManager::registerSurfaceSizerCallback(const QJSValue &callback)
+QJSValue ApplicationManager::surfaceAboutToBeCreatedCallback() const
 {
-    qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::registerSurfaceSizerCallback";
-
-    if (callback.isCallable()) {
-        m_surfaceSizer = callback;
-        return true;
-    } else {
-        qWarning() << "ApplicationManager::registerSurfaceSizerCallback - attempted to register a non-function! Ignored";
-        return false;
-    }
+    return m_surfaceAboutToBeCreatedCallback;
 }
 
-/*!
- * \brief ApplicationManager::deregisterSurfaceSizerCallback
- * Remove any Javascript callback function registered.
- */
-void ApplicationManager::deregisterSurfaceSizerCallback()
+void ApplicationManager::setSurfaceAboutToBeCreatedCallback(const QJSValue &callback)
 {
-    qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::deregisterSurfaceSizerCallback";
+    if (m_surfaceAboutToBeCreatedCallback.equals(callback))
+        return;
 
-    m_surfaceSizer = QJSValue::UndefinedValue;
+    if (callback.isCallable()) {
+        m_surfaceAboutToBeCreatedCallback = callback;
+    } else {
+        qWarning() << "ApplicationManager::setSurfaceAboutToBeCreatedCallback - attempted to register a non-function!";
+        m_surfaceAboutToBeCreatedCallback = QJSValue::UndefinedValue;
+    }
+    Q_EMIT surfaceAboutToBeCreatedCallbackChanged();
 }
 
 bool ApplicationManager::suspended() const
@@ -895,14 +890,14 @@ void ApplicationManager::onSessionAboutToCreateSurface(const ms::Session &sessio
 
     Application* application = findApplicationWithSession(&session, false);
 
-    if (m_surfaceSizer.isCallable()) {
+    if (m_surfaceAboutToBeCreatedCallback.isCallable()) {
         QJSValue argument = m_jsEngine->newObject();
         argument.setProperty("width", surfaceGeometry.width());
         argument.setProperty("height", surfaceGeometry.height());
         if (application)
             argument.setProperty("appId", application->appId());
 
-        QJSValue output = m_surfaceSizer.call(QJSValueList() << argument);
+        QJSValue output = m_surfaceAboutToBeCreatedCallback.call(QJSValueList() << argument);
         if (output.isObject()) {
             QJSValue width = output.property("width");
             QJSValue height = output.property("height");
@@ -912,7 +907,7 @@ void ApplicationManager::onSessionAboutToCreateSurface(const ms::Session &sessio
                 surfaceGeometry.setHeight(height.toInt());
         } else {
             qWarning() << "ApplicationManager::onSessionAboutToCreateSurface - unrecognised object returned from JS callback!!"
-                       << "Surface size has not been overridden by shell!";
+                       << "Surface size has *not* been overridden by shell!";
         }
     }
 }

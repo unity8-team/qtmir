@@ -93,6 +93,10 @@ public:
     QString focusedApplicationId() const override;
     bool suspended() const override;
     void setSuspended(bool suspended) override;
+
+    QJSValue surfaceAboutToBeCreatedCallback() const override;
+    void setSurfaceAboutToBeCreatedCallback(const QJSValue &callback) override;
+
     Q_INVOKABLE qtmir::Application* get(int index) const override;
     Q_INVOKABLE qtmir::Application* findApplication(const QString &appId) const override;
     Q_INVOKABLE bool requestFocusApplication(const QString &appId) override;
@@ -101,9 +105,6 @@ public:
     Q_INVOKABLE qtmir::Application* startApplication(const QString &appId, const QStringList &arguments) override;
     Q_INVOKABLE bool stopApplication(const QString &appId) override;
     Q_INVOKABLE bool updateScreenshot(const QString &appId) override;
-
-    Q_INVOKABLE bool registerSurfaceSizerCallback(const QJSValue &callback) override;
-    Q_INVOKABLE void deregisterSurfaceSizerCallback() override;
 
     // QAbstractListModel
     int rowCount(const QModelIndex & parent = QModelIndex()) const override;
@@ -137,7 +138,6 @@ public Q_SLOTS:
     void onResumeRequested(const QString& appId);
 
 Q_SIGNALS:
-    void focusRequested(const QString &appId);
     void emptyChanged();
 
 private Q_SLOTS:
@@ -168,7 +168,7 @@ private:
     QSharedPointer<TaskController> m_taskController;
     QSharedPointer<DesktopFileReader::Factory> m_desktopFileReaderFactory;
     QSharedPointer<ProcInfo> m_procInfo;
-    QJSValue m_surfaceSizer;
+    QJSValue m_surfaceAboutToBeCreatedCallback;
     QJSEngine *m_jsEngine;
     static ApplicationManager* the_application_manager;
     QList<pid_t> m_hiddenPIDs;

@@ -1871,8 +1871,7 @@ TEST_F(ApplicationManagerTests, registerSurfaceSizerFunctional)
     QSize requestedSurfaceSize(400, 250); // can be overridden
 
     QJSValue callback = jsEngine->evaluate("(function(surface) { surface.width = 111; return surface; })");
-    bool res = applicationManager.registerSurfaceSizerCallback(callback);
-    EXPECT_TRUE(res);
+    applicationManager.setSurfaceAboutToBeCreatedCallback(callback);
 
     const MockSession session("", procId);
     applicationManager.onSessionAboutToCreateSurface(session, requestedSurfaceSize);
@@ -1890,12 +1889,11 @@ TEST_F(ApplicationManagerTests, deregisterSurfaceSizerWorks)
     QSize requestedSurfaceSize(400, 250); // can be overridden
 
     QJSValue callback = jsEngine->evaluate("(function(surface) { surface.width = 111; return surface; })");
-    bool res = applicationManager.registerSurfaceSizerCallback(callback);
-    EXPECT_TRUE(res);
+    applicationManager.setSurfaceAboutToBeCreatedCallback(callback);
 
     const MockSession session("", procId);
 
-    applicationManager.deregisterSurfaceSizerCallback();
+    applicationManager.setSurfaceAboutToBeCreatedCallback(false);
     applicationManager.onSessionAboutToCreateSurface(session, requestedSurfaceSize);
 
     EXPECT_EQ(requestedSurfaceSize, QSize(400, 250)); // should be unchanged
@@ -1909,20 +1907,16 @@ TEST_F(ApplicationManagerTests, registerSurfaceSizerRejectsNonCallableJSValues)
     using namespace ::testing;
 
     QJSValue callback = jsEngine->evaluate("21");
-    bool res = applicationManager.registerSurfaceSizerCallback(callback);
-    EXPECT_FALSE(res);
+    applicationManager.setSurfaceAboutToBeCreatedCallback(callback);
 
     callback = jsEngine->evaluate("true");
-    res = applicationManager.registerSurfaceSizerCallback(callback);
-    EXPECT_FALSE(res);
+    applicationManager.setSurfaceAboutToBeCreatedCallback(callback);
 
     callback = jsEngine->evaluate("{}");
-    res = applicationManager.registerSurfaceSizerCallback(callback);
-    EXPECT_FALSE(res);
+    applicationManager.setSurfaceAboutToBeCreatedCallback(callback);
 
     callback = jsEngine->evaluate("new Array()");
-    res = applicationManager.registerSurfaceSizerCallback(callback);
-    EXPECT_FALSE(res);
+    applicationManager.setSurfaceAboutToBeCreatedCallback(callback);
 }
 
 /*
@@ -1936,8 +1930,7 @@ TEST_F(ApplicationManagerTests, registeredSurfaceSizerDealswithBadReturns)
     QSize requestedSurfaceSize(400, 250); // can be overridden
 
     QJSValue callback = jsEngine->evaluate("(function(surface) { var out = new Object(); out.height = 333; return out; })");
-    bool res = applicationManager.registerSurfaceSizerCallback(callback);
-    EXPECT_TRUE(res);
+    applicationManager.setSurfaceAboutToBeCreatedCallback(callback);
 
     const MockSession session("", procId);
     applicationManager.onSessionAboutToCreateSurface(session, requestedSurfaceSize);
