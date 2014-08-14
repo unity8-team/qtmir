@@ -1,0 +1,7 @@
+TRACEPOINT_EVENT(qtmir, startApplication, TP_ARGS(0), TP_FIELDS())
+TRACEPOINT_EVENT(qtmir, onProcessStarting, TP_ARGS(0), TP_FIELDS())
+TRACEPOINT_EVENT(qtmir, authorizeSession, TP_ARGS(0), TP_FIELDS())
+TRACEPOINT_EVENT(qtmir, onProcessStopped, TP_ARGS(0), TP_FIELDS())
+TRACEPOINT_EVENT(qtmir, surfaceCreated, TP_ARGS(0), TP_FIELDS())
+TRACEPOINT_EVENT(qtmir, surfaceDestroyed, TP_ARGS(0), TP_FIELDS())
+TRACEPOINT_EVENT(qtmir, firstFrameDrawn, TP_ARGS(0), TP_FIELDS())

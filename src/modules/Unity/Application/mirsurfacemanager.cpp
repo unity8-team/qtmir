@@ -22,6 +22,7 @@
 #include "debughelpers.h"
 #include "mirsurfacemanager.h"
 #include "application_manager.h"
+#include "tracepoints.h" // generated from tracepoints.tp
 
 // QPA mirserver
 #include "nativeinterface.h"
@@ -146,6 +147,7 @@ void MirSurfaceManager::onSessionCreatedSurface(const mir::scene::Session *sessi
         Q_EMIT countChanged();
 
         refreshPromptSessionSurfaces(m_mirSessionToItemHash.key(item));
+        tracepoint(qtmir, firstFrameDrawn);
     });
 
     // clean up after MirSurfaceItem is destroyed
@@ -164,7 +166,9 @@ void MirSurfaceManager::onSessionCreatedSurface(const mir::scene::Session *sessi
             endRemoveRows();
             Q_EMIT countChanged();
         }
+        tracepoint(qtmir, surfaceDestroyed);
     });
+    tracepoint(qtmir, surfaceCreated);
 }
 
 void MirSurfaceManager::onSessionDestroyingSurface(const mir::scene::Session *session,

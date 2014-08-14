@@ -22,7 +22,7 @@
 #include "proc_info.h"
 #include "taskcontroller.h"
 #include "upstart/applicationcontroller.h"
-
+#include "tracepoints.h" // generated from tracepoints.tp
 
 // mirserver
 #include "mirserverconfiguration.h"
@@ -503,6 +503,7 @@ Application* ApplicationManager::startApplication(const QString &appId,
 Application *ApplicationManager::startApplication(const QString &inputAppId, ExecFlags flags,
                                                   const QStringList &arguments)
 {
+    tracepoint(qtmir, startApplication);
     QString appId = toShortAppIdIfPossible(inputAppId);
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::startApplication - this=" << this << "appId" << qPrintable(appId);
 
@@ -541,6 +542,7 @@ Application *ApplicationManager::startApplication(const QString &inputAppId, Exe
 
 void ApplicationManager::onProcessStarting(const QString &appId)
 {
+    tracepoint(qtmir, onProcessStarting);
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessStarting - appId=" << appId;
 
     Application *application = findApplication(appId);
@@ -657,6 +659,7 @@ void ApplicationManager::onProcessFailed(const QString &appId, const bool during
 
 void ApplicationManager::onProcessStopped(const QString &appId)
 {
+    tracepoint(qtmir, onProcessStarting);
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessStopped - appId=" << appId;
     Application *application = findApplication(appId);
 
@@ -732,6 +735,7 @@ void ApplicationManager::screenshotUpdated()
 
 void ApplicationManager::authorizeSession(const quint64 pid, bool &authorized)
 {
+    tracepoint(qtmir, authorizeSession);
     authorized = false; //to be proven wrong
 
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::authorizeSession - pid=" << pid;
