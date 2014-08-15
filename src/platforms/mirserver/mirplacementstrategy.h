@@ -40,7 +40,8 @@ public:
             const mir::scene::SurfaceCreationParameters &requestParameters) override;
 
 Q_SIGNALS:
-    void sessionAboutToCreateSurface(const mir::scene::Session &session, QSize &surfaceGeometry); // requires Qt::BlockingQueuedConnection!!
+    void sessionAboutToCreateSurface(const mir::scene::Session &session,
+                                     QSize &surfaceGeometry); // requires Qt::BlockingQueuedConnection!!
 
 private:
     const std::shared_ptr<mir::shell::DisplayLayout> m_displayLayout;

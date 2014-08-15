@@ -1929,7 +1929,7 @@ TEST_F(ApplicationManagerTests, registeredSurfaceSizerDealswithBadReturns)
     quint64 procId = 5551;
     QSize requestedSurfaceSize(400, 250); // can be overridden
 
-    QJSValue callback = jsEngine->evaluate("(function(surface) { var out = new Object(); out.height = 333; return out; })");
+    QJSValue callback = jsEngine->evaluate("(function(s) { var out = new Object(); out.height = 333; return out; })");
     applicationManager.setSurfaceAboutToBeCreatedCallback(callback);
 
     const MockSession session("", procId);
