@@ -659,7 +659,7 @@ void ApplicationManager::onProcessFailed(const QString &appId, const bool during
 
 void ApplicationManager::onProcessStopped(const QString &appId)
 {
-    tracepoint(qtmir, onProcessStarting);
+    tracepoint(qtmir, onProcessStopped);
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessStopped - appId=" << appId;
     Application *application = findApplication(appId);
 
