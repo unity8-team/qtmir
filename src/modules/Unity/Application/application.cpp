@@ -256,7 +256,17 @@ void Application::setState(Application::State state)
         {
         case Application::Suspended:
             if (m_state == Application::Running) {
-                stopPromptSessions();
+                // FIXME: This is a workaround for bug 1355173
+                // The issue is that account setup for UOA is not a prompt session yet
+                // That causes a focus change which would close down the Pay UI.
+                // This workaround keeps the prompt session alive, to be able to return to
+                // it after account setup. However, this in turn breaks another use case
+                // with prompt sessions: If you now open 2 apps that cause the same
+                // prompt session to open (i.e. camera-app & osmtouch both open the location
+                // helper) then it won't open in the second app. So once UOA is fixed to
+                // work through prompt sessions, lets reenable this to make the other use
+                // case work again.
+                // stopPromptSessions();
                 session()->set_lifecycle_state(mir_lifecycle_state_will_suspend);
                 m_suspendTimer->start(3000);
             }
