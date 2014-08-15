@@ -12,7 +12,7 @@ QMAKE_CXXFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden -std=c++11 -We
 QMAKE_LFLAGS += -std=c++11 -Wl,-no-undefined
 
 CONFIG += link_pkgconfig
-PKGCONFIG += mircommon mirclient egl
+PKGCONFIG += egl
 
 LIBS += -lubuntu_application_api
 
