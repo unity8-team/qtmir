@@ -1,3 +1,15 @@
+qtubuntu (0.60+14.10.20140815.1-0ubuntu1) utopic; urgency=low
+
+  [ Daniel d'Andrada ]
+  * Remove leftover pkg dependencies: mircommon and mirclient The QPA
+    shouldn't be talking to mir directly but only throughubuntu-
+    application-api
+
+  [ Ricardo Mendoza ]
+  * Check window is valid before delivering event.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 15 Aug 2014 16:49:41 +0000
+
 qtubuntu (0.60+14.10.20140812-0ubuntu1) utopic; urgency=low
 
   [ Florian Boucault ]
