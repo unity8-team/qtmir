@@ -186,6 +186,11 @@ void UbuntuInput::customEvent(QEvent* event)
     UbuntuEvent* ubuntuEvent = static_cast<UbuntuEvent*>(event);
     WindowEvent *nativeEvent = &ubuntuEvent->nativeEvent;
 
+    if (ubuntuEvent->window->window() == nullptr) {
+        qWarning() << "Attempted to deliver an event to a non-existant QWindow, ignoring.";
+        return;
+    }
+
     // Event filtering.
     long result;
     if (QWindowSystemInterface::handleNativeEvent(
