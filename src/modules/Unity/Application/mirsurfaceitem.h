@@ -62,6 +62,7 @@ public:
     void orientation_set_to(MirOrientation) override {}
 private:
     QObject *m_listener;
+    bool first_frame_posted;
 };
 
 class MirSurfaceItem : public QQuickItem

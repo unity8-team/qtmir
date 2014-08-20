@@ -216,7 +216,7 @@ public Q_SLOTS:
 };
 
 MirSurfaceObserver::MirSurfaceObserver()
-    : m_listener(nullptr) {
+    : m_listener(nullptr), first_frame_posted(false) {
 }
 
 void MirSurfaceObserver::setListener(QObject *listener) {
@@ -225,6 +225,13 @@ void MirSurfaceObserver::setListener(QObject *listener) {
 
 void MirSurfaceObserver::frame_posted(int frames_available) {
     Q_UNUSED(frames_available);
+
+    //Ignore the first frame, it's blank for some reason.
+    if (!first_frame_posted)
+    {
+        first_frame_posted = true;
+        return;
+    }
     QMetaObject::invokeMethod(m_listener, "surfaceDamaged");
 }
 
