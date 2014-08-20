@@ -1,3 +1,5 @@
+include(../../../lttng-compiler.pri)
+
 TARGET = unityapplicationplugin
 TEMPLATE = lib
 
@@ -56,6 +58,8 @@ HEADERS += application_manager.h \
     processcontroller.h \
     proc_info.h \
     upstart/applicationcontroller.h
+
+LTTNG_TP_FILES += tracepoints.tp
 
 installPath = $$[QT_INSTALL_QML]/$$replace(uri, \\., /)
 

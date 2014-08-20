@@ -212,3 +212,12 @@ SurfaceConfigurator *MirServerConfiguration::surfaceConfigurator()
 
     return static_cast<SurfaceConfigurator*>(sharedPtr.get());
 }
+
+MirPlacementStrategy *MirServerConfiguration::placementStrategy()
+{
+    auto sharedPtr = the_placement_strategy();
+    if (sharedPtr.unique()) return 0;
+
+    return static_cast<MirPlacementStrategy*>(sharedPtr.get());
+}
+

@@ -40,6 +40,7 @@ namespace mir {
 }
 
 class MirServerConfiguration;
+class QJSValue;
 
 namespace qtmir {
 
@@ -57,7 +58,7 @@ public:
         RoleSurface = Qt::UserRole,
     };
 
-    static MirSurfaceManager* singleton();
+    static MirSurfaceManager* singleton(QJSEngine *jsEngine);
 
     ~MirSurfaceManager();
 
@@ -89,6 +90,7 @@ public Q_SLOTS:
 protected:
     MirSurfaceManager(
         const QSharedPointer<MirServerConfiguration>& mirConfig,
+        QJSEngine *jsEngine,
         QObject *parent = 0
     );
 
@@ -99,6 +101,7 @@ protected:
 
 private:
     QSharedPointer<MirServerConfiguration> m_mirConfig;
+    QJSEngine *m_jsEngine;
 
     QHash<const mir::scene::Surface *, MirSurfaceItem *> m_mirSurfaceToItemHash;
     QMultiHash<const mir::scene::Session *, MirSurfaceItem *> m_mirSessionToItemHash;

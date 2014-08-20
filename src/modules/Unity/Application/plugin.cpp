@@ -30,18 +30,16 @@
 
 static QObject* applicationManagerSingleton(QQmlEngine* engine, QJSEngine* scriptEngine) {
     Q_UNUSED(engine);
-    Q_UNUSED(scriptEngine);
     qCDebug(QTMIR_APPLICATIONS) << "applicationManagerSingleton - engine=" << engine << "scriptEngine=" << scriptEngine;
 
-    return qtmir::ApplicationManager::singleton();
+    return qtmir::ApplicationManager::singleton(scriptEngine);
 }
 
 static QObject* surfaceManagerSingleton(QQmlEngine* engine, QJSEngine* scriptEngine) {
     Q_UNUSED(engine);
-    Q_UNUSED(scriptEngine);
     qCDebug(QTMIR_APPLICATIONS) << "surfaceManagerSingleton - engine=" << engine << "scriptEngine=" << scriptEngine;
 
-    return qtmir::MirSurfaceManager::singleton();
+    return qtmir::MirSurfaceManager::singleton(scriptEngine);
 }
 
 class UnityApplicationPlugin : public QQmlExtensionPlugin {
@@ -76,7 +74,7 @@ class UnityApplicationPlugin : public QQmlExtensionPlugin {
         QQmlExtensionPlugin::initializeEngine(engine, uri);
 
         qtmir::ApplicationManager* appManager
-                = static_cast<qtmir::ApplicationManager*>(applicationManagerSingleton(engine, nullptr));
+                = static_cast<qtmir::ApplicationManager*>(applicationManagerSingleton(engine, engine));
         engine->addImageProvider(QLatin1String("application"), new qtmir::ApplicationScreenshotProvider(appManager));
     }
 };

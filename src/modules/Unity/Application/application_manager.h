@@ -40,6 +40,7 @@ namespace mir {
 }
 
 class MirServerConfiguration;
+class QJSValue;
 
 namespace qtmir {
 
@@ -61,7 +62,7 @@ public:
     class Factory
     {
     public:
-        ApplicationManager* create();
+        ApplicationManager* create(QJSEngine *jsEngine);
     };
 
     // FIXME: these roles should be added to unity-api and removed from here
@@ -78,13 +79,13 @@ public:
     };
     Q_DECLARE_FLAGS(ExecFlags, Flag)
 
-    static ApplicationManager* singleton();
+    static ApplicationManager* singleton(QJSEngine *jsEngine);
 
-    explicit ApplicationManager(
-            const QSharedPointer<MirServerConfiguration> &mirConfig,
+    explicit ApplicationManager(const QSharedPointer<MirServerConfiguration> &mirConfig,
             const QSharedPointer<TaskController> &taskController,
             const QSharedPointer<DesktopFileReader::Factory> &desktopFileReaderFactory,
             const QSharedPointer<ProcInfo> &processInfo,
+            QJSEngine *jsEngine,
             QObject *parent = 0);
     virtual ~ApplicationManager();
 
@@ -92,6 +93,10 @@ public:
     QString focusedApplicationId() const override;
     bool suspended() const override;
     void setSuspended(bool suspended) override;
+
+    QJSValue surfaceAboutToBeCreatedCallback() const override;
+    void setSurfaceAboutToBeCreatedCallback(const QJSValue &callback) override;
+
     Q_INVOKABLE qtmir::Application* get(int index) const override;
     Q_INVOKABLE qtmir::Application* findApplication(const QString &appId) const override;
     Q_INVOKABLE bool requestFocusApplication(const QString &appId) override;
@@ -106,7 +111,7 @@ public:
     QVariant data(const QModelIndex & index, int role) const override;
 
     Q_INVOKABLE qtmir::Application *startApplication(const QString &appId, ExecFlags flags,
-                                              const QStringList &arguments = QStringList());
+                                                     const QStringList &arguments = QStringList());
     Q_INVOKABLE void move(int from, int to);
 
     bool isEmpty() const { return rowCount() == 0; }
@@ -117,13 +122,14 @@ public:
 public Q_SLOTS:
     void authorizeSession(const quint64 pid, bool &authorized);
 
-    void onSessionStarting(std::shared_ptr<mir::scene::Session> const& session);
-    void onSessionStopping(std::shared_ptr<mir::scene::Session> const& session);
+    void onSessionStarting(const std::shared_ptr<mir::scene::Session> &session);
+    void onSessionStopping(const std::shared_ptr<mir::scene::Session> &session);
 
-    void onSessionCreatedSurface(mir::scene::Session const*, std::shared_ptr<mir::scene::Surface> const&);
+    void onSessionAboutToCreateSurface(const mir::scene::Session &session, QSize &surfaceGeometry);
+    void onSessionCreatedSurface(const mir::scene::Session *session, const std::shared_ptr<mir::scene::Surface> &surface);
 
-    void onPromptSessionStarting(const std::shared_ptr<mir::scene::PromptSession>& promptSession);
-    void onPromptSessionStopping(const std::shared_ptr<mir::scene::PromptSession>& promptSession);
+    void onPromptSessionStarting(const std::shared_ptr<mir::scene::PromptSession> &promptSession);
+    void onPromptSessionStopping(const std::shared_ptr<mir::scene::PromptSession> &promptSession);
 
     void onProcessStarting(const QString& appId);
     void onProcessStopped(const QString& appId);
@@ -132,7 +138,6 @@ public Q_SLOTS:
     void onResumeRequested(const QString& appId);
 
 Q_SIGNALS:
-    void focusRequested(const QString &appId);
     void emptyChanged();
 
 private Q_SLOTS:
@@ -163,6 +168,8 @@ private:
     QSharedPointer<TaskController> m_taskController;
     QSharedPointer<DesktopFileReader::Factory> m_desktopFileReaderFactory;
     QSharedPointer<ProcInfo> m_procInfo;
+    QJSValue m_surfaceAboutToBeCreatedCallback;
+    QJSEngine *m_jsEngine;
     static ApplicationManager* the_application_manager;
     QList<pid_t> m_hiddenPIDs;
     bool m_suspended;
