@@ -139,9 +139,11 @@ public Q_SLOTS:
 
 Q_SIGNALS:
     void emptyChanged();
+    void addApplication(Application* application);
 
 private Q_SLOTS:
     void screenshotUpdated();
+    void onAddApplication(Application* application);
 
 private:
     void setFocused(Application *application);
@@ -160,6 +162,7 @@ private:
     QSharedPointer<MirServerConfiguration> m_mirConfig;
 
     QList<Application*> m_applications;
+    QList<Application*> m_startingApplications;
     Application* m_focusedApplication;
     Application* m_mainStageApplication;
     Application* m_sideStageApplication;

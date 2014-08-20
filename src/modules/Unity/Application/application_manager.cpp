@@ -187,6 +187,10 @@ ApplicationManager* ApplicationManager::Factory::Factory::create(QJSEngine *jsEn
     connectToSurfacePlacementStrategy(appManager, placementStrategy);
     connectToTaskController(appManager, taskController.data());
 
+    QObject::connect(appManager, &ApplicationManager::addApplication,
+                     appManager, &ApplicationManager::onAddApplication,
+                     Qt::QueuedConnection);
+
     return appManager;
 }
 
@@ -564,7 +568,7 @@ void ApplicationManager::onProcessStarting(const QString &appId)
         if (application->stage() == Application::SideStage && forceAllAppsIntoMainStage(m_mirConfig))
             application->setStage(Application::MainStage);
 
-        add(application);
+        m_startingApplications.append(application);
         Q_EMIT focusRequested(appId);
     }
     else {
@@ -740,11 +744,13 @@ void ApplicationManager::authorizeSession(const quint64 pid, bool &authorized)
 
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::authorizeSession - pid=" << pid;
 
-    for (Application *app : m_applications) {
+    for (Application *app : m_startingApplications) {
         if (app->state() == Application::Starting) {
             tracepoint(qtmir, appIdHasProcessId_start);
             if (m_taskController->appIdHasProcessId(app->appId(), pid)) {
                 app->setPid(pid);
+                // Use delayed add as this is the fast-path
+                Q_EMIT addApplication(app);
                 authorized = true;
                 tracepoint(qtmir, appIdHasProcessId_end, 1); //found
                 return;
@@ -1003,6 +1009,12 @@ Application* ApplicationManager::applicationForStage(Application::Stage stage)
         return m_mainStageApplication;
     else
         return m_sideStageApplication;
+}
+
+void ApplicationManager::onAddApplication(Application* application)
+{
+    add(application);
+    m_startingApplications.removeOne(application);
 }
 
 void ApplicationManager::add(Application* application)
