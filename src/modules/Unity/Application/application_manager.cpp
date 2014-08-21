@@ -859,12 +859,12 @@ void ApplicationManager::onSessionAboutToCreateSurface(const ms::Session &sessio
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onSessionAboutToCreateSurface - sessionName="
                                 << session.name().c_str() << "surfaceGeometry=" << surfaceGeometry;
 
-    Application* application = findApplicationWithSession(&session, false);
-
     if (m_surfaceAboutToBeCreatedCallback.isCallable()) {
         QJSValue argument = m_jsEngine->newObject();
         argument.setProperty("width", surfaceGeometry.width());
         argument.setProperty("height", surfaceGeometry.height());
+
+        Application* application = findApplicationWithSession(&session, false);
         if (application)
             argument.setProperty("appId", application->appId());
 
