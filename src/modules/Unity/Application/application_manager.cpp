@@ -321,35 +321,6 @@ QString ApplicationManager::focusedApplicationId() const
     }
 }
 
-/*!
- * \brief ApplicationManager::surfaceAboutToBeCreatedCallback
- *
- * Registers a Javascript callback function which ApplicationManager will call when an application is asking
- * Mir to create a new surface. The function is passed a 'surface' object with properties width, height and
- * appId. The shell can implement this function to return different width & height to override the geometry
- * requested by the client.
- *
- * If shell attempts to register a non-function, it will be ignored and the callback disabled.
- *
- * Example QML:
- *
- * function surfaceSizer(surface) {
- *     surface.width = 400;
- *     if (surface.appId && surface.appId == "dialer-app") {
- *         surface.height = 300;
- *     }
- *     return surface;
- * }
- *
- * Component.onCompleted {
- *     ApplicationManager.surfaceAboutToBeCreatedCallback = surfaceSizer;
- * }
- * Component.onDestruction {
- *     ApplicationManager.surfaceAboutToBeCreatedCallback = null;
- * }
- *
- * Warning: the function must live in the QML context thread!
- */
 QJSValue ApplicationManager::surfaceAboutToBeCreatedCallback() const
 {
     return m_surfaceAboutToBeCreatedCallback;
