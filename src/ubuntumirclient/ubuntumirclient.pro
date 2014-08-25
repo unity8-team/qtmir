@@ -41,7 +41,8 @@ HEADERS = \
     plugin.h \
     screen.h \
     theme.h \
-    window.h
+    window.h \
+    orientationchangeevent_p.h
 
 # Installation path
 target.path +=  $$[QT_INSTALL_PLUGINS]/platforms

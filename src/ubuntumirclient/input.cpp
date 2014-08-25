@@ -18,8 +18,10 @@
 #include "input.h"
 #include "integration.h"
 #include "nativeinterface.h"
+#include "screen.h"
 #include "window.h"
 #include "logging.h"
+#include "orientationchangeevent_p.h"
 
 // Qt
 #if !defined(QT_NO_DEBUG)
@@ -36,6 +38,7 @@
 
 // Platform API
 #include <ubuntu/application/ui/input/event.h>
+#include <ubuntu/application/ui/window_orientation.h>
 
 #define LOG_EVENTS 0
 
@@ -174,6 +177,10 @@ static const char* nativeEventTypeToStr(int eventType)
         break;
     case SURFACE_WEVENT_TYPE:
         return "SURFACE_WEVENT_TYPE";
+        break;
+    case ORIENTATION_WEVENT_TYPE:
+        return "ORIENTATION_WEVENT_TYPE";
+        break;
     default:
         return "INVALID!";
     }
@@ -217,6 +224,9 @@ void UbuntuInput::customEvent(QEvent* event)
         if (nativeEvent->surface.attribute == SURFACE_ATTRIBUTE_FOCUS) {
             ubuntuEvent->window->handleSurfaceFocusChange(nativeEvent->surface.value == 1);
         }
+        break;
+    case ORIENTATION_WEVENT_TYPE:
+        dispatchOrientationEvent(ubuntuEvent->window->window(), nativeEvent);
         break;
     default:
         DLOG("unhandled event type %d", nativeEvent->type);
@@ -408,3 +418,45 @@ void UbuntuInput::dispatchKeyEvent(QWindow* window, const void* ev)
 
     QWindowSystemInterface::handleKeyEvent(window, timestamp, keyType, sym, modifiers, text);
 }
+
+void UbuntuInput::dispatchOrientationEvent(QWindow* window, const void* ev)
+{
+    const WindowEvent* event = reinterpret_cast<const WindowEvent*>(ev);
+
+    #if (LOG_EVENTS != 0)
+    // Orientation event logging.
+    LOG("ORIENTATION direction:%d", event->orientation.direction);
+    #endif
+
+    if (!window->screen()) {
+        DLOG("Window has no associated screen, dropping orientation event");
+        return;
+    }
+
+    Qt::ScreenOrientation orientation;
+    switch (event->orientation.direction) {
+    case U_ORIENTATION_NORMAL:
+        orientation = Qt::PortraitOrientation;
+        break;
+    case U_ORIENTATION_LEFT:
+        orientation = Qt::LandscapeOrientation;
+        break;
+    case U_ORIENTATION_INVERTED:
+        orientation = Qt::InvertedPortraitOrientation;
+        break;
+    case U_ORIENTATION_RIGHT:
+        orientation = Qt::InvertedLandscapeOrientation;
+        break;
+    default:
+        DLOG("No such orientation %d", event->orientation.direction);
+        return;
+    }
+
+    // Dispatch orientation event to [Platform]Screen, as that is where Qt reads it. Screen will handle
+    // notifying Qt of the actual orientation change - done to prevent multiple Windows each creating
+    // an identical orientation change event and passing it directly to Qt.
+    // [Platform]Screen can also factor in the native orientation.
+    QCoreApplication::postEvent(static_cast<UbuntuScreen*>(window->screen()->handle()),
+                                new OrientationChangeEvent(OrientationChangeEvent::mType, orientation));
+}
+
