@@ -37,12 +37,12 @@ HEADERS = \
     integration.h \
     logging.h \
     nativeinterface.h \
+    orientationchangeevent_p.h \    
     platformservices.h \
     plugin.h \
     screen.h \
     theme.h \
-    window.h \
-    orientationchangeevent_p.h
+    window.h
 
 # Installation path
 target.path +=  $$[QT_INSTALL_PLUGINS]/platforms
