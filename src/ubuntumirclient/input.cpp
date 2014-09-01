@@ -447,7 +447,7 @@ void UbuntuInput::dispatchOrientationEvent(QWindow* window, const void* ev)
 
     #if (LOG_EVENTS != 0)
     // Orientation event logging.
-    LOG("ORIENTATION direction: %d", nativeOrientationDirectionToStr(event->orientation.direction));
+    LOG("ORIENTATION direction: %s", nativeOrientationDirectionToStr(event->orientation.direction));
     #endif
 
     if (!window->screen()) {
