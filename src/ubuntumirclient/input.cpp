@@ -419,13 +419,35 @@ void UbuntuInput::dispatchKeyEvent(QWindow* window, const void* ev)
     QWindowSystemInterface::handleKeyEvent(window, timestamp, keyType, sym, modifiers, text);
 }
 
+#if (LOG_EVENTS != 0)
+static const char* nativeOrientationDirectionToStr(const int orientation)
+{
+    switch (orientation) {
+    case U_ORIENTATION_NORMAL:
+        return "Normal";
+        break;
+    case U_ORIENTATION_LEFT:
+        return "Left";
+        break;
+    case U_ORIENTATION_INVERTED:
+        return "Inverted";
+        break;
+    case U_ORIENTATION_RIGHT:
+        return "Right";
+        break;
+    default:
+        return "INVALID!";
+    }
+}
+#endif
+
 void UbuntuInput::dispatchOrientationEvent(QWindow* window, const void* ev)
 {
     const WindowEvent* event = reinterpret_cast<const WindowEvent*>(ev);
 
     #if (LOG_EVENTS != 0)
     // Orientation event logging.
-    LOG("ORIENTATION direction:%d", event->orientation.direction);
+    LOG("ORIENTATION direction: %d", nativeOrientationDirectionToStr(event->orientation.direction));
     #endif
 
     if (!window->screen()) {
