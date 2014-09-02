@@ -18,17 +18,19 @@
 #define ORIENTATIONCHANGEEVENT_P_H
 
 #include <QEvent>
+#include <QOrientationReading>
 #include "logging.h"
 
 class OrientationChangeEvent : public QEvent {
 public:
-    OrientationChangeEvent(QEvent::Type type, Qt::ScreenOrientation orientation)
+    OrientationChangeEvent(QEvent::Type type, QOrientationReading::Orientation orientation)
         : QEvent(type)
-        , mOrientation(orientation) {
+        , mOrientation(orientation)
+    {
     }
 
     static const QEvent::Type mType;
-    Qt::ScreenOrientation mOrientation;
+    QOrientationReading::Orientation mOrientation;
 };
 
 #endif // ORIENTATIONCHANGEEVENT_P_H

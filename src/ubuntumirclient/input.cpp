@@ -455,19 +455,19 @@ void UbuntuInput::dispatchOrientationEvent(QWindow* window, const void* ev)
         return;
     }
 
-    Qt::ScreenOrientation orientation;
+    QOrientationReading::Orientation orientation;
     switch (event->orientation.direction) {
     case U_ORIENTATION_NORMAL:
-        orientation = Qt::PortraitOrientation;
+        orientation = QOrientationReading::TopUp;
         break;
     case U_ORIENTATION_LEFT:
-        orientation = Qt::LandscapeOrientation;
+        orientation = QOrientationReading::LeftUp;
         break;
     case U_ORIENTATION_INVERTED:
-        orientation = Qt::InvertedPortraitOrientation;
+        orientation = QOrientationReading::TopDown;
         break;
     case U_ORIENTATION_RIGHT:
-        orientation = Qt::InvertedLandscapeOrientation;
+        orientation = QOrientationReading::RightUp;
         break;
     default:
         DLOG("No such orientation %d", event->orientation.direction);

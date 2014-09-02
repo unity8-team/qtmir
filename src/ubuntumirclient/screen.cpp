@@ -167,22 +167,22 @@ void UbuntuScreen::customEvent(QEvent* event) {
 
     OrientationChangeEvent* oReadingEvent = static_cast<OrientationChangeEvent*>(event);
     switch (oReadingEvent->mOrientation) {
-        case Qt::InvertedLandscapeOrientation: {
+        case QOrientationReading::RightUp: {
             mCurrentOrientation = (mNativeOrientation == Qt::LandscapeOrientation) ?
                         Qt::InvertedPortraitOrientation : Qt::InvertedLandscapeOrientation;
             break;
         }
-        case Qt::PortraitOrientation: {
+        case QOrientationReading::TopUp: {
             mCurrentOrientation = (mNativeOrientation == Qt::LandscapeOrientation) ?
                         Qt::LandscapeOrientation : Qt::PortraitOrientation;
             break;
         }
-        case Qt::LandscapeOrientation: {
+        case QOrientationReading::LeftUp: {
             mCurrentOrientation = (mNativeOrientation == Qt::LandscapeOrientation) ?
                         Qt::PortraitOrientation : Qt::LandscapeOrientation;
             break;
         }
-        case Qt::InvertedPortraitOrientation: {
+        case QOrientationReading::TopDown: {
             mCurrentOrientation = (mNativeOrientation == Qt::LandscapeOrientation) ?
                         Qt::InvertedLandscapeOrientation : Qt::InvertedPortraitOrientation;
             break;
