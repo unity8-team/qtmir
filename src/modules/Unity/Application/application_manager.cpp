@@ -262,6 +262,12 @@ Application* ApplicationManager::findApplication(const QString &inputAppId) cons
             return app;
         }
     }
+    for (QPair<Application*, bool> entry : m_pendingApplications) {
+        if (entry.first->appId() == appId) {
+            return entry.first;
+        }
+    }
+
     return nullptr;
 }
 
@@ -483,8 +489,7 @@ void ApplicationManager::onProcessStarting(const QString &appId)
         if (application->stage() == Application::SideStage && forceAllAppsIntoMainStage(m_mirConfig))
             application->setStage(Application::MainStage);
 
-        add(application);
-        Q_EMIT focusRequested(appId);
+        delayedAdd(application, true);
     }
     else {
         qWarning() << "ApplicationManager::onProcessStarting application already found with appId" << appId;
@@ -741,7 +746,7 @@ void ApplicationManager::authorizeSession(const quint64 pid, bool &authorized)
     application->setPid(pid);
     application->setStage(stage);
     application->setCanBeResumed(false);
-    add(application);
+    delayedAdd(application, false);
     authorized = true;
 }
 
@@ -833,6 +838,23 @@ Application* ApplicationManager::applicationForStage(Application::Stage stage)
         return m_sideStageApplication;
 }
 
+void ApplicationManager::delayedAdd(Application *application, bool focus)
+{
+    m_pendingApplications.append(qMakePair<Application*, bool>(application, focus));
+    QTimer::singleShot(0, this, SLOT(addPending()));
+}
+
+void ApplicationManager::addPending()
+{
+    while (!m_pendingApplications.isEmpty()) {
+        QPair<Application*, bool> entry = m_pendingApplications.takeFirst();
+        add(entry.first);
+        if (entry.second) {
+            Q_EMIT focusRequested(entry.first->appId());
+        }
+    }
+}
+
 void ApplicationManager::add(Application* application)
 {
     Q_ASSERT(application != nullptr);
@@ -874,6 +896,16 @@ void ApplicationManager::remove(Application *application)
         Q_EMIT countChanged();
         if (i == 0) {
             Q_EMIT emptyChanged();
+        }
+    } else {
+        for (int j = 0; j < m_pendingApplications.count(); j++) {
+            if (m_pendingApplications.at(j).first == application) {
+                i = j;
+                break;
+            }
+        }
+        if (i != -1) {
+            m_pendingApplications.takeAt(i);
         }
     }
 }

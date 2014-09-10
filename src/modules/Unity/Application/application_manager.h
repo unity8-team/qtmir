@@ -132,9 +132,11 @@ Q_SIGNALS:
 
 private Q_SLOTS:
     void onAppDataChanged(const int role);
+    void addPending();
 
 private:
     void setFocused(Application *application);
+    void delayedAdd(Application *application, bool focus);
     void add(Application *application);
     void remove(Application* application);
     Application* findApplicationWithSession(const std::shared_ptr<mir::scene::Session> &session);
@@ -149,6 +151,7 @@ private:
 
     QSharedPointer<MirServerConfiguration> m_mirConfig;
 
+    QList<QPair<Application*, bool>> m_pendingApplications;
     QList<Application*> m_applications;
     Application* m_focusedApplication;
     Application* m_mainStageApplication;
