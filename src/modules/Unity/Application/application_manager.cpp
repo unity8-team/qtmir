@@ -462,7 +462,7 @@ Application *ApplicationManager::startApplication(const QString &inputAppId, Exe
         application->setStage(Application::MainStage);
     }
 
-    add(application);
+    delayedAdd(application, false);
     return application;
 }
 
@@ -840,6 +840,11 @@ Application* ApplicationManager::applicationForStage(Application::Stage stage)
 
 void ApplicationManager::delayedAdd(Application *application, bool focus)
 {
+    connect(application, &Application::fullscreenChanged, this, [this](bool) { onAppDataChanged(RoleFullscreen); });
+    connect(application, &Application::focusedChanged, this, [this](bool) { onAppDataChanged(RoleFocused); });
+    connect(application, &Application::stateChanged, this, [this](Application::State) { onAppDataChanged(RoleState); });
+    connect(application, &Application::stageChanged, this, [this](Application::Stage) { onAppDataChanged(RoleStage); });
+
     m_pendingApplications.append(qMakePair<Application*, bool>(application, focus));
     QTimer::singleShot(0, this, SLOT(addPending()));
 }
@@ -859,11 +864,6 @@ void ApplicationManager::add(Application* application)
 {
     Q_ASSERT(application != nullptr);
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::add - appId=" << application->appId();
-
-    connect(application, &Application::fullscreenChanged, this, [this](bool) { onAppDataChanged(RoleFullscreen); });
-    connect(application, &Application::focusedChanged, this, [this](bool) { onAppDataChanged(RoleFocused); });
-    connect(application, &Application::stateChanged, this, [this](Application::State) { onAppDataChanged(RoleState); });
-    connect(application, &Application::stageChanged, this, [this](Application::Stage) { onAppDataChanged(RoleStage); });
 
     beginInsertRows(QModelIndex(), m_applications.count(), m_applications.count());
     m_applications.append(application);

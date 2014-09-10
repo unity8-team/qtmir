@@ -316,13 +316,20 @@ TEST_F(ApplicationManagerTests,bug_case_1281075_session_ptrs_always_distributed_
     onSessionStarting(third_session);
     onSessionStarting(second_session);
 
+    qDebug() << "aaa";
+
     Application * firstApp = applicationManager.findApplication(first_app_id);
     Application * secondApp = applicationManager.findApplication(second_app_id);
     Application * thirdApp = applicationManager.findApplication(third_app_id);
 
+    qDebug() << "bbb"  << firstApp->session();
+
     EXPECT_EQ(first_session, firstApp->session()->session());
+    qDebug() << "ccc";
     EXPECT_EQ(second_session, secondApp->session()->session());
+    qDebug() << "ddd";
     EXPECT_EQ(third_session, thirdApp->session()->session());
+    qDebug() << "eee";
 }
 
 TEST_F(ApplicationManagerTests,two_session_on_one_application)
