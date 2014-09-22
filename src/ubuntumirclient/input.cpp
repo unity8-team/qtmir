@@ -160,6 +160,7 @@ UbuntuInput::~UbuntuInput()
 }
 
 #ifndef QT_NO_DEBUG
+/*
 static const char* nativeEventTypeToStr(int eventType)
 {
     switch (eventType) {
@@ -178,6 +179,7 @@ static const char* nativeEventTypeToStr(int eventType)
         return "INVALID!";
     }
 }
+*/
 #endif
 
 void UbuntuInput::customEvent(QEvent* event)
@@ -199,7 +201,7 @@ void UbuntuInput::customEvent(QEvent* event)
         return;
     }
 
-    DLOG("UbuntuInput::customEvent(type=%s)", nativeEventTypeToStr(nativeEvent->type));
+    //DLOG("UbuntuInput::customEvent(type=%s)", nativeEventTypeToStr(nativeEvent->type));
 
     // Event dispatching.
     switch (nativeEvent->type) {

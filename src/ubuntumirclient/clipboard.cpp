@@ -18,9 +18,9 @@
 
 #include <QtCore/QMimeData>
 #include <QtCore/QStringList>
-
-// Platform API
-#include <ubuntu/application/ui/clipboard.h>
+#include <QDBusInterface>
+#include <QDBusPendingCallWatcher>
+#include <QDBusPendingReply>
 
 // FIXME(loicm) The clipboard data format is not defined by Ubuntu Platform API
 //     which makes it impossible to have non-Qt applications communicate with Qt
@@ -29,19 +29,26 @@
 //     embedding different mime types in the clipboard.
 
 // Data format:
-//   number of mime types      (4 bytes)
-//   data layout               (16 bytes * number of mime types)
-//     mime type string offset (4 bytes)
-//     mime type string size   (4 bytes)
-//     data offset             (4 bytes)
-//     data size               (4 bytes)
+//   number of mime types      (sizeof(int))
+//   data layout               ((4 * sizeof(int)) * number of mime types)
+//     mime type string offset (sizeof(int))
+//     mime type string size   (sizeof(int))
+//     data offset             (sizeof(int))
+//     data size               (sizeof(int))
 //   data                      (n bytes)
+
+namespace {
 
 const int maxFormatsCount = 16;
 const int maxBufferSize = 4 * 1024 * 1024;  // 4 Mb
 
+}
+
 UbuntuClipboard::UbuntuClipboard()
     : mMimeData(new QMimeData)
+    , mIsOutdated(true)
+    , mUpdatesDisabled(false)
+    , mDBusSetupDone(false)
 {
 }
 
@@ -50,80 +57,195 @@ UbuntuClipboard::~UbuntuClipboard()
     delete mMimeData;
 }
 
-QMimeData* UbuntuClipboard::mimeData(QClipboard::Mode mode)
+void UbuntuClipboard::requestDBusClipboardContents()
 {
-    Q_UNUSED(mode);
-    // Get clipboard data.
-    void* data = NULL;
-    size_t size = 0;
-    ua_ui_get_clipboard_content(&data, &size);
-
-    // Deserialize, update and return mime data taking care of incorrectly
-    // formatted input.
-    mMimeData->clear();
-    if (static_cast<size_t>(size) > sizeof(int)  // Should be at least that big to read the count.
-            && data != NULL) {
-        const char* const buffer = reinterpret_cast<char*>(data);
-        const int* const header = reinterpret_cast<int*>(data);
-        const int count = qMin(header[0], maxFormatsCount);
-        for (int i = 0; i < count; i++) {
-            const unsigned int formatOffset = header[i*4+1];
-            const unsigned int formatSize = header[i*4+2];
-            const unsigned int dataOffset = header[i*4+3];
-            const unsigned int dataSize = header[i*4+4];
-            if (formatOffset + formatSize <= size && dataOffset + dataSize <= size) {
-                mMimeData->setData(QString(&buffer[formatOffset]),
-                        QByteArray(&buffer[dataOffset], dataSize));
-            }
-        }
+    if (!mDBusSetupDone) {
+        setupDBus();
     }
-    return mMimeData;
+
+    if (!mPendingGetContentsCall.isNull())
+        return;
+
+    QDBusPendingCall pendingCall = mDBusClipboard->asyncCall("GetContents");
+
+    mPendingGetContentsCall = new QDBusPendingCallWatcher(pendingCall, this);
+
+    QObject::connect(mPendingGetContentsCall.data(), SIGNAL(finished(QDBusPendingCallWatcher*)),
+                     this, SLOT(onDBusClipboardGetContentsFinished(QDBusPendingCallWatcher*)));
 }
 
-void UbuntuClipboard::setMimeData(QMimeData* mimeData, QClipboard::Mode mode)
+void UbuntuClipboard::onDBusClipboardGetContentsFinished(QDBusPendingCallWatcher* call)
 {
-    Q_UNUSED(mode);
-    if (mimeData == NULL) {
-        ua_ui_set_clipboard_content(NULL, 0);
+    Q_ASSERT(call == mPendingGetContentsCall.data());
+
+    QDBusPendingReply<QByteArray> reply = *call;
+    if (reply.isError()) {
+        qCritical("UbuntuClipboard - Failed to get system clipboard contents via D-Bus. %s, %s",
+                qPrintable(reply.error().name()), qPrintable(reply.error().message()));
+        // TODO: Might try again later a number of times...
+    } else {
+        QByteArray serializedMimeData = reply.argumentAt<0>();
+        updateMimeData(serializedMimeData);
+    }
+    call->deleteLater();
+}
+
+void UbuntuClipboard::onDBusClipboardSetContentsFinished(QDBusPendingCallWatcher *call)
+{
+    QDBusPendingReply<void> reply = *call;
+    if (reply.isError()) {
+        qCritical("UbuntuClipboard - Failed to set the system clipboard contents via D-Bus. %s, %s",
+                qPrintable(reply.error().name()), qPrintable(reply.error().message()));
+        // TODO: Might try again later a number of times...
+    }
+    call->deleteLater();
+}
+
+void UbuntuClipboard::updateMimeData(const QByteArray &serializedMimeData)
+{
+    if (mUpdatesDisabled)
         return;
+
+    QMimeData *newMimeData = deserializeMimeData(serializedMimeData);
+    if (newMimeData) {
+        delete mMimeData;
+        mMimeData = newMimeData;
+        mIsOutdated = false;
+        emitChanged(QClipboard::Clipboard);
+    } else {
+        qWarning("UbuntuClipboard - Got invalid serialized mime data. Ignoring it.");
+    }
+}
+
+void UbuntuClipboard::setupDBus()
+{
+    QDBusConnection dbusConnection = QDBusConnection::sessionBus();
+
+    bool ok = dbusConnection.connect(
+            "com.canonical.QtMir",
+            "/com/canonical/QtMir/Clipboard",
+            "com.canonical.QtMir.Clipboard",
+            "ContentsChanged",
+            this, SLOT(updateMimeData(QByteArray)));
+    if (!ok) {
+        qCritical("UbuntuClipboard - Failed to connect to ContentsChanged signal form the D-Bus system clipboard.");
     }
 
-    const QStringList formats = mimeData->formats();
-    const int count = qMin(formats.size(), maxFormatsCount);
-    const int headerSize = sizeof(int) + count * 4 * sizeof(int);
-    int bufferSize = headerSize;
-    char* buffer;
+    mDBusClipboard = new QDBusInterface("com.canonical.QtMir",
+            "/com/canonical/QtMir/Clipboard",
+            "com.canonical.QtMir.Clipboard",
+            dbusConnection);
 
-    // Get the buffer size considering the header size, the NULL-terminated
-    // formats and the non NULL-terminated data.
-    for (int i = 0; i < count; i++)
-        bufferSize += formats[i].size() + 1 + mimeData->data(formats[i]).size();
+    mDBusSetupDone = true;
+}
+
+QByteArray UbuntuClipboard::serializeMimeData(QMimeData *mimeData) const
+{
+    const QStringList formats = mimeData->formats();
+    const int formatCount = qMin(formats.size(), maxFormatsCount);
+    const int headerSize = sizeof(int) + (formatCount * 4 * sizeof(int));
+    int bufferSize = headerSize;
+
+    for (int i = 0; i < formatCount; i++)
+        bufferSize += formats[i].size() + mimeData->data(formats[i]).size();
     // FIXME(loicm) Implement max buffer size limitation.
     // FIXME(loicm) Remove ASSERT before release.
     Q_ASSERT(bufferSize <= maxBufferSize);
 
     // Serialize data.
-    buffer = new char[bufferSize];
-    int* header = reinterpret_cast<int*>(buffer);
-    int offset = headerSize;
-    header[0] = count;
-    for (int i = 0; i < count; i++) {
-        const int formatOffset = offset;
-        const int formatSize = formats[i].size() + 1;
-        const int dataOffset = offset + formatSize;
-        const int dataSize = mimeData->data(formats[i]).size();
-        memcpy(&buffer[formatOffset], formats[i].toLatin1().data(), formatSize);
-        memcpy(&buffer[dataOffset], mimeData->data(formats[i]).data(), dataSize);
-        header[i*4+1] = formatOffset;
-        header[i*4+2] = formatSize;
-        header[i*4+3] = dataOffset;
-        header[i*4+4] = dataSize;
-        offset += formatSize + dataSize;
+    QByteArray serializedMimeData(bufferSize, 0 /* char to fill with */);
+    {
+        char *buffer = serializedMimeData.data();
+        int* header = reinterpret_cast<int*>(serializedMimeData.data());
+        int offset = headerSize;
+        header[0] = formatCount;
+        for (int i = 0; i < formatCount; i++) {
+            const int formatOffset = offset;
+            const int formatSize = formats[i].size();
+            const int dataOffset = offset + formatSize;
+            const int dataSize = mimeData->data(formats[i]).size();
+            memcpy(&buffer[formatOffset], formats[i].toLatin1().data(), formatSize);
+            memcpy(&buffer[dataOffset], mimeData->data(formats[i]).data(), dataSize);
+            header[i*4+1] = formatOffset;
+            header[i*4+2] = formatSize;
+            header[i*4+3] = dataOffset;
+            header[i*4+4] = dataSize;
+            offset += formatSize + dataSize;
+        }
     }
 
-    // Set clipboard content.
-    ua_ui_set_clipboard_content(reinterpret_cast<void*>(buffer), bufferSize);
-    delete [] buffer;
+    return serializedMimeData;
+}
+
+QMimeData *UbuntuClipboard::deserializeMimeData(const QByteArray &serializedMimeData) const
+{
+    if (static_cast<std::size_t>(serializedMimeData.size()) < sizeof(int)) {
+        // Data is invalid
+        return nullptr;
+    }
+
+    QMimeData *mimeData = new QMimeData;
+
+    const char* const buffer = serializedMimeData.constData();
+    const int* const header = reinterpret_cast<const int*>(serializedMimeData.constData());
+
+    const int count = qMin(header[0], maxFormatsCount);
+
+    for (int i = 0; i < count; i++) {
+        const int formatOffset = header[i*4+1];
+        const int formatSize = header[i*4+2];
+        const int dataOffset = header[i*4+3];
+        const int dataSize = header[i*4+4];
+
+        if (formatOffset + formatSize <= serializedMimeData.size()
+                && dataOffset + dataSize <= serializedMimeData.size()) {
+
+            QString mimeType = QString::fromLatin1(&buffer[formatOffset], formatSize);
+            QByteArray mimeDataBytes(&buffer[dataOffset], dataSize);
+
+            mimeData->setData(mimeType, mimeDataBytes);
+        }
+    }
+
+    return mimeData;
+}
+
+QMimeData* UbuntuClipboard::mimeData(QClipboard::Mode mode)
+{
+    if (mode != QClipboard::Clipboard)
+        return nullptr;
+
+    if (mIsOutdated && mPendingGetContentsCall.isNull()) {
+        requestDBusClipboardContents();
+    }
+
+    // Return whatever we have at the moment instead of blocking until we have something.
+    //
+    // This might be called during app startup just for the sake of checking if some
+    // "Paste" UI control should be enabled or not.
+    // We will emit QClipboard::changed() once we finally have something.
+    return mMimeData;
+}
+
+void UbuntuClipboard::setMimeData(QMimeData* mimeData, QClipboard::Mode mode)
+{
+    if (mode != QClipboard::Clipboard)
+        return;
+
+    if (!mPendingGetContentsCall.isNull()) {
+        // Ignore whatever comes from the system clipboard as we are going to change it anyway
+        QObject::disconnect(mPendingGetContentsCall.data(), 0, this, 0);
+        mUpdatesDisabled = true;
+        mPendingGetContentsCall->waitForFinished();
+        mUpdatesDisabled = false;
+        delete mPendingGetContentsCall.data();
+    }
+
+    QByteArray serializedMimeData = serializeMimeData(mimeData);
+    setDBusClipboardContents(serializedMimeData);
+
+    mMimeData = mimeData;
+    emitChanged(QClipboard::Clipboard);
 }
 
 bool UbuntuClipboard::supportsMode(QClipboard::Mode mode) const
@@ -135,4 +257,23 @@ bool UbuntuClipboard::ownsMode(QClipboard::Mode mode) const
 {
     Q_UNUSED(mode);
     return false;
+}
+
+void UbuntuClipboard::setDBusClipboardContents(const QByteArray &clipboardContents)
+{
+    if (!mPendingSetContentsCall.isNull()) {
+        // Ignore any previous set call as we are going to overwrite it anyway
+        QObject::disconnect(mPendingSetContentsCall.data(), 0, this, 0);
+        mUpdatesDisabled = true;
+        mPendingSetContentsCall->waitForFinished();
+        mUpdatesDisabled = false;
+        delete mPendingSetContentsCall.data();
+    }
+
+    QDBusPendingCall pendingCall = mDBusClipboard->asyncCall("SetContents", clipboardContents);
+
+    mPendingSetContentsCall = new QDBusPendingCallWatcher(pendingCall, this);
+
+    QObject::connect(mPendingSetContentsCall.data(), SIGNAL(finished(QDBusPendingCallWatcher*)),
+                     this, SLOT(onDBusClipboardSetContentsFinished(QDBusPendingCallWatcher*)));
 }
