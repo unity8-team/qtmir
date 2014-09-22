@@ -306,20 +306,24 @@ void UbuntuWindow::setWindowState(Qt::WindowState state)
     switch (state) {
     case Qt::WindowNoState:
         DLOG("setting window state: 'NoState'");
+        ua_ui_window_request_state(d->window, U_RESTORED_STATE);
         d->state = Qt::WindowNoState;
         break;
 
     case Qt::WindowFullScreen:
         DLOG("setting window state: 'FullScreen'");
-        ua_ui_window_request_fullscreen(d->window);
+        ua_ui_window_request_state(d->window, U_FULLSCREEN_STATE);
         d->state = Qt::WindowFullScreen;
         break;
 
     case Qt::WindowMaximized:
         DLOG("setting window state: 'Maximized'");
+        ua_ui_window_request_state(d->window, U_MAXIMIZED_STATE);
         d->state = Qt::WindowMaximized;
         break;
-
+// TODO: Can someone explain this code? ~racarr I am guessing it is based on a misinterpretation of Qt documentation
+// which suggests that (Active | ~Minimized) is the way to restore a window. This switch expresses
+// logical or, not bitwise or though, and fails to negate the minimize flag.
     case Qt::WindowActive:
     case Qt::WindowMinimized:
     default:
