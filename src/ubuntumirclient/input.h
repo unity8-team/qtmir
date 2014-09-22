@@ -40,6 +40,7 @@ public:
 protected:
     void dispatchKeyEvent(QWindow* window, const void* event);
     void dispatchMotionEvent(QWindow* window, const void* event);
+    void dispatchOrientationEvent(QWindow* window, const void* event);
 
 private:
     UbuntuClientIntegration* mIntegration;
