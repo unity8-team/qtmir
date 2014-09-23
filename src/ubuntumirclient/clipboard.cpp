@@ -148,30 +148,33 @@ QByteArray UbuntuClipboard::serializeMimeData(QMimeData *mimeData) const
 
     for (int i = 0; i < formatCount; i++)
         bufferSize += formats[i].size() + mimeData->data(formats[i]).size();
-    // FIXME(loicm) Implement max buffer size limitation.
-    // FIXME(loicm) Remove ASSERT before release.
-    Q_ASSERT(bufferSize <= maxBufferSize);
 
-    // Serialize data.
-    QByteArray serializedMimeData(bufferSize, 0 /* char to fill with */);
-    {
-        char *buffer = serializedMimeData.data();
-        int* header = reinterpret_cast<int*>(serializedMimeData.data());
-        int offset = headerSize;
-        header[0] = formatCount;
-        for (int i = 0; i < formatCount; i++) {
-            const int formatOffset = offset;
-            const int formatSize = formats[i].size();
-            const int dataOffset = offset + formatSize;
-            const int dataSize = mimeData->data(formats[i]).size();
-            memcpy(&buffer[formatOffset], formats[i].toLatin1().data(), formatSize);
-            memcpy(&buffer[dataOffset], mimeData->data(formats[i]).data(), dataSize);
-            header[i*4+1] = formatOffset;
-            header[i*4+2] = formatSize;
-            header[i*4+3] = dataOffset;
-            header[i*4+4] = dataSize;
-            offset += formatSize + dataSize;
+    QByteArray serializedMimeData;
+    if (bufferSize <= maxBufferSize) {
+        // Serialize data.
+        serializedMimeData.resize(bufferSize);
+        {
+            char *buffer = serializedMimeData.data();
+            int* header = reinterpret_cast<int*>(serializedMimeData.data());
+            int offset = headerSize;
+            header[0] = formatCount;
+            for (int i = 0; i < formatCount; i++) {
+                const int formatOffset = offset;
+                const int formatSize = formats[i].size();
+                const int dataOffset = offset + formatSize;
+                const int dataSize = mimeData->data(formats[i]).size();
+                memcpy(&buffer[formatOffset], formats[i].toLatin1().data(), formatSize);
+                memcpy(&buffer[dataOffset], mimeData->data(formats[i]).data(), dataSize);
+                header[i*4+1] = formatOffset;
+                header[i*4+2] = formatSize;
+                header[i*4+3] = dataOffset;
+                header[i*4+4] = dataSize;
+                offset += formatSize + dataSize;
+            }
         }
+    } else {
+        qWarning("UbuntuClipboard: Not sending contents (%d bytes) to the global clipboard as it's"
+                " bigger than the maximum allowed size of %d bytes", bufferSize, maxBufferSize);
     }
 
     return serializedMimeData;
@@ -242,7 +245,9 @@ void UbuntuClipboard::setMimeData(QMimeData* mimeData, QClipboard::Mode mode)
     }
 
     QByteArray serializedMimeData = serializeMimeData(mimeData);
-    setDBusClipboardContents(serializedMimeData);
+    if (!serializedMimeData.isEmpty()) {
+        setDBusClipboardContents(serializedMimeData);
+    }
 
     mMimeData = mimeData;
     emitChanged(QClipboard::Clipboard);
