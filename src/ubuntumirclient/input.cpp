@@ -408,5 +408,5 @@ void UbuntuInput::dispatchKeyEvent(QWindow* window, const void* ev)
         }
     }
 
-    QWindowSystemInterface::handleKeyEvent(window, timestamp, keyType, sym, modifiers, text);
+    QWindowSystemInterface::handleKeyEvent(window, timestamp, keyType, sym, modifiers, text, is_auto_rep);
 }
