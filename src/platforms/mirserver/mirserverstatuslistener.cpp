@@ -17,13 +17,6 @@
 // local
 #include "mirserverstatuslistener.h"
 
-// Qt
-#include <QtGlobal>
-#include <QByteArray>
-
-// std
-#include <csignal>
-
 void MirServerStatusListener::paused()
 {
 }
