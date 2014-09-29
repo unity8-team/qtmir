@@ -21,8 +21,6 @@
 #include <QSurfaceFormat>
 #include <EGL/egl.h>
 
-class QOrientationSensor;
-
 class UbuntuScreen : public QObject, public QPlatformScreen
 {
     Q_OBJECT
@@ -44,20 +42,14 @@ public:
     EGLConfig eglConfig() const { return mEglConfig; }
     EGLNativeDisplayType eglNativeDisplay() const { return mEglNativeDisplay; }
 
-    void toggleSensors(bool enable) const;
-
     // QObject methods.
     void customEvent(QEvent* event);
-
-public Q_SLOTS:
-   void onOrientationReadingChanged();
 
 private:
     QRect mGeometry;
     QRect mAvailableGeometry;
     Qt::ScreenOrientation mNativeOrientation;
     Qt::ScreenOrientation mCurrentOrientation;
-    QOrientationSensor* mOrientationSensor;
     QImage::Format mFormat;
     int mDepth;
     QSurfaceFormat mSurfaceFormat;

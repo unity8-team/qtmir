@@ -37,6 +37,7 @@ HEADERS = \
     integration.h \
     logging.h \
     nativeinterface.h \
+    orientationchangeevent_p.h \    
     platformservices.h \
     plugin.h \
     screen.h \
