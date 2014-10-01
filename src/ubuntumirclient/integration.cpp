@@ -228,6 +228,10 @@ QVariant UbuntuClientIntegration::styleHint(StyleHint hint) const
             // default is 10 pixels (see QPlatformTheme::defaultThemeHint)
             return 10.0 * mScaleFactor;
         }
+        case QPlatformIntegration::PasswordMaskDelay: {
+            // return time in milliseconds - 1 second
+            return QVariant(1000);
+        }
         default:
             break;
     }
