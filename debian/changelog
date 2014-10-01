@@ -1,3 +1,17 @@
+qtubuntu (0.60+14.10.20141001.3-0ubuntu1) utopic; urgency=low
+
+  [ Zsombor Egri ]
+  * Handle PasswordMaskDelay. (LP: #1237614)
+
+  [ Robert Carr ]
+  * Support mir restored surface state as a way to leave fullscreen.
+    (LP: #1194550)
+
+  [ Daniel d'Andrada ]
+  * Use the global clipboard from D-Bus (LP: #1367814)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 01 Oct 2014 17:20:53 +0000
+
 qtubuntu (0.60+14.10.20140922.1-0ubuntu1) utopic; urgency=low
 
   [ Gerry Boland ]
