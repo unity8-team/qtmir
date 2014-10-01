@@ -306,24 +306,26 @@ void UbuntuWindow::setWindowState(Qt::WindowState state)
     switch (state) {
     case Qt::WindowNoState:
         DLOG("setting window state: 'NoState'");
+        ua_ui_window_request_state(d->window, U_RESTORED_STATE);
         d->state = Qt::WindowNoState;
         break;
-
     case Qt::WindowFullScreen:
         DLOG("setting window state: 'FullScreen'");
-        ua_ui_window_request_fullscreen(d->window);
+        ua_ui_window_request_state(d->window, U_FULLSCREEN_STATE);
         d->state = Qt::WindowFullScreen;
         break;
-
     case Qt::WindowMaximized:
         DLOG("setting window state: 'Maximized'");
+        ua_ui_window_request_state(d->window, U_MAXIMIZED_STATE);
         d->state = Qt::WindowMaximized;
         break;
-
-    case Qt::WindowActive:
     case Qt::WindowMinimized:
+        DLOG("setting window state: 'Minimized'");
+        ua_ui_window_request_state(d->window, U_MINIMIZED_STATE);
+        d->state = Qt::WindowMinimized;
+        break;
     default:
-        DLOG("setting window state: 'Active|Minimized'");
+        DLOG("Unexpected window state");
         break;
     }
 }
