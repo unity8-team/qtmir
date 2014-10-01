@@ -108,7 +108,6 @@ UbuntuClientIntegration::UbuntuClientIntegration()
 
 UbuntuClientIntegration::~UbuntuClientIntegration()
 {
-    delete mClipboard;
     delete mInput;
     delete mInputContext;
     delete mScreen;
@@ -157,7 +156,7 @@ QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window) 
 QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window)
 {
     QPlatformWindow* platformWindow = new UbuntuWindow(
-            window, static_cast<UbuntuScreen*>(mScreen), mInput, mInstance);
+            window, mClipboard, static_cast<UbuntuScreen*>(mScreen), mInput, mInstance);
     platformWindow->requestActivateWindow();
     return platformWindow;
 }
@@ -236,4 +235,9 @@ QVariant UbuntuClientIntegration::styleHint(StyleHint hint) const
             break;
     }
     return QPlatformIntegration::styleHint(hint);
+}
+
+QPlatformClipboard* UbuntuClientIntegration::clipboard() const
+{
+    return mClipboard.data();
 }

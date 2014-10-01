@@ -15,6 +15,7 @@
  */
 
 // Local
+#include "clipboard.h"
 #include "input.h"
 #include "window.h"
 #include "screen.h"
@@ -55,17 +56,17 @@ public:
     QSize bufferSize;
     QSize targetBufferSize;
     QMutex mutex;
+    QSharedPointer<UbuntuClipboard> clipboard;
 };
 
 static void eventCallback(void* context, const WindowEvent* event)
 {
-    DLOG("eventCallback (context=%p, event=%p)", context, event);
     DASSERT(context != NULL);
     UbuntuWindow* platformWindow = static_cast<UbuntuWindow*>(context);
     platformWindow->priv()->input->postEvent(platformWindow, event);
 }
 
-UbuntuWindow::UbuntuWindow(QWindow* w, UbuntuScreen* screen,
+UbuntuWindow::UbuntuWindow(QWindow* w, QSharedPointer<UbuntuClipboard> clipboard, UbuntuScreen* screen,
                            UbuntuInput* input, UApplicationInstance* instance)
     : QObject(nullptr), QPlatformWindow(w)
 {
@@ -77,6 +78,7 @@ UbuntuWindow::UbuntuWindow(QWindow* w, UbuntuScreen* screen,
     d->input = input;
     d->state = window()->windowState();
     d->uaInstance = instance;
+    d->clipboard = clipboard;
 
     static int id = 1;
     d->id = id++;
@@ -265,6 +267,17 @@ void UbuntuWindow::handleSurfaceFocusChange(bool focused)
 {
     LOG("UbuntuWindow::handleSurfaceFocusChange(focused=%s)", focused ? "true" : "false");
     QWindow *activatedWindow = focused ? window() : nullptr;
+
+    // System clipboard contents might have changed while this window was unfocused and wihtout
+    // this process getting notified about it because it might have been suspended (due to
+    // application lifecycle policies), thus unable to listen to any changes notified through
+    // D-Bus.
+    // Therefore let's ensure we are up to date with the system clipboard now that we are getting
+    // focused again.
+    if (focused) {
+        d->clipboard->requestDBusClipboardContents();
+    }
+
     QWindowSystemInterface::handleWindowActivated(activatedWindow, Qt::ActiveWindowFocusReason);
 }
 

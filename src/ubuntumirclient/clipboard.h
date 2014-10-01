@@ -19,8 +19,14 @@
 
 #include <qpa/qplatformclipboard.h>
 
-class UbuntuClipboard : public QPlatformClipboard
+#include <QMimeData>
+#include <QPointer>
+class QDBusInterface;
+class QDBusPendingCallWatcher;
+
+class UbuntuClipboard : public QObject, public QPlatformClipboard
 {
+    Q_OBJECT
 public:
     UbuntuClipboard();
     virtual ~UbuntuClipboard();
@@ -31,8 +37,31 @@ public:
     bool supportsMode(QClipboard::Mode mode) const override;
     bool ownsMode(QClipboard::Mode mode) const override;
 
+    void requestDBusClipboardContents();
+
+private Q_SLOTS:
+    void onDBusClipboardGetContentsFinished(QDBusPendingCallWatcher*);
+    void onDBusClipboardSetContentsFinished(QDBusPendingCallWatcher*);
+    void updateMimeData(const QByteArray &serializedMimeData);
+
 private:
-    QMimeData* mMimeData;
+    void setupDBus();
+
+    QByteArray serializeMimeData(QMimeData *mimeData) const;
+    QMimeData *deserializeMimeData(const QByteArray &serializedMimeData) const;
+
+    void setDBusClipboardContents(const QByteArray &clipboardContents);
+
+    QMimeData *mMimeData;
+    bool mIsOutdated;
+
+    QPointer<QDBusInterface> mDBusClipboard;
+
+    QPointer<QDBusPendingCallWatcher> mPendingGetContentsCall;
+    QPointer<QDBusPendingCallWatcher> mPendingSetContentsCall;
+
+    bool mUpdatesDisabled;
+    bool mDBusSetupDone;
 };
 
 #endif // UBUNTU_CLIPBOARD_H

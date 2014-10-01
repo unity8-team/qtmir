@@ -18,6 +18,7 @@
 #define UBUNTU_CLIENT_INTEGRATION_H
 
 #include <qpa/qplatformintegration.h>
+#include <QSharedPointer>
 
 #include "platformservices.h"
 
@@ -27,6 +28,7 @@
 #include <ubuntu/application/ui/options.h>
 #include <ubuntu/application/ui/session.h>
 
+class UbuntuClipboard;
 class UbuntuInput;
 class UbuntuScreen;
 
@@ -48,7 +50,7 @@ public:
     QPlatformServices *services() const override;
     QPlatformWindow* createPlatformWindow(QWindow* window) const override;
     QPlatformInputContext* inputContext() const override { return mInputContext; }
-    QPlatformClipboard* clipboard() const override { return mClipboard; }
+    QPlatformClipboard* clipboard() const override;
 
     QPlatformOpenGLContext* createPlatformOpenGLContext(QOpenGLContext* context);
     QPlatformWindow* createPlatformWindow(QWindow* window);
@@ -66,7 +68,7 @@ private:
     UbuntuScreen* mScreen;
     UbuntuInput* mInput;
     QPlatformInputContext* mInputContext;
-    QPlatformClipboard* mClipboard;
+    QSharedPointer<UbuntuClipboard> mClipboard;
     qreal mScaleFactor;
 
     // Platform API stuff

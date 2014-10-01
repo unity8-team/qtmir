@@ -18,7 +18,9 @@
 #define UBUNTU_WINDOW_H
 
 #include <qpa/qplatformwindow.h>
+#include <QSharedPointer>
 
+class UbuntuClipboard;
 class UbuntuInput;
 class UbuntuScreen;
 class UbuntuWindowPrivate;
@@ -27,7 +29,7 @@ class UbuntuWindow : public QObject, public QPlatformWindow
 {
     Q_OBJECT
 public:
-    UbuntuWindow(QWindow* w, UbuntuScreen* screen,
+    UbuntuWindow(QWindow* w, QSharedPointer<UbuntuClipboard> clipboard, UbuntuScreen* screen,
                  UbuntuInput* input, void* instance);
     virtual ~UbuntuWindow();
 
