@@ -18,7 +18,6 @@
 #include <thread>
 #include <condition_variable>
 #include <QSignalSpy>
-#include <QJSEngine>
 
 #include <applicationscreenshotprovider.h>
 
@@ -2063,7 +2062,7 @@ TEST_F(ApplicationManagerTests, registeredSurfaceSizerDealswithBadReturns)
  * state and emit focusRequested to shell - authorizeSession will then associate new process with
  * the Application as normal.
  */
-TEST_F(ApplicationManagerTests, stoppedBackgroundAppRelaunchedByUpstart)
+TEST_F(ApplicationManagerTests,stoppedBackgroundAppRelaunchedByUpstart)
 {
     using namespace ::testing;
     const QString appId("testAppId");

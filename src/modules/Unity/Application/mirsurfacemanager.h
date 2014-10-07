@@ -40,7 +40,6 @@ namespace mir {
 }
 
 class MirServerConfiguration;
-class QJSValue;
 
 namespace qtmir {
 
