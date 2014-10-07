@@ -101,13 +101,15 @@ public:
                   )
               )
         }
+        , jsEngine{ new QJSEngine }
         , applicationManager{
             mirConfig,
             taskController,
             QSharedPointer<DesktopFileReader::Factory>(
                 &desktopFileReaderFactory,
                 [](DesktopFileReader::Factory*){}),
-            QSharedPointer<ProcInfo>(&procInfo,[](ProcInfo *){})
+            QSharedPointer<ProcInfo>(&procInfo,[](ProcInfo *){}),
+            jsEngine
         }
         , sessionManager{
             mirConfig,
@@ -157,6 +159,7 @@ public:
     testing::NiceMock<testing::MockDesktopFileReaderFactory> desktopFileReaderFactory;
     QSharedPointer<FakeMirServerConfiguration> mirConfig;
     QSharedPointer<TaskController> taskController;
+    QJSEngine* jsEngine;
     ApplicationManager applicationManager;
     SessionManager sessionManager;
     MirSurfaceManager surfaceManager;

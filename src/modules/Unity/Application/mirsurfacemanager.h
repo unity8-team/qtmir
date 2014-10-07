@@ -75,7 +75,6 @@ public Q_SLOTS:
     void onSurfaceAttributeChanged(const mir::scene::Surface *, MirSurfaceAttrib, int);
 
 protected:
-
     QHash<const mir::scene::Surface *, MirSurfaceItem *> m_mirSurfaceToItemHash;
     QMutex m_mutex;
 

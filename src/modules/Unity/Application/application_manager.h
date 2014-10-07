@@ -21,6 +21,7 @@
 #include <memory>
 
 // Qt
+#include <QJSEngine>
 #include <QObject>
 #include <QStringList>
 
@@ -92,6 +93,9 @@ public:
     QString focusedApplicationId() const override;
     bool suspended() const override;
     void setSuspended(bool suspended) override;
+
+    bool forceDashActive() const override;
+    void setForceDashActive(bool forceDashActive) override;
 
     QJSValue surfaceAboutToBeCreatedCallback() const override;
     void setSurfaceAboutToBeCreatedCallback(const QJSValue &callback) override;
@@ -168,6 +172,7 @@ private:
     static ApplicationManager* the_application_manager;
     QList<pid_t> m_hiddenPIDs;
     bool m_suspended;
+    bool m_forceDashActive;
 
     friend class Application;
     friend class DBusWindowStack;

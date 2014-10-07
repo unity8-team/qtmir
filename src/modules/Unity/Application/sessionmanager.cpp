@@ -63,7 +63,7 @@ void connectToPromptSessionListener(SessionManager * manager, PromptSessionListe
                      manager, &SessionManager::onPromptProviderRemoved);
 }
 
-SessionManager* SessionManager::singleton()
+SessionManager* SessionManager::singleton(QJSEngine *jsEngine)
 {
     if (!the_session_manager) {
 
@@ -78,7 +78,7 @@ SessionManager* SessionManager::singleton()
         SessionListener *sessionListener = static_cast<SessionListener*>(nativeInterface->nativeResourceForIntegration("SessionListener"));
         PromptSessionListener *promptSessionListener = static_cast<PromptSessionListener*>(nativeInterface->nativeResourceForIntegration("PromptSessionListener"));
 
-        the_session_manager = new SessionManager(nativeInterface->m_mirConfig, ApplicationManager::singleton());
+        the_session_manager = new SessionManager(nativeInterface->m_mirConfig, ApplicationManager::singleton(jsEngine));
 
         connectToSessionListener(the_session_manager, sessionListener);
         connectToPromptSessionListener(the_session_manager, promptSessionListener);

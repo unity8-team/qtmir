@@ -57,7 +57,7 @@ void connectToSurfaceConfigurator(MirSurfaceManager *manager, SurfaceConfigurato
                      manager, &MirSurfaceManager::onSurfaceAttributeChanged);
 }
 
-MirSurfaceManager* MirSurfaceManager::singleton()
+MirSurfaceManager* MirSurfaceManager::singleton(QJSEngine *jsEngine)
 {
     if (!the_surface_manager) {
 
@@ -72,7 +72,7 @@ MirSurfaceManager* MirSurfaceManager::singleton()
         SessionListener *sessionListener = static_cast<SessionListener*>(nativeInterface->nativeResourceForIntegration("SessionListener"));
         SurfaceConfigurator *surfaceConfigurator = static_cast<SurfaceConfigurator*>(nativeInterface->nativeResourceForIntegration("SessionConfigurator"));
 
-        the_surface_manager = new MirSurfaceManager(nativeInterface->m_mirConfig, SessionManager::singleton());
+        the_surface_manager = new MirSurfaceManager(nativeInterface->m_mirConfig, SessionManager::singleton(jsEngine));
 
         connectToSessionListener(the_surface_manager, sessionListener);
         connectToSurfaceConfigurator(the_surface_manager, surfaceConfigurator);

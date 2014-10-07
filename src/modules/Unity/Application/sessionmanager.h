@@ -38,6 +38,8 @@ namespace mir {
     }
 }
 
+class QJSEngine;
+
 class MirServerConfiguration;
 
 namespace qtmir {
@@ -57,7 +59,7 @@ public:
     );
     ~SessionManager();
 
-    static SessionManager* singleton();
+    static SessionManager* singleton(QJSEngine *jsEngine);
 
     SessionInterface *findSession(const mir::scene::Session* session) const;
 

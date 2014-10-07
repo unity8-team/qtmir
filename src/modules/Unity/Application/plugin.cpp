@@ -29,27 +29,23 @@
 // qtmir
 #include "logging.h"
 
-static QObject* applicationManagerSingleton(QQmlEngine* engine, QJSEngine* jsEngine) {
-    Q_UNUSED(engine);
-    qCDebug(QTMIR_APPLICATIONS) << "applicationManagerSingleton - engine=" << engine << "jsEngine=" << jsEngine;
-
+static QObject* applicationManagerSingleton(QQmlEngine* /*engine*/, QJSEngine* jsEngine)
+{
     return qtmir::ApplicationManager::singleton(jsEngine);
 }
 
-static QObject* surfaceManagerSingleton(QQmlEngine* engine, QJSEngine* jsEngine) {
-    Q_UNUSED(engine);
-    qCDebug(QTMIR_APPLICATIONS) << "surfaceManagerSingleton - engine=" << engine << "jsEngine=" << jsEngine;
-
+static QObject* surfaceManagerSingleton(QQmlEngine* /*engine*/, QJSEngine* jsEngine)
+{
     return qtmir::MirSurfaceManager::singleton(jsEngine);
 }
 
-static QObject* sessionManagerSingleton(QQmlEngine* engine, QJSEngine* scriptEngine) {
-    Q_UNUSED(engine);
-    Q_UNUSED(scriptEngine);
-    return qtmir::SessionManager::singleton();
+static QObject* sessionManagerSingleton(QQmlEngine* /*engine*/, QJSEngine* jsEngine)
+{
+    return qtmir::SessionManager::singleton(jsEngine);
 }
 
-class UnityApplicationPlugin : public QQmlExtensionPlugin {
+class UnityApplicationPlugin : public QQmlExtensionPlugin
+{
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QQmlExtensionInterface/1.0")
 
