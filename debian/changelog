@@ -1,3 +1,87 @@
+qtmir (0.4.3+14.10.20141001.5-0ubuntu1) utopic; urgency=low
+
+  [ Daniel d'Andrada ]
+  * CONFIG+=no_tests to avoid building the tests and therefore speed up
+    the build
+  * Provide a global clipboard via D-Bus (LP: #1367814)
+
+  [ josharenson ]
+  * Remove check to see if application is already focused before
+    focusing.
+
+  [ Robert Carr ]
+  * MirSurfaceItem::consume Set motion event tooltypes based on
+    QTouchPoints (LP: #1371282)
+
+  [ Gerry Boland ]
+  * Fix AppMan handling Upstart resuming a Stopped application
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 01 Oct 2014 18:43:00 +0000
+
+qtmir (0.4.3+14.10.20140922.1-0ubuntu1) utopic; urgency=low
+
+  [ Gerry Boland ]
+  * Expose Mir surface orientation property to QML (LP: #1288332)
+  * Add splash screen properties to Application
+
+  [ Florian Boucault ]
+  * Add splash screen properties to Application
+
+  [ Daniel d'Andrada ]
+  * Add splash screen properties to Application
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 22 Sep 2014 17:38:51 +0000
+
+qtmir (0.4.3+14.10.20140918.3-0ubuntu1) utopic; urgency=low
+
+  [ Gerry Boland ]
+  * TaskController may call processStarted synchronously, so check for
+    that in startApplication before adding (LP: #1371047)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 18 Sep 2014 16:57:48 +0000
+
+qtmir (0.4.3+14.10.20140918.1-0ubuntu1) utopic; urgency=low
+
+  [ Gerry Boland ]
+  * Fix unstable test - be more careful about synchronizing the Qt image
+    provider and Mir snapshot threads
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 18 Sep 2014 09:38:52 +0000
+
+qtmir (0.4.3+14.10.20140915-0ubuntu1) utopic; urgency=low
+
+  [ Daniel d'Andrada ]
+  * MirSurfaceItem: Ensure all touch sequences sent to Mir surface are
+    properly ended.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 15 Sep 2014 14:50:16 +0000
+
+qtmir (0.4.3+14.10.20140907-0ubuntu1) utopic; urgency=low
+
+  [ Daniel d'Andrada ]
+  * QtEventFeeder: validate touches before sending them to Qt
+
+  [ josharenson ]
+  * Fix a small typo in the README file
+
+  [ Alan Griffiths ]
+  * Provide Mir with a handler for any command-line arguments it fails
+    to parse. For the moment, these are simply ignored.
+
+  [ Gerry Boland ]
+  * Add LTTng tracepoints
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Sun, 07 Sep 2014 19:42:56 +0000
+
+qtmir (0.4.3+14.10.20140903-0ubuntu1) utopic; urgency=medium
+
+  [ Nick Dedekind ]
+  * Use a model for child surfaces/sessions. Add surface tests.
+  * Support for nesting prompt sessions.
+
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 03 Sep 2014 08:03:52 +0000
+
 qtmir (0.4.2+14.10.20140829-0ubuntu1) utopic; urgency=low
 
   [ Ubuntu daily release ]

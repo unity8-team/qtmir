@@ -17,6 +17,7 @@
 // local
 #include "mirplacementstrategy.h"
 #include "logging.h"
+#include "tracepoints.h" // generated from tracepoints.tp
 
 // mir
 #include <mir/geometry/rectangle.h>
@@ -40,6 +41,7 @@ MirPlacementStrategy::place(const ms::Session &session,
         const ms::SurfaceCreationParameters &requestParameters)
 {
     using namespace mir::geometry;
+    tracepoint(qtmirserver, surfacePlacementStart);
 
     QSize surfaceGeometry(requestParameters.size.width.as_int(),
                           requestParameters.size.height.as_int());
@@ -66,6 +68,8 @@ MirPlacementStrategy::place(const ms::Session &session,
     qCDebug(QTMIR_MIR_MESSAGES) << "MirPlacementStrategy: requested ("
         << requestParameters.size.width.as_int() << "," << requestParameters.size.height.as_int() << ") and returned ("
         << placedParameters.size.width.as_int() << "," << placedParameters.size.height.as_int() << ")";
+
+    tracepoint(qtmirserver, surfacePlacementEnd);
 
     return placedParameters;
 }

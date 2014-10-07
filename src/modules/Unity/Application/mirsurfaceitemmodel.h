@@ -14,22 +14,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "unityprotobufservice.h"
+#ifndef MIRSURFACEITEMMODEL_H
+#define MIRSURFACEITEMMODEL_H
 
-void UnityProtobufService::copy(::google::protobuf::RpcController* /*controller*/,
-        const ::unity::protobuf::Clip* newClip,
-        ::unity::protobuf::Void* /*response*/,
-        ::google::protobuf::Closure* done)
-{
-    m_clip = newClip->content();
-    done->Run();
-}
+// Local
+#include "objectlistmodel.h"
 
-void UnityProtobufService::paste(::google::protobuf::RpcController* /*controller*/,
-        const ::unity::protobuf::Void* /*request*/,
-        ::unity::protobuf::Clip* clipReturned,
-        ::google::protobuf::Closure* done)
-{
-    clipReturned->set_content(m_clip);
-    done->Run();
-}
+namespace qtmir {
+
+class MirSurfaceItem;
+typedef ObjectListModel<MirSurfaceItem> MirSurfaceItemModel;
+
+} // namespace qtmir
+
+Q_DECLARE_METATYPE(qtmir::MirSurfaceItemModel*)
+
+#endif // MIRSURFACEITEMMODEL_H

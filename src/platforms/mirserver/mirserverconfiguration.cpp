@@ -17,7 +17,6 @@
 #include "mirserverconfiguration.h"
 
 // local
-#include "connectioncreator.h"
 #include "focussetter.h"
 #include "mirglconfig.h"
 #include "mirplacementstrategy.h"
@@ -29,23 +28,29 @@
 #include "qtcompositor.h"
 #include "qteventfeeder.h"
 #include "logging.h"
-#include "unityprotobufservice.h"
 
-// Qt
-#include <QDebug>
+// mir
+#include <mir/options/default_configuration.h>
 
 // egl
 #include <EGL/egl.h>
 
+namespace mo  = mir::options;
 namespace msh = mir::shell;
 namespace ms = mir::scene;
+
+namespace
+{
+void ignore_unparsed_arguments(int /*argc*/, char const* const/*argv*/[])
+{
+}
+}
 
 Q_LOGGING_CATEGORY(QTMIR_MIR_MESSAGES, "qtmir.mir")
 
 MirServerConfiguration::MirServerConfiguration(int argc, char const* argv[], QObject* parent)
     : QObject(parent)
-    , DefaultServerConfiguration(argc, argv)
-    , m_unityService(std::make_shared<UnityProtobufService>())
+    , DefaultServerConfiguration(std::make_shared<mo::DefaultConfiguration>(argc, argv, &ignore_unparsed_arguments))
 {
     qCDebug(QTMIR_MIR_MESSAGES) << "MirServerConfiguration created";
 }
@@ -141,19 +146,6 @@ MirServerConfiguration::the_server_status_listener()
         []()
         {
             return std::make_shared<MirServerStatusListener>();
-        });
-}
-
-std::shared_ptr<mir::frontend::ConnectionCreator>
-MirServerConfiguration::the_connection_creator()
-{
-    return connection_creator([this]
-        {
-            return std::make_shared<ConnectionCreator>(
-                m_unityService,
-                new_ipc_factory(the_session_authorizer()),
-                the_session_authorizer(),
-                the_message_processor_report());
         });
 }
 

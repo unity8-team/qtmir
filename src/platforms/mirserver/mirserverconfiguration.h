@@ -20,12 +20,6 @@
 #include <QObject>
 #include <mir/default_server_configuration.h>
 
-namespace unity {
-    namespace protobuf {
-        class UnityService;
-    }
-}
-
 class QtEventFeeder;
 class SessionListener;
 class SessionAuthorizer;
@@ -57,7 +51,6 @@ public:
     std::shared_ptr<mir::input::InputDispatcher> the_input_dispatcher() override;
     std::shared_ptr<mir::graphics::GLConfig> the_gl_config() override;
     std::shared_ptr<mir::ServerStatusListener> the_server_status_listener() override;
-    std::shared_ptr<mir::frontend::ConnectionCreator> the_connection_creator() override;
     std::shared_ptr<mir::shell::FocusSetter> the_shell_focus_setter() override;
 
     /* qt specific */
@@ -69,7 +62,6 @@ public:
     MirPlacementStrategy *placementStrategy();
 
 private:
-    std::shared_ptr<unity::protobuf::UnityService> m_unityService;
     std::shared_ptr<QtEventFeeder> m_qtEventFeeder;
 };
 

@@ -18,6 +18,7 @@
 #include "applicationscreenshotprovider.h"
 #include "application_manager.h"
 #include "application.h"
+#include "session.h"
 
 // QPA-mirserver
 #include "logging.h"
@@ -54,7 +55,8 @@ QImage ApplicationScreenshotProvider::requestImage(const QString &imageId, QSize
 
     // TODO: if app not ready, return an app-provided splash image. If app has been stopped with saved state
     // return the screenshot that was saved to disk.
-    if (!app->session() || !app->session()->default_surface()) {
+    Session* session = app->session();
+    if (!session || !session->session() || !session->session()->default_surface()) {
         qWarning() << "ApplicationScreenshotProvider - app session not found - asking for screenshot too early";
         return QImage();
     }
@@ -62,8 +64,9 @@ QImage ApplicationScreenshotProvider::requestImage(const QString &imageId, QSize
     QImage screenshotImage;
     QMutex screenshotMutex;
     QWaitCondition screenshotTakenCondition;
+    bool screenShotDone = false;
 
-    app->session()->take_snapshot(
+    session->session()->take_snapshot(
         [&](mir::scene::Snapshot const& snapshot)
         {
             qCDebug(QTMIR_APPLICATIONS) << "ApplicationScreenshotProvider - Mir snapshot ready with size"
@@ -76,29 +79,30 @@ QImage ApplicationScreenshotProvider::requestImage(const QString &imageId, QSize
                             snapshot.size.height.as_int(),
                             QImage::Format_ARGB32_Premultiplied).mirrored();
 
-                QMutexLocker screenshotMutexLocker(&screenshotMutex);
+                if (!fullSizeScreenshot.isNull()) {
+                    if (requestedSize.isValid()) {
+                        *size = requestedSize.boundedTo(fullSizeScreenshot.size());
+                        screenshotImage = fullSizeScreenshot.scaled(*size, Qt::IgnoreAspectRatio,
+                            Qt::SmoothTransformation);
+                    } else {
+                        *size = fullSizeScreenshot.size();
+                        screenshotImage = fullSizeScreenshot;
+                    }
+                }
 
-                if (requestedSize.isValid()) {
-                    *size = requestedSize.boundedTo(fullSizeScreenshot.size());
-                    screenshotImage = fullSizeScreenshot.scaled(*size, Qt::IgnoreAspectRatio,
-                        Qt::SmoothTransformation);
-                } else {
-                    *size = fullSizeScreenshot.size();
-                    screenshotImage = fullSizeScreenshot;
+                { // Sync point with Qt's ImageProviderThread
+                    QMutexLocker screenshotMutexLocker(&screenshotMutex);
+                    screenShotDone = true;
                 }
 
                 screenshotTakenCondition.wakeAll();
             }
         });
 
-    {
+    { // Sync point with Mir's snapshot thread
         QMutexLocker screenshotMutexLocker(&screenshotMutex);
-        if (screenshotImage.isNull()) {
-            // mir is taking a snapshot in a separate thread. Wait here until it's done.
+        if (!screenShotDone) {
             screenshotTakenCondition.wait(&screenshotMutex);
-        } else {
-            // mir took a snapshot synchronously or it was asynchronous but already finished.
-            // In either case, there's no need to wait.
         }
     }
 
