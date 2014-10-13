@@ -1,3 +1,9 @@
+qtmir-gles (0.4.3+14.10.20141013-0ubuntu1) utopic; urgency=medium
+
+  * Sync with upstream
+
+ -- Ricardo Mendoza <ricardo.mendoza@canonical.com>  Mon, 13 Oct 2014 16:27:04 +0200
+
 qtmir-gles (0.4.3+14.10.20141006-0ubuntu1) utopic; urgency=medium
 
   [ Michael Zanetti ]
