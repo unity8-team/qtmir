@@ -1,4 +1,4 @@
-qtmir-gles (0.4.3+14.10.20141013-0ubuntu1) utopic; urgency=medium
+qtmir-gles (0.4.3+14.10.20141013-0ubuntu1) 14.09;  urgency=medium
 
   * Sync with upstream
 
