@@ -18,6 +18,7 @@
 #include <thread>
 #include <condition_variable>
 #include <QSignalSpy>
+#include <QScopedPointer>
 
 #include <applicationscreenshotprovider.h>
 
@@ -2051,6 +2052,29 @@ TEST_F(ApplicationManagerTests,stoppedBackgroundAppRelaunchedByUpstart)
     EXPECT_EQ(app->state(), Application::Starting);
     EXPECT_EQ(focusRequestSpy.count(), 1);
     EXPECT_EQ(applicationManager.count(), 1);
+}
+
+/*
+ * Test if url-dispatcher requests focus for an app which was lifecycle killed, then
+ * AppMan assumes that url-dispatcher respawned the app (and AppMan doesn't try to respawn
+ * the app itself)
+ */
+TEST_F(ApplicationManagerTests,urlDispatcherRespawnsAppsSoWeDoNotHaveTo)
+{
+    using namespace ::testing;
+    quint64 procId1 = 5551;
+    const QString appId("testAppId");
+
+    auto app = startApplication(procId1, appId);
+    app->setState(Application::Stopped);
+
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
+        .Times(0)
+        .WillOnce(Return(true));
+
+    applicationManager.requestFocusApplication(appId);
+
+    EXPECT_EQ(app->state(), Application::Starting);
 }
 
 /*

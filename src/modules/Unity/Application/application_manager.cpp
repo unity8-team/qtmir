@@ -278,6 +278,11 @@ bool ApplicationManager::requestFocusApplication(const QString &inputAppId)
         return false;
     }
 
+    if (application->state() == Application::Stopped) {
+        // Assume that url-dispatcher has respawned the app
+        application->setState(Application::Starting);
+    }
+
     Q_EMIT focusRequested(appId);
     return true;
 }
