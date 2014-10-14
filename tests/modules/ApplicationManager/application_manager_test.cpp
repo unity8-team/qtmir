@@ -2059,7 +2059,7 @@ TEST_F(ApplicationManagerTests,stoppedBackgroundAppRelaunchedByUpstart)
  * AppMan assumes that url-dispatcher respawned the app (and AppMan doesn't try to respawn
  * the app itself)
  */
-TEST_F(ApplicationManagerTests,urlDispatcherRespawnsAppsSoWeDoNotHaveTo)
+TEST_F(ApplicationManagerTests,urlDispatcherRespawnsStoppedAppsSoWeDoNotHaveTo)
 {
     using namespace ::testing;
     quint64 procId1 = 5551;
