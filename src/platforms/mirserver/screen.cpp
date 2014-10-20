@@ -69,14 +69,19 @@ enum QImage::Format qImageFormatFromMirPixelFormat(MirPixelFormat mirPixelFormat
                    "Qt doesn't support mir_pixel_format_xbgr_8888 in a big endian architecture");
         }
         break;
-        break;
     case mir_pixel_format_argb_8888:
         // 0xAARRGGBB
         return QImage::Format_ARGB32;
         break;
     case mir_pixel_format_xrgb_8888:
-        // 0xffRRGGBB
-        return QImage::Format_RGB32;
+        if (isLittleEndian()) {
+            // 0xRR,0xGG,0xBB,0xXX
+            return QImage::Format_RGBX8888;
+        } else {
+            // 0xXX,0xBB,0xGG,0xRR
+            qFatal("[mirserver QPA] "
+                   "Qt doesn't support mir_pixel_format_xrgb_8888 in a big endian architecture");
+        }
         break;
     case mir_pixel_format_bgr_888:
         qFatal("[mirserver QPA] Qt doesn't support mir_pixel_format_bgr_888");
