@@ -50,113 +50,66 @@ Q_LOGGING_CATEGORY(QTMIR_MIR_MESSAGES, "qtmir.mir")
 
 MirServerConfiguration::MirServerConfiguration(int argc, char const* argv[], QObject* parent)
     : QObject(parent)
-    , DefaultServerConfiguration(std::make_shared<mo::DefaultConfiguration>(argc, argv, &ignore_unparsed_arguments))
 {
-    qCDebug(QTMIR_MIR_MESSAGES) << "MirServerConfiguration created";
-}
-
-std::shared_ptr<ms::PlacementStrategy>
-MirServerConfiguration::the_placement_strategy()
-{
-    return shell_placement_strategy(
-        [this]
-        {
-            return std::make_shared<MirPlacementStrategy>(the_shell_display_layout());
-        });
-}
-
-std::shared_ptr<ms::SessionListener>
-MirServerConfiguration::the_session_listener()
-{
-    return session_listener(
-        [this]
-        {
-            return std::make_shared<SessionListener>();
-        });
-}
-
-std::shared_ptr<ms::PromptSessionListener>
-MirServerConfiguration::the_prompt_session_listener()
-{
-    return prompt_session_listener(
-        [this]
-        {
-            return std::make_shared<PromptSessionListener>();
-        });
-}
-
-std::shared_ptr<ms::SurfaceConfigurator>
-MirServerConfiguration::the_surface_configurator()
-{
-    return surface_configurator(
-        [this]()
-        {
-            return std::make_shared<SurfaceConfigurator>();
-        });
-}
-
-std::shared_ptr<mir::frontend::SessionAuthorizer>
-MirServerConfiguration::the_session_authorizer()
-{
-    return session_authorizer(
-    []
-    {
-        return std::make_shared<SessionAuthorizer>();
-    });
-}
-
-std::shared_ptr<mir::compositor::Compositor>
-MirServerConfiguration::the_compositor()
-{
-    return compositor(
-        [this]()
+    override_the_compositor([]() -> std::shared_ptr<mir::compositor::Compositor>
         {
             return std::make_shared<QtCompositor>();
         });
-}
 
-std::shared_ptr<mir::input::InputDispatcher>
-MirServerConfiguration::the_input_dispatcher()
-{
-    return input_dispatcher(
-    [this]()
-    {
-        return std::make_shared<QtEventFeeder>();
-    });
-}
+    override_the_placement_strategy([this] () -> std::shared_ptr<ms::PlacementStrategy>
+        {
+            return std::make_shared<MirPlacementStrategy>(the_shell_display_layout());
+        });
 
-std::shared_ptr<mir::graphics::GLConfig>
-MirServerConfiguration::the_gl_config()
-{
-    return gl_config(
-    [this]()
-    {
+    override_the_input_dispatcher([]() -> std::shared_ptr<mir::input::InputDispatcher>
+        {
+            return std::make_shared<QtEventFeeder>();
+        });
+
+    override_the_gl_config([]() -> std::shared_ptr<mir::graphics::GLConfig>
+        {
 #ifdef QTMIR_USE_OPENGL
-        // Should desktop-GL be desired, need to bind that API before a context is created
-        eglBindAPI(EGL_OPENGL_API);
+            // Should desktop-GL be desired, need to bind that API before a context is created
+            eglBindAPI(EGL_OPENGL_API);
 #endif
-        return std::make_shared<MirGLConfig>();
-    });
-}
+            return std::make_shared<MirGLConfig>();
+        });
 
-std::shared_ptr<mir::ServerStatusListener>
-MirServerConfiguration::the_server_status_listener()
-{
-    return server_status_listener(
-        []()
+    override_the_server_status_listener([]() -> std::shared_ptr<mir::ServerStatusListener>
         {
             return std::make_shared<MirServerStatusListener>();
         });
-}
 
-std::shared_ptr<mir::shell::FocusSetter>
-MirServerConfiguration::the_shell_focus_setter()
-{
-    return shell_focus_setter(
-        [this]
+    override_the_shell_focus_setter([]() -> std::shared_ptr<mir::shell::FocusSetter>
         {
             return std::make_shared<FocusSetter>();
         });
+
+    override_the_session_listener([]() -> std::shared_ptr<ms::SessionListener>
+        {
+            return std::make_shared<SessionListener>();
+        });
+
+    override_the_prompt_session_listener([]() -> std::shared_ptr<ms::PromptSessionListener>
+        {
+            return std::make_shared<PromptSessionListener>();
+        });
+
+    override_the_surface_configurator([]() -> std::shared_ptr<ms::SurfaceConfigurator>
+        {
+            return std::make_shared<SurfaceConfigurator>();
+        });
+
+    override_the_session_authorizer([]() -> std::shared_ptr<mir::frontend::SessionAuthorizer>
+        {
+            return std::make_shared<SessionAuthorizer>();
+        });
+
+    set_command_line_handler(&ignore_unparsed_arguments);
+
+    set_command_line(argc, argv);
+
+    qCDebug(QTMIR_MIR_MESSAGES) << "MirServerConfiguration created";
 }
 
 /************************************ Shell side ************************************/
