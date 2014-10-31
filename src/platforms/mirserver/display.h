@@ -22,21 +22,20 @@
 #include <QObject>
 #include <qpa/qplatformscreen.h>
 
-#include "mir/graphics/display.h"
-#include "mir/default_server_configuration.h"
+class MirServerConfiguration;
 
 class Display : public QObject
 {
     Q_OBJECT
 public:
-    Display(const QSharedPointer<mir::DefaultServerConfiguration> &config, QObject *parent = 0);
+    Display(const QSharedPointer<MirServerConfiguration> &config, QObject *parent = 0);
     ~Display();
 
     QList<QPlatformScreen *> screens() const { return m_screens; }
 
 private:
     QList<QPlatformScreen *> m_screens;
-    const QSharedPointer<mir::DefaultServerConfiguration> m_mirConfig;
+    const QSharedPointer<MirServerConfiguration> m_mirConfig;
 };
 
 #endif // DISPLAY_H

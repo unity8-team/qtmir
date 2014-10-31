@@ -48,6 +48,7 @@ public:
     using mir::Server::the_display;
     using mir::Server::run;
     using mir::Server::stop;
+    using mir::Server::set_terminator;
 
     /* qt specific */
     // getters
