@@ -26,7 +26,7 @@
 #include <Unity/Application/sessionmanager.h>
 #include <Unity/Application/taskcontroller.h>
 #include <Unity/Application/proc_info.h>
-#include <mirserverconfiguration.h>
+#include <mirserver.h>
 
 #include "mock_application_controller.h"
 #include "mock_desktop_file_reader.h"
@@ -41,12 +41,12 @@ using namespace qtmir;
 
 namespace qtmir {
 
-class FakeMirServerConfiguration: public MirServerConfiguration
+class FakeMirServerConfiguration: public MirServer
 {
     typedef testing::NiceMock<mir::scene::MockPromptSessionManager> StubPromptSessionManager;
 public:
     FakeMirServerConfiguration()
-    : MirServerConfiguration(0, nullptr)
+    : MirServer(0, nullptr)
     , mock_prompt_session_manager(std::make_shared<StubPromptSessionManager>())
     {
         override_the_prompt_session_manager([this]()

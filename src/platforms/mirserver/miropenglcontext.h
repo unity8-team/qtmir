@@ -27,13 +27,13 @@
 #include <QOpenGLDebugLogger>
 #endif
 
-class MirServerConfiguration;
+class MirServer;
 
 class MirOpenGLContext : public QObject, public QPlatformOpenGLContext
 {
     Q_OBJECT
 public:
-    MirOpenGLContext(const QSharedPointer<MirServerConfiguration> &, const QSurfaceFormat &);
+    MirOpenGLContext(const QSharedPointer<MirServer> &, const QSurfaceFormat &);
     ~MirOpenGLContext() = default;
 
     QSurfaceFormat format() const override;
@@ -52,7 +52,7 @@ public:
 #endif
 
 private:
-    const QSharedPointer<MirServerConfiguration> m_mirConfig;
+    const QSharedPointer<MirServer> m_mirServer;
     QSurfaceFormat m_format;
 #if GL_DEBUG
     QOpenGLDebugLogger *m_logger;

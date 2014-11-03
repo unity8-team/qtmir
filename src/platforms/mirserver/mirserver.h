@@ -14,8 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MIRSERVERCONFIGURATION_H
-#define MIRSERVERCONFIGURATION_H
+#ifndef MIRSERVER_H
+#define MIRSERVER_H
 
 #include <QObject>
 #include <mir/server.h>
@@ -26,7 +26,7 @@ class SessionAuthorizer;
 class SurfaceConfigurator;
 class PromptSessionListener;
 
-class MirServerConfiguration : public QObject, private mir::Server
+class MirServer : public QObject, private mir::Server
 {
     Q_OBJECT
 
@@ -36,8 +36,8 @@ class MirServerConfiguration : public QObject, private mir::Server
     Q_PROPERTY(PromptSessionListener* promptSessionListener READ promptSessionListener CONSTANT)
 
 public:
-    MirServerConfiguration(int argc, char const* argv[], QObject* parent = 0);
-    ~MirServerConfiguration() = default;
+    MirServer(int argc, char const* argv[], QObject* parent = 0);
+    ~MirServer() = default;
 
     /* mir specific */
     using mir::Server::run;
@@ -66,4 +66,4 @@ private:
     std::shared_ptr<QtEventFeeder> m_qtEventFeeder;
 };
 
-#endif // MIRSERVERCONFIGURATION_H
+#endif // MIRSERVER_H

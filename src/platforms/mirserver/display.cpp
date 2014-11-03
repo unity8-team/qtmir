@@ -17,7 +17,7 @@
  */
 
 #include "display.h"
-#include "mirserverconfiguration.h"
+#include "mirserver.h"
 #include "screen.h"
 
 #include <mir/graphics/display.h>
@@ -28,11 +28,11 @@ namespace mg = mir::graphics;
 
 // TODO: Listen for display changes and update the list accordingly
 
-Display::Display(const QSharedPointer<MirServerConfiguration> &config, QObject *parent)
+Display::Display(const QSharedPointer<MirServer> &server, QObject *parent)
   : QObject(parent)
-  , m_mirConfig(config)
+  , m_mirServer(server)
 {
-    auto const displayConfig = m_mirConfig->the_display()->configuration();
+    auto const displayConfig = m_mirServer->the_display()->configuration();
 
     displayConfig->for_each_output([this](mg::DisplayConfigurationOutput const& output) {
         if (output.used) {

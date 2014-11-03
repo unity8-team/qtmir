@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mirserverconfiguration.h"
+#include "mirserver.h"
 
 // local
 #include "focussetter.h"
@@ -44,7 +44,7 @@ void ignore_unparsed_arguments(int /*argc*/, char const* const/*argv*/[])
 
 Q_LOGGING_CATEGORY(QTMIR_MIR_MESSAGES, "qtmir.mir")
 
-MirServerConfiguration::MirServerConfiguration(int argc, char const* argv[], QObject* parent)
+MirServer::MirServer(int argc, char const* argv[], QObject* parent)
     : QObject(parent)
 {
     override_the_compositor([]() -> std::shared_ptr<mir::compositor::Compositor>
@@ -122,7 +122,7 @@ MirServerConfiguration::MirServerConfiguration(int argc, char const* argv[], QOb
 // scope the unique pointer will be destroyed so we return 0
 //
 
-SessionAuthorizer *MirServerConfiguration::sessionAuthorizer()
+SessionAuthorizer *MirServer::sessionAuthorizer()
 {
     auto sharedPtr = the_session_authorizer();
     if (sharedPtr.unique()) return 0;
@@ -130,7 +130,7 @@ SessionAuthorizer *MirServerConfiguration::sessionAuthorizer()
     return static_cast<SessionAuthorizer*>(sharedPtr.get());
 }
 
-SessionListener *MirServerConfiguration::sessionListener()
+SessionListener *MirServer::sessionListener()
 {
     auto sharedPtr = the_session_listener();
     if (sharedPtr.unique()) return 0;
@@ -138,7 +138,7 @@ SessionListener *MirServerConfiguration::sessionListener()
     return static_cast<SessionListener*>(sharedPtr.get());
 }
 
-PromptSessionListener *MirServerConfiguration::promptSessionListener()
+PromptSessionListener *MirServer::promptSessionListener()
 {
     auto sharedPtr = the_prompt_session_listener();
     if (sharedPtr.unique()) return 0;
@@ -146,7 +146,7 @@ PromptSessionListener *MirServerConfiguration::promptSessionListener()
     return static_cast<PromptSessionListener*>(sharedPtr.get());
 }
 
-SurfaceConfigurator *MirServerConfiguration::surfaceConfigurator()
+SurfaceConfigurator *MirServer::surfaceConfigurator()
 {
     auto sharedPtr = the_surface_configurator();
     if (sharedPtr.unique()) return 0;
