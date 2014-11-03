@@ -26,7 +26,7 @@ class SessionAuthorizer;
 class SurfaceConfigurator;
 class PromptSessionListener;
 
-class MirServerConfiguration : public QObject, private mir::Server
+class MirServerConfiguration : public QObject, protected mir::Server
 {
     Q_OBJECT
 
@@ -49,6 +49,7 @@ public:
     using mir::Server::run;
     using mir::Server::stop;
     using mir::Server::set_terminator;
+    using mir::Server::the_prompt_session_manager;
 
     /* qt specific */
     // getters
