@@ -26,7 +26,7 @@ class SessionAuthorizer;
 class SurfaceConfigurator;
 class PromptSessionListener;
 
-class MirServerConfiguration : public QObject, protected mir::Server
+class MirServerConfiguration : public QObject, private mir::Server
 {
     Q_OBJECT
 
@@ -40,16 +40,16 @@ public:
     ~MirServerConfiguration() = default;
 
     /* mir specific */
-    using mir::Server::the_session_listener;
-    using mir::Server::the_prompt_session_listener;
-    using mir::Server::the_surface_configurator;
-    using mir::Server::the_session_authorizer;
-    using mir::Server::the_gl_config;
-    using mir::Server::the_display;
     using mir::Server::run;
-    using mir::Server::stop;
     using mir::Server::set_terminator;
+    using mir::Server::stop;
+    using mir::Server::the_display;
+    using mir::Server::the_gl_config;
+    using mir::Server::the_prompt_session_listener;
     using mir::Server::the_prompt_session_manager;
+    using mir::Server::the_session_authorizer;
+    using mir::Server::the_session_listener;
+    using mir::Server::the_surface_configurator;
 
     /* qt specific */
     // getters
@@ -57,6 +57,10 @@ public:
     SessionListener *sessionListener();
     PromptSessionListener *promptSessionListener();
     SurfaceConfigurator *surfaceConfigurator();
+
+protected:
+    /* mir specific */
+    using mir::Server::override_the_prompt_session_manager;
 
 private:
     std::shared_ptr<QtEventFeeder> m_qtEventFeeder;

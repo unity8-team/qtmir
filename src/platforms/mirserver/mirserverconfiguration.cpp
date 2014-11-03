@@ -29,13 +29,9 @@
 #include "qteventfeeder.h"
 #include "logging.h"
 
-// mir
-#include <mir/options/default_configuration.h>
-
 // egl
 #include <EGL/egl.h>
 
-namespace mo  = mir::options;
 namespace msh = mir::shell;
 namespace ms = mir::scene;
 
