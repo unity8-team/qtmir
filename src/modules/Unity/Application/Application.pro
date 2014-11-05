@@ -12,7 +12,7 @@ CONFIG   += link_pkgconfig plugin debug no_keywords # keywords clash with Proces
 QMAKE_CXXFLAGS = -std=c++11 -Werror -Wall
 QMAKE_LFLAGS = -std=c++11 -Wl,-no-undefined
 
-PKGCONFIG += mirserver glib-2.0 process-cpp ubuntu-app-launch-2
+PKGCONFIG += mirserver glib-2.0 gio-unix-2.0 process-cpp ubuntu-app-launch-2
 
 INCLUDEPATH += ../../../platforms/mirserver ../../../common
 LIBS += -L../../../platforms/mirserver -lqpa-mirserver
@@ -36,7 +36,6 @@ SOURCES += application_manager.cpp \
     ubuntukeyboardinfo.cpp \
     mirsurfaceitem.cpp \
     mirbuffersgtexture.cpp \
-    processcontroller.cpp \
     proc_info.cpp \
     session.cpp \
     sessionmanager.cpp \
@@ -60,12 +59,12 @@ HEADERS += application_manager.h \
     mirsurfaceitemmodel.h \
     mirbuffersgtexture.h \
     objectlistmodel.h \
-    processcontroller.h \
     proc_info.h \
     session.h \
     session_interface.h \
     sessionmodel.h \
-    upstart/applicationcontroller.h
+    upstart/applicationcontroller.h \
+    gscopedpointer.h
 
 LTTNG_TP_FILES += tracepoints.tp
 
