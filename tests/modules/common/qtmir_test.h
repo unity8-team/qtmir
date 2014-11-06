@@ -41,11 +41,11 @@ using namespace qtmir;
 
 namespace qtmir {
 
-class FakeMirServerConfiguration: public MirServer
+class FakeMirServer: public MirServer
 {
     typedef testing::NiceMock<mir::scene::MockPromptSessionManager> StubPromptSessionManager;
 public:
-    FakeMirServerConfiguration()
+    FakeMirServer()
     : MirServer(0, nullptr)
     , mock_prompt_session_manager(std::make_shared<StubPromptSessionManager>())
     {
@@ -73,7 +73,7 @@ class QtMirTest : public ::testing::Test
 public:
     QtMirTest()
         : mirConfig{
-            QSharedPointer<FakeMirServerConfiguration> (new FakeMirServerConfiguration)
+            QSharedPointer<FakeMirServer> (new FakeMirServer)
         }
         , taskController{
               QSharedPointer<TaskController> (
@@ -137,7 +137,7 @@ public:
     testing::NiceMock<testing::MockApplicationController> appController;
     testing::NiceMock<testing::MockProcInfo> procInfo;
     testing::NiceMock<testing::MockDesktopFileReaderFactory> desktopFileReaderFactory;
-    QSharedPointer<FakeMirServerConfiguration> mirConfig;
+    QSharedPointer<FakeMirServer> mirConfig;
     QSharedPointer<TaskController> taskController;
     ApplicationManager applicationManager;
     SessionManager sessionManager;
