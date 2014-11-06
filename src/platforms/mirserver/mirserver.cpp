@@ -105,7 +105,9 @@ MirServer::MirServer(int argc, char const* argv[], QObject* parent)
 
     set_command_line(argc, argv);
 
-    qCDebug(QTMIR_MIR_MESSAGES) << "MirServerConfiguration created";
+    apply_settings();
+
+    qCDebug(QTMIR_MIR_MESSAGES) << "MirServer created";
 }
 
 /************************************ Shell side ************************************/
