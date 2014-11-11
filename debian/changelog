@@ -1,3 +1,13 @@
+qtubuntu (0.60+15.04.20141111-0ubuntu1) vivid; urgency=low
+
+  [ Ubuntu daily release ]
+  * New rebuild forced
+
+  [ Timo Jyrinki ]
+  * Add libmtdev-dev build dependency (LP: #1379152) (LP: #1379152)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 11 Nov 2014 06:11:03 +0000
+
 qtubuntu (0.60+14.10.20141001.3-0ubuntu1) utopic; urgency=low
 
   [ Zsombor Egri ]
