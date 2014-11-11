@@ -20,7 +20,8 @@
 #include <qpa/qplatformbackingstore.h>
 
 class QOpenGLContext;
-class QOpenGLPaintDevice;
+class QOpenGLTexture;
+class QOpenGLTextureBlitter;
 
 class UbuntuBackingStore : public QPlatformBackingStore
 {
@@ -30,14 +31,19 @@ public:
 
     // QPlatformBackingStore methods.
     void beginPaint(const QRegion&) override;
-    void endPaint() override;
     void flush(QWindow* window, const QRegion& region, const QPoint& offset) override;
     void resize(const QSize& size, const QRegion& staticContents) override;
     QPaintDevice* paintDevice() override;
 
+protected:
+    void updateTexture();
+
 private:
-    QOpenGLContext* mContext;
-    QOpenGLPaintDevice* mDevice;
+    QScopedPointer<QOpenGLContext> mContext;
+    QScopedPointer<QOpenGLTexture> mTexture;
+    QScopedPointer<QOpenGLTextureBlitter> mBlitter;
+    QImage mImage;
+    QRegion mDirty;
 };
 
 #endif // UBUNTU_BACKING_STORE_H
