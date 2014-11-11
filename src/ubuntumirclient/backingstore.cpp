@@ -48,9 +48,9 @@ void UbuntuBackingStore::flush(QWindow* window, const QRegion& region, const QPo
 
     updateTexture();
 
-    if (!mBlitter->isCreated()) {
+    if (!mBlitter->isCreated())
         mBlitter->create();
-    }
+
     mBlitter->bind();
     mBlitter->setSwizzleRB(true);
     mBlitter->blit(mTexture->textureId(), QMatrix4x4(), QOpenGLTextureBlitter::OriginTopLeft);
