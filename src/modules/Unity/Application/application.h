@@ -89,13 +89,16 @@ public:
     QColor splashColorHeader() const override;
     QColor splashColorFooter() const override;
 
+    Q_INVOKABLE bool suspend() override;
+    Q_INVOKABLE bool resume() override;
+
     void setStage(Stage stage);
     void setState(State state);
 
     Session* session() const;
 
-    bool canBeResumed() const;
-    void setCanBeResumed(const bool);
+    bool canBeRespawned() const;
+    void setCanBeRespawned(const bool);
 
     bool isValid() const;
     QString desktopFile() const;
@@ -126,6 +129,7 @@ private:
     void setSession(Session *session);
     QColor colorFromString(const QString &colorString, const char *colorName) const;
 
+    ApplicationManager *m_appMan;
     QSharedPointer<TaskController> m_taskController;
     DesktopFileReader* m_desktopData;
     QString m_longAppId;
@@ -134,7 +138,7 @@ private:
     Stages m_supportedStages;
     State m_state;
     bool m_focused;
-    bool m_canBeResumed;
+    bool m_canBeRespawned;
     QStringList m_arguments;
     SupportedOrientations m_supportedOrientations;
     Session *m_session;

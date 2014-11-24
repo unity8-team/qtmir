@@ -42,13 +42,14 @@ Application::Application(const QSharedPointer<TaskController>& taskController,
                          const QStringList &arguments,
                          ApplicationManager *parent)
     : ApplicationInfoInterface(desktopFileReader->appId(), parent)
+    , m_appMan(parent)
     , m_taskController(taskController)
     , m_desktopData(desktopFileReader)
     , m_pid(0)
     , m_stage((m_desktopData->stageHint() == "SideStage") ? Application::SideStage : Application::MainStage)
     , m_state(state)
     , m_focused(false)
-    , m_canBeResumed(true)
+    , m_canBeRespawned(true)
     , m_arguments(arguments)
     , m_session(nullptr)
 {
@@ -217,14 +218,24 @@ bool Application::fullscreen() const
     return m_session ? m_session->fullscreen() : false;
 }
 
-bool Application::canBeResumed() const
+bool Application::suspend()
 {
-    return m_canBeResumed;
+    return m_appMan->suspendApplication(this);
 }
 
-void Application::setCanBeResumed(const bool resume)
+bool Application::resume()
 {
-    m_canBeResumed = resume;
+    return m_appMan->resumeApplication(this);
+}
+
+bool Application::canBeRespawned() const
+{
+    return m_canBeRespawned;
+}
+
+void Application::setCanBeRespawned(const bool respawn)
+{
+    m_canBeRespawned = respawn;
 }
 
 pid_t Application::pid() const
@@ -320,6 +331,9 @@ void Application::setFocused(bool focused)
         m_focused = focused;
         Q_EMIT focusedChanged(focused);
     }
+
+    if (focused)
+        m_appMan->setFocusedApplication(this);
 }
 
 void Application::onSessionSuspended()

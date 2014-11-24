@@ -91,13 +91,10 @@ public:
     QString focusedApplicationId() const override;
     bool suspended() const override;
     void setSuspended(bool suspended) override;
-    bool forceDashActive() const override;
-    void setForceDashActive(bool forceDashActive) override;
+
     Q_INVOKABLE qtmir::Application* get(int index) const override;
     Q_INVOKABLE qtmir::Application* findApplication(const QString &appId) const override;
-    Q_INVOKABLE bool requestFocusApplication(const QString &appId) override;
-    Q_INVOKABLE bool focusApplication(const QString &appId) override;
-    Q_INVOKABLE void unfocusCurrentApplication() override;
+
     Q_INVOKABLE qtmir::Application* startApplication(const QString &appId, const QStringList &arguments) override;
     Q_INVOKABLE bool stopApplication(const QString &appId) override;
 
@@ -125,26 +122,24 @@ public Q_SLOTS:
     void onProcessStarting(const QString& appId);
     void onProcessStopped(const QString& appId);
     void onProcessFailed(const QString& appId, const bool duringStartup);
-    void onFocusRequested(const QString& appId);
-    void onResumeRequested(const QString& appId);
 
 Q_SIGNALS:
     void focusRequested(const QString &appId);
+    void resumeRequested(const QString &appId);
     void emptyChanged();
 
 private Q_SLOTS:
     void onAppDataChanged(const int role);
 
 private:
-    void setFocused(Application *application);
+    void setFocusedApplication(Application *application);
     void add(Application *application);
     void remove(Application* application);
     Application* findApplicationWithSession(const std::shared_ptr<mir::scene::Session> &session);
     Application* findApplicationWithSession(const mir::scene::Session *session);
-    Application* applicationForStage(Application::Stage stage);
     QModelIndex findIndex(Application* application);
     bool suspendApplication(Application *application);
-    void resumeApplication(Application *application);
+    bool resumeApplication(Application *application);
     QString toString() const;
 
     Application* findApplicationWithPromptSession(const mir::scene::PromptSession* promptSession);
@@ -153,8 +148,6 @@ private:
 
     QList<Application*> m_applications;
     Application* m_focusedApplication;
-    Application* m_mainStageApplication;
-    Application* m_sideStageApplication;
     QStringList m_lifecycleExceptions;
     DBusWindowStack* m_dbusWindowStack;
     QSharedPointer<TaskController> m_taskController;
@@ -163,7 +156,6 @@ private:
     static ApplicationManager* the_application_manager;
     QList<pid_t> m_hiddenPIDs;
     bool m_suspended;
-    bool m_forceDashActive;
 
     friend class Application;
     friend class DBusWindowStack;
