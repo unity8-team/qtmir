@@ -144,6 +144,7 @@ private:
     Session *m_session;
 
     friend class ApplicationManager;
+    friend class MirSurfaceItem;
     friend class SessionManager;
     friend class Session;
 };

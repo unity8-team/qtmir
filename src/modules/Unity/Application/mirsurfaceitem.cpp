@@ -245,7 +245,7 @@ void MirSurfaceObserver::frame_posted(int frames_available) {
 }
 
 MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
-                               SessionInterface* session,
+                               SessionInterface *session,
                                QQuickItem *parent)
     : QQuickItem(parent)
     , m_surface(surface)
@@ -515,7 +515,11 @@ void MirSurfaceItem::focusInEvent(QFocusEvent *event)
 {
     qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::focusInEvent" << appId();
     m_surface->configure(mir_surface_attrib_focus, mir_surface_focused);
-    // TODO notify Application
+
+    Application *app = static_cast<Application*>(m_session->application());
+    if (app)
+        app->setFocused(true);
+
     QQuickItem::focusInEvent(event);
 }
 
@@ -523,7 +527,11 @@ void MirSurfaceItem::focusOutEvent(QFocusEvent *event)
 {
     qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::focusOutEvent" << appId();
     m_surface->configure(mir_surface_attrib_focus, mir_surface_unfocused);
-    // TODO notify Application
+
+    Application *app = static_cast<Application*>(m_session->application());
+    if (app)
+        app->setFocused(false);
+
     QQuickItem::focusOutEvent(event);
 }
 

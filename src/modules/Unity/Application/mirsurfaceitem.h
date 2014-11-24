@@ -78,7 +78,7 @@ class MirSurfaceItem : public QQuickItem
 
 public:
     explicit MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
-                            SessionInterface* session,
+                            SessionInterface *session,
                             QQuickItem *parent = 0);
     ~MirSurfaceItem();
 
