@@ -1497,6 +1497,7 @@ TEST_F(ApplicationManagerTests,mirNotifiesOfStoppingForegroundAppLaunchedWithDes
     EXPECT_EQ(applicationManager.count(), 0);
     EXPECT_EQ(removedSpy.count(), 1);
 
+    app = applicationManager.findApplication(appId);
     EXPECT_EQ(nullptr, app);
 }
 
