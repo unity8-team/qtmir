@@ -190,7 +190,7 @@ ApplicationManager::ApplicationManager(
     : ApplicationManagerInterface(parent)
     , m_mirConfig(mirConfig)
     , m_focusedApplication(nullptr)
-    , m_lifecycleExceptions(QStringList() << "com.ubuntu.music")
+    , m_lifecycleExceptions(QStringList() << "com.ubuntu.music" << "unity8-dash")
     , m_dbusWindowStack(new DBusWindowStack(this))
     , m_taskController(taskController)
     , m_desktopFileReaderFactory(desktopFileReaderFactory)
