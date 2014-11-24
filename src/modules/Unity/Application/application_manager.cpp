@@ -755,10 +755,13 @@ void ApplicationManager::onSessionCreatedSurface(ms::Session const* session,
     if (application) {
         m_dbusWindowStack->WindowCreated(0, application->appId());
 
-        if (application->state() == Application::Starting) {
-            application->setState(Application::Running);
-        } else if (application->state() == Application::Suspended || m_suspended) {
+        if (m_suspended) {
             suspendApplication(application);
+            m_suspendedApplications.append(application->appId());
+        } else if (application->state() == Application::Suspended) {
+            suspendApplication(application);
+        } else {
+            application->setState(Application::Running);
         }
     }
 }
