@@ -152,6 +152,9 @@ protected:
 
     void touchEvent(QTouchEvent *event) override;
 
+    void focusInEvent(QFocusEvent *event) override;
+    void focusOutEvent(QFocusEvent *event) override;
+
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *);
 
 private Q_SLOTS:
@@ -161,8 +164,6 @@ private Q_SLOTS:
 
     void scheduleMirSurfaceSizeUpdate();
     void updateMirSurfaceSize();
-
-    void updateMirSurfaceFocus(bool focused);
 
 private:
     bool updateTexture();

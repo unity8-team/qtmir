@@ -311,7 +311,6 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     // FIXME - setting surface unfocused immediately breaks camera & video apps, but is
     // technically the correct thing to do (surface should be unfocused until shell focuses it)
     //m_surface->configure(mir_surface_attrib_focus, mir_surface_unfocused);
-    connect(this, &QQuickItem::activeFocusChanged, this, &MirSurfaceItem::updateMirSurfaceFocus);
 
     if (m_session) {
         connect(m_session.data(), &Session::stateChanged, this, &MirSurfaceItem::onSessionStateChanged);
@@ -510,6 +509,22 @@ QSGNode *MirSurfaceItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
     node->update();
 
     return node;
+}
+
+void MirSurfaceItem::focusInEvent(QFocusEvent *event)
+{
+    qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::focusInEvent" << appId();
+    m_surface->configure(mir_surface_attrib_focus, mir_surface_focused);
+    // TODO notify Application
+    QQuickItem::focusInEvent(event);
+}
+
+void MirSurfaceItem::focusOutEvent(QFocusEvent *event)
+{
+    qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::focusOutEvent" << appId();
+    m_surface->configure(mir_surface_attrib_focus, mir_surface_unfocused);
+    // TODO notify Application
+    QQuickItem::focusOutEvent(event);
 }
 
 void MirSurfaceItem::mousePressEvent(QMouseEvent *event)
@@ -737,16 +752,6 @@ void MirSurfaceItem::updateMirSurfaceSize()
         mir::geometry::Size newMirSize(qmlWidth, qmlHeight);
         m_surface->resize(newMirSize);
         setImplicitSize(qmlWidth, qmlHeight);
-    }
-}
-
-void MirSurfaceItem::updateMirSurfaceFocus(bool focused)
-{
-    qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::updateMirSurfaceFocus" << focused;
-    if (focused) {
-        m_surface->configure(mir_surface_attrib_focus, mir_surface_focused);
-    } else {
-        m_surface->configure(mir_surface_attrib_focus, mir_surface_unfocused);
     }
 }
 
