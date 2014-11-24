@@ -138,19 +138,6 @@ public:
         return nullptr;
     }
 
-    bool setFocused(const QString &appId)
-    {
-        Application *app = applicationManager.findApplication(appId);
-        if (!app || app->session() == nullptr)
-            return false;
-
-        MirSurfaceItem *surface = app->session()->surface();
-        if (!surface)
-            return false;
-
-        surface->setFocus(true);
-    }
-
     testing::NiceMock<testing::MockApplicationController> appController;
     testing::NiceMock<testing::MockProcInfo> procInfo;
     testing::NiceMock<testing::MockDesktopFileReaderFactory> desktopFileReaderFactory;

@@ -332,8 +332,7 @@ void Application::setFocused(bool focused)
         Q_EMIT focusedChanged(focused);
     }
 
-    if (focused)
-        m_appMan->setFocusedApplication(this);
+    m_appMan->setFocusedApplication( focused ? this : nullptr );
 }
 
 void Application::onSessionSuspended()

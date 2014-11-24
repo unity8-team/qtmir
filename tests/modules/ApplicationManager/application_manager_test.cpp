@@ -123,7 +123,8 @@ TEST_F(ApplicationManagerTests, DISABLED_FocusingRunningApplicationResultsInOomS
 
     for (auto appId : appIds)
     {
-        setFocused(appId);
+        Application *app = applicationManager.findApplication(appId);
+        applicationManager.setFocusedApplication(app);
     }
 }
 
@@ -521,14 +522,14 @@ TEST_F(ApplicationManagerTests,focus_change_suspends_starting_app_when_it_gets_r
     onSessionStarting(first_session);
 
     Application * app1 = applicationManager.findApplication("app1");
-    setFocused("app1");
+    applicationManager.setFocusedApplication(app1);
 
     // First app starting...
     EXPECT_EQ(Application::Starting, app1->state());
 
     onSessionStarting(second_session);
     Application * app2 = applicationManager.findApplication("app2");
-    setFocused("app2");
+    applicationManager.setFocusedApplication(app2);
 
     // Second app starting...
     EXPECT_EQ(Application::Starting, app2->state());
@@ -1010,7 +1011,10 @@ TEST_F(ApplicationManagerTests,shellStopsForegroundAppCorrectly)
 
     std::shared_ptr<mir::scene::Surface> surface(nullptr);
     applicationManager.onSessionCreatedSurface(session.get(), surface);
-    setFocused(appId);
+
+    Application *app = applicationManager.findApplication(appId);
+    applicationManager.setFocusedApplication(app);
+
     EXPECT_EQ(applicationManager.focusedApplicationId(), appId);
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
@@ -1137,7 +1141,8 @@ TEST_F(ApplicationManagerTests,upstartNotifiesOfStoppingForegroundApp)
 
     std::shared_ptr<mir::scene::Surface> surface(nullptr);
     applicationManager.onSessionCreatedSurface(session.get(), surface);
-    setFocused(appId);
+    Application *app = applicationManager.findApplication(appId);
+    applicationManager.setFocusedApplication(app);
     EXPECT_EQ(applicationManager.focusedApplicationId(), appId);
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
@@ -1182,7 +1187,8 @@ TEST_F(ApplicationManagerTests,upstartNotifiesOfUnexpectedStopOfForegroundApp)
 
     std::shared_ptr<mir::scene::Surface> surface(nullptr);
     applicationManager.onSessionCreatedSurface(session.get(), surface);
-    setFocused(appId);
+    Application *app = applicationManager.findApplication(appId);
+    applicationManager.setFocusedApplication(app);
     EXPECT_EQ(applicationManager.focusedApplicationId(), appId);
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
@@ -1426,7 +1432,8 @@ TEST_F(ApplicationManagerTests,mirNotifiesOfStoppingForegroundApp)
     // Associate a surface so AppMan considers app Running, check focused
     std::shared_ptr<mir::scene::Surface> surface(nullptr);
     applicationManager.onSessionCreatedSurface(session.get(), surface);
-    setFocused(appId);
+    Application *app = applicationManager.findApplication(appId);
+    applicationManager.setFocusedApplication(app);
     EXPECT_EQ(applicationManager.focusedApplicationId(), appId);
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
@@ -1476,7 +1483,8 @@ TEST_F(ApplicationManagerTests,mirNotifiesOfStoppingForegroundAppLaunchedWithDes
     // Associate a surface so AppMan considers app Running, check focused
     std::shared_ptr<mir::scene::Surface> surface(nullptr);
     applicationManager.onSessionCreatedSurface(session.get(), surface);
-    setFocused(appId);
+    Application *app = applicationManager.findApplication(appId);
+    applicationManager.setFocusedApplication(app);
     EXPECT_EQ(applicationManager.focusedApplicationId(), appId);
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
@@ -1489,7 +1497,6 @@ TEST_F(ApplicationManagerTests,mirNotifiesOfStoppingForegroundAppLaunchedWithDes
     EXPECT_EQ(applicationManager.count(), 0);
     EXPECT_EQ(removedSpy.count(), 1);
 
-    Application *app = applicationManager.findApplication(appId);
     EXPECT_EQ(nullptr, app);
 }
 

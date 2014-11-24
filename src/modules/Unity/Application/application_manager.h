@@ -111,6 +111,8 @@ public:
     const QList<Application*> &list() const { return m_applications; }
     qtmir::Application* findApplicationWithPid(const qint64 pid);
 
+    void setFocusedApplication(Application *application);
+
 public Q_SLOTS:
     void authorizeSession(const quint64 pid, bool &authorized);
 
@@ -132,7 +134,6 @@ private Q_SLOTS:
     void onAppDataChanged(const int role);
 
 private:
-    void setFocusedApplication(Application *application);
     void add(Application *application);
     void remove(Application* application);
     Application* findApplicationWithSession(const std::shared_ptr<mir::scene::Session> &session);
