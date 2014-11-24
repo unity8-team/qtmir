@@ -703,17 +703,17 @@ void ApplicationManager::onSessionStopping(std::shared_ptr<ms::Session> const& s
     // in case application closed not by hand of shell, check again here:
     Application* application = findApplicationWithSession(session);
     if (application) {
-        /* Can remove the application from the running apps list immediately in these curcumstances:
+        /* Can remove the application from the running apps list immediately in these circumstances:
          *  1. application is not managed by upstart (this message from Mir is only notice the app has stopped, must do
          *     it here)
          *  2. application is managed by upstart, but has stopped before it managed to create a surface, we can assume
          *     it crashed on startup, and thus cannot be resumed - so remove it.
-         *  3. application is managed by upstart and is in foreground (i.e. has Running state), if Mir reports the
+         *  3. application is managed by upstart and is in foreground (i.e. has focus), if Mir reports the
          *     application disconnects, it either crashed or stopped itself. Either case, remove it.
          */
         if (!application->canBeRespawned()
                 || application->state() == Application::Starting
-                || application->state() == Application::Running) {
+                || application->focused()) {
             m_dbusWindowStack->WindowDestroyed(0, application->appId());
             remove(application);
            
