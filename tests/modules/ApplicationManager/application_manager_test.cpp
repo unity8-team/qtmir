@@ -494,54 +494,39 @@ TEST_F(ApplicationManagerTests,suspended_suspends_starting_app_when_it_gets_read
     EXPECT_EQ(Application::Running, the_app->state());
 }
 
-TEST_F(ApplicationManagerTests,focus_change_suspends_starting_app_when_it_gets_ready)
+TEST_F(ApplicationManagerTests,suspendedAppCreatingSurfaceRemainsSuspended)
 {
     using namespace ::testing;
-    quint64 first_procId = 5921;
-    quint64 second_procId = 5922;
+    quint64 procId = 5921;
     std::shared_ptr<mir::scene::Surface> aSurface(nullptr);
-    QByteArray first_cmdLine( "/usr/bin/app1 --desktop_file_hint=app1");
-    QByteArray second_cmdLine( "/usr/bin/app2--desktop_file_hint=app2");
+    QByteArray cmdLine( "/usr/bin/app1 --desktop_file_hint=app1");
 
-    EXPECT_CALL(procInfo,command_line(first_procId))
+    EXPECT_CALL(procInfo,command_line(procId))
         .Times(1)
-        .WillOnce(Return(first_cmdLine));
+        .WillOnce(Return(cmdLine));
 
     ON_CALL(appController,appIdHasProcessId(_,_)).WillByDefault(Return(false));
 
-    EXPECT_CALL(procInfo,command_line(second_procId))
-        .Times(1)
-        .WillOnce(Return(second_cmdLine));
-
     bool authed = true;
 
-    std::shared_ptr<mir::scene::Session> first_session = std::make_shared<MockSession>("Oo", first_procId);
-    std::shared_ptr<mir::scene::Session> second_session = std::make_shared<MockSession>("oO", second_procId);
-    applicationManager.authorizeSession(first_procId, authed);
-    applicationManager.authorizeSession(second_procId, authed);
-    onSessionStarting(first_session);
+    std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("Oo", procId);
+    applicationManager.authorizeSession(procId, authed);
+    onSessionStarting(session);
 
-    Application * app1 = applicationManager.findApplication("app1");
-    applicationManager.setFocusedApplication(app1);
+    Application *app = applicationManager.findApplication("app1");
+    applicationManager.setFocusedApplication(app);
 
-    // First app starting...
-    EXPECT_EQ(Application::Starting, app1->state());
+    EXPECT_EQ(Application::Starting, app->state());
 
-    onSessionStarting(second_session);
-    Application * app2 = applicationManager.findApplication("app2");
-    applicationManager.setFocusedApplication(app2);
-
-    // Second app starting...
-    EXPECT_EQ(Application::Starting, app2->state());
+    onSessionStarting(session);
+    app->suspend();
 
     // Make sure first one is still in starting state
-    EXPECT_EQ(Application::Starting, app1->state());
+    EXPECT_EQ(Application::Suspended, app->state());
 
-    // Signal app1 is ready now
-    applicationManager.onSessionCreatedSurface(first_session.get(), aSurface);
+    applicationManager.onSessionCreatedSurface(session.get(), aSurface);
 
-    // Make sure AppMan suspended it now that its ready
-    EXPECT_EQ(Application::Suspended, app1->state());
+    EXPECT_EQ(Application::Suspended, app->state());
 }
 
 /*
