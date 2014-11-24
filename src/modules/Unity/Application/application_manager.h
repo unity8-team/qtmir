@@ -150,6 +150,7 @@ private:
     QList<Application*> m_applications;
     Application* m_focusedApplication;
     QStringList m_lifecycleExceptions;
+    QStringList m_suspendedApplications;
     DBusWindowStack* m_dbusWindowStack;
     QSharedPointer<TaskController> m_taskController;
     QSharedPointer<DesktopFileReader::Factory> m_desktopFileReaderFactory;

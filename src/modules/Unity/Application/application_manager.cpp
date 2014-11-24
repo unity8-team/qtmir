@@ -287,9 +287,22 @@ void ApplicationManager::setSuspended(bool suspended)
     m_suspended = suspended;
     Q_EMIT suspendedChanged();
 
-    // TODO - save state of all apps, suspend those alive.
-    for (Application *app : m_applications) {
-        app->setState( suspended ? Application::Suspended : Application::Running );
+    // Save / restore lifecycle state
+    if (suspended) {
+        for (Application *app : m_applications) {
+            if (app->state() == Application::Running) {
+                m_suspendedApplications.append(app->appId()); // appIds safer than pointers
+                app->setState(Application::Suspended);
+            }
+        }
+    } else {
+        for (Application *app : m_applications) {
+            if ( (app->state() == Application::Suspended || app->state() == Application::Stopped)
+                 && m_suspendedApplications.contains(app->appId())) {
+                app->setState(Application::Running);
+            }
+        }
+        m_suspendedApplications.clear();
     }
 }
 
@@ -314,6 +327,12 @@ bool ApplicationManager::resumeApplication(Application *application)
     if (application == nullptr)
         return false;
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::resumeApplication - appId=" << application->appId();
+
+    if (m_suspended) { // if shell tries to resume an app while all suspended, do so but discard saved state
+        m_suspended = false;
+        Q_EMIT suspendedChanged();
+        m_suspendedApplications.clear();
+    }
 
     if (application->state() == Application::Stopped && !application->canBeRespawned())
         return false;
