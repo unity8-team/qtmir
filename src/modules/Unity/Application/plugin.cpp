@@ -46,11 +46,12 @@ QObject* sessionManagerSingleton(QQmlEngine* /*engine*/, QJSEngine* jsEngine)
     return qtmir::SessionManager::singleton(jsEngine);
 }
 
-QObject* ubuntuKeyboardInfoSingleton(QQmlEngine* /*engine*/, QJSEngine* /*scriptEngine*/) {
-    if (!UbuntuKeyboardInfo::instance()) {
-        new UbuntuKeyboardInfo;
+QObject* ubuntuKeyboardInfoSingleton(QQmlEngine* /*engine*/, QJSEngine* /*scriptEngine*/)
+{
+    if (!qtmir::UbuntuKeyboardInfo::instance()) {
+        new qtmir::UbuntuKeyboardInfo;
     }
-    return UbuntuKeyboardInfo::instance();
+    return qtmir::UbuntuKeyboardInfo::instance();
 }
 } // anonymous namespace
 
