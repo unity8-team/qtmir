@@ -102,6 +102,7 @@ void UbuntuBackingStore::updateTexture()
                             mImage.copy(rect).constBits());
         }
     }
+    /* End of code taken from QEGLPlatformBackingStore */
 
     mDirty = QRegion();
 }
