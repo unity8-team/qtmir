@@ -285,33 +285,18 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     // for a surface, and thus Mir will not release the surface buffers etc.)
     QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
 
-    connect(&m_frameDropperTimer, &QTimer::timeout,
-            this, &MirSurfaceItem::dropPendingBuffers);
-    // Rationale behind the frame dropper and its interval value:
-    //
-    // We want to give ample room for Qt scene graph to have a chance to fetch and render
-    // the next pending buffer before we take the drastic action of dropping it (so don't set
-    // it anywhere close to our target render interval).
-    //
-    // We also want to guarantee a minimal frames-per-second (fps) frequency for client applications
-    // as they get stuck on swap_buffers() if there's no free buffer to swap to yet (ie, they
-    // are all pending consumption by the compositor, us). But on the other hand, we don't want
-    // that minimal fps to be too high as that would mean this timer would be triggered way too often
-    // for nothing causing unnecessary overhead as actually dropping frames from an app should
-    // in practice rarely happen.
-    m_frameDropperTimer.setInterval(200);
-    m_frameDropperTimer.setSingleShot(false);
-
     m_updateMirSurfaceSizeTimer.setSingleShot(true);
     m_updateMirSurfaceSizeTimer.setInterval(1);
     connect(&m_updateMirSurfaceSizeTimer, &QTimer::timeout, this, &MirSurfaceItem::updateMirSurfaceSize);
-    connect(this, &QQuickItem::widthChanged, this, &MirSurfaceItem::scheduleMirSurfaceSizeUpdate);
-    connect(this, &QQuickItem::heightChanged, this, &MirSurfaceItem::scheduleMirSurfaceSizeUpdate);
+    connect(this, &MirSurfaceItem::widthChanged, this, &MirSurfaceItem::scheduleMirSurfaceSizeUpdate);
+    connect(this, &MirSurfaceItem::heightChanged, this, &MirSurfaceItem::scheduleMirSurfaceSizeUpdate);
+
+    connect(this, &MirSurfaceItem::visibleChanged, this, &MirSurfaceItem::onVisibleChanged);
 
     // FIXME - setting surface unfocused immediately breaks camera & video apps, but is
     // technically the correct thing to do (surface should be unfocused until shell focuses it)
     //m_surface->configure(mir_surface_attrib_focus, mir_surface_unfocused);
-    connect(this, &QQuickItem::activeFocusChanged, this, &MirSurfaceItem::updateMirSurfaceFocus);
+    connect(this, &MirSurfaceItem::activeFocusChanged, this, &MirSurfaceItem::updateMirSurfaceFocus);
 
     if (m_session) {
         connect(m_session.data(), &Session::stateChanged, this, &MirSurfaceItem::onSessionStateChanged);
@@ -320,6 +305,7 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
 
 MirSurfaceItem::~MirSurfaceItem()
 {
+//    disconnect();
     if (m_session) {
         m_session->setSurface(nullptr);
     }
@@ -438,39 +424,31 @@ void MirSurfaceItem::surfaceDamaged()
         Q_EMIT firstFrameDrawn(this);
     }
 
-    scheduleTextureUpdate();
+    if (isVisible())
+        scheduleTextureUpdate();
 }
 
-bool MirSurfaceItem::updateTexture()    // called by rendering thread (scene graph)
+void MirSurfaceItem::updateTexture()    // called by rendering thread (scene graph)
 {
     QMutexLocker locker(&m_mutex);
     ensureProvider();
-    bool textureUpdated = false;
 
-    std::unique_ptr<mg::Renderable> renderable =
-        m_surface->compositor_snapshot((void*)123/*user_id*/);
+    std::unique_ptr<mg::Renderable> renderable = m_surface->compositor_snapshot((void*)123/*user_id*/);
 
-    if (renderable->buffers_ready_for_compositor() > 0) {
-        if (!m_textureProvider->t) {
-            m_textureProvider->t = new MirBufferSGTexture(renderable->buffer());
-        } else {
-            // Avoid holding two buffers for the compositor at the same time. Thus free the current
-            // before acquiring the next
-            m_textureProvider->t->freeBuffer();
-            m_textureProvider->t->setBuffer(renderable->buffer());
-        }
-        textureUpdated = true;
-    }
+    // It tempting to try compare renderable buffers to see if texture needs updating at all
+    // However doing this would mean us holding 2 client buffers at one time, which greatly
+    // impacts client rendering.
 
-    if (renderable->buffers_ready_for_compositor() > 0) {
-        QTimer::singleShot(0, this, SLOT(update()));
-        // restart the frame dropper so that we have enough time to render the next frame.
-        m_frameDropperTimer.start();
+    if (!m_textureProvider->t) {
+        m_textureProvider->t = new MirBufferSGTexture(renderable->buffer());
+    } else {
+        // Avoid holding two buffers for the compositor at the same time. Thus free the current
+        // before acquiring the next
+        m_textureProvider->t->freeBuffer();
+        m_textureProvider->t->setBuffer(renderable->buffer());
     }
 
     m_textureProvider->smooth = smooth();
-
-    return textureUpdated;
 }
 
 QSGNode *MirSurfaceItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)    // called by render thread
@@ -480,7 +458,7 @@ QSGNode *MirSurfaceItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
         return 0;
     }
 
-    bool textureUpdated = updateTexture();
+    updateTexture();
     if (!m_textureProvider->t) {
         delete oldNode;
         return 0;
@@ -496,9 +474,7 @@ QSGNode *MirSurfaceItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
         node->setVerticalWrapMode(QSGTexture::ClampToEdge);
         node->setSubSourceRect(QRectF(0, 0, 1, 1));
     } else {
-        if (textureUpdated) {
-            node->markDirty(QSGNode::DirtyMaterial);
-        }
+        node->markDirty(QSGNode::DirtyMaterial);
     }
 
     node->setTargetRect(QRectF(0, 0, width(), height()));
@@ -750,50 +726,12 @@ void MirSurfaceItem::updateMirSurfaceFocus(bool focused)
     }
 }
 
-void MirSurfaceItem::dropPendingBuffers()
-{
-    QMutexLocker locker(&m_mutex);
-
-    std::unique_ptr<mg::Renderable> renderable =
-        m_surface->compositor_snapshot((void*)123/*user_id*/);
-
-    while (renderable->buffers_ready_for_compositor() > 0) {
-        // The line below looks like an innocent, effect-less, getter. But as this
-        // method returns a unique_pointer, not holding its reference causes the
-        // buffer to be destroyed/released straight away.
-        m_surface->compositor_snapshot((void*)123/*user_id*/)->buffer();
-        qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::dropPendingBuffers()"
-            << "surface =" << this
-            << "buffer dropped."
-            << renderable->buffers_ready_for_compositor()
-            << "left.";
-    }
-}
-
-void MirSurfaceItem::stopFrameDropper()
-{
-    qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::stopFrameDropper surface = " << this;
-    QMutexLocker locker(&m_mutex);
-    m_frameDropperTimer.stop();
-}
-
-void MirSurfaceItem::startFrameDropper()
-{
-    qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::startFrameDropper surface = " << this;
-    QMutexLocker locker(&m_mutex);
-    if (!m_frameDropperTimer.isActive()) {
-        m_frameDropperTimer.start();
-    }
-}
-
 void MirSurfaceItem::scheduleTextureUpdate()
 {
     QMutexLocker locker(&m_mutex);
 
     // Notify QML engine that this needs redrawing, schedules call to updatePaintItem
     update();
-    // restart the frame dropper so that we have enough time to render the next frame.
-    m_frameDropperTimer.start();
 }
 
 void MirSurfaceItem::setSession(SessionInterface *session)
@@ -831,6 +769,18 @@ bool MirSurfaceItem::clientIsRunning() const
             (m_session->state() == Session::State::Running
              || m_session->state() == Session::State::Starting))
         || !m_session;
+}
+
+void MirSurfaceItem::onVisibleChanged()
+{
+    if (!m_surface)
+        return;
+
+    if (isVisible()) {
+        m_surface->show();
+    } else {
+        m_surface->hide();
+    }
 }
 
 void MirSurfaceItem::TouchEvent::updateTouchPointStatesAndType()

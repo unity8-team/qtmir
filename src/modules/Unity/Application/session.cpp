@@ -60,11 +60,6 @@ Session::Session(const std::shared_ptr<ms::Session>& session,
 
     m_suspendTimer->setSingleShot(true);
     connect(m_suspendTimer, &QTimer::timeout, this, [this]() {
-        if (m_surface) {
-            m_surface->stopFrameDropper();
-        } else {
-            qDebug() << "Application::suspend - no surface to call stopFrameDropper() on!";
-        }
         Q_EMIT suspended();
     });
 }
@@ -233,8 +228,6 @@ void Session::setState(State state)
                 m_suspendTimer->stop();
 
             if (m_state == Session::State::Suspended) {
-                if (m_surface)
-                    m_surface->startFrameDropper();
                 Q_EMIT resumed();
                 session()->set_lifecycle_state(mir_lifecycle_state_resumed);
             }
@@ -243,8 +236,6 @@ void Session::setState(State state)
             stopPromptSessions();
             if (m_suspendTimer->isActive())
                 m_suspendTimer->stop();
-            if (m_surface)
-                m_surface->stopFrameDropper();
             break;
         default:
             break;
