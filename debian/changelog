@@ -1,3 +1,10 @@
+qtmir (0.4.5) UNRELEASED; urgency=medium
+
+  * Implement a callback mechanism to allow shell override the initial 
+    surface geometry requested by clients
+
+ -- Gerry Boland <gerry.boland@canonical.com>  Mon, 08 Dec 2014 11:47:07 +0100
+
 qtmir (0.4.4+15.04.20141203-0ubuntu1) vivid; urgency=low
 
   [ Gerry Boland ]
@@ -79,13 +86,6 @@ qtmir (0.4.4+14.10.20141013-0ubuntu1) utopic; urgency=medium
   * Pass key auto-repeat flag through QtEventFeeder.
 
  -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 13 Oct 2014 10:08:04 +0000
-
-qtmir (0.4.4) UNRELEASED; urgency=medium
-
-  * Implement a callback mechanism to allow shell override the initial 
-    surface geometry requested by clients
-
- -- Gerry Boland <gerry.boland@canonical.com>  Tue, 07 Oct 2014 11:47:07 +0100
 
 qtmir (0.4.3+14.10.20141010-0ubuntu1) utopic; urgency=low
 
