@@ -20,32 +20,74 @@
 
 #include "screen.h"
 #include "mirserver.h"
+#include "mirserverintegration.h"
 
 #include <mir/graphics/display.h>
 #include <mir/graphics/display_configuration.h>
+#include <mir/main_loop.h>
 #include <QDebug>
 
 namespace mg = mir::graphics;
 
-// TODO: Listen for display changes and update the list accordingly
-
-Display::Display(const QSharedPointer<MirServer> &server, QObject *parent)
-  : QObject(parent)
-  , m_mirServer(server)
+Display::Display(const QSharedPointer<MirServer> &server, MirServerIntegration *platformIntegration)
+    : m_mirServer(server)
+    , m_platformIntegration(platformIntegration)
 {
-    std::shared_ptr<mir::graphics::DisplayConfiguration> displayConfig = m_mirServer->the_display()->configuration();
+    std::shared_ptr<mg::Display> display = m_mirServer->the_display();
 
-    displayConfig->for_each_output([this](mg::DisplayConfigurationOutput const& output) {
-        if (output.used) {
-            auto screen = new Screen(output);
-            m_screens.push_back(screen);
-        }
+    display->register_configuration_change_handler(*m_mirServer->the_main_loop(), [this]() {
+        // display configuration changed, update!
+        //this->updateScreens(); // need to learn what thread this is called in
+        QMetaObject::invokeMethod(this, "updateScreens", Qt::QueuedConnection);
     });
+
+    display->register_pause_resume_handlers(*m_mirServer->the_main_loop(), []() -> bool {
+        // pause handler - set the Window associated with the Screen as hidden
+                                                // TODO
+        return true;
+    }, []() -> bool {
+        // resume handler - set the Window associated with the Screen as visible
+                                                // TODO
+        return true;
+    });
+
+    updateScreens();
 }
 
 Display::~Display()
 {
-    for (auto screen : m_screens)
+    for (auto screen : m_screens) {
         delete screen;
-    m_screens.clear();
+    }
+}
+
+void Display::updateScreens()
+{
+    qDebug() << "Display::updateScreens";
+    std::shared_ptr<mg::DisplayConfiguration> displayConfig = m_mirServer->the_display()->configuration();
+
+    QList<int> oldOutputIds = m_screens.keys();
+
+    displayConfig->for_each_output([this, &oldOutputIds](mg::DisplayConfigurationOutput const& output) {
+        if (output.used && output.connected) {
+            int outputId = output.id.as_value();
+            if (oldOutputIds.contains(outputId)) { // we've already set up this display before
+                // TODO: check if the geometry matches the old Screen geometry
+
+            } else {
+                // new display, so create Screen for it
+                auto screen = new Screen(output);
+                m_screens.insert(outputId, screen);
+                m_platformIntegration->screenAdded(screen); // notify Qt
+            }
+
+            oldOutputIds.removeAll(outputId);
+        }
+    });
+
+    // Delete any old & unused Screens
+    for (auto id: oldOutputIds) {
+        delete m_screens.value(id);
+        m_screens.remove(id);
+    }
 }

@@ -23,19 +23,22 @@
 #include <qpa/qplatformscreen.h>
 
 class MirServer;
+class MirServerIntegration;
 
 class Display : public QObject
 {
     Q_OBJECT
 public:
-    Display(const QSharedPointer<MirServer> &server, QObject *parent = 0);
+    Display(const QSharedPointer<MirServer> &server, MirServerIntegration *platformIntegration);
     ~Display();
 
-    QList<QPlatformScreen *> screens() const { return m_screens; }
+private Q_SLOTS:
+    void updateScreens();
 
 private:
-    QList<QPlatformScreen *> m_screens;
+    QHash<int, QPlatformScreen*> m_screens;
     const QSharedPointer<MirServer> m_mirServer;
+    MirServerIntegration *m_platformIntegration;
 };
 
 #endif // DISPLAY_H

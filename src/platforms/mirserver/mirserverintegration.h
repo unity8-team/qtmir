@@ -77,11 +77,13 @@ private:
     QScopedPointer<QAbstractEventDispatcher> m_eventDispatcher;
 #endif
 
-    Display *m_display;
+    QScopedPointer<Display> m_display;
     QMirServer *m_qmirServer;
     NativeInterface *m_nativeInterface;
     QPlatformInputContext* m_inputContext;
     QScopedPointer<qtmir::Clipboard> m_clipboard;
+
+    friend class Display;
 };
 
 #endif // MIRSERVERINTEGRATION_H

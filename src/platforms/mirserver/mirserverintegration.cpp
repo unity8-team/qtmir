@@ -29,7 +29,7 @@
 #include <qpa/qplatforminputcontextfactory_p.h>
 #include <qpa/qwindowsysteminterface.h>
 
-#include <QCoreApplication>
+#include <QGuiApplication>
 #include <QStringList>
 #include <QOpenGLContext>
 
@@ -53,6 +53,7 @@
 #include "miropenglcontext.h"
 #include "nativeinterface.h"
 #include "qmirserver.h"
+#include "screen.h"
 #include "services.h"
 #include "ubuntutheme.h"
 
@@ -108,7 +109,6 @@ MirServerIntegration::MirServerIntegration()
 MirServerIntegration::~MirServerIntegration()
 {
     delete m_nativeInterface;
-    delete m_display;
     delete m_qmirServer;
 }
 
@@ -120,7 +120,7 @@ bool MirServerIntegration::hasCapability(QPlatformIntegration::Capability cap) c
     case ThreadedOpenGL: return true;
     case SharedGraphicsCache: return true;
     case BufferQueueingOpenGL: return true;
-    case MultipleWindows: return false; // multi-monitor support
+    case MultipleWindows: return true; // multi-monitor support
 #if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
     case WindowManagement: return false; // platform has no WM, as this implements the WM!
     case NonFullScreenWindows: return false;
@@ -133,18 +133,43 @@ QPlatformWindow *MirServerIntegration::createPlatformWindow(QWindow *window) con
 {
     QWindowSystemInterface::flushWindowSystemEvents();
 
+    Screen *unusedDisplay = nullptr;
+    // have all existing screens got an associated DisplayWindow?
+    for (auto qscreen : QGuiApplication::screens()) {
+        qDebug() << "screen" << qscreen;
+        auto screen = static_cast<Screen*>(qscreen->handle());
+        if (screen && !screen->window()) {
+            unusedDisplay = screen;
+        }
+    }
+
+    if (!unusedDisplay) { // no available screen
+        qDebug() << "No available Screens to create a QWindow for";
+        return nullptr;
+    }
+
     DisplayWindow* displayWindow = nullptr;
 
+    // Find the DisplayBuffer for this Window
     m_mirServer->the_display()->for_each_display_buffer(
                 [&](mg::DisplayBuffer& buffer) {
-        // FIXME(gerry) this will go very bad for >1 display buffer
-        displayWindow = new DisplayWindow(window, &buffer);
+        // only way to match Screen to a DisplayBuffer is by matching the geometry
+        QRect dbGeom(buffer.view_area().top_left.x.as_int(),
+                     buffer.view_area().top_left.y.as_int(),
+                     buffer.view_area().size.width.as_int(),
+                     buffer.view_area().size.height.as_int());
+
+        if (dbGeom == unusedDisplay->geometry() && !displayWindow) {
+            displayWindow = new DisplayWindow(window, &buffer);
+            unusedDisplay->setWindow(displayWindow);
+        }
     });
 
-    if (!displayWindow)
+    if (!displayWindow) {
+        qDebug() << "Unable to find mg::DisplayBuffer associated with a Screen of geometry" << unusedDisplay->geometry();
         return nullptr;
+    }
 
-    //displayWindow->requestActivateWindow();
     return displayWindow;
 }
 
@@ -172,11 +197,8 @@ void MirServerIntegration::initialize()
     // Creates instance of and start the Mir server in a separate thread
     m_qmirServer = new QMirServer(m_mirServer);
 
-    m_display = new Display(m_mirServer);
+    m_display.reset(new Display(m_mirServer, this));
     m_nativeInterface = new NativeInterface(m_mirServer);
-
-    for (QPlatformScreen *screen : m_display->screens())
-        screenAdded(screen);
 
     m_clipboard->setupDBusService();
 }

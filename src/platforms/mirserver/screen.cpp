@@ -143,6 +143,14 @@ Screen::Screen(mir::graphics::DisplayConfigurationOutput const &screen)
     }
 }
 
+Screen::~Screen()
+{
+    //if a DisplayWindow associated with this screen, kill it
+    if (m_displayWindow) {
+        m_displayWindow->window()->destroy(); // ends up destroying m_displayWindow
+    }
+}
+
 bool Screen::orientationSensorEnabled()
 {
     return m_orientationSensor->isActive();
@@ -165,6 +173,10 @@ void Screen::readMirDisplayConfiguration(mir::graphics::DisplayConfigurationOutp
 
     // Pixel depth
     m_depth = 8 * MIR_BYTES_PER_PIXEL(screen.current_format);
+
+    // Position of screen in virtual desktop coordinate space
+    m_geometry.setTop(screen.top_left.y.as_int());
+    m_geometry.setLeft(screen.top_left.x.as_int());
 
     // Mode = Resolution & refresh rate
     mir::graphics::DisplayConfigurationMode mode = screen.modes.at(screen.current_mode_index);
@@ -229,4 +241,17 @@ void Screen::onOrientationReadingChanged()
     QCoreApplication::postEvent(this, new OrientationReadingEvent(
                                               OrientationReadingEvent::m_type,
                                               m_orientationSensor->reading()->orientation()));
+}
+
+DisplayWindow* Screen::window() const
+{
+    if (m_displayWindow.isNull())
+        return nullptr;
+
+    return m_displayWindow;
+}
+
+void Screen::setWindow(DisplayWindow *window)
+{
+    m_displayWindow = window;
 }

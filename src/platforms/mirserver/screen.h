@@ -20,12 +20,18 @@
 #ifndef SCREEN_H
 #define SCREEN_H
 
+// Qt
 #include <QObject>
 #include <QTimer>
+#include <QPointer>
 #include <QtDBus/QDBusInterface>
 #include <qpa/qplatformscreen.h>
 
+// Mir
 #include "mir/graphics/display_configuration.h"
+
+// local
+#include "displaywindow.h"
 
 class QOrientationSensor;
 
@@ -34,6 +40,7 @@ class Screen : public QObject, public QPlatformScreen
     Q_OBJECT
 public:
     Screen(mir::graphics::DisplayConfigurationOutput const&);
+    ~Screen();
 
     // QPlatformScreen methods.
     QRect geometry() const override { return m_geometry; }
@@ -48,6 +55,9 @@ public:
 
     // QObject methods.
     void customEvent(QEvent* event) override;
+
+    DisplayWindow* window() const;
+    void setWindow(DisplayWindow *window);
 
     // To make it testable
     static bool skipDBusRegistration;
@@ -70,6 +80,7 @@ private:
     Qt::ScreenOrientation m_currentOrientation;
     QOrientationSensor *m_orientationSensor;
 
+    QPointer<DisplayWindow> m_displayWindow;
     QDBusInterface *m_unityScreen;
 };
 
