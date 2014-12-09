@@ -136,7 +136,6 @@ QPlatformWindow *MirServerIntegration::createPlatformWindow(QWindow *window) con
     Screen *unusedDisplay = nullptr;
     // have all existing screens got an associated DisplayWindow?
     for (auto qscreen : QGuiApplication::screens()) {
-        qDebug() << "screen" << qscreen;
         auto screen = static_cast<Screen*>(qscreen->handle());
         if (screen && !screen->window()) {
             unusedDisplay = screen;

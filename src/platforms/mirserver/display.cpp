@@ -21,11 +21,14 @@
 #include "screen.h"
 #include "mirserver.h"
 #include "mirserverintegration.h"
+#include "logging.h"
 
 #include <mir/graphics/display.h>
 #include <mir/graphics/display_configuration.h>
 #include <mir/main_loop.h>
 #include <QDebug>
+
+Q_LOGGING_CATEGORY(QTMIR_MIR_DISPLAYS, "qtmir.displays")
 
 namespace mg = mir::graphics;
 
@@ -63,7 +66,7 @@ Display::~Display()
 
 void Display::updateScreens()
 {
-    qDebug() << "Display::updateScreens";
+    qCDebug(QTMIR_MIR_DISPLAYS) << "Display::updateScreens";
     std::shared_ptr<mg::DisplayConfiguration> displayConfig = m_mirServer->the_display()->configuration();
 
     QList<int> oldOutputIds = m_screens.keys();
@@ -79,6 +82,8 @@ void Display::updateScreens()
                 auto screen = new Screen(output);
                 m_screens.insert(outputId, screen);
                 m_platformIntegration->screenAdded(screen); // notify Qt
+                qCDebug(QTMIR_MIR_DISPLAYS) << "Added Display with id" << outputId
+                                            << "and geometry" << screen->geometry();
             }
 
             oldOutputIds.removeAll(outputId);
@@ -87,6 +92,9 @@ void Display::updateScreens()
 
     // Delete any old & unused Screens
     for (auto id: oldOutputIds) {
+        qCDebug(QTMIR_MIR_DISPLAYS) << "Removed Display with id" << id
+                                    << "and geometry" << m_screens.value(id)->geometry();
+        // The screen is automatically removed from Qt's internal list when the QPlatformScreen is destroyed.
         delete m_screens.value(id);
         m_screens.remove(id);
     }
