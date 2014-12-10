@@ -18,7 +18,6 @@
 #include <thread>
 #include <condition_variable>
 #include <QSignalSpy>
-#include <QScopedPointer>
 
 #include <Unity/Application/applicationscreenshotprovider.h>
 
