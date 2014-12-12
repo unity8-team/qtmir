@@ -408,9 +408,11 @@ void UbuntuInput::dispatchKeyEvent(QWindow* window, const void* ev)
     int sym = translateKeysym(xk_sym, s, sizeof(s));
     QString text = QString::fromLatin1(s);
 
+    bool is_auto_rep = event->key.repeat_count > 0;
+
     QPlatformInputContext* context = QGuiApplicationPrivate::platformIntegration()->inputContext();
     if (context) {
-        QKeyEvent qKeyEvent(keyType, sym, modifiers, text);
+        QKeyEvent qKeyEvent(keyType, sym, modifiers, text, is_auto_rep);
         qKeyEvent.setTimestamp(timestamp);
         if (context->filterEvent(&qKeyEvent)) {
             DLOG("key event filtered out by input context");
@@ -418,7 +420,7 @@ void UbuntuInput::dispatchKeyEvent(QWindow* window, const void* ev)
         }
     }
 
-    QWindowSystemInterface::handleKeyEvent(window, timestamp, keyType, sym, modifiers, text);
+    QWindowSystemInterface::handleKeyEvent(window, timestamp, keyType, sym, modifiers, text, is_auto_rep);
 }
 
 #if (LOG_EVENTS != 0)
