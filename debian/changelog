@@ -1,3 +1,14 @@
+qtubuntu (0.60+15.04.20141212-0ubuntu1) vivid; urgency=low
+
+  [ Gerry Boland ]
+  * Fix raster-based (QWidget) application rendering.
+
+  [ Robert Carr ]
+  * Utilize repeat_count value from Mir in constructing QKeyEvents. (LP:
+    #1349416)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 12 Dec 2014 15:43:42 +0000
+
 qtubuntu (0.60+15.04.20141111-0ubuntu1) vivid; urgency=low
 
   [ Ubuntu daily release ]
