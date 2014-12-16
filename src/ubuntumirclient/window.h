@@ -20,6 +20,8 @@
 #include <qpa/qplatformwindow.h>
 #include <QSharedPointer>
 
+#include <mir_toolkit/mir_client_library.h>
+
 class UbuntuClipboard;
 class UbuntuInput;
 class UbuntuScreen;
@@ -30,7 +32,7 @@ class UbuntuWindow : public QObject, public QPlatformWindow
     Q_OBJECT
 public:
     UbuntuWindow(QWindow* w, QSharedPointer<UbuntuClipboard> clipboard, UbuntuScreen* screen,
-                 UbuntuInput* input, void* instance);
+                 UbuntuInput* input, MirConnection *mir_connection);
     virtual ~UbuntuWindow();
 
     // QPlatformWindow methods.

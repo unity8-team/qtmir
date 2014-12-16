@@ -34,12 +34,15 @@ public:
     // QObject methods.
     void customEvent(QEvent* event) override;
 
+    // TODO: Update to use MirEvent
     void postEvent(UbuntuWindow* window, const void* event);
     UbuntuClientIntegration* integration() const { return mIntegration; }
 
 protected:
     void dispatchKeyEvent(QWindow* window, const void* event);
     void dispatchMotionEvent(QWindow* window, const void* event);
+    void dispatchInputEvent(QWindow* window, const void* event);
+    
     void dispatchOrientationEvent(QWindow* window, const void* event);
 
 private:
