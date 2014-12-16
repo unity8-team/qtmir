@@ -51,7 +51,7 @@ public:
     Qt::WindowState state;
     QRect geometry;
     MirConnection *connection;
-    MirSurface* surface;n
+    MirSurface* surface;
     QSize bufferSize;
     QSize targetBufferSize;
     QMutex mutex;
@@ -69,9 +69,9 @@ static void surfaceCreateCallback(MirSurface* surface, void* context)
 {
     DASSERT(context != NULL);
     UbuntuWindow* platformWindow = static_cast<UbuntuWindow*>(context);
-    platformWindow->priv()-surface = surface;
+    platformWindow->priv()->surface = surface;
     
-    MirEventDelegate handler = {event_callback, context};
+    MirEventDelegate handler = {eventCallback, context};
     mir_surface_set_event_handler(surface, &handler);
 }
 
@@ -104,7 +104,7 @@ UbuntuWindow::~UbuntuWindow()
     DLOG("UbuntuWindow::~UbuntuWindow");
     d->destroyEGLSurface();
 
-    mir_surface_release_sync(surface);
+    mir_surface_release_sync(d->surface);
 
     delete d;
 }
@@ -336,22 +336,22 @@ void UbuntuWindow::setWindowState(Qt::WindowState state)
     switch (state) {
     case Qt::WindowNoState:
         DLOG("setting window state: 'NoState'");
-        mir_wait_for(mir_surface_set_state(d->window, mir_surface_state_restored));
+        mir_wait_for(mir_surface_set_state(d->surface, mir_surface_state_restored));
         d->state = Qt::WindowNoState;
         break;
     case Qt::WindowFullScreen:
         DLOG("setting window state: 'FullScreen'");
-        mir_wait_for(mir_surface_set_state(d->window, mir_surface_state_fullscreen));
+        mir_wait_for(mir_surface_set_state(d->surface, mir_surface_state_fullscreen));
         d->state = Qt::WindowFullScreen;
         break;
     case Qt::WindowMaximized:
         DLOG("setting window state: 'Maximized'");
-        mir_wait_for(mir_surface_set_state(d->window, mir_surface_state_maximized));
+        mir_wait_for(mir_surface_set_state(d->surface, mir_surface_state_maximized));
         d->state = Qt::WindowMaximized;
         break;
     case Qt::WindowMinimized:
         DLOG("setting window state: 'Minimized'");
-        mir_wait_for(mir_surface_set_state(d->window, mir_surface_state_minimized));
+        mir_wait_for(mir_surface_set_state(d->surface, mir_surface_state_minimized));
         d->state = Qt::WindowMinimized;
         break;
     default:
