@@ -60,6 +60,7 @@ public:
 
 static void eventCallback(MirSurface* surface, const MirEvent *event, void* context)
 {
+    (void) surface;
     DASSERT(context != NULL);
     UbuntuWindow* platformWindow = static_cast<UbuntuWindow*>(context);
     platformWindow->priv()->input->postEvent(platformWindow, event);
@@ -152,9 +153,13 @@ namespace
 static MirPixelFormat
 mir_choose_default_pixel_format(MirConnection *connection)
 {
-    MirDisplayInfo info;
-    mir_connection_get_display_info(connection, &info);
-    return info.supported_pixel_format[0];
+    MirPixelFormat format[mir_pixel_formats];
+    unsigned int nformats;
+
+    mir_connection_get_available_surface_formats(connection,
+        format, mir_pixel_formats, &nformats);
+    
+    return format[0];
 }
 }
 
@@ -164,7 +169,6 @@ void UbuntuWindow::createWindow()
 
     // Get surface role and flags.
     QVariant roleVariant = window()->property("role");
-    int role = roleVariant.isValid() ? roleVariant.toUInt() : 1;  // 1 is the default role for apps.
     QVariant opaqueVariant = window()->property("opaque");
     uint flags = opaqueVariant.isValid() ?
         opaqueVariant.toUInt() ? static_cast<uint>(IS_OPAQUE_FLAG) : 0 : 0;
@@ -210,20 +214,20 @@ void UbuntuWindow::createWindow()
             geometry.x(), geometry.y(), geometry.width(), geometry.height(), title.data());
 
     // Setup platform window creation properties
-    auto spec = mir_connection_create_spec_for_normal_surface(connection, geometry.width(),
-        geometry.height(), mir_choose_default_pixel_format(connection));
-    mir_surface_spec_set_name(spec, title.data);
+    auto spec = mir_connection_create_spec_for_normal_surface(d->connection, geometry.width(),
+        geometry.height(), mir_choose_default_pixel_format(d->connection));
+    mir_surface_spec_set_name(spec, title.data());
 
     // Create platform window
     mir_wait_for(mir_surface_create(spec, surfaceCreateCallback, this));
     mir_surface_spec_release(spec);
     
     DASSERT(d->surface != NULL);
-    d->createEGLSurface(mir_surface_get_egl_native_window(surface));
+    d->createEGLSurface((EGLNativeWindowType)mir_surface_get_egl_native_window(d->surface));
 
     if (d->state == Qt::WindowFullScreen) {
     // TODO: We could set this on creation once surface spec supports it (mps already up)
-        mir_wait_for(mir_surface_set_state(surface, mir_surface_state_fullscreen));
+        mir_wait_for(mir_surface_set_state(d->surface, mir_surface_state_fullscreen));
     }
 
     // Window manager can give us a final size different from what we asked for
