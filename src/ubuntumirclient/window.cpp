@@ -215,7 +215,7 @@ void UbuntuWindow::createWindow()
     mir_surface_spec_set_name(spec, title.data);
 
     // Create platform window
-    mir_wait_for(mir_surface_create(spec, surface_create_callback, this));
+    mir_wait_for(mir_surface_create(spec, surfaceCreateCallback, this));
     mir_surface_spec_release(spec);
     
     DASSERT(d->surface != NULL);
