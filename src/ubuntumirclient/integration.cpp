@@ -156,7 +156,7 @@ QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window) 
 QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window)
 {
     QPlatformWindow* platformWindow = new UbuntuWindow(
-            window, mClipboard, static_cast<UbuntuScreen*>(mScreen), mInput, mInstance);
+            window, mClipboard, static_cast<UbuntuScreen*>(mScreen), mInput, u_application_instance_get_mir_connection(mInstance));
     platformWindow->requestActivateWindow();
     return platformWindow;
 }
