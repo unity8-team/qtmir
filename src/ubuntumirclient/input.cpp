@@ -355,16 +355,16 @@ void UbuntuInput::dispatchKeyEvent(QWindow* window, const void* ev)
     // Key modifier and unicode index mapping.
     const int kMetaState = mir_key_input_event_get_modifiers(key_event);
     Qt::KeyboardModifiers modifiers = Qt::NoModifier;
-    if (kMetaState & mir_key_input_event_modifier_shift) {
+    if (kMetaState & mir_input_event_modifier_shift) {
         modifiers |= Qt::ShiftModifier;
     }
-    if (kMetaState & mir_key_input_event_modifier_ctrl) {
+    if (kMetaState & mir_input_event_modifier_ctrl) {
         modifiers |= Qt::ControlModifier;
     }
-    if (kMetaState & mir_key_input_event_modifier_alt) {
+    if (kMetaState & mir_input_event_modifier_alt) {
         modifiers |= Qt::AltModifier;
     }
-    if (kMetaState & mir_key_input_event_modifier_meta) {
+    if (kMetaState & mir_input_event_modifier_meta) {
         modifiers |= Qt::MetaModifier;
     }
 
