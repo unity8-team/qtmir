@@ -38,15 +38,6 @@
 
 #include <mir_toolkit/mir_client_library.h>
 
-// TODO: Why?
-#include <mir_toolkit/events/resize_event.h>
-#include <mir_toolkit/events/surface_event.h>
-#include <mir_toolkit/events/orientation_event.h>
-#include <mir_toolkit/events/input/input_event.h>
-#include <mir_toolkit/events/input/touch_input_event.h>
-#include <mir_toolkit/events/input/key_input_event.h>
-
-
 #define LOG_EVENTS 0
 
 // XKB Keysyms which do not map directly to Qt types (i.e. Unicode points)
@@ -148,6 +139,7 @@ public:
     {
         mir_event_unref(nativeEvent);
     }
+    
     UbuntuWindow* window;
     MirEvent *nativeEvent;
 };
@@ -174,30 +166,35 @@ UbuntuInput::~UbuntuInput()
 }
 
 #ifndef QT_NO_DEBUG
-/*
-static const char* nativeEventTypeToStr(int eventType)
+
+
+static const char* nativeEventTypeToStr(MirEventType t)
 {
-    switch (eventType) {
-    case MOTION_WEVENT_TYPE:
-        return "MOTION_WEVENT_TYPE";
-        break;
-    case KEY_WEVENT_TYPE:
-        return "KEY_WEVENT_TYPE";
-        break;
-    case RESIZE_WEVENT_TYPE:
-        return "RESIZE_WEVENT_TYPE";
-        break;
-    case SURFACE_WEVENT_TYPE:
-        return "SURFACE_WEVENT_TYPE";
-        break;
-    case ORIENTATION_WEVENT_TYPE:
-        return "ORIENTATION_WEVENT_TYPE";
-        break;
+    switch (t)
+    {
+    case mir_event_type_key:
+        return "mir_event_type_key";
+    case mir_event_type_motion:
+        return "mir_event_type_motion";
+    case mir_event_type_surface:
+        return "mir_event_type_surface";
+    case mir_event_type_resize:
+        return "mir_event_type_resize";
+    case mir_event_type_prompt_session_state_change:
+        return "mir_event_type_prompt_session_state_change";
+    case mir_event_type_orientation:
+        return "mir_event_type_orientation";
+    case mir_event_type_close_surface:
+        return "mir_event_type_close_surface";
+    case mir_event_type_input:
+        return "mir_event_type_input";
     default:
-        return "INVALID!";
+        DLOG("Invalid event type %d", t);
+        return "invalid";
     }
 }
-*/
+
+
 #endif
 
 void UbuntuInput::customEvent(QEvent* event)
@@ -219,10 +216,11 @@ void UbuntuInput::customEvent(QEvent* event)
         return;
     }
 
-    //DLOG("UbuntuInput::customEvent(type=%s)", nativeEventTypeToStr(nativeEvent->type));
+    DLOG("UbuntuInput::customEvent(type=%s)", nativeEventTypeToStr(mir_event_get_type(nativeEvent)));
 
     // Event dispatching.
-    switch (mir_event_get_type(nativeEvent)) {
+    switch (mir_event_get_type(nativeEvent)) 
+    {
     case mir_event_type_input:
         dispatchInputEvent(ubuntuEvent->window->window(), mir_event_get_input_event(nativeEvent));
         break;
@@ -282,36 +280,6 @@ void UbuntuInput::dispatchMotionEvent(QWindow* window, const void* ev)
 {
     const MirInputEvent* event = reinterpret_cast<const MirInputEvent*>(ev);
     const MirTouchInputEvent* tev = mir_input_event_get_touch_input_event(event);
-
-// TODO: Reenable logging
-    #if (LOG_EVENTS != 0)
-    // Motion event logging.
-/*    LOG("MOTION device_id:%d source_id:%d action:%d flags:%d meta_state:%d edge_flags:%d "
-            "button_state:%d x_offset:%.2f y_offset:%.2f x_precision:%.2f y_precision:%.2f "
-            "down_time:%lld event_time:%lld pointer_count:%d {", event->motion.device_id,
-            event->motion.source_id, event->motion.action,
-            event->motion.flags, event->motion.meta_state,
-            event->motion.edge_flags, event->motion.button_state,
-            event->motion.x_offset, event->motion.y_offset,
-            event->motion.x_precision, event->motion.y_precision,
-            event->motion.down_time, event->motion.event_time,
-            event->motion.pointer_count);
-    for (size_t i = 0; i < event->motion.pointer_count; i++) {
-        LOG("  id:%d x:%.2f y:%.2f rx:%.2f ry:%.2f maj:%.2f min:%.2f sz:%.2f press:%.2f",
-                event->motion.pointer_coordinates[i].id,
-                event->motion.pointer_coordinates[i].x,
-                event->motion.pointer_coordinates[i].y,
-                event->motion.pointer_coordinates[i].raw_x,
-                event->motion.pointer_coordinates[i].raw_y,
-                event->motion.pointer_coordinates[i].touch_major,
-                event->motion.pointer_coordinates[i].touch_minor,
-                event->motion.pointer_coordinates[i].size,
-                event->motion.pointer_coordinates[i].pressure */
-                // event->motion.pointer_coordinates[i].orientation  -> Always 0.0.
-//           );
-//    }
-//    LOG("}");
-    #endif
 
     // FIXME(loicm) Max pressure is device specific. That one is for the Samsung Galaxy Nexus. That
     //     needs to be fixed as soon as the compat input lib adds query support.
@@ -381,18 +349,6 @@ void UbuntuInput::dispatchKeyEvent(QWindow* window, const void* ev)
     const MirInputEvent* event = reinterpret_cast<const MirInputEvent*>(ev);
     const MirKeyInputEvent* key_event = mir_input_event_get_key_input_event(event);
 
-    // TODO: Update logging
-    #if (LOG_EVENTS != 0)
-    // Key event logging.
-//    LOG("KEY device_id:%d source_id:%d action:%d flags:%d meta_state:%d key_code:%d "
-//            "scan_code:%d repeat_count:%d down_time:%lld event_time:%lld is_system_key:%d",
-//            event->key.device_id, event->key.source_id,
-//            event->key.action, event->key.flags, event->key.meta_state,
-//            event->key.key_code, event->key.scan_code,
-//            event->key.repeat_count, event->key.down_time,
-//            event->key.event_time, event->key.is_system_key);
-    #endif
-
     ulong timestamp = mir_input_event_get_event_time(event) / 1000000;
     xkb_keysym_t xk_sym = mir_key_input_event_get_key_code(key_event);
 
@@ -436,19 +392,19 @@ void UbuntuInput::dispatchKeyEvent(QWindow* window, const void* ev)
 }
 
 #if (LOG_EVENTS != 0)
-static const char* nativeOrientationDirectionToStr(const int orientation)
+static const char* nativeOrientationDirectionToStr(MirOrientation orientation)
 {
     switch (orientation) {
-    case U_ORIENTATION_NORMAL:
+    case mir_orientation_normal:
         return "Normal";
         break;
-    case U_ORIENTATION_LEFT:
+    case mir_orientation_left:
         return "Left";
         break;
-    case U_ORIENTATION_INVERTED:
+    case mir_orientation_inverted:
         return "Inverted";
         break;
-    case U_ORIENTATION_RIGHT:
+    case mir_orientation_right:
         return "Right";
         break;
     default:
