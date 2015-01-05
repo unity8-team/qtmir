@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2014 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -12,33 +12,24 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Author: Gerry Boland <gerry.boland@canonical.com>
  */
 
-#ifndef DISPLAY_H
-#define DISPLAY_H
+#ifndef TILEDDISPLAYCONFIGURATIONPOLICY_H
+#define TILEDDISPLAYCONFIGURATIONPOLICY_H
 
-#include <QObject>
-#include <qpa/qplatformscreen.h>
+#include <mir/graphics/display_configuration_policy.h>
 
-class MirServer;
-class MirServerIntegration;
+#include <memory>
 
-class Display : public QObject
+class TiledDisplayConfigurationPolicy : public mir::graphics::DisplayConfigurationPolicy
 {
-    Q_OBJECT
 public:
-    Display(const QSharedPointer<MirServer> &server, MirServerIntegration *platformIntegration);
-    ~Display();
+    TiledDisplayConfigurationPolicy(const std::shared_ptr<mir::graphics::DisplayConfigurationPolicy> &wrapped);
 
-private Q_SLOTS:
-    void updateScreens();
+    void apply_to(mir::graphics::DisplayConfiguration& conf) override;
 
 private:
-    QHash<int, QPlatformScreen*> m_screens;
-    const QSharedPointer<MirServer> m_mirServer;
-    MirServerIntegration *m_platformIntegration;
+    const std::shared_ptr<mir::graphics::DisplayConfigurationPolicy> m_wrapped;
 };
 
-#endif // DISPLAY_H
+#endif // TILEDDISPLAYCONFIGURATIONPOLICY_H

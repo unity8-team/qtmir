@@ -49,7 +49,7 @@ set(MIRSERVER_QPA_PLUGIN_SRC
     mirplacementstrategy.cpp
     mirserver.cpp
     mirserverstatuslistener.cpp
-    display.cpp
+    displayconfigurationlistener.cpp
     screen.cpp
     displaywindow.cpp
     mirserverintegration.cpp
@@ -59,6 +59,7 @@ set(MIRSERVER_QPA_PLUGIN_SRC
     services.cpp
     ubuntutheme.cpp
     clipboard.cpp
+    tileddisplayconfigurationpolicy.cpp
     tracepoints.c
     )
 

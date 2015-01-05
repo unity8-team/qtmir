@@ -112,3 +112,25 @@ void DisplayWindow::doneCurrent()
 {
     m_displayBuffer->release_current();
 }
+
+mir::graphics::DisplayBuffer* DisplayWindow::mirDisplayBuffer() const
+{
+    return m_displayBuffer;
+}
+
+void DisplayWindow::setMirDisplayBuffer(const mir::graphics::DisplayBuffer *buffer)
+{
+    if (m_displayBuffer == buffer)
+        return;
+
+    // Changing Display Buffers indicates that if there's a current GL context, it needs
+    // to be destroyed and recreated
+    bool isVisible = window()->isVisible();
+    if (isVisible) {
+        window()->setVisible(false); // causes GL resources to be released
+    }
+    m_displayBuffer = buffer;
+    if (isVisible) {
+        window()->setVisible(false); // recreate GL resources
+    }
+}

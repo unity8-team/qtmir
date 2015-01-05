@@ -48,7 +48,7 @@
 
 // local
 #include "clipboard.h"
-#include "display.h"
+#include "displayconfigurationlistener.h"
 #include "displaywindow.h"
 #include "miropenglcontext.h"
 #include "nativeinterface.h"
@@ -139,11 +139,12 @@ QPlatformWindow *MirServerIntegration::createPlatformWindow(QWindow *window) con
         auto screen = static_cast<Screen*>(qscreen->handle());
         if (screen && !screen->window()) {
             unusedDisplay = screen;
+            break;
         }
     }
 
     if (!unusedDisplay) { // no available screen
-        qDebug() << "No available Screens to create a QWindow for";
+        qDebug() << "No available Screens to create a new QWindow/DisplayWindow for";
         return nullptr;
     }
 

@@ -16,7 +16,7 @@
  * Author: Gerry Boland <gerry.boland@canonical.com>
  */
 
-#include "display.h"
+#include "displayconfigurationlistener.h"
 
 #include "screen.h"
 #include "mirserver.h"
@@ -32,15 +32,16 @@ Q_LOGGING_CATEGORY(QTMIR_MIR_DISPLAYS, "qtmir.displays")
 
 namespace mg = mir::graphics;
 
-Display::Display(const QSharedPointer<MirServer> &server, MirServerIntegration *platformIntegration)
+DisplayConfigurationListener::DisplayConfigurationListener(
+        const QSharedPointer<MirServer> &server,
+        MirServerIntegration *platformIntegration)
     : m_mirServer(server)
     , m_platformIntegration(platformIntegration)
 {
     std::shared_ptr<mg::Display> display = m_mirServer->the_display();
 
     display->register_configuration_change_handler(*m_mirServer->the_main_loop(), [this]() {
-        // display configuration changed, update!
-        //this->updateScreens(); // need to learn what thread this is called in
+        // display hardware configuration changed, update! - not called when we set new configuration
         QMetaObject::invokeMethod(this, "updateScreens", Qt::QueuedConnection);
     });
 
@@ -57,44 +58,49 @@ Display::Display(const QSharedPointer<MirServer> &server, MirServerIntegration *
     updateScreens();
 }
 
-Display::~Display()
+DisplayConfigurationListener::~DisplayConfigurationListener()
 {
     for (auto screen : m_screens) {
         delete screen;
     }
 }
 
-void Display::updateScreens()
+void DisplayConfigurationListener::updateScreens()
 {
-    qCDebug(QTMIR_MIR_DISPLAYS) << "Display::updateScreens";
+    /* This is called after a DisplayConfigurationPolicy has been applied. This policy
+       is defined elsewhere. This method called to update Qt on the config changes */
+    qCDebug(QTMIR_MIR_DISPLAYS) << "DisplayConfigurationListener::updateScreens";
     std::shared_ptr<mg::DisplayConfiguration> displayConfig = m_mirServer->the_display()->configuration();
 
     QList<int> oldOutputIds = m_screens.keys();
 
-    displayConfig->for_each_output([this, &oldOutputIds](mg::DisplayConfigurationOutput const& output) {
-        if (output.used && output.connected) {
-            int outputId = output.id.as_value();
-            if (oldOutputIds.contains(outputId)) { // we've already set up this display before
-                // TODO: check if the geometry matches the old Screen geometry
+    displayConfig->for_each_output(
+        [this, &oldOutputIds](mg::DisplayConfigurationOutput const& output) {
+            if (output.used && output.connected) {
+                int outputId = output.id.as_value();
+                if (oldOutputIds.contains(outputId)) { // we've already set up this display before
+                    // TODO: check if the geometry matches the old Screen geometry, and if not, update it
 
-            } else {
-                // new display, so create Screen for it
-                auto screen = new Screen(output);
-                m_screens.insert(outputId, screen);
-                m_platformIntegration->screenAdded(screen); // notify Qt
-                qCDebug(QTMIR_MIR_DISPLAYS) << "Added Display with id" << outputId
-                                            << "and geometry" << screen->geometry();
+
+                } else {
+                    // new display, so create Screen for it
+                    auto screen = new Screen(output);
+                    m_screens.insert(outputId, screen);
+                    m_platformIntegration->screenAdded(screen); // notify Qt
+                    qCDebug(QTMIR_MIR_DISPLAYS) << "Added Screen with id" << outputId
+                                                << "and geometry" << screen->geometry();
+                }
+
+                oldOutputIds.removeAll(outputId);
             }
-
-            oldOutputIds.removeAll(outputId);
         }
-    });
+    );
 
     // Delete any old & unused Screens
     for (auto id: oldOutputIds) {
-        qCDebug(QTMIR_MIR_DISPLAYS) << "Removed Display with id" << id
+        qCDebug(QTMIR_MIR_DISPLAYS) << "Removed Screen with id" << id
                                     << "and geometry" << m_screens.value(id)->geometry();
-        // The screen is automatically removed from Qt's internal list when the QPlatformScreen is destroyed.
+        // The screen is automatically removed from Qt's internal list by the QPlatformScreen deconstructor.
         delete m_screens.value(id);
         m_screens.remove(id);
     }

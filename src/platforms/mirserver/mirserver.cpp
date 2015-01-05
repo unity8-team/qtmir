@@ -29,11 +29,13 @@
 #include "sessionauthorizer.h"
 #include "qtcompositor.h"
 #include "qteventfeeder.h"
+#include "tileddisplayconfigurationpolicy.h"
 #include "logging.h"
 
 // egl
 #include <EGL/egl.h>
 
+namespace mg = mir::graphics;
 namespace mo  = mir::options;
 namespace msh = mir::shell;
 namespace ms = mir::scene;
@@ -105,6 +107,13 @@ MirServer::MirServer(int argc, char const* argv[], QObject* parent)
     override_the_shell_focus_setter([]
         {
             return std::make_shared<FocusSetter>();
+        });
+
+    wrap_display_configuration_policy(
+        [](const std::shared_ptr<mg::DisplayConfigurationPolicy> &wrapped)
+            -> std::shared_ptr<mg::DisplayConfigurationPolicy>
+        {
+            return std::make_shared<TiledDisplayConfigurationPolicy>(wrapped);
         });
 
     set_terminator([&](int)
