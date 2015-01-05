@@ -40,7 +40,7 @@ namespace mir {
 
 class QJSEngine;
 
-class MirServerConfiguration;
+class MirServer;
 
 namespace qtmir {
 
@@ -53,7 +53,7 @@ class SessionManager : public SessionModel
 
 public:
     explicit SessionManager(
-        const QSharedPointer<MirServerConfiguration>& mirConfig,
+        const QSharedPointer<MirServer>& mirServer,
         ApplicationManager* applicationManager,
         QObject *parent = 0
     );
@@ -79,7 +79,7 @@ public Q_SLOTS:
 protected:
 
 private:
-    QSharedPointer<MirServerConfiguration> m_mirConfig;
+    QSharedPointer<MirServer> m_mirServer;
     ApplicationManager* m_applicationManager;
     static SessionManager *the_session_manager;
 
