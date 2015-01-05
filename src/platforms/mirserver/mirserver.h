@@ -65,6 +65,7 @@ public:
 
 private:
     std::shared_ptr<QtEventFeeder> m_qtEventFeeder;
+    std::shared_ptr<MirPlacementStrategy> m_placementStrategy; // remove when bug lp:1407687 fixed
 };
 
 #endif // MIRSERVER_H

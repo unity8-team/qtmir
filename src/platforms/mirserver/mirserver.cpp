@@ -55,7 +55,8 @@ MirServer::MirServer(int argc, char const* argv[], QObject* parent)
 
     override_the_placement_strategy([this]
         {
-            return std::make_shared<MirPlacementStrategy>(the_shell_display_layout());
+            m_placementStrategy = std::make_shared<MirPlacementStrategy>(the_shell_display_layout());
+            return m_placementStrategy;
         });
 
     override_the_session_listener([]
@@ -165,11 +166,11 @@ SurfaceConfigurator *MirServer::surfaceConfigurator()
     return static_cast<SurfaceConfigurator*>(sharedPtr.get());
 }
 
-MirPlacementStrategy *MirServerConfiguration::placementStrategy()
+MirPlacementStrategy *MirServer::placementStrategy()
 {
-    auto sharedPtr = the_placement_strategy();
-    if (sharedPtr.unique()) return 0;
+    //auto sharedPtr = the_placement_strategy(); - re-instate when bug lp:1407687 fixed
+    if (m_placementStrategy.unique()) return 0;
 
-    return static_cast<MirPlacementStrategy*>(sharedPtr.get());
+    return static_cast<MirPlacementStrategy*>(m_placementStrategy.get());
 }
 
