@@ -21,7 +21,8 @@
 #include "displaywindow.h"
 
 #include <QGuiApplication>
-#include <QWindow>
+#include <QQuickWindow>
+#include <QtQuick/private/qsgrenderloop_p.h>
 
 #include <QDebug>
 
@@ -32,30 +33,20 @@ QtCompositor::QtCompositor()
 
 void QtCompositor::start()
 {
-    // (Re)Start Qt's render thread by setting all its windows to exposed
-    setAllWindowsExposed(true);
+    // (Re)Start Qt's render thread by setting all its windows to exposed.
+    auto renderLoop = QSGRenderLoop::instance();
+    Q_FOREACH(auto window, renderLoop->windows()) {
+        QMetaObject::invokeMethod(renderLoop, "show", Q_ARG(QQuickWindow*, window));
+    }
 }
 
 void QtCompositor::stop()
 {
-    // Stop Qt's render threads by setting all its windows it obscured
-    setAllWindowsExposed(false);
-}
-
-void QtCompositor::setAllWindowsExposed(const bool exposed)
-{
-    qDebug() << "QtCompositor::setAllWindowsExposed" << exposed;
-    QList<QWindow *> windowList = QGuiApplication::allWindows();
-
-    // manipulate Qt object's indirectly via posted events as we're not in Qt's GUI thread
-    auto iterator = windowList.constBegin();
-    while (iterator != windowList.constEnd()) {
-        QWindow *window = *iterator;
-        DisplayWindow *displayWindow = static_cast<DisplayWindow*>(window->handle());
-        if (displayWindow) {
-            QCoreApplication::postEvent(displayWindow,
-                                        new QEvent( (exposed) ? QEvent::Show : QEvent::Hide));
-        }
-        iterator++;
+    // Stop Qt's render threads by setting all its windows it obscured. Must
+    // block until all windows have their GL contexts released.
+    auto renderLoop = QSGRenderLoop::instance();
+    Q_FOREACH(auto window , renderLoop->windows()) {
+        QMetaObject::invokeMethod(renderLoop, "hide", Qt::BlockingQueuedConnection,
+                                  Q_ARG(QQuickWindow*, window));
     }
 }

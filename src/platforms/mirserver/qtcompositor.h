@@ -28,9 +28,6 @@ public:
 
     void start();
     void stop();
-
-private:
-    void setAllWindowsExposed(const bool exposed);
 };
 
 #endif // QTCOMPOSITOR_H
