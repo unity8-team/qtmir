@@ -34,6 +34,24 @@
 static const int kSwapInterval = 1;
 
 #if !defined(QT_NO_DEBUG)
+
+static const char *orientationToStr(Qt::ScreenOrientation orientation) {
+    switch (orientation) {
+        case Qt::PrimaryOrientation:
+            return "primary";
+        case Qt::PortraitOrientation:
+            return "portrait";
+        case Qt::LandscapeOrientation:
+            return "landscape";
+        case Qt::InvertedPortraitOrientation:
+            return "inverted portrait";
+        case Qt::InvertedLandscapeOrientation:
+            return "inverted landscape";
+        default:
+            return "INVALID!";
+    }
+}
+
 static void printEglConfig(EGLDisplay display, EGLConfig config) {
   DASSERT(display != EGL_NO_DISPLAY);
   DASSERT(config != nullptr);
@@ -146,12 +164,12 @@ UbuntuScreen::UbuntuScreen()
     ua_ui_display_destroy(display);
 
     mGeometry = QRect(0, 0, kScreenWidth, kScreenHeight);
-    mAvailableGeometry = QRect(0, 0, kScreenWidth, kScreenHeight);
+    mActualGeometry = mGeometry;
 
     DLOG("QUbuntuScreen::QUbuntuScreen (this=%p)", this);
 
     // Set the default orientation based on the initial screen dimmensions.
-    mNativeOrientation = (mAvailableGeometry.width() >= mAvailableGeometry.height()) ? Qt::LandscapeOrientation : Qt::PortraitOrientation;
+    mNativeOrientation = (mGeometry.width() >= mGeometry.height()) ? Qt::LandscapeOrientation : Qt::PortraitOrientation;
 
     // If it's a landscape device (i.e. some tablets), start in landscape, otherwise portrait
     mCurrentOrientation = (mNativeOrientation == Qt::LandscapeOrientation) ? Qt::LandscapeOrientation : Qt::PortraitOrientation;
@@ -168,22 +186,22 @@ void UbuntuScreen::customEvent(QEvent* event) {
     OrientationChangeEvent* oReadingEvent = static_cast<OrientationChangeEvent*>(event);
     switch (oReadingEvent->mOrientation) {
         case QOrientationReading::LeftUp: {
-            mCurrentOrientation = (mNativeOrientation == Qt::LandscapeOrientation) ?
+            mCurrentOrientation = (screen()->primaryOrientation() == Qt::LandscapeOrientation) ?
                         Qt::InvertedPortraitOrientation : Qt::LandscapeOrientation;
             break;
         }
         case QOrientationReading::TopUp: {
-            mCurrentOrientation = (mNativeOrientation == Qt::LandscapeOrientation) ?
+            mCurrentOrientation = (screen()->primaryOrientation() == Qt::LandscapeOrientation) ?
                         Qt::LandscapeOrientation : Qt::PortraitOrientation;
             break;
         }
         case QOrientationReading::RightUp: {
-            mCurrentOrientation = (mNativeOrientation == Qt::LandscapeOrientation) ?
+            mCurrentOrientation = (screen()->primaryOrientation() == Qt::LandscapeOrientation) ?
                         Qt::PortraitOrientation : Qt::InvertedLandscapeOrientation;
             break;
         }
         case QOrientationReading::TopDown: {
-            mCurrentOrientation = (mNativeOrientation == Qt::LandscapeOrientation) ?
+            mCurrentOrientation = (screen()->primaryOrientation() == Qt::LandscapeOrientation) ?
                         Qt::InvertedLandscapeOrientation : Qt::InvertedPortraitOrientation;
             break;
         }
@@ -194,6 +212,38 @@ void UbuntuScreen::customEvent(QEvent* event) {
     }
 
     // Raise the event signal so that client apps know the orientation changed
+    DLOG("UbuntuScreen::customEvent - handling orientation change to %s", orientationToStr(mCurrentOrientation));
     QWindowSystemInterface::handleScreenOrientationChange(screen(), mCurrentOrientation);
-    DLOG("UbuntuScreen::customEvent - handling orientation change to %d", mCurrentOrientation);
+}
+
+void UbuntuScreen::handleWindowSurfaceResize(int windowWidth, int windowHeight)
+{
+    if ((windowWidth > windowHeight && mGeometry.width() < mGeometry.height())
+     || (windowWidth < windowHeight && mGeometry.width() > mGeometry.height())) {
+
+        // The window aspect ratio differ's from the screen one. This means that
+        // unity8 has rotated the window in its scene.
+        // As there's no way to express window rotation in Qt's API, we have
+        // Flip QScreen's dimensions so that orientation properties match
+        // (primaryOrientation particularly).
+        // FIXME: This assumes a phone scenario. Won't work, or make sense,
+        //        on the desktop
+
+        QRect currGeometry = mGeometry;
+        mGeometry.setWidth(currGeometry.height());
+        mGeometry.setHeight(currGeometry.width());
+
+        DLOG("UbuntuScreen::handleWindowSurfaceResize - new screen geometry (w=%d, h=%d)",
+            mGeometry.width(), mGeometry.height());
+        QWindowSystemInterface::handleScreenGeometryChange(screen(), mGeometry);
+        QWindowSystemInterface::handleScreenAvailableGeometryChange(screen(), mGeometry);
+
+        if (mGeometry.width() < mGeometry.height()) {
+            mCurrentOrientation = Qt::PortraitOrientation;
+        } else {
+            mCurrentOrientation = Qt::LandscapeOrientation;
+        }
+        DLOG("UbuntuScreen::handleWindowSurfaceResize - new orientation %s",orientationToStr(mCurrentOrientation));
+        QWindowSystemInterface::handleScreenOrientationChange(screen(), mCurrentOrientation);
+    }
 }

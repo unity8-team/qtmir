@@ -32,7 +32,7 @@ public:
     QImage::Format format() const override { return mFormat; }
     int depth() const override { return mDepth; }
     QRect geometry() const override { return mGeometry; }
-    QRect availableGeometry() const override { return mAvailableGeometry; }
+    QRect availableGeometry() const override { return mGeometry; }
     Qt::ScreenOrientation nativeOrientation() const override { return mNativeOrientation; }
     Qt::ScreenOrientation orientation() const override { return mNativeOrientation; }
 
@@ -41,13 +41,13 @@ public:
     EGLDisplay eglDisplay() const { return mEglDisplay; }
     EGLConfig eglConfig() const { return mEglConfig; }
     EGLNativeDisplayType eglNativeDisplay() const { return mEglNativeDisplay; }
+    void handleWindowSurfaceResize(int width, int height);
 
     // QObject methods.
     void customEvent(QEvent* event);
 
 private:
     QRect mGeometry;
-    QRect mAvailableGeometry;
     Qt::ScreenOrientation mNativeOrientation;
     Qt::ScreenOrientation mCurrentOrientation;
     QImage::Format mFormat;
@@ -56,6 +56,7 @@ private:
     EGLDisplay mEglDisplay;
     EGLConfig mEglConfig;
     EGLNativeDisplayType mEglNativeDisplay;
+    QRect mActualGeometry;
 };
 
 #endif // UBUNTU_SCREEN_H

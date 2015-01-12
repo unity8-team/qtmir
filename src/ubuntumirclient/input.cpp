@@ -162,8 +162,7 @@ UbuntuInput::~UbuntuInput()
   // Qt will take care of deleting mTouchDevice.
 }
 
-#ifndef QT_NO_DEBUG
-/*
+#if (LOG_EVENTS != 0)
 static const char* nativeEventTypeToStr(int eventType)
 {
     switch (eventType) {
@@ -186,7 +185,6 @@ static const char* nativeEventTypeToStr(int eventType)
         return "INVALID!";
     }
 }
-*/
 #endif
 
 void UbuntuInput::customEvent(QEvent* event)
@@ -208,7 +206,9 @@ void UbuntuInput::customEvent(QEvent* event)
         return;
     }
 
-    //DLOG("UbuntuInput::customEvent(type=%s)", nativeEventTypeToStr(nativeEvent->type));
+    #if (LOG_EVENTS != 0)
+    LOG("UbuntuInput::customEvent(type=%s)", nativeEventTypeToStr(nativeEvent->type));
+    #endif
 
     // Event dispatching.
     switch (nativeEvent->type) {
@@ -218,9 +218,14 @@ void UbuntuInput::customEvent(QEvent* event)
     case KEY_WEVENT_TYPE:
         dispatchKeyEvent(ubuntuEvent->window->window(), nativeEvent);
         break;
-    case RESIZE_WEVENT_TYPE:
+    case RESIZE_WEVENT_TYPE: {
+        Q_ASSERT(ubuntuEvent->window->screen() == mIntegration->screen());
+        mIntegration->screen()->handleWindowSurfaceResize(nativeEvent->resize.width,
+                                                          nativeEvent->resize.height);
+
         ubuntuEvent->window->handleSurfaceResize(nativeEvent->resize.width,
                                                  nativeEvent->resize.height);
+        }
         break;
     case SURFACE_WEVENT_TYPE:
         if (nativeEvent->surface.attribute == SURFACE_ATTRIBUTE_FOCUS) {
