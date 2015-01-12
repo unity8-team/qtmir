@@ -67,7 +67,6 @@ MirServerIntegration::MirServerIntegration()
 #if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
     , m_eventDispatcher(createUnixEventDispatcher())
 #endif
-    , m_display(nullptr)
     , m_qmirServer(nullptr)
     , m_nativeInterface(nullptr)
     , m_clipboard(new Clipboard)
@@ -197,7 +196,7 @@ void MirServerIntegration::initialize()
     // Creates instance of and start the Mir server in a separate thread
     m_qmirServer = new QMirServer(m_mirServer);
 
-    m_display.reset(new Display(m_mirServer, this));
+    m_displayConfigListener.reset(new DisplayConfigurationListener(m_mirServer, this));
     m_nativeInterface = new NativeInterface(m_mirServer);
 
     m_clipboard->setupDBusService();

@@ -26,8 +26,9 @@
 // local
 #include "mirserver.h"
 
-class Display;
+class DisplayConfigurationListener;
 class NativeInterface;
+class MirServer;
 class QMirServer;
 
 namespace qtmir {
@@ -77,13 +78,13 @@ private:
     QScopedPointer<QAbstractEventDispatcher> m_eventDispatcher;
 #endif
 
-    QScopedPointer<Display> m_display;
+    QScopedPointer<DisplayConfigurationListener> m_displayConfigListener;
     QMirServer *m_qmirServer;
     NativeInterface *m_nativeInterface;
     QPlatformInputContext* m_inputContext;
     QScopedPointer<qtmir::Clipboard> m_clipboard;
 
-    friend class Display;
+    friend class DisplayConfigurationListener;
 };
 
 #endif // MIRSERVERINTEGRATION_H
