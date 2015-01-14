@@ -66,7 +66,7 @@ class FakeMirServer: private TestMirServerInit, public MirServer
 {
 public:
     FakeMirServer()
-    : MirServer(nullptr, 0, nullptr)
+    : MirServer(0, nullptr)
     {
     }
 

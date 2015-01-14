@@ -25,24 +25,11 @@
 #include <QObject>
 #include <QMutex>
 
-#include <mir/graphics/display_configuration.h>
-
-// std
-#include <memory>
-
-class QScreen;
-class MirServerIntegration;
-class Screen;
-namespace mir {
-    namespace graphics { class Display; }
-}
-
 class QtCompositor : public QObject, public mir::compositor::Compositor
 {
     Q_OBJECT
 public:
-    QtCompositor(const std::shared_ptr<mir::graphics::Display> &display,
-                 MirServerIntegration *platformIntegration);
+    QtCompositor();
     ~QtCompositor();
 
     void start();
@@ -52,18 +39,9 @@ Q_SIGNALS:
     void starting();
     void stopping();
 
-private Q_SLOTS:
-    void onStarting();
-    void onStopping();
-
 private:
-    void updateScreens();
-    Screen* findScreen(const QList<QScreen*> &list, const mir::graphics::DisplayConfigurationOutputId id);
-
     bool m_running;
     QMutex m_runningMutex;
-    const std::shared_ptr<mir::graphics::Display> &m_display;
-    MirServerIntegration *m_platformIntegration;
 };
 
 #endif // QTCOMPOSITOR_H

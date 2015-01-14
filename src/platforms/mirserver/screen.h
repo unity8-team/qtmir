@@ -88,7 +88,7 @@ private:
     QPointer<DisplayWindow> m_displayWindow;
     QDBusInterface *m_unityScreen;
 
-    friend class QtCompositor;
+    friend class ScreenController;
 };
 
 #endif // SCREEN_H

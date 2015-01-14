@@ -53,6 +53,7 @@
 #include "nativeinterface.h"
 #include "qmirserver.h"
 #include "screen.h"
+#include "screencontroller.h"
 #include "services.h"
 #include "ubuntutheme.h"
 
@@ -94,7 +95,8 @@ MirServerIntegration::MirServerIntegration()
     }
 
     m_mirServer = QSharedPointer<MirServer>(
-                      new MirServer(this, args.length(), const_cast<const char**>(argv)));
+                      new MirServer(args.length(), const_cast<const char**>(argv)));
+    m_screenController.reset(new ScreenController(m_mirServer, this));
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
     QGuiApplicationPrivate::instance()->setEventDispatcher(eventDispatcher_);
