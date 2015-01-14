@@ -48,7 +48,7 @@ public:
     void doneCurrent();
 
     mir::graphics::DisplayBuffer *mirDisplayBuffer() const;
-    void setMirDisplayBuffer(const mir::graphics::DisplayBuffer *);
+    void setMirDisplayBuffer(mir::graphics::DisplayBuffer *);
 
 private:
     bool m_isExposed;

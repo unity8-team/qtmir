@@ -33,6 +33,7 @@
 #include "logging.h"
 
 // egl
+#define MESA_EGL_NO_X11_HEADERS
 #include <EGL/egl.h>
 
 namespace mg = mir::graphics;
@@ -49,8 +50,9 @@ void ignore_unparsed_arguments(int /*argc*/, char const* const/*argv*/[])
 
 Q_LOGGING_CATEGORY(QTMIR_MIR_MESSAGES, "qtmir.mir")
 
-MirServer::MirServer(int argc, char const* argv[], QObject* parent)
+MirServer::MirServer(MirServerIntegration *integration, int argc, char const* argv[], QObject* parent)
     : QObject(parent)
+    , m_integration(integration)
 {
     set_command_line_handler(&ignore_unparsed_arguments);
     set_command_line(argc, argv);
@@ -80,9 +82,12 @@ MirServer::MirServer(int argc, char const* argv[], QObject* parent)
             return std::make_shared<SessionAuthorizer>();
         });
 
-    override_the_compositor([]
+    override_the_compositor([this]
         {
-            return std::make_shared<QtCompositor>();
+            return std::make_shared<QtCompositor>(
+                        the_display(),
+                        m_integration
+                        );
         });
 
     override_the_input_dispatcher([]

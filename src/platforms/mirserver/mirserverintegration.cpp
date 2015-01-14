@@ -48,7 +48,6 @@
 
 // local
 #include "clipboard.h"
-#include "displayconfigurationlistener.h"
 #include "displaywindow.h"
 #include "miropenglcontext.h"
 #include "nativeinterface.h"
@@ -95,7 +94,7 @@ MirServerIntegration::MirServerIntegration()
     }
 
     m_mirServer = QSharedPointer<MirServer>(
-                      new MirServer(args.length(), const_cast<const char**>(argv)));
+                      new MirServer(this, args.length(), const_cast<const char**>(argv)));
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
     QGuiApplicationPrivate::instance()->setEventDispatcher(eventDispatcher_);
@@ -196,7 +195,6 @@ void MirServerIntegration::initialize()
     // Creates instance of and start the Mir server in a separate thread
     m_qmirServer = new QMirServer(m_mirServer);
 
-    m_displayConfigListener.reset(new DisplayConfigurationListener(m_mirServer, this));
     m_nativeInterface = new NativeInterface(m_mirServer);
 
     m_clipboard->setupDBusService();

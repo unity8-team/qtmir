@@ -119,7 +119,7 @@ mir::graphics::DisplayBuffer* DisplayWindow::mirDisplayBuffer() const
     return m_displayBuffer;
 }
 
-void DisplayWindow::setMirDisplayBuffer(const mir::graphics::DisplayBuffer *buffer)
+void DisplayWindow::setMirDisplayBuffer(mir::graphics::DisplayBuffer *buffer)
 {
     if (m_displayBuffer == buffer)
         return;

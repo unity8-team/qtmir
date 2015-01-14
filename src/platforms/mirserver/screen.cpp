@@ -106,12 +106,12 @@ const QEvent::Type OrientationReadingEvent::m_type =
 
 bool Screen::skipDBusRegistration = false;
 
-Screen::Screen(mir::graphics::DisplayConfigurationOutput const &screen)
+Screen::Screen(const mir::graphics::DisplayConfigurationOutput &screen)
     : QObject(nullptr)
     , m_orientationSensor(new QOrientationSensor(this))
     , m_unityScreen(nullptr)
 {
-    readMirDisplayConfiguration(screen);
+    setMirDisplayConfiguration(screen);
 
     // Set the default orientation based on the initial screen dimmensions.
     m_nativeOrientation = (m_geometry.width() >= m_geometry.height())
@@ -162,8 +162,15 @@ void Screen::onDisplayPowerStateChanged(int status, int reason)
     toggleSensors(status);
 }
 
-void Screen::readMirDisplayConfiguration(mir::graphics::DisplayConfigurationOutput const &screen)
+void Screen::setMirDisplayConfiguration(const mir::graphics::DisplayConfigurationOutput &screen)
 {
+    // Note: DisplayConfigurationOutput will be destroyed after this function returns
+
+    // Output data - each output has a unique id and corresponding type. Can be multiple cards.
+    m_outputId = screen.id;
+    m_cardId = screen.card_id;
+    m_type = screen.type;
+
     // Physical screen size
     m_physicalSize.setWidth(screen.physical_size_mm.width.as_float());
     m_physicalSize.setHeight(screen.physical_size_mm.height.as_float());
@@ -174,16 +181,34 @@ void Screen::readMirDisplayConfiguration(mir::graphics::DisplayConfigurationOutp
     // Pixel depth
     m_depth = 8 * MIR_BYTES_PER_PIXEL(screen.current_format);
 
+    // Power mode
+    m_powerMode = screen.power_mode;
+
+    QRect oldGeometry = m_geometry;
     // Position of screen in virtual desktop coordinate space
     m_geometry.setTop(screen.top_left.y.as_int());
     m_geometry.setLeft(screen.top_left.x.as_int());
 
-    // Mode = Resolution & refresh rate
+    // Mode = current resolution & refresh rate
     mir::graphics::DisplayConfigurationMode mode = screen.modes.at(screen.current_mode_index);
     m_geometry.setWidth(mode.size.width.as_int());
     m_geometry.setHeight(mode.size.height.as_int());
 
-    m_refreshRate = mode.vrefresh_hz;
+    // DPI - TODO
+
+    if (m_geometry != oldGeometry) {
+        QWindowSystemInterface::handleScreenGeometryChange(this->screen(), m_geometry);
+        QWindowSystemInterface::handleScreenAvailableGeometryChange(this->screen(), m_geometry);
+        if (!m_displayWindow.isNull()) { // resize corresponding window immediately
+            m_displayWindow->setGeometry(m_geometry);
+        }
+    }
+
+    // Refresh rate
+    if (m_refreshRate != mode.vrefresh_hz) {
+        m_refreshRate = mode.vrefresh_hz;
+        QWindowSystemInterface::handleScreenRefreshRateChange(this->screen(), mode.vrefresh_hz);
+    }
 }
 
 void Screen::toggleSensors(const bool enable) const

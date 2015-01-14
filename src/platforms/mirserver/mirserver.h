@@ -21,6 +21,7 @@
 #include <mir/server.h>
 
 class QtEventFeeder;
+class MirServerIntegration;
 class SessionListener;
 class SessionAuthorizer;
 class SurfaceConfigurator;
@@ -38,7 +39,7 @@ class MirServer : public QObject, private virtual mir::Server
     Q_PROPERTY(PromptSessionListener* promptSessionListener READ promptSessionListener CONSTANT)
 
 public:
-    MirServer(int argc, char const* argv[], QObject* parent = 0);
+    MirServer(MirServerIntegration *integration, int argc, char const* argv[], QObject* parent = 0);
     ~MirServer() = default;
 
     /* mir specific */
@@ -61,6 +62,7 @@ public:
     SurfaceConfigurator *surfaceConfigurator();
 
 private:
+    MirServerIntegration *m_integration;
     std::shared_ptr<QtEventFeeder> m_qtEventFeeder;
 };
 

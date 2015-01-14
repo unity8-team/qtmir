@@ -39,7 +39,7 @@ class Screen : public QObject, public QPlatformScreen
 {
     Q_OBJECT
 public:
-    Screen(mir::graphics::DisplayConfigurationOutput const&);
+    Screen(const mir::graphics::DisplayConfigurationOutput &);
     ~Screen();
 
     // QPlatformScreen methods.
@@ -68,7 +68,7 @@ public Q_SLOTS:
    void onOrientationReadingChanged();
 
 private:
-    void readMirDisplayConfiguration(mir::graphics::DisplayConfigurationOutput const&);
+    void setMirDisplayConfiguration(const mir::graphics::DisplayConfigurationOutput &);
 
     QRect m_geometry;
     int m_depth;
@@ -76,12 +76,19 @@ private:
     QSizeF m_physicalSize;
     qreal m_refreshRate;
 
+    mir::graphics::DisplayConfigurationOutputId m_outputId;
+    mir::graphics::DisplayConfigurationCardId m_cardId;
+    mir::graphics::DisplayConfigurationOutputType m_type;
+    MirPowerMode m_powerMode;
+
     Qt::ScreenOrientation m_nativeOrientation;
     Qt::ScreenOrientation m_currentOrientation;
     QOrientationSensor *m_orientationSensor;
 
     QPointer<DisplayWindow> m_displayWindow;
     QDBusInterface *m_unityScreen;
+
+    friend class QtCompositor;
 };
 
 #endif // SCREEN_H

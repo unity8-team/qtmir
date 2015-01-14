@@ -50,7 +50,6 @@ set(MIRSERVER_QPA_PLUGIN_SRC
     mirplacementstrategy.cpp
     mirserver.cpp
     mirserverstatuslistener.cpp
-    displayconfigurationlistener.cpp
     screen.cpp
     displaywindow.cpp
     mirserverintegration.cpp
