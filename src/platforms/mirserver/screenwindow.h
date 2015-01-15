@@ -16,21 +16,21 @@
  * Author: Gerry Boland <gerry.boland@canonical.com>
  */
 
-#ifndef DISPLAYWINDOW_H
-#define DISPLAYWINDOW_H
+#ifndef SCREENWINDOW_H
+#define SCREENWINDOW_H
 
 #include <qpa/qplatformwindow.h>
 
 #include <QObject>
 
-// DisplayWindow implements the basics of a QPlatformWindow. Any Mir
+// ScreenWindow implements the basics of a QPlatformWindow. Any Mir
 // specifics live in the associated Screen object.
 
-class DisplayWindow : public QObject, public QPlatformWindow
+class ScreenWindow : public QObject, public QPlatformWindow
 {
     Q_OBJECT
 public:
-    explicit DisplayWindow(QWindow *window);
+    explicit ScreenWindow(QWindow *window);
 
     QRect geometry() const override;
     void setGeometry(const QRect &rect) override;
@@ -50,4 +50,4 @@ private:
     WId m_winId;
 };
 
-#endif // DISPLAYWINDOW_H
+#endif // SCREENWINDOW_H

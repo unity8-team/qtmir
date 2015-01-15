@@ -31,7 +31,7 @@
 #include "mir/graphics/display_configuration.h"
 
 // local
-#include "displaywindow.h"
+#include "screenwindow.h"
 
 class QOrientationSensor;
 namespace mir { namespace graphics { class DisplayBuffer; }}
@@ -54,7 +54,7 @@ public:
 
     void toggleSensors(const bool enable) const;
 
-    DisplayWindow* window() const;
+    ScreenWindow* window() const;
 
     // QObject methods.
     void customEvent(QEvent* event) override;
@@ -68,7 +68,7 @@ public Q_SLOTS:
    void onOrientationReadingChanged();
 
 private:
-    void setWindow(DisplayWindow *window);
+    void setWindow(ScreenWindow *window);
 
     void setMirDisplayConfiguration(const mir::graphics::DisplayConfigurationOutput &);
     mir::graphics::DisplayBuffer *mirDisplayBuffer() const;
@@ -90,11 +90,11 @@ private:
     Qt::ScreenOrientation m_currentOrientation;
     QOrientationSensor *m_orientationSensor;
 
-    QPointer<DisplayWindow> m_displayWindow;
+    QPointer<ScreenWindow> m_screenWindow;
     QDBusInterface *m_unityScreen;
 
     friend class ScreenController;
-    friend class DisplayWindow;
+    friend class ScreenWindow;
 };
 
 #endif // SCREEN_H

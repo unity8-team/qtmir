@@ -18,7 +18,7 @@
 
 #include "miropenglcontext.h"
 
-#include "displaywindow.h"
+#include "screenwindow.h"
 #include "mirserver.h"
 #include "mirglconfig.h"
 
@@ -120,7 +120,7 @@ void MirOpenGLContext::swapBuffers(QPlatformSurface *surface)
 #endif
 
     // ultimately calls Mir's DisplayBuffer::post_update()
-    DisplayWindow *displayBuffer = static_cast<DisplayWindow*>(surface);
+    ScreenWindow *displayBuffer = static_cast<ScreenWindow*>(surface);
     displayBuffer->swapBuffers(); //blocks for vsync
 }
 
@@ -131,7 +131,7 @@ bool MirOpenGLContext::makeCurrent(QPlatformSurface *surface)
 #endif
 
     // ultimately calls Mir's DisplayBuffer::make_current()
-    DisplayWindow *displayBuffer = static_cast<DisplayWindow*>(surface);
+    ScreenWindow *displayBuffer = static_cast<ScreenWindow*>(surface);
     if (displayBuffer) {
         displayBuffer->makeCurrent();
 

@@ -48,12 +48,12 @@
 
 // local
 #include "clipboard.h"
-#include "displaywindow.h"
 #include "miropenglcontext.h"
 #include "nativeinterface.h"
 #include "qmirserver.h"
 #include "screen.h"
 #include "screencontroller.h"
+#include "screenwindow.h"
 #include "services.h"
 #include "ubuntutheme.h"
 
@@ -138,20 +138,20 @@ QPlatformWindow *MirServerIntegration::createPlatformWindow(QWindow *window) con
     if (qscreen) {
         auto screen = static_cast<Screen*>(qscreen->handle());
         if (screen->window()) {
-            qDebug() << "Screen already has a QWindow/DisplayWindow attached";
+            qDebug() << "Screen already has a QWindow/ScreenWindow attached";
             return nullptr;
         }
     } else {
         // If Screen was not specified, just grab an unused one, if available
         qscreen = m_screenController->getUnusedQScreen();
         if (!qscreen) {
-            qDebug() << "No available Screens to create a new QWindow/DisplayWindow for";
+            qDebug() << "No available Screens to create a new QWindow/ScreenWindow for";
             return nullptr;
         }
         window->setScreen(qscreen);
     }
 
-    return new DisplayWindow(window);
+    return new ScreenWindow(window);
 }
 
 QPlatformBackingStore *MirServerIntegration::createPlatformBackingStore(QWindow *window) const

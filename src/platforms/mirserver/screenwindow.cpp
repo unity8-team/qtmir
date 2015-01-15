@@ -17,7 +17,7 @@
  *          Daniel d'Andrada <daniel.dandrada@canonical.com>
  */
 
-#include "displaywindow.h"
+#include "screenwindow.h"
 #include "screen.h"
 
 #include <mir/geometry/size.h>
@@ -38,12 +38,12 @@ static WId newWId()
     return ++id;
 }
 
-DisplayWindow::DisplayWindow(QWindow *window)
+ScreenWindow::ScreenWindow(QWindow *window)
     : QObject(nullptr), QPlatformWindow(window)
     , m_isExposed(true)
     , m_winId(newWId())
 {
-    qDebug() << "DisplayWindow::DisplayWindow";
+    qDebug() << "ScreenWindow::ScreenWindow";
     qWarning("Window %p: %p 0x%x\n", this, window, uint(m_winId));
 
     // Register with the Screen it is associated with
@@ -62,7 +62,7 @@ DisplayWindow::DisplayWindow(QWindow *window)
     requestActivateWindow();
 }
 
-QRect DisplayWindow::geometry() const
+QRect ScreenWindow::geometry() const
 {
     // For yet-to-become-fullscreen windows report the geometry covering the entire
     // screen. This is particularly important for Quick where the root object may get
@@ -70,7 +70,7 @@ QRect DisplayWindow::geometry() const
     return screen()->availableGeometry();
 }
 
-void DisplayWindow::setGeometry(const QRect &)
+void ScreenWindow::setGeometry(const QRect &)
 {
     // We only support full-screen windows
     QRect rect(screen()->availableGeometry());
@@ -78,23 +78,23 @@ void DisplayWindow::setGeometry(const QRect &)
     QPlatformWindow::setGeometry(rect);
 }
 
-bool DisplayWindow::isExposed() const
+bool ScreenWindow::isExposed() const
 {
     return m_isExposed;
 }
 
-bool DisplayWindow::event(QEvent *event)
+bool ScreenWindow::event(QEvent *event)
 {
     // Intercept Hide event and convert to Expose event, as Hide causes Qt to release GL
     // resources, which we don't want. Must intercept Show to un-do hide.
     if (event->type() == QEvent::Hide) {
-        qDebug() << "DisplayWindow::event got QEvent::Hide";
+        qDebug() << "ScreenWindow::event got QEvent::Hide";
         m_isExposed = false;
         QWindowSystemInterface::handleExposeEvent(window(), QRect());
         QWindowSystemInterface::flushWindowSystemEvents();
         return true;
     } else if (event->type() == QEvent::Show) {
-        qDebug() << "DisplayWindow::event got QEvent::Show";
+        qDebug() << "ScreenWindow::event got QEvent::Show";
         m_isExposed = true;
         QRect rect(QPoint(), geometry().size());
         QWindowSystemInterface::handleExposeEvent(window(), rect);
@@ -104,20 +104,20 @@ bool DisplayWindow::event(QEvent *event)
     return QObject::event(event);
 }
 
-void DisplayWindow::swapBuffers()
+void ScreenWindow::swapBuffers()
 {
     auto displayBuffer = static_cast<Screen *>(screen())->mirDisplayBuffer();
     displayBuffer->gl_swap_buffers();
     displayBuffer->flip();
 }
 
-void DisplayWindow::makeCurrent()
+void ScreenWindow::makeCurrent()
 {
     auto displayBuffer = static_cast<Screen *>(screen())->mirDisplayBuffer();
     displayBuffer->make_current();
 }
 
-void DisplayWindow::doneCurrent()
+void ScreenWindow::doneCurrent()
 {
     auto displayBuffer = static_cast<Screen *>(screen())->mirDisplayBuffer();
     displayBuffer->release_current();

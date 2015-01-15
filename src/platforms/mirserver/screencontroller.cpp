@@ -18,7 +18,7 @@
 
 #include "screencontroller.h"
 
-#include "displaywindow.h"
+#include "screenwindow.h"
 #include "qtcompositor.h"
 #include "logging.h"
 #include "mirserver.h"
@@ -170,7 +170,7 @@ QScreen* ScreenController::getUnusedQScreen()
     qCDebug(QTMIR_SCREENS) << "ScreenController::getUnusedQScreen";
 
     QScreen *unusedQScreen = nullptr;
-    // have all existing screens got an associated DisplayWindow?
+    // have all existing screens got an associated ScreenWindow?
     for (auto qscreen : QGuiApplication::screens()) {
         auto screen = static_cast<Screen*>(qscreen->handle());
         if (screen && !screen->window()) {

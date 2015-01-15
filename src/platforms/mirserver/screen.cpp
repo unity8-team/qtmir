@@ -145,9 +145,9 @@ Screen::Screen(const mir::graphics::DisplayConfigurationOutput &screen)
 
 Screen::~Screen()
 {
-    //if a DisplayWindow associated with this screen, kill it
-    if (m_displayWindow) {
-        m_displayWindow->window()->destroy(); // ends up destroying m_displayWindow
+    //if a ScreenWindow associated with this screen, kill it
+    if (m_screenWindow) {
+        m_screenWindow->window()->destroy(); // ends up destroying m_ScreenWindow
     }
 }
 
@@ -199,8 +199,8 @@ void Screen::setMirDisplayConfiguration(const mir::graphics::DisplayConfiguratio
     if (m_geometry != oldGeometry) {
         QWindowSystemInterface::handleScreenGeometryChange(this->screen(), m_geometry);
         QWindowSystemInterface::handleScreenAvailableGeometryChange(this->screen(), m_geometry);
-        if (!m_displayWindow.isNull()) { // resize corresponding window immediately
-            m_displayWindow->setGeometry(m_geometry);
+        if (!m_screenWindow.isNull()) { // resize corresponding window immediately
+            m_screenWindow->setGeometry(m_geometry);
         }
     }
 
@@ -268,17 +268,17 @@ void Screen::onOrientationReadingChanged()
                                               m_orientationSensor->reading()->orientation()));
 }
 
-DisplayWindow* Screen::window() const
+ScreenWindow* Screen::window() const
 {
-    if (m_displayWindow.isNull())
+    if (m_screenWindow.isNull())
         return nullptr;
 
-    return m_displayWindow;
+    return m_screenWindow;
 }
 
-void Screen::setWindow(DisplayWindow *window)
+void Screen::setWindow(ScreenWindow *window)
 {
-    m_displayWindow = window;
+    m_screenWindow = window;
 }
 
 mir::graphics::DisplayBuffer* Screen::mirDisplayBuffer() const
