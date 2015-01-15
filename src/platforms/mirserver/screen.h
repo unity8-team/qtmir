@@ -34,6 +34,7 @@
 #include "displaywindow.h"
 
 class QOrientationSensor;
+namespace mir { namespace graphics { class DisplayBuffer; }}
 
 class Screen : public QObject, public QPlatformScreen
 {
@@ -53,11 +54,10 @@ public:
 
     void toggleSensors(const bool enable) const;
 
+    DisplayWindow* window() const;
+
     // QObject methods.
     void customEvent(QEvent* event) override;
-
-    DisplayWindow* window() const;
-    void setWindow(DisplayWindow *window);
 
     // To make it testable
     static bool skipDBusRegistration;
@@ -68,7 +68,11 @@ public Q_SLOTS:
    void onOrientationReadingChanged();
 
 private:
+    void setWindow(DisplayWindow *window);
+
     void setMirDisplayConfiguration(const mir::graphics::DisplayConfigurationOutput &);
+    mir::graphics::DisplayBuffer *mirDisplayBuffer() const;
+    void setMirDisplayBuffer(mir::graphics::DisplayBuffer *);
 
     QRect m_geometry;
     int m_depth;
@@ -76,6 +80,7 @@ private:
     QSizeF m_physicalSize;
     qreal m_refreshRate;
 
+    mir::graphics::DisplayBuffer *m_displayBuffer;
     mir::graphics::DisplayConfigurationOutputId m_outputId;
     mir::graphics::DisplayConfigurationCardId m_cardId;
     mir::graphics::DisplayConfigurationOutputType m_type;
@@ -89,6 +94,7 @@ private:
     QDBusInterface *m_unityScreen;
 
     friend class ScreenController;
+    friend class DisplayWindow;
 };
 
 #endif // SCREEN_H

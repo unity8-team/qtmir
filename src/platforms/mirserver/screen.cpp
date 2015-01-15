@@ -280,3 +280,14 @@ void Screen::setWindow(DisplayWindow *window)
 {
     m_displayWindow = window;
 }
+
+mir::graphics::DisplayBuffer* Screen::mirDisplayBuffer() const
+{
+    return m_displayBuffer;
+}
+
+void Screen::setMirDisplayBuffer(mir::graphics::DisplayBuffer *buffer)
+{
+    // This operation should only be performed while rendering is stopped
+    m_displayBuffer = buffer;
+}

@@ -27,6 +27,7 @@
 
 // Mir
 #include <mir/graphics/display.h>
+#include <mir/graphics/display_buffer.h>
 #include <mir/main_loop.h>
 
 // Qt
@@ -52,6 +53,8 @@ ScreenController::ScreenController(const QSharedPointer<MirServer> &server,
     , m_platformIntegration(platformIntegration)
     , m_watchForUpdates(true)
 {
+    qCDebug(QTMIR_SCREENS) << "ScreenController::ScreenController";
+
     // Using Blocking Queued Connection to enforce synchronization of Qt GUI thread with Mir thread(s)
     auto compositor = static_cast<QtCompositor *>(m_server->the_compositor().get());
     connect(compositor, &QtCompositor::starting,
@@ -73,6 +76,7 @@ ScreenController::ScreenController(const QSharedPointer<MirServer> &server,
 
 void ScreenController::onCompositorStarting()
 {
+    qCDebug(QTMIR_SCREENS) << "ScreenController::onCompositorStarting";
     {
         QMutexLocker lock(&m_mutex);
         m_watchForUpdates = false;
@@ -93,6 +97,7 @@ void ScreenController::onCompositorStarting()
 
 void ScreenController::onCompositorStopping()
 {
+    qCDebug(QTMIR_SCREENS) << "ScreenController::onCompositorStopping";
     {
         QMutexLocker lock(&m_mutex);
         m_watchForUpdates = true;
@@ -109,17 +114,18 @@ void ScreenController::onCompositorStopping()
 void ScreenController::updateScreens()
 {
     qCDebug(QTMIR_SCREENS) << "ScreenController::update";
-    std::shared_ptr<mg::DisplayConfiguration> displayConfig = m_server->the_display()->configuration();
+    auto display = m_server->the_display();
+    auto displayConfig = display->configuration();
 
-    QList<QScreen*> oldScreenList = QGuiApplication::screens();
+    QList<QScreen*> screenList = QGuiApplication::screens();
 
     displayConfig->for_each_output(
-        [this, &oldScreenList](const mg::DisplayConfigurationOutput &output) {
+        [this, &screenList](const mg::DisplayConfigurationOutput &output) {
             if (output.used && output.connected) {
-                Screen *screen = findScreen(oldScreenList, output.id);
+                Screen *screen = findScreen(screenList, output.id);
                 if (screen) { // we've already set up this display before, refresh its internals
                     screen->setMirDisplayConfiguration(output);
-                    oldScreenList.removeAll(screen->screen());
+                    screenList.removeAll(screen->screen());
                 } else {
                     // new display, so create Screen for it
                     screen = new Screen(output);
@@ -132,12 +138,48 @@ void ScreenController::updateScreens()
     );
 
     // Delete any old & unused Screens
-    for (auto screen: oldScreenList) {
+    for (auto screen: screenList) {
         qCDebug(QTMIR_SCREENS) << "Removed Screen with id" << static_cast<Screen *>(screen->handle())->m_outputId.as_value()
                                << "and geometry" << screen->geometry();
         // The screen is automatically removed from Qt's internal list by the QPlatformScreen deconstructor.
         delete screen;
     }
+
+    // Match up the new Mir DisplayBuffers with each Screen
+    screenList = QGuiApplication::screens();
+
+    display->for_each_display_buffer(
+        [&](mg::DisplayBuffer& buffer) {
+            // only way to match Screen to a DisplayBuffer is by matching the geometry
+            QRect dbGeom(buffer.view_area().top_left.x.as_int(),
+                         buffer.view_area().top_left.y.as_int(),
+                         buffer.view_area().size.width.as_int(),
+                         buffer.view_area().size.height.as_int());
+
+            for (auto qscreen : screenList) {
+                if (dbGeom == qscreen->geometry()) {
+                    static_cast<Screen *>(qscreen->handle())->setMirDisplayBuffer(&buffer);
+                }
+            }
+        }
+    );
+}
+
+QScreen* ScreenController::getUnusedQScreen()
+{
+    qCDebug(QTMIR_SCREENS) << "ScreenController::getUnusedQScreen";
+
+    QScreen *unusedQScreen = nullptr;
+    // have all existing screens got an associated DisplayWindow?
+    for (auto qscreen : QGuiApplication::screens()) {
+        auto screen = static_cast<Screen*>(qscreen->handle());
+        if (screen && !screen->window()) {
+            unusedQScreen = qscreen;
+            break;
+        }
+    }
+
+    return unusedQScreen;
 }
 
 Screen* ScreenController::findScreen(const QList<QScreen*> &list, const mg::DisplayConfigurationOutputId id)

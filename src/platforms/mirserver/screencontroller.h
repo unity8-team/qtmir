@@ -42,6 +42,8 @@ public:
                               MirServerIntegration *platformIntegration,
                               QObject *parent = 0);
 
+    QScreen* getUnusedQScreen();
+
 private Q_SLOTS:
     void onCompositorStarting();
     void onCompositorStopping();

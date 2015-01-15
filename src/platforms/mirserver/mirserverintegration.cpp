@@ -133,44 +133,25 @@ QPlatformWindow *MirServerIntegration::createPlatformWindow(QWindow *window) con
 {
     QWindowSystemInterface::flushWindowSystemEvents();
 
-    Screen *unusedDisplay = nullptr;
-    // have all existing screens got an associated DisplayWindow?
-    for (auto qscreen : QGuiApplication::screens()) {
+    // User may have specified an unused Screen for this Window
+    QScreen *qscreen = window->screen();
+    if (qscreen) {
         auto screen = static_cast<Screen*>(qscreen->handle());
-        if (screen && !screen->window()) {
-            unusedDisplay = screen;
-            break;
+        if (screen->window()) {
+            qDebug() << "Screen already has a QWindow/DisplayWindow attached";
+            return nullptr;
         }
-    }
-
-    if (!unusedDisplay) { // no available screen
-        qDebug() << "No available Screens to create a new QWindow/DisplayWindow for";
-        return nullptr;
-    }
-
-    DisplayWindow* displayWindow = nullptr;
-
-    // Find the DisplayBuffer for this Window
-    m_mirServer->the_display()->for_each_display_buffer(
-                [&](mg::DisplayBuffer& buffer) {
-        // only way to match Screen to a DisplayBuffer is by matching the geometry
-        QRect dbGeom(buffer.view_area().top_left.x.as_int(),
-                     buffer.view_area().top_left.y.as_int(),
-                     buffer.view_area().size.width.as_int(),
-                     buffer.view_area().size.height.as_int());
-
-        if (dbGeom == unusedDisplay->geometry() && !displayWindow) {
-            displayWindow = new DisplayWindow(window, &buffer);
-            unusedDisplay->setWindow(displayWindow);
+    } else {
+        // If Screen was not specified, just grab an unused one, if available
+        qscreen = m_screenController->getUnusedQScreen();
+        if (!qscreen) {
+            qDebug() << "No available Screens to create a new QWindow/DisplayWindow for";
+            return nullptr;
         }
-    });
-
-    if (!displayWindow) {
-        qDebug() << "Unable to find mg::DisplayBuffer associated with a Screen of geometry" << unusedDisplay->geometry();
-        return nullptr;
+        window->setScreen(qscreen);
     }
 
-    return displayWindow;
+    return new DisplayWindow(window);
 }
 
 QPlatformBackingStore *MirServerIntegration::createPlatformBackingStore(QWindow *window) const

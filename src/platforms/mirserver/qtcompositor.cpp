@@ -29,10 +29,12 @@
 QtCompositor::QtCompositor()
     : m_running(false)
 {
+    qCDebug(QTMIR_SCREENS) << "QtCompositor::QtCompositor";
 }
 
 QtCompositor::~QtCompositor()
 {
+    qCDebug(QTMIR_SCREENS) << "QtCompositor::~QtCompositor";
     stop();
 }
 

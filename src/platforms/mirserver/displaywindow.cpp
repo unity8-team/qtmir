@@ -18,8 +18,10 @@
  */
 
 #include "displaywindow.h"
+#include "screen.h"
 
-#include "mir/geometry/size.h"
+#include <mir/geometry/size.h>
+#include <mir/graphics/display_buffer.h>
 
 #include <qpa/qwindowsysteminterface.h>
 #include <qpa/qplatformscreen.h>
@@ -36,14 +38,18 @@ static WId newWId()
     return ++id;
 }
 
-DisplayWindow::DisplayWindow(QWindow *window, mir::graphics::DisplayBuffer *displayBuffer)
+DisplayWindow::DisplayWindow(QWindow *window)
     : QObject(nullptr), QPlatformWindow(window)
     , m_isExposed(true)
     , m_winId(newWId())
-    , m_displayBuffer(displayBuffer)
 {
     qDebug() << "DisplayWindow::DisplayWindow";
     qWarning("Window %p: %p 0x%x\n", this, window, uint(m_winId));
+
+    // Register with the Screen it is associated with
+    auto windowscreen = static_cast<Screen *>(screen());
+    Q_ASSERT(windowscreen);
+    windowscreen->setWindow(this);
 
     QRect screenGeometry(screen()->availableGeometry());
     if (window->geometry() != screenGeometry) {
@@ -100,38 +106,19 @@ bool DisplayWindow::event(QEvent *event)
 
 void DisplayWindow::swapBuffers()
 {
-    m_displayBuffer->gl_swap_buffers();
-    m_displayBuffer->flip();
+    auto displayBuffer = static_cast<Screen *>(screen())->mirDisplayBuffer();
+    displayBuffer->gl_swap_buffers();
+    displayBuffer->flip();
 }
 
 void DisplayWindow::makeCurrent()
 {
-    m_displayBuffer->make_current();
+    auto displayBuffer = static_cast<Screen *>(screen())->mirDisplayBuffer();
+    displayBuffer->make_current();
 }
 
 void DisplayWindow::doneCurrent()
 {
-    m_displayBuffer->release_current();
-}
-
-mir::graphics::DisplayBuffer* DisplayWindow::mirDisplayBuffer() const
-{
-    return m_displayBuffer;
-}
-
-void DisplayWindow::setMirDisplayBuffer(mir::graphics::DisplayBuffer *buffer)
-{
-    if (m_displayBuffer == buffer)
-        return;
-
-    // Changing Display Buffers indicates that if there's a current GL context, it needs
-    // to be destroyed and recreated
-    bool isVisible = window()->isVisible();
-    if (isVisible) {
-        window()->setVisible(false); // causes GL resources to be released
-    }
-    m_displayBuffer = buffer;
-    if (isVisible) {
-        window()->setVisible(false); // recreate GL resources
-    }
+    auto displayBuffer = static_cast<Screen *>(screen())->mirDisplayBuffer();
+    displayBuffer->release_current();
 }
