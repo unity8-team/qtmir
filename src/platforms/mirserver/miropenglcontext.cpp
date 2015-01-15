@@ -120,8 +120,8 @@ void MirOpenGLContext::swapBuffers(QPlatformSurface *surface)
 #endif
 
     // ultimately calls Mir's DisplayBuffer::post_update()
-    ScreenWindow *displayBuffer = static_cast<ScreenWindow*>(surface);
-    displayBuffer->swapBuffers(); //blocks for vsync
+    ScreenWindow *screenWindow = static_cast<ScreenWindow*>(surface);
+    screenWindow->swapBuffers(); //blocks for vsync
 }
 
 bool MirOpenGLContext::makeCurrent(QPlatformSurface *surface)
@@ -131,9 +131,9 @@ bool MirOpenGLContext::makeCurrent(QPlatformSurface *surface)
 #endif
 
     // ultimately calls Mir's DisplayBuffer::make_current()
-    ScreenWindow *displayBuffer = static_cast<ScreenWindow*>(surface);
-    if (displayBuffer) {
-        displayBuffer->makeCurrent();
+    ScreenWindow *screenWindow = static_cast<ScreenWindow*>(surface);
+    if (screenWindow) {
+        screenWindow->makeCurrent();
 
 #if GL_DEBUG
         if (!m_logger->isLogging() && m_logger->initialize()) {
