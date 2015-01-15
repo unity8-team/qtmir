@@ -96,7 +96,6 @@ MirServerIntegration::MirServerIntegration()
 
     m_mirServer = QSharedPointer<MirServer>(
                       new MirServer(args.length(), const_cast<const char**>(argv)));
-    m_screenController.reset(new ScreenController(m_mirServer, this));
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
     QGuiApplicationPrivate::instance()->setEventDispatcher(eventDispatcher_);
@@ -177,6 +176,7 @@ void MirServerIntegration::initialize()
 {
     // Creates instance of and start the Mir server in a separate thread
     m_qmirServer = new QMirServer(m_mirServer);
+    m_screenController.reset(new ScreenController(m_mirServer, this)); // FIXME - move into QMirServer
 
     m_nativeInterface = new NativeInterface(m_mirServer);
 
