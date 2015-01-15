@@ -34,7 +34,6 @@
 #include <QMutexLocker>
 #include <QScreen>
 #include <QQuickWindow>
-#include <QtQuick/private/qsgrenderloop_p.h>
 
 // std
 #include <memory>
@@ -84,12 +83,11 @@ void ScreenController::onCompositorStarting()
     updateScreens();
 
     // (Re)Start Qt's render thread by setting all windows with a corresponding screen to exposed.
-    auto renderLoop = QSGRenderLoop::instance();
-    for (auto window : renderLoop->windows()) {
-        for (auto screen : m_qscreenList) {
-            if (window->screen() == screen) {
-                renderLoop->show(window);
-            }
+    for (auto qscreen : m_qscreenList) {
+        auto screen = static_cast<Screen *>(qscreen->handle());
+        auto window = static_cast<ScreenWindow *>(screen->window());
+        if (window) {
+            window->setVisible(true);
         }
     }
 }
@@ -104,9 +102,12 @@ void ScreenController::onCompositorStopping()
 
     // Stop Qt's render threads by setting all its windows it obscured. Must
     // block until all windows have their GL contexts released.
-    auto renderLoop = QSGRenderLoop::instance();
-    for (auto window : renderLoop->windows()) {
-        renderLoop->hide(window);
+    for (auto qscreen : m_qscreenList) {
+        auto screen = static_cast<Screen *>(qscreen->handle());
+        auto window = static_cast<ScreenWindow *>(screen->window());
+        if (window) {
+            window->setVisible(false);
+        }
     }
 }
 

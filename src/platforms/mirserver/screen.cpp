@@ -288,6 +288,7 @@ mir::graphics::DisplayBuffer* Screen::mirDisplayBuffer() const
 
 void Screen::setMirDisplayBuffer(mir::graphics::DisplayBuffer *buffer)
 {
+    qCDebug(QTMIR_SCREENS) << "Screen::setMirDisplayBuffer" << buffer;
     // This operation should only be performed while rendering is stopped
     m_displayBuffer = buffer;
 }

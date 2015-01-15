@@ -82,7 +82,7 @@ void QMirServer::shutDownMirServer()
 {
     if (m_mirThread.isRunning()) {
         m_mirServer->stop();
-        m_mirThread.wait(1000);
+        m_mirThread.wait();
     }
 }
 
