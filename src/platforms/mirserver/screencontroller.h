@@ -54,6 +54,7 @@ private:
 
     const QSharedPointer<MirServer> &m_server;
     MirServerIntegration *m_platformIntegration;
+    QList<QScreen*> m_qscreenList;
     bool m_watchForUpdates;
     QMutex m_mutex;
 };

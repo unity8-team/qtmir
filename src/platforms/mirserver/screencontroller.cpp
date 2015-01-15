@@ -31,7 +31,6 @@
 #include <mir/main_loop.h>
 
 // Qt
-#include <QGuiApplication>
 #include <QMutexLocker>
 #include <QScreen>
 #include <QQuickWindow>
@@ -87,7 +86,7 @@ void ScreenController::onCompositorStarting()
     // (Re)Start Qt's render thread by setting all windows with a corresponding screen to exposed.
     auto renderLoop = QSGRenderLoop::instance();
     for (auto window : renderLoop->windows()) {
-        for (auto screen : QGuiApplication::screens()) {
+        for (auto screen : m_qscreenList) {
             if (window->screen() == screen) {
                 renderLoop->show(window);
             }
@@ -117,15 +116,18 @@ void ScreenController::updateScreens()
     auto display = m_server->the_display();
     auto displayConfig = display->configuration();
 
-    QList<QScreen*> screenList = QGuiApplication::screens();
+    QMutexLocker lock(&m_mutex);
+
+    QList<QScreen*> oldQScreenList = m_qscreenList;
+    m_qscreenList.clear();
 
     displayConfig->for_each_output(
-        [this, &screenList](const mg::DisplayConfigurationOutput &output) {
+        [this, &oldQScreenList](const mg::DisplayConfigurationOutput &output) {
             if (output.used && output.connected) {
-                Screen *screen = findScreen(screenList, output.id);
+                Screen *screen = findScreen(oldQScreenList, output.id);
                 if (screen) { // we've already set up this display before, refresh its internals
                     screen->setMirDisplayConfiguration(output);
-                    screenList.removeAll(screen->screen());
+                    oldQScreenList.removeAll(screen->screen());
                 } else {
                     // new display, so create Screen for it
                     screen = new Screen(output);
@@ -133,12 +135,13 @@ void ScreenController::updateScreens()
                     qCDebug(QTMIR_SCREENS) << "Added Screen with id" << output.id.as_value()
                                            << "and geometry" << screen->geometry();
                 }
+                m_qscreenList.append(screen->screen());
             }
         }
     );
 
     // Delete any old & unused Screens
-    for (auto screen: screenList) {
+    for (auto screen: oldQScreenList) {
         qCDebug(QTMIR_SCREENS) << "Removed Screen with id" << static_cast<Screen *>(screen->handle())->m_outputId.as_value()
                                << "and geometry" << screen->geometry();
         // The screen is automatically removed from Qt's internal list by the QPlatformScreen deconstructor.
@@ -146,8 +149,6 @@ void ScreenController::updateScreens()
     }
 
     // Match up the new Mir DisplayBuffers with each Screen
-    screenList = QGuiApplication::screens();
-
     display->for_each_display_buffer(
         [&](mg::DisplayBuffer& buffer) {
             // only way to match Screen to a DisplayBuffer is by matching the geometry
@@ -156,13 +157,19 @@ void ScreenController::updateScreens()
                          buffer.view_area().size.width.as_int(),
                          buffer.view_area().size.height.as_int());
 
-            for (auto qscreen : screenList) {
+            for (auto qscreen : m_qscreenList) {
                 if (dbGeom == qscreen->geometry()) {
                     static_cast<Screen *>(qscreen->handle())->setMirDisplayBuffer(&buffer);
                 }
             }
         }
     );
+
+    for (auto qscreen: m_qscreenList) {
+        qCDebug(QTMIR_SCREENS) << "Screen - id:" << static_cast<Screen *>(qscreen->handle())->m_outputId.as_value()
+                               << "geometry" << qscreen->geometry();
+    }
+
 }
 
 QScreen* ScreenController::getUnusedQScreen()
@@ -171,7 +178,7 @@ QScreen* ScreenController::getUnusedQScreen()
 
     QScreen *unusedQScreen = nullptr;
     // have all existing screens got an associated ScreenWindow?
-    for (auto qscreen : QGuiApplication::screens()) {
+    for (auto qscreen : m_qscreenList) {
         auto screen = static_cast<Screen*>(qscreen->handle());
         if (screen && !screen->window()) {
             unusedQScreen = qscreen;
