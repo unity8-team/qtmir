@@ -20,6 +20,7 @@
 #include "desktopfilereader.h"
 #include "dbuswindowstack.h"
 #include "session.h"
+#include "sharedwakelock.h"
 #include "proc_info.h"
 #include "taskcontroller.h"
 #include "upstart/applicationcontroller.h"
@@ -160,6 +161,7 @@ ApplicationManager* ApplicationManager::Factory::Factory::create(QJSEngine *jsEn
     QSharedPointer<TaskController> taskController(new TaskController(nullptr, appController));
     QSharedPointer<DesktopFileReader::Factory> fileReaderFactory(new DesktopFileReader::Factory());
     QSharedPointer<ProcInfo> procInfo(new ProcInfo());
+    QSharedPointer<SharedWakelock> sharedWakelock(new SharedWakelock);
 
     // FIXME: We should use a QSharedPointer to wrap this ApplicationManager object, which requires us
     // to use the data() method to pass the raw pointer to the QML engine. However the QML engine appears
@@ -169,6 +171,7 @@ ApplicationManager* ApplicationManager::Factory::Factory::create(QJSEngine *jsEn
     ApplicationManager* appManager = new ApplicationManager(
                                              mirServer,
                                              taskController,
+                                             sharedWakelock,
                                              fileReaderFactory,
                                              procInfo,
                                              jsEngine
@@ -205,6 +208,7 @@ ApplicationManager* ApplicationManager::singleton(QJSEngine *jsEngine)
 ApplicationManager::ApplicationManager(
         const QSharedPointer<MirServer>& mirServer,
         const QSharedPointer<TaskController>& taskController,
+        const QSharedPointer<SharedWakelock>& sharedWakelock,
         const QSharedPointer<DesktopFileReader::Factory>& desktopFileReaderFactory,
         const QSharedPointer<ProcInfo>& procInfo,
         QJSEngine *jsEngine,
@@ -219,6 +223,7 @@ ApplicationManager::ApplicationManager(
     , m_taskController(taskController)
     , m_desktopFileReaderFactory(desktopFileReaderFactory)
     , m_procInfo(procInfo)
+    , m_sharedWakelock(sharedWakelock)
     , m_surfaceAboutToBeCreatedCallback(QJSValue::UndefinedValue)
     , m_jsEngine(jsEngine)
     , m_suspended(false)
@@ -528,6 +533,7 @@ Application *ApplicationManager::startApplication(const QString &inputAppId, Exe
     } else {
         application = new Application(
                     m_taskController,
+                    m_sharedWakelock,
                     m_desktopFileReaderFactory->createInstance(appId, m_taskController->findDesktopFileForAppId(appId)),
                     Application::Starting,
                     arguments,
@@ -557,6 +563,7 @@ void ApplicationManager::onProcessStarting(const QString &appId)
     if (!application) { // then shell did not start this application, so ubuntu-app-launch must have - add to list
         application = new Application(
                     m_taskController,
+                    m_sharedWakelock,
                     m_desktopFileReaderFactory->createInstance(appId, m_taskController->findDesktopFileForAppId(appId)),
                     Application::Starting,
                     QStringList(),
@@ -831,6 +838,7 @@ void ApplicationManager::authorizeSession(const quint64 pid, bool &authorized)
     QStringList arguments(info->asStringList());
     application = new Application(
         m_taskController,
+        m_sharedWakelock,
         desktopData,
         Application::Starting,
         arguments,
