@@ -21,10 +21,12 @@
 #include <QObject>
 #include <QThread>
 #include <QSharedPointer>
+#include <QScopedPointer>
 
 // local
 #include "mirserver.h"
 
+// std
 #include <condition_variable>
 #include <mutex>
 
@@ -56,17 +58,25 @@ private:
 };
 
 
+class Screen;
+class ScreenController;
+
 class QMirServer: public QObject
 {
     Q_OBJECT
 
 public:
     QMirServer(const QSharedPointer<MirServer> &config, QObject* parent=0);
-    ~QMirServer();
+    virtual ~QMirServer();
 
-Q_SIGNALS:
     void run();
     void stop();
+
+    ScreenController* screenController() const;
+
+Q_SIGNALS:
+    void runServer();
+    void stopServer();
 
 protected Q_SLOTS:
     void shutDownMirServer();
@@ -74,7 +84,9 @@ protected Q_SLOTS:
 
 private:
     QThread m_mirThread;
-    MirServerWorker *m_mirServer;
+    const QSharedPointer<MirServer> m_server;
+    QScopedPointer<MirServerWorker> m_mirServer;
+    QScopedPointer<ScreenController> m_screenController;
     Q_DISABLE_COPY(QMirServer)
 };
 

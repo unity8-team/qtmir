@@ -18,7 +18,6 @@
  */
 
 #include "qtcompositor.h"
-#include "mirserverintegration.h"
 #include "logging.h"
 
 // Mir
@@ -26,26 +25,9 @@
 
 
 // Lives in a Mir thread
-QtCompositor::QtCompositor()
-    : m_running(false)
-{
-    qCDebug(QTMIR_SCREENS) << "QtCompositor::QtCompositor";
-}
-
-QtCompositor::~QtCompositor()
-{
-    qCDebug(QTMIR_SCREENS) << "QtCompositor::~QtCompositor";
-    stop();
-}
-
 void QtCompositor::start()
 {
     qCDebug(QTMIR_SCREENS) << "QtCompositor::start";
-    QMutexLocker lock(&m_runningMutex);
-    if (m_running) {
-        return;
-    }
-    m_running = true;
 
     Q_EMIT starting(); // blocks
 }
@@ -53,12 +35,6 @@ void QtCompositor::start()
 void QtCompositor::stop()
 {
     qCDebug(QTMIR_SCREENS) << "QtCompositor::stop";
-    QMutexLocker lock(&m_runningMutex);
 
-    if (!m_running) {
-        return;
-    }
     Q_EMIT stopping(); // blocks
-
-    m_running = false;
 }

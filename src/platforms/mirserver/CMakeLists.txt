@@ -55,6 +55,7 @@ set(MIRSERVER_QPA_PLUGIN_SRC
     mirserverintegration.cpp
     miropenglcontext.cpp
     nativeinterface.cpp
+    offscreensurface.cpp
     qtcompositor.cpp
     services.cpp
     ubuntutheme.cpp

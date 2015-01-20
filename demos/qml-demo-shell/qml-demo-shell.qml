@@ -1,5 +1,7 @@
-import QtQuick 2.0
+import QtQuick 2.3
+import QtQuick.Window 2.2
 import Unity.Application 0.1
+import Unity.Screens 0.1
 
 Rectangle {
     id: root
@@ -152,6 +154,50 @@ Rectangle {
                 closeAnimation.surface.release();
                 print("surface destroyed")
             }
+        }
+    }
+
+
+    Component {
+        id: window1
+        Window {
+            color: "lightgreen"
+            visible: true // if not set visible, Window is not created!!
+
+            Image {
+                id: unityLogo1
+                source: "UnityLogo.png"
+                fillMode: Image.PreserveAspectFit
+                anchors.centerIn: parent
+                width: 600
+                height: 600
+
+                RotationAnimation {
+                    id: logoAnimation1
+                    target: unityLogo1
+                    from: 359
+                    to: 0
+                    duration: 5000
+                    easing.type: Easing.Linear
+                    loops: Animation.Infinite
+                    running: true
+                }
+                Component.onCompleted: print("new window!!")
+                Component.onDestruction: print("window destroyed!!")
+            }
+        }
+    }
+
+    Screens {
+        id: screens
+        property variant secondWindow: null
+        onScreenAdded: {
+            print("Screen added!!")
+            secondWindow = window1.createObject(root)
+        }
+        onScreenRemoved: {
+            print("Screen removed!!!")
+            secondWindow.destroy();
         }
     }
 }

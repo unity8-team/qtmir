@@ -50,6 +50,7 @@
 #include "clipboard.h"
 #include "miropenglcontext.h"
 #include "nativeinterface.h"
+#include "offscreensurface.h"
 #include "qmirserver.h"
 #include "screen.h"
 #include "screencontroller.h"
@@ -61,7 +62,8 @@ namespace mg = mir::graphics;
 using qtmir::Clipboard;
 
 MirServerIntegration::MirServerIntegration()
-    : m_accessibility(new QPlatformAccessibility())
+    : QObject()
+    , m_accessibility(new QPlatformAccessibility())
     , m_fontDb(new QGenericUnixFontDatabase())
     , m_services(new Services)
 #if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
@@ -130,27 +132,31 @@ bool MirServerIntegration::hasCapability(QPlatformIntegration::Capability cap) c
 
 QPlatformWindow *MirServerIntegration::createPlatformWindow(QWindow *window) const
 {
+    qDebug() << "createPlatformWindow" << window;
+
     QWindowSystemInterface::flushWindowSystemEvents();
 
     // User may have specified an unused Screen for this Window
     QScreen *qscreen = window->screen();
-    if (qscreen) {
-        auto screen = static_cast<Screen*>(qscreen->handle());
-        if (screen->window()) {
-            qDebug() << "Screen already has a QWindow/ScreenWindow attached";
-            return nullptr;
-        }
-    } else {
-        // If Screen was not specified, just grab an unused one, if available
-        qscreen = m_screenController->getUnusedQScreen();
-        if (!qscreen) {
-            qDebug() << "No available Screens to create a new QWindow/ScreenWindow for";
-            return nullptr;
-        }
-        window->setScreen(qscreen);
-    }
+//    if (qscreen) {
+//        auto screen = static_cast<Screen*>(qscreen->handle());
+//        if (screen->window()) {
+//            qDebug() << "Specified Screen already has a QWindow/ScreenWindow attached, overriding";
+//        }
+//    }
 
-    return new ScreenWindow(window);
+    // If Screen was not specified, just grab an unused one, if available
+    Screen *screen = m_qmirServer->screenController()->getUnusedScreen();
+    if (!screen) {
+        qDebug() << "No available Screens to create a new QWindow/ScreenWindow for";
+        return nullptr;
+    }
+    qscreen = screen->screen();
+    window->setScreen(qscreen);
+
+    auto platformWindow = new ScreenWindow(window);
+    qDebug() << "New" << window << "is backed by a" << screen << "with geometry" << screen->geometry();
+    return platformWindow;
 }
 
 QPlatformBackingStore *MirServerIntegration::createPlatformBackingStore(QWindow *window) const
@@ -176,7 +182,9 @@ void MirServerIntegration::initialize()
 {
     // Creates instance of and start the Mir server in a separate thread
     m_qmirServer = new QMirServer(m_mirServer);
-    m_screenController.reset(new ScreenController(m_mirServer, this)); // FIXME - move into QMirServer
+    connect(m_qmirServer->screenController(), &ScreenController::screenAdded,
+            [&](QPlatformScreen *screen) { screenAdded(screen); });
+    m_qmirServer->run();
 
     m_nativeInterface = new NativeInterface(m_mirServer);
 
@@ -218,3 +226,10 @@ QPlatformClipboard *MirServerIntegration::clipboard() const
 {
     return m_clipboard.data();
 }
+
+QPlatformOffscreenSurface *MirServerIntegration::createPlatformOffscreenSurface(
+        QOffscreenSurface *surface) const
+{
+    return new OffscreenSurface(m_mirServer, surface);
+}
+

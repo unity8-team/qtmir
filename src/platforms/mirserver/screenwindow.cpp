@@ -40,10 +40,10 @@ static WId newWId()
 
 ScreenWindow::ScreenWindow(QWindow *window)
     : QObject(nullptr), QPlatformWindow(window)
-    , m_isExposed(true)
+    , m_isExposed(false)
     , m_winId(newWId())
 {
-    qDebug() << "ScreenWindow::ScreenWindow";
+    qDebug() << "ScreenWindow::ScreenWindow" << this;
     qWarning("Window %p: %p 0x%x\n", this, window, uint(m_winId));
 
     // Register with the Screen it is associated with
@@ -62,6 +62,11 @@ ScreenWindow::ScreenWindow(QWindow *window)
     requestActivateWindow();
 }
 
+ScreenWindow::~ScreenWindow()
+{
+    qDebug() << "ScreenWindow::~ScreenWindow" << this;
+}
+
 QRect ScreenWindow::geometry() const
 {
     // For yet-to-become-fullscreen windows report the geometry covering the entire
@@ -78,10 +83,10 @@ void ScreenWindow::setGeometry(const QRect &)
     QPlatformWindow::setGeometry(rect);
 }
 
-bool ScreenWindow::isExposed() const
-{
-    return m_isExposed;
-}
+//bool ScreenWindow::isExposed() const
+//{
+//    return m_isExposed;
+//}
 
 bool ScreenWindow::event(QEvent *event)
 {
@@ -90,16 +95,16 @@ bool ScreenWindow::event(QEvent *event)
     if (event->type() == QEvent::Hide) {
         qDebug() << "ScreenWindow::event got QEvent::Hide";
         m_isExposed = false;
-        QWindowSystemInterface::handleExposeEvent(window(), QRect());
-        QWindowSystemInterface::flushWindowSystemEvents();
-        return true;
+        //QWindowSystemInterface::handleExposeEvent(window(), QRect());
+        //QWindowSystemInterface::flushWindowSystemEvents();
+        //return true;
     } else if (event->type() == QEvent::Show) {
         qDebug() << "ScreenWindow::event got QEvent::Show";
         m_isExposed = true;
-        QRect rect(QPoint(), geometry().size());
-        QWindowSystemInterface::handleExposeEvent(window(), rect);
-        QWindowSystemInterface::flushWindowSystemEvents();
-        return true;
+        //QRect rect(QPoint(), geometry().size());
+        //QWindowSystemInterface::handleExposeEvent(window(), rect);
+        //QWindowSystemInterface::flushWindowSystemEvents();
+        //return true;
     }
     return QObject::event(event);
 }
@@ -119,6 +124,8 @@ void ScreenWindow::makeCurrent()
 
 void ScreenWindow::doneCurrent()
 {
+    qDebug() << "ScreenWindow::doneCurrent";
+
     auto displayBuffer = static_cast<Screen *>(screen())->mirDisplayBuffer();
     displayBuffer->release_current();
 }

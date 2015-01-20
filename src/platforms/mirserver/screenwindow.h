@@ -31,13 +31,14 @@ class ScreenWindow : public QObject, public QPlatformWindow
     Q_OBJECT
 public:
     explicit ScreenWindow(QWindow *window);
+    virtual ~ScreenWindow();
 
     QRect geometry() const override;
     void setGeometry(const QRect &rect) override;
 
     WId winId() const override { return m_winId; }
 
-    bool isExposed() const override;
+    //bool isExposed() const override;
 
     bool event(QEvent *event) override;
 
