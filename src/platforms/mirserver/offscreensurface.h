@@ -27,8 +27,7 @@ class QOpenGLFramebufferObject;
 class OffscreenSurface : public QPlatformOffscreenSurface
 {
 public:
-    OffscreenSurface(const QSharedPointer<MirServer> &mirServer,
-                     QOffscreenSurface *offscreenSurface);
+    OffscreenSurface(QOffscreenSurface *offscreenSurface);
 
     QSurfaceFormat format() const override;
     bool isValid() const override;

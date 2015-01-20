@@ -32,13 +32,11 @@
 
 namespace mg = mir::graphics;
 
-OffscreenSurface::OffscreenSurface(const QSharedPointer<MirServer> &mirServer,
-                                   QOffscreenSurface *offscreenSurface)
+OffscreenSurface::OffscreenSurface(QOffscreenSurface *offscreenSurface)
     : QPlatformOffscreenSurface(offscreenSurface)
     , m_buffer(nullptr)
     , m_format(offscreenSurface->requestedFormat())
 {
-    Q_UNUSED(mirServer)
 }
 
 QSurfaceFormat OffscreenSurface::format() const

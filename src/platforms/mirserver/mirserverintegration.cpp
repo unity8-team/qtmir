@@ -230,6 +230,6 @@ QPlatformClipboard *MirServerIntegration::clipboard() const
 QPlatformOffscreenSurface *MirServerIntegration::createPlatformOffscreenSurface(
         QOffscreenSurface *surface) const
 {
-    return new OffscreenSurface(m_mirServer, surface);
+    return new OffscreenSurface(surface);
 }
 
