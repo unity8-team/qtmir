@@ -25,6 +25,7 @@
 
 #include <QDebug>
 
+#include <QOpenGLFramebufferObject>
 #include <QSurfaceFormat>
 #include <QtPlatformSupport/private/qeglconvenience_p.h>
 
@@ -121,8 +122,7 @@ void MirOpenGLContext::swapBuffers(QPlatformSurface *surface)
 #endif
 
     if (surface->surface()->surfaceClass() == QSurface::Offscreen) {
-        auto offscreen = static_cast<OffscreenSurface *>(surface);
-        eglSwapBuffers(m_eglDisplay, offscreen->eglSurface());
+        // NOOP
     } else {
         // ultimately calls Mir's DisplayBuffer::post_update()
         ScreenWindow *screenWindow = static_cast<ScreenWindow*>(surface);
@@ -138,7 +138,11 @@ bool MirOpenGLContext::makeCurrent(QPlatformSurface *surface)
 
     if (surface->surface()->surfaceClass() == QSurface::Offscreen) {
         auto offscreen = static_cast<OffscreenSurface *>(surface);
-        return eglMakeCurrent(m_eglDisplay, offscreen->eglSurface(), offscreen->eglSurface(), m_eglContext);
+        if (!offscreen->buffer()) {
+            auto buffer = new QOpenGLFramebufferObject(surface->surface()->size());
+            offscreen->setBuffer(buffer);
+        }
+        return offscreen->buffer()->bind();
     }
 
     // ultimately calls Mir's DisplayBuffer::make_current()

@@ -21,27 +21,24 @@
 #include <QSurfaceFormat>
 #include <QSharedPointer>
 
-#define MESA_EGL_NO_X11_HEADERS
-#include <EGL/egl.h>
-
 class MirServer;
+class QOpenGLFramebufferObject;
 
 class OffscreenSurface : public QPlatformOffscreenSurface
 {
 public:
     OffscreenSurface(const QSharedPointer<MirServer> &mirServer,
                      QOffscreenSurface *offscreenSurface);
-    ~OffscreenSurface();
 
     QSurfaceFormat format() const override;
     bool isValid() const override;
 
-    EGLSurface eglSurface() const;
+    QOpenGLFramebufferObject* buffer() const;
+    void setBuffer(QOpenGLFramebufferObject *buffer);
 
 private:
+    QOpenGLFramebufferObject *m_buffer;
     QSurfaceFormat m_format;
-    EGLDisplay m_eglDisplay;
-    EGLSurface m_eglSurface;
 };
 
 #endif // OFFSCREENSURFACE_H
