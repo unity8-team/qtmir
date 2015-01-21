@@ -177,17 +177,16 @@ Rectangle {
                     target: unityLogo1
                     from: 359
                     to: 0
-                    duration: 5000
+                    duration: 7000
                     easing.type: Easing.Linear
                     loops: Animation.Infinite
-                    running: true
                 }
                 Component.onCompleted: print("new window!!")
                 Component.onDestruction: print("window destroyed!!")
             }
 
             Rectangle {
-                width: 30; height: 30
+                width: 50; height: 50
                 color: "blue"
                 x: point1.x
                 y: point1.y
@@ -200,6 +199,15 @@ Rectangle {
                 touchPoints: [
                     TouchPoint { id: point1 }
                 ]
+                onPressed: {
+                    if (logoAnimation1.paused) {
+                        logoAnimation1.resume();
+                    } else if (logoAnimation1.running) {
+                        logoAnimation1.pause();
+                    } else {
+                        logoAnimation1.start();
+                    }
+                }
             }
         }
     }
