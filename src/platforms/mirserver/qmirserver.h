@@ -85,7 +85,7 @@ protected Q_SLOTS:
 
 private:
     QThread m_mirThread;
-    QSharedPointer<ScreenController> m_screenController;
+    ScreenController *m_screenController;
     const QSharedPointer<MirServer> m_server;
     QScopedPointer<MirServerWorker> m_mirServer;
     Q_DISABLE_COPY(QMirServer)

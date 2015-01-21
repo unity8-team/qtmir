@@ -94,7 +94,7 @@ void QMirServer::stop()
 void QMirServer::shutDownMirServer()
 {
     if (m_mirThread.isRunning()) {
-        m_screenController.reset();
+        delete m_screenController;
         m_mirServer->stop();
         m_mirThread.wait();
     }
@@ -103,7 +103,6 @@ void QMirServer::shutDownMirServer()
 void QMirServer::shutDownQApplication()
 {
     if (m_mirThread.isRunning()) {
-        m_screenController.reset();
         m_mirThread.quit();
     }
 
@@ -115,5 +114,5 @@ void QMirServer::shutDownQApplication()
 
 ScreenController* QMirServer::screenController() const
 {
-    return m_screenController.data();
+    return m_screenController;
 }

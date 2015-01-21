@@ -54,7 +54,7 @@ void ignore_unparsed_arguments(int /*argc*/, char const* const/*argv*/[])
 
 Q_LOGGING_CATEGORY(QTMIR_MIR_MESSAGES, "qtmir.mir")
 
-MirServer::MirServer(int argc, char const* argv[], QSharedPointer<ScreenController> &screenController, QObject* parent)
+MirServer::MirServer(int argc, char const* argv[], ScreenController *screenController, QObject* parent)
     : QObject(parent)
 {
     set_command_line_handler(&ignore_unparsed_arguments);

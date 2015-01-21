@@ -149,10 +149,10 @@ class QtWindowSystem : public QtEventFeeder::QtWindowSystemInterface
 {
     bool ready() const override
     {
-        return !m_screenController.isNull();
+        return m_screenController != nullptr;
     }
 
-    void setScreenController(QSharedPointer<ScreenController> &sc) override
+    void setScreenController(ScreenController *sc) override
     {
         m_screenController = sc;
     }
@@ -190,13 +190,13 @@ class QtWindowSystem : public QtEventFeeder::QtWindowSystemInterface
     }    
 
 private:
-    QSharedPointer<ScreenController> m_screenController;
+    ScreenController *m_screenController{nullptr};
 };
 
 } // anonymous namespace
 
 
-QtEventFeeder::QtEventFeeder(QSharedPointer<ScreenController> screenController,
+QtEventFeeder::QtEventFeeder(ScreenController *screenController,
                              QtEventFeeder::QtWindowSystemInterface *windowSystem)
 {
     if (windowSystem) {

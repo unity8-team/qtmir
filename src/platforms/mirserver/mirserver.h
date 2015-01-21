@@ -40,7 +40,7 @@ class MirServer : public QObject, private virtual mir::Server
     Q_PROPERTY(PromptSessionListener* promptSessionListener READ promptSessionListener CONSTANT)
 
 public:
-    MirServer(int argc, char const* argv[], QSharedPointer<ScreenController> &screenController, QObject* parent = 0);
+    MirServer(int argc, char const* argv[], ScreenController *screenController, QObject* parent = 0);
     ~MirServer() = default;
 
     /* mir specific */
