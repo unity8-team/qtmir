@@ -96,13 +96,15 @@ MirServerIntegration::MirServerIntegration()
         }
     }
 
-    m_mirServer = QSharedPointer<MirServer>(
-                      new MirServer(args.length(), const_cast<const char**>(argv)));
-
 #if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
     QGuiApplicationPrivate::instance()->setEventDispatcher(eventDispatcher_);
     initialize();
 #endif
+
+    // Creates instance of and start the Mir server in a separate thread
+    m_qmirServer = new QMirServer(args.length(), const_cast<const char**>(argv));
+    connect(m_qmirServer->screenController(), &ScreenController::screenAdded,
+            [&](QPlatformScreen *screen) { screenAdded(screen); });
 
     m_inputContext = QPlatformInputContextFactory::create();
 }
@@ -136,22 +138,13 @@ QPlatformWindow *MirServerIntegration::createPlatformWindow(QWindow *window) con
 
     QWindowSystemInterface::flushWindowSystemEvents();
 
-    // User may have specified an unused Screen for this Window
-    QScreen *qscreen = window->screen();
-//    if (qscreen) {
-//        auto screen = static_cast<Screen*>(qscreen->handle());
-//        if (screen->window()) {
-//            qDebug() << "Specified Screen already has a QWindow/ScreenWindow attached, overriding";
-//        }
-//    }
-
     // If Screen was not specified, just grab an unused one, if available
     Screen *screen = m_qmirServer->screenController()->getUnusedScreen();
     if (!screen) {
         qDebug() << "No available Screens to create a new QWindow/ScreenWindow for";
         return nullptr;
     }
-    qscreen = screen->screen();
+    QScreen *qscreen = screen->screen();
     window->setScreen(qscreen);
 
     auto platformWindow = new ScreenWindow(window);
@@ -168,7 +161,7 @@ QPlatformBackingStore *MirServerIntegration::createPlatformBackingStore(QWindow 
 QPlatformOpenGLContext *MirServerIntegration::createPlatformOpenGLContext(QOpenGLContext *context) const
 {
     qDebug() << "createPlatformOpenGLContext" << context;
-    return new MirOpenGLContext(m_mirServer, context->format());
+    return new MirOpenGLContext(m_qmirServer->server(), context->format());
 }
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
@@ -180,13 +173,9 @@ QAbstractEventDispatcher *MirServerIntegration::createEventDispatcher() const
 
 void MirServerIntegration::initialize()
 {
-    // Creates instance of and start the Mir server in a separate thread
-    m_qmirServer = new QMirServer(m_mirServer);
-    connect(m_qmirServer->screenController(), &ScreenController::screenAdded,
-            [&](QPlatformScreen *screen) { screenAdded(screen); });
     m_qmirServer->run();
 
-    m_nativeInterface = new NativeInterface(m_mirServer);
+    m_nativeInterface = new NativeInterface(m_qmirServer->server());
 
     m_clipboard->setupDBusService();
 }

@@ -18,6 +18,7 @@
 #define MIRSERVER_H
 
 #include <QObject>
+#include <QPointer>
 #include <mir/server.h>
 
 class QtEventFeeder;
@@ -25,6 +26,7 @@ class SessionListener;
 class SessionAuthorizer;
 class SurfaceConfigurator;
 class PromptSessionListener;
+class ScreenController;
 
 // We use virtual inheritance of mir::Server to facilitate derived classes (e.g. testing)
 // calling initialization functions before MirServer is constructed.
@@ -38,7 +40,7 @@ class MirServer : public QObject, private virtual mir::Server
     Q_PROPERTY(PromptSessionListener* promptSessionListener READ promptSessionListener CONSTANT)
 
 public:
-    MirServer(int argc, char const* argv[], QObject* parent = 0);
+    MirServer(int argc, char const* argv[], QSharedPointer<ScreenController> &screenController, QObject* parent = 0);
     ~MirServer() = default;
 
     /* mir specific */
@@ -62,7 +64,6 @@ public:
     SurfaceConfigurator *surfaceConfigurator();
 
 private:
-    std::shared_ptr<QtEventFeeder> m_qtEventFeeder;
 };
 
 #endif // MIRSERVER_H

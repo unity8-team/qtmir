@@ -24,11 +24,7 @@
 #include <qpa/qplatformintegration.h>
 #include <QObject>
 
-// local
-#include "mirserver.h"
-
 class NativeInterface;
-class MirServer;
 class QMirServer;
 
 namespace qtmir {
@@ -72,8 +68,6 @@ public:
     QPlatformOffscreenSurface *createPlatformOffscreenSurface(QOffscreenSurface *surface) const override;
 
 private:
-    QSharedPointer<MirServer> m_mirServer;
-
     QScopedPointer<QPlatformAccessibility> m_accessibility;
     QScopedPointer<QPlatformFontDatabase> m_fontDb;
     QScopedPointer<QPlatformServices> m_services;

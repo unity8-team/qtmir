@@ -43,16 +43,15 @@ Q_LOGGING_CATEGORY(QTMIR_SCREENS, "qtmir.screens")
 namespace mg = mir::graphics;
 
 
-ScreenController::ScreenController(const QSharedPointer<MirServer> &server,
-                                   QObject *parent)
+ScreenController::ScreenController(QObject *parent)
     : QObject(parent)
-    , m_server(server)
     , m_watchForUpdates(true)
 {
     qCDebug(QTMIR_SCREENS) << "ScreenController::ScreenController";
 }
 
-void ScreenController::init() {
+void ScreenController::init()
+{
     // Using Blocking Queued Connection to enforce synchronization of Qt GUI thread with Mir thread(s)
     auto compositor = static_cast<QtCompositor *>(m_server->the_compositor().get());
     connect(compositor, &QtCompositor::starting,
@@ -206,9 +205,20 @@ Screen* ScreenController::getUnusedScreen()
 
 Screen* ScreenController::findScreenWithId(const QList<Screen *> &list, const mg::DisplayConfigurationOutputId id)
 {
-    for (Screen* screen : list) {
+    for (Screen *screen : list) {
         if (screen->m_outputId == id) {
             return screen;
+        }
+    }
+    return nullptr;
+}
+
+QWindow* ScreenController::getWindowForPoint(const QPoint &point) //HORRIBLE!!!
+{
+    QMutexLocker lock(&m_mutex);
+    for (Screen *screen : m_screenList) {
+        if (screen->window() && screen->geometry().contains(point)) {
+            return screen->window()->window();
         }
     }
     return nullptr;

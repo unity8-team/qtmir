@@ -66,12 +66,13 @@ class QMirServer: public QObject
     Q_OBJECT
 
 public:
-    QMirServer(const QSharedPointer<MirServer> &config, QObject* parent=0);
+    QMirServer(int argc, char const* argv[], QObject* parent=0);
     virtual ~QMirServer();
 
     void run();
     void stop();
 
+    QSharedPointer<MirServer> server() const {return m_server; }
     ScreenController* screenController() const;
 
 Q_SIGNALS:
@@ -84,9 +85,9 @@ protected Q_SLOTS:
 
 private:
     QThread m_mirThread;
+    QSharedPointer<ScreenController> m_screenController;
     const QSharedPointer<MirServer> m_server;
     QScopedPointer<MirServerWorker> m_mirServer;
-    QScopedPointer<ScreenController> m_screenController;
     Q_DISABLE_COPY(QMirServer)
 };
 

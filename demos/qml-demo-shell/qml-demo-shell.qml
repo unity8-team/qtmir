@@ -185,6 +185,22 @@ Rectangle {
                 Component.onCompleted: print("new window!!")
                 Component.onDestruction: print("window destroyed!!")
             }
+
+            Rectangle {
+                width: 30; height: 30
+                color: "blue"
+                x: point1.x
+                y: point1.y
+            }
+
+            MultiPointTouchArea {
+                anchors.fill: parent
+                minimumTouchPoints: 1
+                maximumTouchPoints: 1
+                touchPoints: [
+                    TouchPoint { id: point1 }
+                ]
+            }
         }
     }
 

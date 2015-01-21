@@ -24,6 +24,7 @@
 #include "mirplacementstrategy.h"
 #include "mirserverstatuslistener.h"
 #include "promptsessionlistener.h"
+#include "screencontroller.h"
 #include "sessionlistener.h"
 #include "surfaceconfigurator.h"
 #include "sessionauthorizer.h"
@@ -31,6 +32,9 @@
 #include "qteventfeeder.h"
 #include "tileddisplayconfigurationpolicy.h"
 #include "logging.h"
+
+// std
+#include <memory>
 
 // egl
 #define MESA_EGL_NO_X11_HEADERS
@@ -50,11 +54,13 @@ void ignore_unparsed_arguments(int /*argc*/, char const* const/*argv*/[])
 
 Q_LOGGING_CATEGORY(QTMIR_MIR_MESSAGES, "qtmir.mir")
 
-MirServer::MirServer(int argc, char const* argv[], QObject* parent)
+MirServer::MirServer(int argc, char const* argv[], QSharedPointer<ScreenController> &screenController, QObject* parent)
     : QObject(parent)
 {
     set_command_line_handler(&ignore_unparsed_arguments);
     set_command_line(argc, argv);
+
+    screenController->setMirServer(this); // Bad Gerry
 
     override_the_placement_strategy([this]
         {
@@ -86,9 +92,9 @@ MirServer::MirServer(int argc, char const* argv[], QObject* parent)
             return std::make_shared<QtCompositor>();
         });
 
-    override_the_input_dispatcher([]
+    override_the_input_dispatcher([&screenController]
         {
-            return std::make_shared<QtEventFeeder>();
+            return std::make_shared<QtEventFeeder>(screenController);
         });
 
     override_the_gl_config([]

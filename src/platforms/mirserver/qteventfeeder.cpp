@@ -19,6 +19,7 @@
 
 #include "qteventfeeder.h"
 #include "logging.h"
+#include "screencontroller.h"
 
 #include <qpa/qplatforminputcontext.h>
 #include <qpa/qplatformintegration.h>
@@ -144,20 +145,26 @@ static uint32_t translateKeysym(uint32_t sym, char *string, size_t size) {
 
 namespace {
 
-class QtWindowSystem : public QtEventFeeder::QtWindowSystemInterface {
-
-    bool hasTargetWindow() override
+class QtWindowSystem : public QtEventFeeder::QtWindowSystemInterface
+{
+    bool ready() const override
     {
-        if (mTopLevelWindow.isNull() && !QGuiApplication::topLevelWindows().isEmpty()) {
-            mTopLevelWindow = QGuiApplication::topLevelWindows().first();
-        }
-        return !mTopLevelWindow.isNull();
+        return !m_screenController.isNull();
     }
 
-    QRect targetWindowGeometry() override
+    void setScreenController(QSharedPointer<ScreenController> &sc) override
     {
-        Q_ASSERT(!mTopLevelWindow.isNull());
-        return mTopLevelWindow->geometry();
+        m_screenController = sc;
+    }
+
+    virtual QWindow* focusedWindow() override
+    {
+        return QGuiApplication::focusWindow();
+    }
+
+    QWindow* getWindowForTouchPoint(const QPoint &point) override
+    {
+        return m_screenController->getWindowForPoint(point);
     }
 
     void registerTouchDevice(QTouchDevice *device) override
@@ -165,31 +172,32 @@ class QtWindowSystem : public QtEventFeeder::QtWindowSystemInterface {
         QWindowSystemInterface::registerTouchDevice(device);
     }
 
-    void handleExtendedKeyEvent(ulong timestamp, QEvent::Type type, int key,
+    void handleExtendedKeyEvent(QWindow *window, ulong timestamp, QEvent::Type type, int key,
                 Qt::KeyboardModifiers modifiers,
                 quint32 nativeScanCode, quint32 nativeVirtualKey,
                 quint32 nativeModifiers,
                 const QString& text, bool autorep, ushort count) override
     {
-        Q_ASSERT(!mTopLevelWindow.isNull());
-        QWindowSystemInterface::handleExtendedKeyEvent(mTopLevelWindow.data(), timestamp, type, key, modifiers,
+        QWindowSystemInterface::handleExtendedKeyEvent(window, timestamp, type, key, modifiers,
                 nativeScanCode, nativeVirtualKey, nativeModifiers, text, autorep, count);
     }
 
-    void handleTouchEvent(ulong timestamp, QTouchDevice *device,
+    void handleTouchEvent(QWindow *window, ulong timestamp, QTouchDevice *device,
             const QList<struct QWindowSystemInterface::TouchPoint> &points, Qt::KeyboardModifiers mods) override
     {
-        Q_ASSERT(!mTopLevelWindow.isNull());
-        QWindowSystemInterface::handleTouchEvent(mTopLevelWindow.data(), timestamp, device, points, mods);
-    }
+        qDebug() << window << points;
+        QWindowSystemInterface::handleTouchEvent(window, timestamp, device, points, mods);
+    }    
+
 private:
-    QPointer<QWindow> mTopLevelWindow;
+    QSharedPointer<ScreenController> m_screenController;
 };
 
 } // anonymous namespace
 
 
-QtEventFeeder::QtEventFeeder(QtEventFeeder::QtWindowSystemInterface *windowSystem)
+QtEventFeeder::QtEventFeeder(QSharedPointer<ScreenController> screenController,
+                             QtEventFeeder::QtWindowSystemInterface *windowSystem)
 {
     if (windowSystem) {
         mQtWindowSystem = windowSystem;
@@ -206,6 +214,7 @@ QtEventFeeder::QtEventFeeder(QtEventFeeder::QtWindowSystemInterface *windowSyste
     mTouchDevice->setCapabilities(
             QTouchDevice::Position | QTouchDevice::Area | QTouchDevice::Pressure |
             QTouchDevice::NormalizedPosition);
+    mQtWindowSystem->setScreenController(screenController);
     mQtWindowSystem->registerTouchDevice(mTouchDevice);
 }
 
@@ -216,6 +225,9 @@ QtEventFeeder::~QtEventFeeder()
 
 void QtEventFeeder::dispatch(MirEvent const& event)
 {
+    if (!mQtWindowSystem->ready())
+        return;
+
     switch (event.type) {
     case mir_event_type_key:
         dispatchKey(event.key);
@@ -237,9 +249,6 @@ void QtEventFeeder::dispatch(MirEvent const& event)
 
 void QtEventFeeder::dispatchKey(MirKeyEvent const& event)
 {
-    if (!mQtWindowSystem->hasTargetWindow())
-        return;
-
     ulong timestamp = event.event_time / 1000000;
     xkb_keysym_t xk_sym = static_cast<xkb_keysym_t>(event.key_code);
 
@@ -287,15 +296,12 @@ void QtEventFeeder::dispatchKey(MirKeyEvent const& event)
         }
     }
 
-    mQtWindowSystem->handleExtendedKeyEvent(timestamp, keyType, keyCode, modifiers,
+    mQtWindowSystem->handleExtendedKeyEvent(mQtWindowSystem->focusedWindow(), timestamp, keyType, keyCode, modifiers,
             event.scan_code, event.key_code, event.modifiers, text, is_auto_rep);
 }
 
 void QtEventFeeder::dispatchMotion(MirMotionEvent const& event)
 {
-    if (!mQtWindowSystem->hasTargetWindow())
-        return;
-
     const int mirMotionAction = event.action & MirEventActionMask;
 
     // Ignore the events that do not interest us (or that we currently don't support or know
@@ -313,27 +319,38 @@ void QtEventFeeder::dispatchMotion(MirMotionEvent const& event)
     // FIXME(loicm) Max pressure is device specific. That one is for the Samsung Galaxy Nexus. That
     //     needs to be fixed as soon as the compat input lib adds query support.
     const float kMaxPressure = 1.28;
-    const QRect kWindowGeometry = mQtWindowSystem->targetWindowGeometry();
-    QList<QWindowSystemInterface::TouchPoint> touchPoints;
-
-    // TODO: Is it worth setting the Qt::TouchPointStationary ones? Currently they are left
-    //       as Qt::TouchPointMoved
     const int kPointerCount = (int) event.pointer_count;
-    for (int i = 0; i < kPointerCount; ++i) {
-        QWindowSystemInterface::TouchPoint touchPoint;
+    QList<QWindowSystemInterface::TouchPoint> touchPoints;
+    QWindow *window = nullptr;
 
-        const float kX = event.pointer_coordinates[i].x;
-        const float kY = event.pointer_coordinates[i].y;
-        const float kW = event.pointer_coordinates[i].touch_major;
-        const float kH = event.pointer_coordinates[i].touch_minor;
-        const float kP = event.pointer_coordinates[i].pressure;
-        touchPoint.id = event.pointer_coordinates[i].id;
-        touchPoint.normalPosition = QPointF(kX / kWindowGeometry.width(), kY / kWindowGeometry.height());
-        touchPoint.area = QRectF(kX - (kW / 2.0), kY - (kH / 2.0), kW, kH);
-        touchPoint.pressure = kP / kMaxPressure;
-        touchPoint.state = Qt::TouchPointMoved;
+    if (kPointerCount > 0) {
+        window = mQtWindowSystem->getWindowForTouchPoint(QPoint(event.pointer_coordinates[0].x,
+                                                                event.pointer_coordinates[0].y));
 
-        touchPoints.append(touchPoint);
+        const QRect kWindowGeometry = window->geometry();
+
+        // TODO: Is it worth setting the Qt::TouchPointStationary ones? Currently they are left
+        //       as Qt::TouchPointMoved
+        for (int i = 0; i < kPointerCount; ++i) {
+            QWindowSystemInterface::TouchPoint touchPoint;
+
+            const float kX = event.pointer_coordinates[i].x;
+            const float kY = event.pointer_coordinates[i].y;
+            const float kW = event.pointer_coordinates[i].touch_major;
+            const float kH = event.pointer_coordinates[i].touch_minor;
+            const float kP = event.pointer_coordinates[i].pressure;
+            touchPoint.id = event.pointer_coordinates[i].id;
+            touchPoint.normalPosition = QPointF(kX / kWindowGeometry.width(), kY / kWindowGeometry.height());
+            touchPoint.area = QRectF(kX - (kW / 2.0), kY - (kH / 2.0), kW, kH);
+            touchPoint.pressure = kP / kMaxPressure;
+            touchPoint.state = Qt::TouchPointMoved;
+
+            touchPoints.append(touchPoint);
+        }
+    }
+
+    if (!window) {
+        qDebug() << "REJECTING INPUT EVENT";
     }
 
     switch (mirMotionAction) {
@@ -380,7 +397,7 @@ void QtEventFeeder::dispatchMotion(MirMotionEvent const& event)
     validateTouches(touchPoints);
 
     // Touch event propagation.
-    mQtWindowSystem->handleTouchEvent(
+    mQtWindowSystem->handleTouchEvent(window,
             event.event_time / 1000000, //scales down the nsec_t (int64) to fit a ulong, precision lost but time difference suitable
             mTouchDevice,
             touchPoints);

@@ -53,11 +53,11 @@ bool MirServerWorker::wait_for_mir_startup()
     return mir_running;
 }
 
-QMirServer::QMirServer(const QSharedPointer<MirServer> &server, QObject *parent)
+QMirServer::QMirServer(int argc, const char *argv[], QObject *parent)
     : QObject(parent)
-    , m_server(server)
-    , m_mirServer(new MirServerWorker(server))
-    , m_screenController(new ScreenController(m_server, this))
+    , m_screenController(new ScreenController())
+    , m_server(new MirServer(argc, argv, m_screenController))
+    , m_mirServer(new MirServerWorker(m_server))
 {
     m_mirServer->moveToThread(&m_mirThread);
 

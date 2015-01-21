@@ -19,19 +19,69 @@
 #define MOCK_QTWINDOWSYSTEM_H
 
 #include <qteventfeeder.h>
+#include <gmock/gmock-generated-function-mockers.h>
+#include <QWindow>
+
+#define GMOCK_METHOD11_(tn, constness, ct, Method, ...) \
+  GMOCK_RESULT_(tn, __VA_ARGS__) ct Method( \
+      GMOCK_ARG_(tn, 1, __VA_ARGS__) gmock_a1, \
+      GMOCK_ARG_(tn, 2, __VA_ARGS__) gmock_a2, \
+      GMOCK_ARG_(tn, 3, __VA_ARGS__) gmock_a3, \
+      GMOCK_ARG_(tn, 4, __VA_ARGS__) gmock_a4, \
+      GMOCK_ARG_(tn, 5, __VA_ARGS__) gmock_a5, \
+      GMOCK_ARG_(tn, 6, __VA_ARGS__) gmock_a6, \
+      GMOCK_ARG_(tn, 7, __VA_ARGS__) gmock_a7, \
+      GMOCK_ARG_(tn, 8, __VA_ARGS__) gmock_a8, \
+      GMOCK_ARG_(tn, 9, __VA_ARGS__) gmock_a9, \
+      GMOCK_ARG_(tn, 10, __VA_ARGS__) gmock_a10, \
+      GMOCK_ARG_(tn, 11, __VA_ARGS__) gmock_a11) constness { \
+    GTEST_COMPILE_ASSERT_((::std::tr1::tuple_size<                          \
+        tn ::testing::internal::Function<__VA_ARGS__>::ArgumentTuple>::value \
+            == 11), \
+        this_method_does_not_take_11_arguments); \
+    GMOCK_MOCKER_(11, constness, Method).SetOwnerAndName(this, #Method); \
+    return GMOCK_MOCKER_(11, constness, Method).Invoke(gmock_a1, gmock_a2, \
+        gmock_a3, gmock_a4, gmock_a5, gmock_a6, gmock_a7, gmock_a8, \
+        gmock_a9, gmock_a10, gmock_a11); \
+  } \
+    ::testing::MockSpec<__VA_ARGS__>& \
+        gmock_##Method(GMOCK_MATCHER_(tn, 1, __VA_ARGS__) gmock_a1, \
+                       GMOCK_MATCHER_(tn, 2, __VA_ARGS__) gmock_a2, \
+                       GMOCK_MATCHER_(tn, 3, __VA_ARGS__) gmock_a3, \
+                       GMOCK_MATCHER_(tn, 4, __VA_ARGS__) gmock_a4, \
+                       GMOCK_MATCHER_(tn, 5, __VA_ARGS__) gmock_a5, \
+                       GMOCK_MATCHER_(tn, 6, __VA_ARGS__) gmock_a6, \
+                       GMOCK_MATCHER_(tn, 7, __VA_ARGS__) gmock_a7, \
+                       GMOCK_MATCHER_(tn, 8, __VA_ARGS__) gmock_a8, \
+                       GMOCK_MATCHER_(tn, 9, __VA_ARGS__) gmock_a9, \
+                       GMOCK_MATCHER_(tn, 10, __VA_ARGS__) gmock_a10, \
+                       GMOCK_MATCHER_(tn, 11, __VA_ARGS__) gmock_a11) constness { \
+      GMOCK_MOCKER_(11, constness, Method).RegisterOwner(this); \
+      return GMOCK_MOCKER_(11, constness, Method).With(gmock_a1, gmock_a2, \
+          gmock_a3, gmock_a4, gmock_a5, gmock_a6, gmock_a7, gmock_a8, gmock_a9, \
+          gmock_a10, gmock_a10, gmock_a11); \
+    } \
+    mutable ::testing::FunctionMocker<__VA_ARGS__> GMOCK_MOCKER_(11, constness, \
+        Method)
+
+#define MOCK_METHOD11(m, ...) GMOCK_METHOD11_(, , , m, __VA_ARGS__)
+
 
 class MockQtWindowSystem : public QtEventFeeder::QtWindowSystemInterface {
 public:
-    MOCK_METHOD0(hasTargetWindow, bool());
-    MOCK_METHOD0(targetWindowGeometry, QRect());
+    MOCK_METHOD0(ready, bool());
+    MOCK_METHOD0(setScreenController, QSharedPointer<ScreenController>&());
+    MOCK_METHOD1(getWindowForTouchPoint, QWindow*(const QPoint &point));
+    MOCK_METHOD0(lastWindow, QWindow*());
+    MOCK_METHOD0(focusedWindow, QWindow*());
     MOCK_METHOD1(registerTouchDevice, void(QTouchDevice* device));
-    MOCK_METHOD10(handleExtendedKeyEvent, void(ulong timestamp, QEvent::Type type, int key,
+    MOCK_METHOD11(handleExtendedKeyEvent, void(QWindow *window, ulong timestamp, QEvent::Type type, int key,
             Qt::KeyboardModifiers modifiers,
             quint32 nativeScanCode, quint32 nativeVirtualKey,
             quint32 nativeModifiers,
             const QString& text, bool autorep,
             ushort count));
-    MOCK_METHOD4(handleTouchEvent, void(ulong timestamp, QTouchDevice *device,
+    MOCK_METHOD5(handleTouchEvent, void(QWindow *window, ulong timestamp, QTouchDevice *device,
             const QList<struct QWindowSystemInterface::TouchPoint> &points,
             Qt::KeyboardModifiers mods));
 };

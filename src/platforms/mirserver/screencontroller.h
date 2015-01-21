@@ -30,16 +30,18 @@
 
 class MirServer;
 class Screen;
+class QWindow;
 
 
 class ScreenController : public QObject
 {
     Q_OBJECT
 public:
-    explicit ScreenController(const QSharedPointer<MirServer> &server,
-                              QObject *parent = 0);
+    explicit ScreenController(QObject *parent = 0);
 
     Screen* getUnusedScreen();
+
+    QWindow* getWindowForPoint(const QPoint &point);
 
 Q_SIGNALS:
     void screenAdded(Screen *screen);
@@ -50,15 +52,18 @@ private Q_SLOTS:
     void update();
 
 private:
+    void setMirServer(MirServer *ms) { m_server = ms; } // call before MirServer is running - dangerous
     void init(); // call after the MirServer is running
     Screen* findScreenWithId(const QList<Screen*> &list, const mir::graphics::DisplayConfigurationOutputId id);
 
-    const QSharedPointer<MirServer> &m_server;
+
+    MirServer *m_server;
     QList<Screen*> m_screenList;
     bool m_watchForUpdates;
     QMutex m_mutex;
 
     friend class QMirServer;
+    friend class MirServer;
 };
 
 #endif // SCREENCONTROLLER_H
