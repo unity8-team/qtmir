@@ -31,6 +31,7 @@
 // local
 #include "application.h"
 #include "desktopfilereader.h"
+#include "mirplacementstrategy.h"
 
 namespace mir {
     namespace scene {
@@ -130,7 +131,7 @@ public Q_SLOTS:
     void onSessionStarting(const std::shared_ptr<mir::scene::Session> &session);
     void onSessionStopping(const std::shared_ptr<mir::scene::Session> &session);
 
-    void onSessionAboutToCreateSurface(const mir::scene::Session &session, QSize &surfaceGeometry);
+    void onSessionAboutToCreateSurface(const mir::scene::Session &session, SurfaceParameters &surfaceParameters);
     void onSessionCreatedSurface(const mir::scene::Session *session, const std::shared_ptr<mir::scene::Surface> &surface);
 
     void onProcessStarting(const QString& appId);

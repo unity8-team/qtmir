@@ -342,14 +342,14 @@ SessionInterface* MirSurfaceItem::session() const
     return m_session.data();
 }
 
-MirSurfaceItem::Type MirSurfaceItem::type() const
+Globals::SurfaceType MirSurfaceItem::type() const
 {
-    return static_cast<MirSurfaceItem::Type>(m_surface->type());
+    return static_cast<Globals::SurfaceType>(m_surface->type());
 }
 
-MirSurfaceItem::State MirSurfaceItem::state() const
+Globals::SurfaceState MirSurfaceItem::state() const
 {
-    return static_cast<MirSurfaceItem::State>(m_surface->state());
+    return static_cast<Globals::SurfaceState>(m_surface->state());
 }
 
 Qt::ScreenOrientation MirSurfaceItem::orientation() const
@@ -633,7 +633,7 @@ bool MirSurfaceItem::processTouchEvent(
         Qt::TouchPointStates touchPointStates)
 {
     bool accepted = true;
-    if (type() == InputMethod && eventType == QEvent::TouchBegin) {
+    if (type() == Globals::SurfaceType::InputMethod && eventType == QEvent::TouchBegin) {
         // FIXME: Hack to get the VKB use case working while we don't have the proper solution in place.
         if (hasTouchInsideUbuntuKeyboard(touchPoints)) {
             validateAndDeliverTouchEvent(eventType, timestamp, touchPoints, touchPointStates);
@@ -665,14 +665,14 @@ bool MirSurfaceItem::hasTouchInsideUbuntuKeyboard(const QList<QTouchEvent::Touch
     return false;
 }
 
-void MirSurfaceItem::setType(const Type &type)
+void MirSurfaceItem::setType(const Globals::SurfaceType &type)
 {
     if (this->type() != type) {
         m_surface->configure(mir_surface_attrib_type, static_cast<int>(type));
     }
 }
 
-void MirSurfaceItem::setState(const State &state)
+void MirSurfaceItem::setState(const Globals::SurfaceState &state)
 {
     if (this->state() != state) {
         m_surface->configure(mir_surface_attrib_state, static_cast<int>(state));

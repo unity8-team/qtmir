@@ -18,6 +18,8 @@ foreach(item ${Qt5Gui_PRIVATE_INCLUDE_DIRS})
 endforeach(item ${Qt5Gui_PRIVATE_INCLUDE_DIRS})
 
 include_directories(
+    ${CMAKE_SOURCE_DIR}/src/common
+
     ${MIRCOMMON_INCLUDE_DIRS}
     ${MIRSERVER_INCLUDE_DIRS}
     

@@ -200,7 +200,7 @@ void Session::setSurface(MirSurfaceItem *newSurface)
 void Session::updateFullscreenProperty()
 {
     if (m_surface) {
-        setFullscreen(m_surface->state() == MirSurfaceItem::Fullscreen);
+        setFullscreen(m_surface->state() == Globals::SurfaceState::Fullscreen);
     } else {
         // Keep the current value of the fullscreen property until we get a new
         // surface

@@ -41,13 +41,20 @@ MirPlacementStrategy::place(const ms::Session &session,
         const ms::SurfaceCreationParameters &requestParameters)
 {
     using namespace mir::geometry;
+    using namespace qtmir;
     tracepoint(qtmirserver, surfacePlacementStart);
 
-    QSize surfaceGeometry(requestParameters.size.width.as_int(),
-                          requestParameters.size.height.as_int());
+    SurfaceParameters params;
+    params.geometry.setWidth(requestParameters.size.width.as_int());
+    params.geometry.setHeight(requestParameters.size.height.as_int());
+    if (requestParameters.state.is_set()) {
+        params.state = static_cast<Globals::SurfaceState>(requestParameters.state.value());
+    } else {
+        params.state = Globals::SurfaceState::Unknown;
+    }
 
-    Q_EMIT sessionAboutToCreateSurface(session, surfaceGeometry); // should be connected to via Qt::BlockingQueuedConnection
-                                                                  // as surfaceGeometry can be altered
+    Q_EMIT sessionAboutToCreateSurface(session, params); // should be connected to via Qt::BlockingQueuedConnection
+                                                         // as surfaceGeometry can be altered
 
     // Sanity check, fetch display geometry and make sure surface fits inside it
     Rectangle displayRect;
@@ -56,14 +63,14 @@ MirPlacementStrategy::place(const ms::Session &session,
     QSize displayGeometry(displayRect.size.width.as_int(),
                           displayRect.size.height.as_int());
 
-    if (displayGeometry.width() < surfaceGeometry.width()
-            || displayGeometry.height() < surfaceGeometry.height()) {
+    if (displayGeometry.width() < params.geometry.width()
+            || displayGeometry.height() < params.geometry.height()) {
         qCDebug(QTMIR_MIR_MESSAGES) << "MirPlacementStrategy - need to override shell provided geometry as surface larger than display!";
-        surfaceGeometry = surfaceGeometry.boundedTo(displayGeometry);
+        params.geometry = params.geometry.boundedTo(displayGeometry);
     }
 
     ms::SurfaceCreationParameters placedParameters = requestParameters;
-    placedParameters.size = Size{ Width{surfaceGeometry.width()}, Height{surfaceGeometry.height()} };
+    placedParameters.size = Size{ Width{params.geometry.width()}, Height{params.geometry.height()} };
 
     qCDebug(QTMIR_MIR_MESSAGES) << "MirPlacementStrategy: requested ("
         << requestParameters.size.width.as_int() << "," << requestParameters.size.height.as_int() << ") and returned ("

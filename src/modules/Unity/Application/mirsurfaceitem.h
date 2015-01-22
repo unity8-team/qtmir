@@ -29,9 +29,9 @@
 
 // mir
 #include <mir/scene/surface.h>
-#include <mir_toolkit/common.h>
 
 #include "session_interface.h"
+#include "globals.h"
 
 class SurfaceObserver;
 
@@ -45,11 +45,9 @@ class Application;
 class MirSurfaceItem : public QQuickItem
 {
     Q_OBJECT
-    Q_ENUMS(Type)
-    Q_ENUMS(State)
 
-    Q_PROPERTY(Type type READ type NOTIFY typeChanged)
-    Q_PROPERTY(State state READ state NOTIFY stateChanged)
+    Q_PROPERTY(qtmir::Globals::SurfaceType type READ type NOTIFY typeChanged)
+    Q_PROPERTY(qtmir::Globals::SurfaceState state READ state NOTIFY stateChanged)
     Q_PROPERTY(QString name READ name NOTIFY nameChanged)
     Q_PROPERTY(bool live READ live NOTIFY liveChanged)
     Q_PROPERTY(Qt::ScreenOrientation orientation READ orientation WRITE setOrientation NOTIFY orientationChanged DESIGNABLE false)
@@ -61,29 +59,9 @@ public:
                             QQuickItem *parent = 0);
     ~MirSurfaceItem();
 
-    enum Type {
-        Normal = mir_surface_type_normal,
-        Utility = mir_surface_type_utility,
-        Dialog = mir_surface_type_dialog,
-        Overlay = mir_surface_type_overlay,
-        Freestyle = mir_surface_type_freestyle,
-        Popover = mir_surface_type_popover,
-        InputMethod = mir_surface_type_inputmethod,
-        };
-
-    enum State {
-        Unknown = mir_surface_state_unknown,
-        Restored = mir_surface_state_restored,
-        Minimized = mir_surface_state_minimized,
-        Maximized = mir_surface_state_maximized,
-        VertMaximized = mir_surface_state_vertmaximized,
-        /* SemiMaximized = mir_surface_state_semimaximized, // see mircommon/mir_toolbox/common.h*/
-        Fullscreen = mir_surface_state_fullscreen,
-    };
-
     //getters
-    Type type() const;
-    State state() const;
+    Globals::SurfaceType type() const;
+    Globals::SurfaceState state() const;
     QString name() const;
     bool live() const;
     Qt::ScreenOrientation orientation() const;
@@ -147,8 +125,8 @@ private:
     bool updateTexture();
     void ensureProvider();
 
-    void setType(const Type&);
-    void setState(const State&);
+    void setType(const Globals::SurfaceType&);
+    void setState(const Globals::SurfaceState&);
     void setLive(const bool);
 
     // called by MirSurfaceManager

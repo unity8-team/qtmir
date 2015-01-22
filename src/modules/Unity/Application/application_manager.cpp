@@ -904,15 +904,17 @@ void ApplicationManager::onSessionStopping(std::shared_ptr<ms::Session> const& s
     m_hiddenPIDs.removeOne(session->process_id());
 }
 
-void ApplicationManager::onSessionAboutToCreateSurface(const ms::Session &session, QSize &surfaceGeometry)
+void ApplicationManager::onSessionAboutToCreateSurface(const ms::Session &session, SurfaceParameters &params)
 {
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onSessionAboutToCreateSurface - sessionName="
-                                << session.name().c_str() << "surfaceGeometry=" << surfaceGeometry;
+                                << session.name().c_str() << "geometry=" << params.geometry
+                                << "state" << params.state;
 
     if (m_surfaceAboutToBeCreatedCallback.isCallable()) {
         QJSValue argument = m_jsEngine->newObject();
-        argument.setProperty("width", surfaceGeometry.width());
-        argument.setProperty("height", surfaceGeometry.height());
+        argument.setProperty("width", params.geometry.width());
+        argument.setProperty("height", params.geometry.height());
+        argument.setProperty("state", params.state);
 
         Application* application = findApplicationWithSession(&session);
         if (application)
@@ -922,10 +924,13 @@ void ApplicationManager::onSessionAboutToCreateSurface(const ms::Session &sessio
         if (output.isObject()) {
             QJSValue width = output.property("width");
             QJSValue height = output.property("height");
+            QJSValue state = output.property("state");
             if (width.isNumber())
-                surfaceGeometry.setWidth(width.toInt());
+                params.geometry.setWidth(width.toInt());
             if (height.isNumber())
-                surfaceGeometry.setHeight(height.toInt());
+                params.geometry.setHeight(height.toInt());
+            if (state.isNumber())
+                params.state = static_cast<Globals::SurfaceState>(state.toInt());
         } else {
             qWarning() << "ApplicationManager::onSessionAboutToCreateSurface - unrecognised object returned from JS callback!!"
                        << "Surface size has *not* been overridden by shell!";

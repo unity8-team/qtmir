@@ -17,17 +17,33 @@
 #ifndef MIRSERVERQPA_MIR_PLACEMENT_STRATEGY_H
 #define MIRSERVERQPA_MIR_PLACEMENT_STRATEGY_H
 
+// Mir
 #include <mir/scene/placement_strategy.h>
 
+// Qt
 #include <QObject>
+#include <QSize>
+#include <QPoint>
 
+// std
 #include <memory>
+
+// local
+#include "globals.h"
 
 namespace mir {
     namespace shell {
         class DisplayLayout;
     }
 }
+
+namespace qtmir {
+    struct SurfaceParameters
+    {
+        QSize geometry;
+        Globals::SurfaceState state;
+    };
+} // namespace qtmir
 
 class MirPlacementStrategy : public QObject, public mir::scene::PlacementStrategy
 {
@@ -41,7 +57,7 @@ public:
 
 Q_SIGNALS:
     void sessionAboutToCreateSurface(const mir::scene::Session &session,
-                                     QSize &surfaceGeometry); // requires Qt::BlockingQueuedConnection!!
+                                     qtmir::SurfaceParameters &surfaceParamaters); // requires Qt::BlockingQueuedConnection!!
 
 private:
     const std::shared_ptr<mir::shell::DisplayLayout> m_displayLayout;

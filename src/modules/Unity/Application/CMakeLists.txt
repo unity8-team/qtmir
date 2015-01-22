@@ -47,6 +47,7 @@ set(QMLMIRPLUGIN_SRC
 # Feed the automoc monster
     session_interface.h
     applicationcontroller.h
+    ../../../common/globals.h
     )
 
 add_library(unityapplicationplugin SHARED

@@ -1988,12 +1988,13 @@ TEST_F(ApplicationManagerTests, registerSurfaceSizeUnchangedWhenNoSizerCallbackR
 {
     using namespace ::testing;
     quint64 procId = 5551;
-    QSize requestedSurfaceSize(400, 250); // can be overridden
+    SurfaceParameters params;
+    params.geometry = {400, 250}; // can be overridden
 
     const MockSession session("", procId);
-    applicationManager.onSessionAboutToCreateSurface(session, requestedSurfaceSize);
+    applicationManager.onSessionAboutToCreateSurface(session, params);
 
-    EXPECT_EQ(requestedSurfaceSize, QSize(400, 250));
+    EXPECT_EQ(params.geometry, QSize(400, 250));
 }
 
 /*
@@ -2003,15 +2004,16 @@ TEST_F(ApplicationManagerTests, registerSurfaceSizerFunctional)
 {
     using namespace ::testing;
     quint64 procId = 5551;
-    QSize requestedSurfaceSize(400, 250); // can be overridden
+    SurfaceParameters params;
+    params.geometry = {400, 250}; // can be overridden
 
     QJSValue callback = jsEngine->evaluate("(function(surface) { surface.width = 111; return surface; })");
     applicationManager.setSurfaceAboutToBeCreatedCallback(callback);
 
     const MockSession session("", procId);
-    applicationManager.onSessionAboutToCreateSurface(session, requestedSurfaceSize);
+    applicationManager.onSessionAboutToCreateSurface(session, params);
 
-    EXPECT_EQ(requestedSurfaceSize, QSize(111, 250));
+    EXPECT_EQ(params.geometry, QSize(111, 250));
 }
 
 /*
@@ -2021,7 +2023,8 @@ TEST_F(ApplicationManagerTests, deregisterSurfaceSizerWorks)
 {
     using namespace ::testing;
     quint64 procId = 5551;
-    QSize requestedSurfaceSize(400, 250); // can be overridden
+    SurfaceParameters params;
+    params.geometry = {400, 250}; // can be overridden
 
     QJSValue callback = jsEngine->evaluate("(function(surface) { surface.width = 111; return surface; })");
     applicationManager.setSurfaceAboutToBeCreatedCallback(callback);
@@ -2029,9 +2032,9 @@ TEST_F(ApplicationManagerTests, deregisterSurfaceSizerWorks)
     const MockSession session("", procId);
 
     applicationManager.setSurfaceAboutToBeCreatedCallback(false);
-    applicationManager.onSessionAboutToCreateSurface(session, requestedSurfaceSize);
+    applicationManager.onSessionAboutToCreateSurface(session, params);
 
-    EXPECT_EQ(requestedSurfaceSize, QSize(400, 250)); // should be unchanged
+    EXPECT_EQ(params.geometry, QSize(400, 250)); // should be unchanged
 }
 
 /*
@@ -2062,15 +2065,16 @@ TEST_F(ApplicationManagerTests, registeredSurfaceSizerDealswithBadReturns)
 {
     using namespace ::testing;
     quint64 procId = 5551;
-    QSize requestedSurfaceSize(400, 250); // can be overridden
+    SurfaceParameters params;
+    params.geometry = {400, 250}; // can be overridden
 
     QJSValue callback = jsEngine->evaluate("(function(s) { var out = new Object(); out.height = 333; return out; })");
     applicationManager.setSurfaceAboutToBeCreatedCallback(callback);
 
     const MockSession session("", procId);
-    applicationManager.onSessionAboutToCreateSurface(session, requestedSurfaceSize);
+    applicationManager.onSessionAboutToCreateSurface(session, params);
 
-    EXPECT_EQ(requestedSurfaceSize, QSize(400, 333));
+    EXPECT_EQ(params.geometry, QSize(400, 333));
 }
 
 /*
