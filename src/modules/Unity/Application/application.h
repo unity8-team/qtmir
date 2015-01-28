@@ -139,6 +139,7 @@ private:
     State m_state;
     bool m_focused;
     bool m_canBeResumed;
+    bool m_isWebapp;
     QStringList m_arguments;
     SupportedOrientations m_supportedOrientations;
     Session *m_session;

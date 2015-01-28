@@ -51,7 +51,8 @@ Application::Application(const QSharedPointer<TaskController>& taskController,
     , m_stage((m_desktopData->stageHint() == "SideStage") ? Application::SideStage : Application::MainStage)
     , m_state(state)
     , m_focused(false)
-    , m_canBeResumed(true)
+    , m_canBeResumed(true),
+    , m_isWebApp(false)
     , m_arguments(arguments)
     , m_session(nullptr)
 {
@@ -66,6 +67,11 @@ Application::Application(const QSharedPointer<TaskController>& taskController,
         | LandscapeOrientation
         | InvertedPortraitOrientation
         | InvertedLandscapeOrientation;
+
+    // FIXME: This is a hackish way to detect whether or not the app is a webapp
+    if (m_desktopData->exec().contains("webapp-container") {
+        m_isWebapp = true;
+    }
 }
 
 Application::~Application()
@@ -175,7 +181,13 @@ bool Application::splashShowHeader() const
 QColor Application::splashColor() const
 {
     QString colorStr = m_desktopData->splashColor();
-    return colorFromString(colorStr, "splashColor");
+    // webapps splash screen is white by default to match the color of the HTML
+    // page while it is loading
+    if (m_isWebapp && colorStr.isEmpty()) {
+        return QColor::fromRgb("white");
+    } else {
+        return colorFromString(colorStr, "splashColor");
+    }
 }
 
 QColor Application::splashColorHeader() const
