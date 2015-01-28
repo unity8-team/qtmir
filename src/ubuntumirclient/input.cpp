@@ -141,7 +141,7 @@ public:
     }
     
     UbuntuWindow* window;
-    MirEvent *nativeEvent;
+    MirEvent const* nativeEvent;
 };
 
 UbuntuInput::UbuntuInput(UbuntuClientIntegration* integration)
@@ -201,7 +201,7 @@ void UbuntuInput::customEvent(QEvent* event)
 {
     DASSERT(QThread::currentThread() == thread());
     UbuntuEvent* ubuntuEvent = static_cast<UbuntuEvent*>(event);
-    MirEvent *nativeEvent = ubuntuEvent->nativeEvent;
+    MirEvent const* nativeEvent = ubuntuEvent->nativeEvent;
 
     if (ubuntuEvent->window->window() == nullptr) {
         qWarning() << "Attempted to deliver an event to a non-existant QWindow, ignoring.";
@@ -211,7 +211,7 @@ void UbuntuInput::customEvent(QEvent* event)
     // Event filtering.
     long result;
     if (QWindowSystemInterface::handleNativeEvent(
-                ubuntuEvent->window->window(), mEventFilterType, nativeEvent, &result) == true) {
+            ubuntuEvent->window->window(), mEventFilterType, const_cast<void*>(static_cast<void const*>(nativeEvent)), &result) == true) {
         DLOG("event filtered out by native interface");
         return;
     }
@@ -272,6 +272,9 @@ void UbuntuInput::dispatchInputEvent(QWindow* window, const void* ev)
         break;
     case mir_input_event_type_touch:
         dispatchMotionEvent(window, event);
+        break;
+    default:
+        // TODO: Handle pointer events
         break;
     }
 }
