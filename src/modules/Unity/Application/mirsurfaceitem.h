@@ -53,11 +53,14 @@ class MirSurfaceItem : public QQuickItem
     Q_PROPERTY(QString name READ name NOTIFY nameChanged)
     Q_PROPERTY(bool live READ live NOTIFY liveChanged)
     Q_PROPERTY(Qt::ScreenOrientation orientation READ orientation WRITE setOrientation NOTIFY orientationChanged DESIGNABLE false)
+    Q_PROPERTY(MirSurfaceItem* parentSurface READ parentSurface CONSTANT)
+    Q_PROPERTY(QQmlListProperty<MirSurfaceItem> childSurfaces READ childSurfaces NOTIFY childSurfacesChanged)
 
 public:
     explicit MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
                             SessionInterface* session,
                             std::shared_ptr<SurfaceObserver> observer,
+                            MirSurfaceItem *parentSurface = 0,
                             QQuickItem *parent = 0);
     ~MirSurfaceItem();
 
@@ -88,7 +91,9 @@ public:
     bool live() const;
     Qt::ScreenOrientation orientation() const;
     SessionInterface *session() const;
+    MirSurfaceItem* parentSurface() const;
 
+    Q_INVOKABLE void requestClose();
     Q_INVOKABLE void release();
 
     // Item surface/texture management
@@ -116,6 +121,7 @@ Q_SIGNALS:
     void orientationChanged();
     void liveChanged(bool live);
     void firstFrameDrawn(MirSurfaceItem *item);
+    void childSurfacesChanged();
 
 protected Q_SLOTS:
     void onSessionStateChanged(SessionInterface::State state);
@@ -144,12 +150,16 @@ private Q_SLOTS:
     void updateMirSurfaceFocus(bool focused);
 
 private:
+    QQmlListProperty<MirSurfaceItem> childSurfaces();
+
     bool updateTexture();
     void ensureProvider();
 
     void setType(const Type&);
     void setState(const State&);
     void setLive(const bool);
+    void addChildSurface(MirSurfaceItem *child);
+    void removeChildSurface(MirSurfaceItem *child);
 
     // called by MirSurfaceManager
     void setAttribute(const MirSurfaceAttrib, const int);
@@ -176,6 +186,8 @@ private:
     Qt::ScreenOrientation m_orientation; //FIXME -  have to save the state as Mir has no getter for it (bug:1357429)
 
     QMirSurfaceTextureProvider *m_textureProvider;
+    MirSurfaceItem *m_parentSurfaceItem;
+    QList<MirSurfaceItem *> m_childSurfaceItems;
 
     std::shared_ptr<SurfaceObserver> m_surfaceObserver;
 
