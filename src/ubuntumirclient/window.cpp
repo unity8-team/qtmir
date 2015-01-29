@@ -230,11 +230,6 @@ void UbuntuWindow::createWindow()
     // Create platform window
     mir_wait_for(mir_surface_create(spec, surfaceCreateCallback, this));
     mir_surface_spec_release(spec);
-
-    {
-        // TODO: We should set this at creation time
-        mir_wait_for(mir_surface_set_type(d->surface, mir_surface_type_inputmethod));
-    }
     
     DASSERT(d->surface != NULL);
     d->createEGLSurface((EGLNativeWindowType)mir_surface_get_egl_native_window(d->surface));
