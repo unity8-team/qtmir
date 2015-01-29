@@ -394,7 +394,6 @@ void UbuntuWindow::setVisible(bool visible)
 {
   DLOG("UbuntuWindow::setVisible (this=%p, visible=%s)", this, visible ? "true" : "false");
 
-  // TODO: Seems using states here is kind of a hack. This is all mir supports.
   if (visible) {
     setWindowState(Qt::WindowNoState);
 
