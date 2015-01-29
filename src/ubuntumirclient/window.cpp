@@ -213,14 +213,28 @@ void UbuntuWindow::createWindow()
     DLOG("[ubuntumirclient QPA] creating surface at (%d, %d) with size (%d, %d) with title '%s'\n",
             geometry.x(), geometry.y(), geometry.width(), geometry.height(), title.data());
 
-    // Setup platform window creation properties
-    auto spec = mir_connection_create_spec_for_normal_surface(d->connection, geometry.width(),
-        geometry.height(), mir_choose_default_pixel_format(d->connection));
+    MirSurfaceSpec *spec;
+    int role = roleVariant.isValid() ? roleVariant.toUInt() : 1; // 1 is the default role for apps.
+    if (role == U_ON_SCREEN_KEYBOARD_ROLE)
+    {
+        spec = mir_connection_create_spec_for_input_method(d->connection, geometry.width(),
+            geometry.height(), mir_choose_default_pixel_format(d->connection));
+    }
+    else
+    {
+        spec = mir_connection_create_spec_for_normal_surface(d->connection, geometry.width(),
+            geometry.height(), mir_choose_default_pixel_format(d->connection));
+    }
     mir_surface_spec_set_name(spec, title.data());
 
     // Create platform window
     mir_wait_for(mir_surface_create(spec, surfaceCreateCallback, this));
     mir_surface_spec_release(spec);
+
+    {
+        // TODO: We should set this at creation time
+        mir_wait_for(mir_surface_set_type(d->surface, mir_surface_type_inputmethod));
+    }
     
     DASSERT(d->surface != NULL);
     d->createEGLSurface((EGLNativeWindowType)mir_surface_get_egl_native_window(d->surface));
