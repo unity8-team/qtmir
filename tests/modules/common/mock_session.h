@@ -31,14 +31,15 @@ public:
 
     MOCK_CONST_METHOD0(name, QString());
     MOCK_CONST_METHOD0(application, unity::shell::application::ApplicationInfoInterface*());
-    MOCK_CONST_METHOD0(surface, MirSurfaceItem*());
+    MOCK_METHOD0(surfaces, QQmlListProperty<MirSurfaceItem>());
     MOCK_CONST_METHOD0(parentSession, SessionInterface*());
     MOCK_CONST_METHOD0(state, State());
     MOCK_CONST_METHOD0(fullscreen, bool());
     MOCK_CONST_METHOD0(live, bool());
 
     MOCK_METHOD1(setApplication, void(unity::shell::application::ApplicationInfoInterface* item));
-    MOCK_METHOD1(setSurface, void(MirSurfaceItem* surface));
+    MOCK_METHOD1(addSurface, void(MirSurfaceItem* surface));
+    MOCK_METHOD1(removeSurface, void(MirSurfaceItem* surface));
     MOCK_METHOD1(setState, void(State state));
 
     MOCK_METHOD1(addChildSession, void(SessionInterface* session));

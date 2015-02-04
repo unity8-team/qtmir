@@ -24,16 +24,23 @@ SurfaceObserver::SurfaceObserver()
 {
 }
 
-void SurfaceObserver::setListener(QObject *listener) {
+void SurfaceObserver::setListener(QObject *listener)
+{
     m_listener = listener;
     if (m_framesPosted) {
         Q_EMIT framesPosted();
     }
 }
 
-void SurfaceObserver::frame_posted(int /*frames_available*/) {
+void SurfaceObserver::frame_posted(int /*frames_available*/)
+{
     m_framesPosted = true;
     if (m_listener) {
         Q_EMIT framesPosted();
     }
+}
+
+bool SurfaceObserver::framePosted() const
+{
+    return m_framesPosted;
 }

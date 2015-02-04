@@ -43,6 +43,8 @@ public:
     void orientation_set_to(MirOrientation) override {}
     void client_surface_close_requested() override {}
 
+    bool framePosted() const;
+
 Q_SIGNALS:
     void framesPosted();
 

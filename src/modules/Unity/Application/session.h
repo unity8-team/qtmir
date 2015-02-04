@@ -52,14 +52,14 @@ public:
     //getters
     QString name() const override;
     unity::shell::application::ApplicationInfoInterface* application() const override;
-    MirSurfaceItem* surface() const override;
     SessionInterface* parentSession() const override;
     State state() const override;
     bool fullscreen() const override;
     bool live() const override;
 
     void setApplication(unity::shell::application::ApplicationInfoInterface* item) override;
-    void setSurface(MirSurfaceItem* surface) override;
+    void addSurface(MirSurfaceItem* surface) override;
+    void removeSurface(MirSurfaceItem* surface) override;
     void setState(State state) override;
 
     void addChildSession(SessionInterface* session) override;
@@ -84,13 +84,16 @@ private Q_SLOTS:
     void updateFullscreenProperty();
 
 private:
+    QQmlListProperty<qtmir::MirSurfaceItem> surfaces() override;
+
     void setParentSession(Session* session);
 
     void stopPromptSessions();
 
     std::shared_ptr<mir::scene::Session> m_session;
     Application* m_application;
-    MirSurfaceItem* m_surface;
+    QList<MirSurfaceItem *> m_surfaces;
+    QList<MirSurfaceItem *> m_notDrawnToSurfaces;
     SessionInterface* m_parentSession;
     SessionModel* m_children;
     bool m_fullscreen;

@@ -23,6 +23,9 @@
 // Unity API
 #include <unity/shell/application/ApplicationInfoInterface.h>
 
+// Qt
+#include <QQmlListProperty>
+
 // local
 #include "sessionmodel.h"
 
@@ -37,14 +40,16 @@ namespace qtmir {
 
 class MirSurfaceItem;
 
-class SessionInterface : public QObject {
+class SessionInterface : public QObject
+{
     Q_OBJECT
-    Q_PROPERTY(MirSurfaceItem* surface READ surface NOTIFY surfaceChanged)
+    Q_PROPERTY(QQmlListProperty<qtmir::MirSurfaceItem> surfaces READ surfaces NOTIFY surfacesChanged)
     Q_PROPERTY(unity::shell::application::ApplicationInfoInterface* application READ application NOTIFY applicationChanged DESIGNABLE false)
     Q_PROPERTY(SessionInterface* parentSession READ parentSession NOTIFY parentSessionChanged DESIGNABLE false)
     Q_PROPERTY(SessionModel* childSessions READ childSessions DESIGNABLE false CONSTANT)
     Q_PROPERTY(bool fullscreen READ fullscreen NOTIFY fullscreenChanged)
     Q_PROPERTY(bool live READ live NOTIFY liveChanged)
+
 public:
     SessionInterface(QObject *parent = 0) : QObject(parent) {}
     virtual ~SessionInterface() {}
@@ -57,14 +62,14 @@ public:
     //getters
     virtual QString name() const = 0;
     virtual unity::shell::application::ApplicationInfoInterface* application() const = 0;
-    virtual MirSurfaceItem* surface() const = 0;
     virtual SessionInterface* parentSession() const = 0;
     virtual State state() const = 0;
     virtual bool fullscreen() const = 0;
     virtual bool live() const = 0;
 
     virtual void setApplication(unity::shell::application::ApplicationInfoInterface* item) = 0;
-    virtual void setSurface(MirSurfaceItem* surface) = 0;
+    virtual void addSurface(MirSurfaceItem* surface) = 0;
+    virtual void removeSurface(MirSurfaceItem* surface) = 0;
     virtual void setState(State state) = 0;
 
     virtual void addChildSession(SessionInterface* session) = 0;
@@ -80,7 +85,7 @@ public:
     virtual SessionModel* childSessions() const = 0;
 
 Q_SIGNALS:
-    void surfaceChanged(MirSurfaceItem*);
+    void surfacesChanged();
     void parentSessionChanged(SessionInterface*);
     void applicationChanged(unity::shell::application::ApplicationInfoInterface* application);
     void aboutToBeDestroyed();
@@ -92,6 +97,7 @@ Q_SIGNALS:
     void resumed();
 
 protected:
+    virtual QQmlListProperty<qtmir::MirSurfaceItem> surfaces() = 0;
     virtual void setFullscreen(bool fullscreen) = 0;
     virtual void setLive(const bool) = 0;
     virtual void appendPromptSession(const std::shared_ptr<mir::scene::PromptSession>& session) = 0;

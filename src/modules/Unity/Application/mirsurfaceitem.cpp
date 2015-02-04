@@ -314,7 +314,7 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
 MirSurfaceItem::~MirSurfaceItem()
 {
     if (m_session) {
-        m_session->setSurface(nullptr);
+        m_session->removeSurface(this);
     }
 
     qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::~MirSurfaceItem - this=" << this;
@@ -332,7 +332,7 @@ void MirSurfaceItem::release()
     qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::release - this=" << this;
 
     if (m_session) {
-        m_session->setSurface(nullptr);
+        m_session->removeSurface(this);
     }
     deleteLater();
 }

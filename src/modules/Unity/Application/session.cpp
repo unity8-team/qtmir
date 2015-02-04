@@ -46,7 +46,6 @@ Session::Session(const std::shared_ptr<ms::Session>& session,
     : SessionInterface(parent)
     , m_session(session)
     , m_application(nullptr)
-    , m_surface(nullptr)
     , m_parentSession(nullptr)
     , m_children(new SessionModel(this))
     , m_fullscreen(false)
@@ -61,11 +60,11 @@ Session::Session(const std::shared_ptr<ms::Session>& session,
 
     m_suspendTimer->setSingleShot(true);
     connect(m_suspendTimer, &QTimer::timeout, this, [this]() {
-        if (m_surface) {
-            m_surface->stopFrameDropper();
-        } else {
-            qDebug() << "Application::suspend - no surface to call stopFrameDropper() on!";
-        }
+//        if (m_surface) {
+//            m_surface->stopFrameDropper();
+//        } else {
+//            qDebug() << "Application::suspend - no surface to call stopFrameDropper() on!";
+//        }
         Q_EMIT suspended();
     });
 }
@@ -85,7 +84,9 @@ Session::~Session()
     if (m_application) {
         m_application->setSession(nullptr);
     }
-    delete m_surface; m_surface = nullptr;
+    for (auto surface : m_surfaces) { // GERRY - no animation??
+        delete surface;
+    }
     delete m_children; m_children = nullptr;
 }
 
@@ -120,14 +121,22 @@ ApplicationInfoInterface* Session::application() const
     return m_application;
 }
 
-MirSurfaceItem* Session::surface() const
+QQmlListProperty<qtmir::MirSurfaceItem> Session::surfaces()
 {
+    return QQmlListProperty<MirSurfaceItem>(this, 0,
+            [] (QQmlListProperty<MirSurfaceItem> *list) -> int // count function
+            {
+                Session *_this = qobject_cast<Session *>(list->object);
+                return _this->m_surfaces.count();
+            },
+            [] (QQmlListProperty<MirSurfaceItem> *list, int at) -> MirSurfaceItem* // at function
+            {
+                Session *_this = qobject_cast<Session *>(list->object);
+                return _this->m_surfaces.at(at);
+            }
+    );
+
     // Only notify QML of surface creation once it has drawn its first frame.
-    if (m_surface && m_surface->isFirstFrameDrawn()) {
-        return m_surface;
-    } else {
-        return nullptr;
-    }
 }
 
 SessionInterface* Session::parentSession() const
@@ -159,48 +168,58 @@ void Session::setApplication(ApplicationInfoInterface* application)
     Q_EMIT applicationChanged(application);
 }
 
-void Session::setSurface(MirSurfaceItem *newSurface)
+void Session::addSurface(MirSurfaceItem *newSurface)
 {
-    qCDebug(QTMIR_SESSIONS) << "Session::setSurface - session=" << name() << "surface=" << newSurface;
-
-    if (newSurface == m_surface) {
+    if (!newSurface || m_surfaces.contains(newSurface)) {
         return;
     }
+    qCDebug(QTMIR_SESSIONS) << "Session::addSurface - session=" << newSurface->name() << "surface=" << newSurface;
 
-    if (m_surface) {
-        m_surface->disconnect(this);
-        m_surface->setSession(nullptr);
-        m_surface->setParent(nullptr);
-    }
+    newSurface->setParent(this);
+    newSurface->setSession(this);
 
-    MirSurfaceItem *previousSurface = surface();
-    m_surface = newSurface;
-
-    if (newSurface) {
-        m_surface->setParent(this);
-        m_surface->setSession(this);
-
+    if (newSurface->isFirstFrameDrawn()) {
+        m_surfaces.append(newSurface);
+        Q_EMIT surfacesChanged();
+        updateFullscreenProperty();
+        qCDebug(QTMIR_SESSIONS) << "Session::addSurface - added to model";
+    } else {
         // Only notify QML of surface creation once it has drawn its first frame.
-        if (!surface()) {
-            connect(newSurface, &MirSurfaceItem::firstFrameDrawn,
-                    this, [this] { Q_EMIT surfaceChanged(m_surface); });
-        }
-
-        connect(newSurface, &MirSurfaceItem::stateChanged,
-            this, &Session::updateFullscreenProperty);
+        connect(newSurface, &MirSurfaceItem::firstFrameDrawn, this,
+                [this](MirSurfaceItem *item) {
+                    m_surfaces.append(item);
+                    Q_EMIT surfacesChanged();
+                    m_notDrawnToSurfaces.removeOne(item);
+                    updateFullscreenProperty();
+                    qCDebug(QTMIR_SESSIONS) << "Session::addSurface - added to model after first frame drew";
+        });
+        m_notDrawnToSurfaces.append(newSurface);
     }
 
-    if (previousSurface != surface()) {
-        Q_EMIT surfaceChanged(m_surface);
+    connect(newSurface, &MirSurfaceItem::stateChanged,
+        this, &Session::updateFullscreenProperty);
+}
+
+void Session::removeSurface(MirSurfaceItem *surface)
+{
+    qCDebug(QTMIR_SESSIONS) << "Session::removeSurface - session=" << surface->name() << "surface=" << surface;
+    if (m_notDrawnToSurfaces.contains(surface)) {
+        m_notDrawnToSurfaces.removeOne(surface);
     }
 
-    updateFullscreenProperty();
+    // when QML calls release() on this MirSurfaceItem, then it will be removed from the list
+    connect(surface, &MirSurfaceItem::destroyed,
+            [&](QObject *item){
+                auto surface = static_cast<MirSurfaceItem *>(item);
+                m_surfaces.removeOne(surface);
+                Q_EMIT surfacesChanged();
+    });
 }
 
 void Session::updateFullscreenProperty()
 {
-    if (m_surface) {
-        setFullscreen(m_surface->state() == MirSurfaceItem::Fullscreen);
+    if (!m_surfaces.isEmpty()) {
+        setFullscreen(m_surfaces.first()->state() == MirSurfaceItem::Fullscreen);
     } else {
         // Keep the current value of the fullscreen property until we get a new
         // surface
@@ -233,8 +252,8 @@ void Session::setState(State state)
                 m_suspendTimer->stop();
 
             if (m_state == Session::State::Suspended) {
-                if (m_surface)
-                    m_surface->startFrameDropper();
+//                if (m_surface)
+//                    m_surface->startFrameDropper();
                 Q_EMIT resumed();
                 session()->set_lifecycle_state(mir_lifecycle_state_resumed);
             }
@@ -243,8 +262,8 @@ void Session::setState(State state)
             stopPromptSessions();
             if (m_suspendTimer->isActive())
                 m_suspendTimer->stop();
-            if (m_surface)
-                m_surface->stopFrameDropper();
+//            if (m_surface)
+//                m_surface->stopFrameDropper();
             break;
         default:
             break;

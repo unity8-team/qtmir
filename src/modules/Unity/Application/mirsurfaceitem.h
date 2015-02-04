@@ -59,7 +59,7 @@ public:
                             SessionInterface* session,
                             std::shared_ptr<SurfaceObserver> observer,
                             QQuickItem *parent = 0);
-    ~MirSurfaceItem();
+    virtual ~MirSurfaceItem();
 
     enum Type {
         Normal = mir_surface_type_normal,

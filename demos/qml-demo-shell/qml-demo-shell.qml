@@ -1,5 +1,5 @@
 import QtQuick 2.0
-import Mir.Application 0.1
+import Unity.Application 0.1
 
 Rectangle {
     id: root
@@ -94,6 +94,7 @@ Rectangle {
                 } else {
                     logoAnimation.start();
                 }
+                print("GER", ApplicationManager.get(0).session.surfaces.length);
             }
         }
 
@@ -110,48 +111,63 @@ Rectangle {
         y: point.y
     }
 
+    Repeater {
+        model: ApplicationManager
+        delegate: Repeater {
+            model: ApplicationManager.get(index).session.surfaces
+
+            Component.onCompleted: print('new app!')
+
+            delegate: Rectangle {
+                id: decoration
+                Component.onCompleted: {
+                    var decorationHeight = (modelData.type === MirSurfaceItem.Normal) ? 20 : 0
+
+                    modelData.parent = decoration
+                    decoration.width = modelData.width
+                    decoration.height = modelData.height + decorationHeight
+                    modelData.y = decorationHeight
+                }
+
+                color: "red"
+            }
+        }
+
+    }
+
     Connections {
         target: SurfaceManager
         onSurfaceCreated: {
-            print("new surface", surface.name)
-
-            var windowComponent = Qt.createComponent("Window.qml");
-            var window = windowComponent.createObject(windowContainer);
-            window.setSurface(surface);
-
-            openAnimation.target = window;
-            openAnimation.start();
+            print("new surface", surface.name, surface.width, surface.height)
         }
-
         onSurfaceDestroyed: {
-            print("surface destroying", surface.name)
-            closeAnimation.surface = surface;
-            closeAnimation.start();
+            print("surface destroying", surface.name, surface.width, surface.height)
+            surface.release()
         }
     }
 
-    NumberAnimation {
-        id: openAnimation
-        property: "x";
-        from: root.width; to: 10;
-        duration: 1200; easing.type: Easing.InOutQuad
-    }
+//    NumberAnimation {
+//        id: openAnimation
+//        property: "x";
+//        from: root.width; to: 10;
+//        duration: 1200; easing.type: Easing.InOutQuad
+//    }
 
-    SequentialAnimation {
-        id: closeAnimation
-        property variant surface: null
-        NumberAnimation {
-            target: (closeAnimation.surface && closeAnimation.surface.parent) ? closeAnimation.surface.parent.parent : null
-            property: "scale";
-            to: 0;
-            duration: 500; easing.type: Easing.InQuad
-        }
-        ScriptAction {
-            script: {
-                closeAnimation.surface.parent.destroy(); //parent.destroy();
-                closeAnimation.surface.release();
-                print("surface destroyed")
-            }
-        }
-    }
+//    SequentialAnimation {
+//        id: closeAnimation
+//        property variant surface: null
+//        NumberAnimation {
+//            target: (closeAnimation.surface && closeAnimation.surface.parent) ? closeAnimation.surface.parent.parent : null
+//            property: "scale";
+//            to: 0;
+//            duration: 500; easing.type: Easing.InQuad
+//        }
+//        ScriptAction {
+//            script: {
+//                closeAnimation.surface.parent.destroy(); //parent.destroy();
+//                closeAnimation.surface.release();
+//                print("surface destroyed")
+//            }
+//        }
+//    }
 }

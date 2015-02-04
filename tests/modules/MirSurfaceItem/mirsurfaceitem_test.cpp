@@ -58,7 +58,7 @@ TEST(MirSurfaceItemTest, MissingTouchEnd)
     EXPECT_CALL(*mockSurface, remove_observer(_)).Times(AnyNumber());
     EXPECT_CALL(*mockSurface, size()).Times(AnyNumber()).WillRepeatedly(Return(mir::geometry::Size(100,100)));
     EXPECT_CALL(*mockSurface, type()).Times(AnyNumber()).WillRepeatedly(Return(mir_surface_type_normal));
-    EXPECT_CALL(*mockSession, setSurface(_)).Times(AnyNumber());
+    EXPECT_CALL(*mockSession, addSurface(_)).Times(AnyNumber());
 
     // The touch event sequence we expect mir::input::surface to receive from MirSurfaceItem.
     // It should properly finish the sequence for touch 0 ('down', 'move' and 'up') before starting
