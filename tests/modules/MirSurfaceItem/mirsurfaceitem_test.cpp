@@ -62,29 +62,43 @@ TEST(MirSurfaceItemTest, MissingTouchEnd)
     EXPECT_CALL(*mockSurface, type()).Times(AnyNumber()).WillRepeatedly(Return(mir_surface_type_normal));
     EXPECT_CALL(*mockSession, setSurface(_)).Times(AnyNumber());
 
+    auto get_touch_event = [](MirEvent const& event) -> MirTouchInputEvent const*
+    {
+        if (mir_event_get_type(&event) != mir_event_type_input)
+            return nullptr;
+        auto const* input_event = mir_event_get_input_event(&event);
+        if (mir_input_event_get_type(input_event) != mir_input_event_type_touch)
+            return nullptr;
+        return mir_input_event_get_touch_input_event(input_event);
+    };
+
+    auto event_matches = [&](MirEvent const& event,
+                            int touch_count,
+                            MirTouchInputEventTouchAction action,
+                            MirTouchInputEventTouchId touch_id) ->void
+    {
+        auto const* touch_event = get_touch_event(event);
+        ASSERT_NE(touch_event, nullptr);
+        ASSERT_EQ(touch_count, mir_touch_input_event_get_touch_count(touch_event));
+        ASSERT_EQ(action, mir_touch_input_event_get_touch_action(touch_event,0));
+        ASSERT_EQ(touch_id, mir_touch_input_event_get_touch_id(touch_event,0));
+    };
+
     // The touch event sequence we expect mir::input::surface to receive from MirSurfaceItem.
     // It should properly finish the sequence for touch 0 ('down', 'move' and 'up') before starting
     // the sequence for touch 1.
     EXPECT_CALL(*mockSurface, consume(_))
-        .WillOnce(Invoke([] (MirEvent const& mirEvent) {
-            ASSERT_EQ(mir_motion_action_down, mirEvent.motion.action);
-            ASSERT_EQ(1, mirEvent.motion.pointer_count);
-            ASSERT_EQ(0, mirEvent.motion.pointer_coordinates[0].id);
+        .WillOnce(Invoke([&] (MirEvent const& mirEvent) {
+            event_matches(mirEvent, 1, mir_touch_input_event_action_down, 0);
         }))
-        .WillOnce(Invoke([] (MirEvent const& mirEvent) {
-            ASSERT_EQ(mir_motion_action_move, mirEvent.motion.action);
-            ASSERT_EQ(1, mirEvent.motion.pointer_count);
-            ASSERT_EQ(0, mirEvent.motion.pointer_coordinates[0].id);
+        .WillOnce(Invoke([&] (MirEvent const& mirEvent) {
+            event_matches(mirEvent, 1, mir_touch_input_event_action_change, 0);
         }))
-        .WillOnce(Invoke([] (MirEvent const& mirEvent) {
-            ASSERT_EQ(mir_motion_action_up, mirEvent.motion.action);
-            ASSERT_EQ(1, mirEvent.motion.pointer_count);
-            ASSERT_EQ(0, mirEvent.motion.pointer_coordinates[0].id);
+        .WillOnce(Invoke([&] (MirEvent const& mirEvent) {
+            event_matches(mirEvent, 1, mir_touch_input_event_action_up, 0);
         }))
-        .WillOnce(Invoke([] (MirEvent const& mirEvent) {
-            ASSERT_EQ(mir_motion_action_down, mirEvent.motion.action);
-            ASSERT_EQ(1, mirEvent.motion.pointer_count);
-            ASSERT_EQ(1, mirEvent.motion.pointer_coordinates[0].id);
+        .WillOnce(Invoke([&] (MirEvent const& mirEvent) {
+            event_matches(mirEvent, 1, mir_touch_input_event_action_down, 1);
         }));
 
 
