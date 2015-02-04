@@ -54,7 +54,7 @@ class MirSurfaceItem : public QQuickItem
     Q_PROPERTY(bool live READ live NOTIFY liveChanged)
     Q_PROPERTY(Qt::ScreenOrientation orientation READ orientation WRITE setOrientation NOTIFY orientationChanged DESIGNABLE false)
     Q_PROPERTY(MirSurfaceItem* parentSurface READ parentSurface CONSTANT)
-    Q_PROPERTY(QQmlListProperty<MirSurfaceItem> childSurfaces READ childSurfaces NOTIFY childSurfacesChanged)
+    Q_PROPERTY(QQmlListProperty<qtmir::MirSurfaceItem> childSurfaces READ childSurfaces NOTIFY childSurfacesChanged)
 
 public:
     explicit MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
