@@ -39,8 +39,8 @@ Rectangle {
 
     MultiPointTouchArea {
         anchors.fill: parent
-        minimumTouchPoints: 1
-        maximumTouchPoints: 1
+        minimumTouchPoints: 3
+        maximumTouchPoints: 4
         touchPoints: [
             TouchPoint { id: point }
         ]
@@ -61,21 +61,14 @@ Rectangle {
             if (!window) return;
 
             var offset = point.x - previousX
-            if (window.width > 100) {
-                window.width += offset
-            }
-            previousX = point.x
+            window.x = offset
 
             offset = point.y - previousY
-            if (window.height > 100) {
-                window.height += offset
-            }
-            previousY = point.y
+            window.y = offset
         }
 
         onReleased: {
             window = null
-            print(window.width, window.height)
         }
 
         MultiPointTouchArea {
@@ -94,13 +87,39 @@ Rectangle {
                 } else {
                     logoAnimation.start();
                 }
-                print("GER", ApplicationManager.get(0).session.surfaces.length);
             }
         }
 
         Item {
             id: windowContainer
             anchors.fill: parent
+
+            Repeater {
+                model: ApplicationManager
+                delegate: Repeater {
+                    model: ApplicationManager.get(index).session.surfaces
+
+                    Component.onCompleted: print('new app!')
+
+                    delegate: Rectangle {
+                        id: decoration
+                        readonly property var surface: modelData
+                        Component.onCompleted: {
+                            var decorationHeight = (surface.type === MirSurfaceItem.Normal) ? 20 : 0
+
+                            decoration.width = surface.width
+                            decoration.height = surface.height + decorationHeight
+                            surface.parent = decoration
+                            surface.anchors.fill = decoration
+                            surface.anchors.topMargin = decorationHeight
+                        }
+
+                        visible: surface.state !== MirSurfaceItem.Minimized
+                        color: "red"
+                    }
+                }
+
+            }
         }
     }
 
@@ -111,29 +130,6 @@ Rectangle {
         y: point.y
     }
 
-    Repeater {
-        model: ApplicationManager
-        delegate: Repeater {
-            model: ApplicationManager.get(index).session.surfaces
-
-            Component.onCompleted: print('new app!')
-
-            delegate: Rectangle {
-                id: decoration
-                Component.onCompleted: {
-                    var decorationHeight = (modelData.type === MirSurfaceItem.Normal) ? 20 : 0
-
-                    modelData.parent = decoration
-                    decoration.width = modelData.width
-                    decoration.height = modelData.height + decorationHeight
-                    modelData.y = decorationHeight
-                }
-
-                color: "red"
-            }
-        }
-
-    }
 
     Connections {
         target: SurfaceManager
