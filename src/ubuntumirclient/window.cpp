@@ -94,8 +94,8 @@ UbuntuWindow::UbuntuWindow(QWindow* w, QSharedPointer<UbuntuClipboard> clipboard
     d->id = id++;
 
     // Use client geometry if set explicitly, use available screen geometry otherwise.
-    d->geometry = screen->availableGeometry(); //window()->geometry() != screen->geometry() ?
-        //window()->geometry() : screen->availableGeometry();
+    d->geometry = window()->geometry() != screen->geometry() ?
+        window()->geometry() : screen->availableGeometry();
     createWindow();
     DLOG("UbuntuWindow::UbuntuWindow (this=%p, w=%p, screen=%p, input=%p)", this, w, screen, input);
 }
