@@ -126,12 +126,12 @@ QQmlListProperty<qtmir::MirSurfaceItem> Session::surfaces()
     return QQmlListProperty<MirSurfaceItem>(this, 0,
             [] (QQmlListProperty<MirSurfaceItem> *list) -> int // count function
             {
-                Session *_this = qobject_cast<Session *>(list->object);
+                auto _this = qobject_cast<Session *>(list->object);
                 return _this->m_surfaces.count();
             },
             [] (QQmlListProperty<MirSurfaceItem> *list, int at) -> MirSurfaceItem* // at function
             {
-                Session *_this = qobject_cast<Session *>(list->object);
+                auto _this = qobject_cast<Session *>(list->object);
                 return _this->m_surfaces.at(at);
             }
     );
