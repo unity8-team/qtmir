@@ -169,6 +169,7 @@ void UbuntuWindow::createWindow()
 
     // Get surface role and flags.
     QVariant roleVariant = window()->property("role");
+    int role = roleVariant.isValid() ? roleVariant.toUInt() : 1;  // 1 is the default role for apps.
     QVariant opaqueVariant = window()->property("opaque");
     uint flags = opaqueVariant.isValid() ?
         opaqueVariant.toUInt() ? static_cast<uint>(IS_OPAQUE_FLAG) : 0 : 0;
@@ -214,7 +215,6 @@ void UbuntuWindow::createWindow()
             geometry.x(), geometry.y(), geometry.width(), geometry.height(), title.data());
 
     MirSurfaceSpec *spec;
-    int role = roleVariant.isValid() ? roleVariant.toUInt() : 1; // 1 is the default role for apps.
     if (role == U_ON_SCREEN_KEYBOARD_ROLE)
     {
         spec = mir_connection_create_spec_for_input_method(d->connection, geometry.width(),
