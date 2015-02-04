@@ -140,7 +140,7 @@ public:
         mir_event_unref(nativeEvent);
     }
     
-    UbuntuWindow* window;
+    QPointer<UbuntuWindow> window;
     MirEvent const* nativeEvent;
 };
 
@@ -203,8 +203,8 @@ void UbuntuInput::customEvent(QEvent* event)
     UbuntuEvent* ubuntuEvent = static_cast<UbuntuEvent*>(event);
     MirEvent const* nativeEvent = ubuntuEvent->nativeEvent;
 
-    if (ubuntuEvent->window->window() == nullptr) {
-        qWarning() << "Attempted to deliver an event to a non-existant QWindow, ignoring.";
+    if (ubuntuEvent->window == nullptr) {
+        qWarning() << "Attempted to deliver an event to a non-existent window, ignoring.";
         return;
     }
 
