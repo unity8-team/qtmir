@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Canonical, Ltd.
+ * Copyright (C) 2014-2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -71,7 +71,7 @@ static void surfaceCreateCallback(MirSurface* surface, void* context)
     DASSERT(context != NULL);
     UbuntuWindow* platformWindow = static_cast<UbuntuWindow*>(context);
     platformWindow->priv()->surface = surface;
-    
+
     MirEventDelegate handler = {eventCallback, context};
     mir_surface_set_event_handler(surface, &handler);
 }
@@ -94,8 +94,8 @@ UbuntuWindow::UbuntuWindow(QWindow* w, QSharedPointer<UbuntuClipboard> clipboard
     d->id = id++;
 
     // Use client geometry if set explicitly, use available screen geometry otherwise.
-    d->geometry = window()->geometry() != screen->geometry() ?
-        window()->geometry() : screen->availableGeometry();
+    d->geometry = screen->availableGeometry(); //window()->geometry() != screen->geometry() ?
+        //window()->geometry() : screen->availableGeometry();
     createWindow();
     DLOG("UbuntuWindow::UbuntuWindow (this=%p, w=%p, screen=%p, input=%p)", this, w, screen, input);
 }
@@ -158,7 +158,7 @@ mir_choose_default_pixel_format(MirConnection *connection)
 
     mir_connection_get_available_surface_formats(connection,
         format, mir_pixel_formats, &nformats);
-    
+
     return format[0];
 }
 }
@@ -181,12 +181,12 @@ void UbuntuWindow::createWindow()
     const QByteArray title = (!window()->title().isNull()) ? window()->title().toUtf8() : "Window 1"; // legacy title
     const int panelHeight = d->panelHeight();
 
-    #if !defined(QT_NO_DEBUG)
+#if !defined(QT_NO_DEBUG)
     LOG("panelHeight: '%d'", panelHeight);
     LOG("role: '%d'", role);
     LOG("flags: '%s'", (flags & static_cast<uint>(1)) ? "Opaque" : "NotOpaque");
     LOG("title: '%s'", title.constData());
-    #endif
+#endif
 
     // Get surface geometry.
     QRect geometry;
@@ -230,7 +230,7 @@ void UbuntuWindow::createWindow()
     // Create platform window
     mir_wait_for(mir_surface_create(spec, surfaceCreateCallback, this));
     mir_surface_spec_release(spec);
-    
+
     DASSERT(d->surface != NULL);
     d->createEGLSurface((EGLNativeWindowType)mir_surface_get_egl_native_window(d->surface));
 

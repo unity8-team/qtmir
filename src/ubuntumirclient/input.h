@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Canonical, Ltd.
+ * Copyright (C) 2014-2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -37,16 +37,16 @@ public:
     void customEvent(QEvent* event) override;
 
     // TODO: Update to use MirEvent
-    void postEvent(UbuntuWindow* window, MirEvent const* event);
+    void postEvent(UbuntuWindow* window, const MirEvent *event);
     UbuntuClientIntegration* integration() const { return mIntegration; }
 
 protected:
-    void dispatchKeyEvent(QWindow* window, MirInputEvent const* event);
-    void dispatchPointerEvent(QWindow* window, MirInputEvent const* event);
-    void dispatchTouchEvent(QWindow* window, MirInputEvent const* event);
-    void dispatchInputEvent(QWindow* window, MirInputEvent const* event);
+    void dispatchKeyEvent(QWindow *window, const MirInputEvent *event);
+    void dispatchPointerEvent(QWindow *window, const MirInputEvent *event);
+    void dispatchTouchEvent(QWindow *window, const MirInputEvent *event);
+    void dispatchInputEvent(QWindow *window, const MirInputEvent *event);
     
-    void dispatchOrientationEvent(QWindow* window, MirOrientationEvent const* event);
+    void dispatchOrientationEvent(QWindow* window, const MirOrientationEvent *event);
 
 private:
     UbuntuClientIntegration* mIntegration;
