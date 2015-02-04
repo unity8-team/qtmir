@@ -373,11 +373,13 @@ QQmlListProperty<MirSurfaceItem> MirSurfaceItem::childSurfaces()
     return QQmlListProperty<MirSurfaceItem>(this, 0,
             [] (QQmlListProperty<MirSurfaceItem> *list) -> int // count function
             {
-                return qobject_cast<MirSurfaceItem *>(list->object)->m_childSurfaceItems.count();
+                auto _this = qobject_cast<MirSurfaceItem *>(list->object);
+                return _this->m_childSurfaceItems.count();
             },
             [] (QQmlListProperty<MirSurfaceItem> *list, int at) -> MirSurfaceItem* // at function
             {
-                return qobject_cast<MirSurfaceItem *>(list->object)->m_childSurfaceItems.at(at);
+                auto _this = qobject_cast<MirSurfaceItem *>(list->object);
+                return _this->m_childSurfaceItems.at(at);
             }
     );
 }
