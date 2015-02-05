@@ -459,18 +459,21 @@ void MirSurfaceItem::mousePressEvent(QMouseEvent *event)
 {
     auto ev = makeMirEvent(event, mir_pointer_input_event_action_button_down);
     m_surface->consume(*ev);
+    event->accept();
 }
 
 void MirSurfaceItem::mouseMoveEvent(QMouseEvent *event)
 {
     auto ev = makeMirEvent(event, mir_pointer_input_event_action_motion);
     m_surface->consume(*ev);
+    event->accept();
 }
 
 void MirSurfaceItem::mouseReleaseEvent(QMouseEvent *event)
 {
     auto ev = makeMirEvent(event, mir_pointer_input_event_action_button_up);
     m_surface->consume(*ev);
+    event->accept();
 }
 
 void MirSurfaceItem::wheelEvent(QWheelEvent *event)
@@ -482,30 +485,35 @@ void MirSurfaceItem::hoverEnterEvent(QHoverEvent *event)
 {
     auto ev = makeMirEvent(event, mir_pointer_input_event_action_enter);
     m_surface->consume(*ev);
+    event->accept();
 }
 
 void MirSurfaceItem::hoverLeaveEvent(QHoverEvent *event)
 {
     auto ev = makeMirEvent(event, mir_pointer_input_event_action_leave);
     m_surface->consume(*ev);
+    event->accept();
 }
 
 void MirSurfaceItem::hoverMoveEvent(QHoverEvent *event)
 {
     auto ev = makeMirEvent(event, mir_pointer_input_event_action_motion);
     m_surface->consume(*ev);
+    event->accept();
 }
 
 void MirSurfaceItem::keyPressEvent(QKeyEvent *qtEvent)
 {
     auto ev = makeMirEvent(qtEvent);
     m_surface->consume(*ev);
+    qtEvent->accept();
 }
 
 void MirSurfaceItem::keyReleaseEvent(QKeyEvent *qtEvent)
 {
     auto ev = makeMirEvent(qtEvent);
     m_surface->consume(*ev);
+    qtEvent->accept();
 }
 
 QString MirSurfaceItem::appId() const
