@@ -55,7 +55,7 @@ namespace {
 
 // Would be better if QMouseEvent had nativeModifiers
 MirInputEventModifiers
-mir_modifiers_from_qt(Qt::KeyboardModifiers mods)
+getMirModifiersFromQt(Qt::KeyboardModifiers mods)
 {
     MirInputEventModifiers m_mods = mir_input_event_modifier_none;
     if (mods & Qt::ShiftModifier)
@@ -73,7 +73,7 @@ mir_modifiers_from_qt(Qt::KeyboardModifiers mods)
 mir::EventUPtr makeMirEvent(QMouseEvent *qtEvent, MirPointerInputEventAction action)
 {
     auto timestamp = qtEvent->timestamp() * 1000000;
-    auto modifiers = mir_modifiers_from_qt(qtEvent->modifiers());
+    auto modifiers = getMirModifiersFromQt(qtEvent->modifiers());
 
     std::vector<MirPointerInputEventButton> buttons;
     if (qtEvent->buttons() & Qt::LeftButton)
@@ -125,7 +125,7 @@ mir::EventUPtr makeMirEvent(Qt::KeyboardModifiers qmods,
                             Qt::TouchPointStates /* qtTouchPointStates */,
                             ulong qtTimestamp)
 {
-    auto modifiers = mir_modifiers_from_qt(qmods);
+    auto modifiers = getMirModifiersFromQt(qmods);
     auto ev = mir::events::make_event(0, static_cast<int64_t>(qtTimestamp) * 1000000,
                                       modifiers);
    
