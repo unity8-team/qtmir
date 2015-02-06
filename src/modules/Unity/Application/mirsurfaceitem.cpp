@@ -119,7 +119,7 @@ mir::EventUPtr makeMirEvent(QKeyEvent *qtEvent)
                            qtEvent->nativeScanCode(),
                            qtEvent->nativeModifiers());
 }
-    
+
 mir::EventUPtr makeMirEvent(Qt::KeyboardModifiers qmods,
                             const QList<QTouchEvent::TouchPoint> &qtTouchPoints,
                             Qt::TouchPointStates /* qtTouchPointStates */,
@@ -128,7 +128,7 @@ mir::EventUPtr makeMirEvent(Qt::KeyboardModifiers qmods,
     auto modifiers = getMirModifiersFromQt(qmods);
     auto ev = mir::events::make_event(0, static_cast<int64_t>(qtTimestamp) * 1000000,
                                       modifiers);
-   
+
     for (int i = 0; i < qtTouchPoints.count(); ++i) {
         auto touchPoint = qtTouchPoints.at(i);
         auto id = touchPoint.id();
@@ -555,7 +555,7 @@ void MirSurfaceItem::endCurrentTouchSequence(ulong timestamp)
         auto ev = makeMirEvent(touchEvent.modifiers, touchEvent.touchPoints, 
                                touchEvent.touchPointStates, touchEvent.timestamp);
         m_surface->consume(*ev);
-        
+
         *m_lastTouchEvent = touchEvent;
 
         touchEvent.touchPoints.removeAt(0);

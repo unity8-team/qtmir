@@ -62,7 +62,7 @@ TEST(MirSurfaceItemTest, MissingTouchEnd)
     EXPECT_CALL(*mockSurface, type()).Times(AnyNumber()).WillRepeatedly(Return(mir_surface_type_normal));
     EXPECT_CALL(*mockSession, setSurface(_)).Times(AnyNumber());
 
-    auto get_touch_event = [](MirEvent const& event) -> MirTouchInputEvent const*
+    auto getTouchEvent = [](MirEvent const& event) -> MirTouchInputEvent const*
     {
         if (mir_event_get_type(&event) != mir_event_type_input)
             return nullptr;
@@ -72,12 +72,12 @@ TEST(MirSurfaceItemTest, MissingTouchEnd)
         return mir_input_event_get_touch_input_event(input_event);
     };
 
-    auto event_matches = [&](MirEvent const& event,
+    auto eventMatches = [&](MirEvent const& event,
                             int touch_count,
                             MirTouchInputEventTouchAction action,
                             MirTouchInputEventTouchId touch_id) ->void
     {
-        auto const* touch_event = get_touch_event(event);
+        auto const* touch_event = getTouchEvent(event);
         ASSERT_NE(touch_event, nullptr);
         ASSERT_EQ(touch_count, mir_touch_input_event_get_touch_count(touch_event));
         ASSERT_EQ(action, mir_touch_input_event_get_touch_action(touch_event,0));
@@ -89,16 +89,16 @@ TEST(MirSurfaceItemTest, MissingTouchEnd)
     // the sequence for touch 1.
     EXPECT_CALL(*mockSurface, consume(_))
         .WillOnce(Invoke([&] (MirEvent const& mirEvent) {
-            event_matches(mirEvent, 1, mir_touch_input_event_action_down, 0);
+            eventMatches(mirEvent, 1, mir_touch_input_event_action_down, 0);
         }))
         .WillOnce(Invoke([&] (MirEvent const& mirEvent) {
-            event_matches(mirEvent, 1, mir_touch_input_event_action_change, 0);
+            eventMatches(mirEvent, 1, mir_touch_input_event_action_change, 0);
         }))
         .WillOnce(Invoke([&] (MirEvent const& mirEvent) {
-            event_matches(mirEvent, 1, mir_touch_input_event_action_up, 0);
+            eventMatches(mirEvent, 1, mir_touch_input_event_action_up, 0);
         }))
         .WillOnce(Invoke([&] (MirEvent const& mirEvent) {
-            event_matches(mirEvent, 1, mir_touch_input_event_action_down, 1);
+            eventMatches(mirEvent, 1, mir_touch_input_event_action_down, 1);
         }));
 
 
@@ -111,19 +111,19 @@ TEST(MirSurfaceItemTest, MissingTouchEnd)
     touchPoints[0].setId(0);
     touchPoints[0].setState(Qt::TouchPointPressed);
     surfaceItem->processTouchEvent(QEvent::TouchBegin,
-        timestamp, Qt::NoModifier, touchPoints, touchPoints[0].state());
+            timestamp, Qt::NoModifier, touchPoints, touchPoints[0].state());
 
     touchPoints[0].setState(Qt::TouchPointMoved);
     surfaceItem->processTouchEvent(QEvent::TouchUpdate,
-        timestamp + 10, Qt::NoModifier, touchPoints, touchPoints[0].state());
+            timestamp + 10, Qt::NoModifier, touchPoints, touchPoints[0].state());
 
     // Starting a new touch sequence (with touch 1) without ending the current one
     // (wich has touch 0).
     touchPoints[0].setId(1);
     touchPoints[0].setState(Qt::TouchPointPressed);
     surfaceItem->processTouchEvent(QEvent::TouchBegin,
-        timestamp + 20, Qt::NoModifiertouchPoints, touchPoints[0].state());
-    
+            timestamp + 20, Qt::NoModifiertouchPoints, touchPoints[0].state());
+
     delete surfaceItem;
     delete mockSession;
 }

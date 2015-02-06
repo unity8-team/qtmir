@@ -32,8 +32,6 @@
 
 Q_LOGGING_CATEGORY(QTMIR_MIR_INPUT, "qtmir.mir.input")
 
-// from android-input AMOTION_EVENT_ACTION_*, hidden inside mir bowels
-
 // XKB Keysyms which do not map directly to Qt types (i.e. Unicode points)
 static const uint32_t KeyTable[] = {
     XKB_KEY_Escape,                  Qt::Key_Escape,
@@ -224,7 +222,7 @@ void QtEventFeeder::dispatch(MirEvent const& event)
     if (type != mir_event_type_input)
         return;
     auto iev = mir_event_get_input_event(&event);
-    
+
     switch (mir_input_event_get_type(iev)) {
     case mir_input_event_type_key:
         dispatchKey(iev);
@@ -242,25 +240,25 @@ void QtEventFeeder::dispatch(MirEvent const& event)
 namespace
 {
 
-Qt::KeyboardModifiers qt_modifiers_from_mir(MirInputEventModifiers modifiers)
+Qt::KeyboardModifiers getQtModifiersFromMir(MirInputEventModifiers modifiers)
 {
-    int q_modifiers = Qt::NoModifier;
+    int qtModifiers = Qt::NoModifier;
     if (modifiers & mir_input_event_modifier_shift) {
-        q_modifiers |= Qt::ShiftModifier;
+        qtModifiers |= Qt::ShiftModifier;
     }
     if (modifiers & mir_input_event_modifier_ctrl) {
-        q_modifiers |= Qt::ControlModifier;
+        qtModifiers |= Qt::ControlModifier;
     }
     if (modifiers & mir_input_event_modifier_alt) {
-        q_modifiers |= Qt::AltModifier;
+        qtModifiers |= Qt::AltModifier;
     }
     if (modifiers & mir_input_event_modifier_meta) {
-        q_modifiers |= Qt::MetaModifier;
+        qtModifiers |= Qt::MetaModifier;
     }
-    return static_cast<Qt::KeyboardModifiers>(q_modifiers);
+    return static_cast<Qt::KeyboardModifiers>(qtModifiers);
 }
 
-Qt::MouseButton extract_buttons(MirPointerInputEvent const* pev)
+Qt::MouseButton getQtMouseButtonsfromMirPointerEvent(MirPointerInputEvent const* pev)
 {
     int buttons = Qt::NoButton;
     if (mir_pointer_input_event_get_button_state(pev, mir_pointer_input_button_primary))
@@ -280,16 +278,16 @@ void QtEventFeeder::dispatchPointer(MirInputEvent const* ev)
 {
     if (!mQtWindowSystem->hasTargetWindow())
         return;
-    
+
     auto timestamp = mir_input_event_get_event_time(ev) / 1000000;
 
     auto pev = mir_input_event_get_pointer_input_event(ev);
-    auto modifiers = qt_modifiers_from_mir(mir_pointer_input_event_get_modifiers(pev));
-    auto buttons = extract_buttons(pev);
+    auto modifiers = getQtModifiersFromMir(mir_pointer_input_event_get_modifiers(pev));
+    auto buttons = getQtMouseButtonsfromMirPointerEvent(pev);
 
     auto local_point = QPointF(mir_pointer_input_event_get_axis_value(pev, mir_pointer_input_axis_x),
                                mir_pointer_input_event_get_axis_value(pev, mir_pointer_input_axis_y));
-    
+
     mQtWindowSystem->handleMouseEvent(timestamp, local_point,
                                       buttons, modifiers);
 }
@@ -305,12 +303,12 @@ void QtEventFeeder::dispatchKey(MirInputEvent const* event)
     xkb_keysym_t xk_sym = mir_key_input_event_get_key_code(kev);
 
     // Key modifier and unicode index mapping.
-    auto modifiers = qt_modifiers_from_mir(mir_key_input_event_get_modifiers(kev));
+    auto modifiers = getQtModifiersFromMir(mir_key_input_event_get_modifiers(kev));
 
     // Key action
     QEvent::Type keyType = QEvent::KeyRelease;
     bool is_auto_rep = false;
-    
+
     switch (mir_key_input_event_get_action(kev))
     {
     case mir_key_input_event_action_repeat:
@@ -329,7 +327,7 @@ void QtEventFeeder::dispatchKey(MirInputEvent const* event)
     char s[2];
     int keyCode = translateKeysym(xk_sym, s, sizeof(s));
     QString text = QString::fromLatin1(s);
-    
+
     QPlatformInputContext* context = QGuiApplicationPrivate::platformIntegration()->inputContext();
     if (context) {
         // TODO: consider event.repeat_count
@@ -376,7 +374,7 @@ void QtEventFeeder::dispatchTouch(MirInputEvent const* event)
         const float kH = mir_touch_input_event_get_touch_axis_value(tev, i, mir_touch_input_axis_touch_minor);
         const float kP = mir_touch_input_event_get_touch_axis_value(tev, i, mir_touch_input_axis_pressure);
         touchPoint.id = mir_touch_input_event_get_touch_id(tev, i);
-        
+
         touchPoint.normalPosition = QPointF(kX / kWindowGeometry.width(), kY / kWindowGeometry.height());
         touchPoint.area = QRectF(kX - (kW / 2.0), kY - (kH / 2.0), kW, kH);
         touchPoint.pressure = kP / kMaxPressure;
