@@ -342,6 +342,16 @@ SessionInterface* MirSurfaceItem::session() const
     return m_session.data();
 }
 
+int MirSurfaceItem::requestedX() const
+{
+    return m_surface->top_left().x.as_int();
+}
+
+int MirSurfaceItem::requestedY() const
+{
+    return m_surface->top_left().y.as_int();
+}
+
 MirSurfaceItem::Type MirSurfaceItem::type() const
 {
     return static_cast<MirSurfaceItem::Type>(m_surface->type());

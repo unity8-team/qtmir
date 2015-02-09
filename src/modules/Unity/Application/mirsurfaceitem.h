@@ -48,6 +48,8 @@ class MirSurfaceItem : public QQuickItem
     Q_ENUMS(Type)
     Q_ENUMS(State)
 
+    Q_PROPERTY(int requestedX READ requestedX NOTIFY requestedXChanged)
+    Q_PROPERTY(int requestedY READ requestedY NOTIFY requestedYChanged)
     Q_PROPERTY(Type type READ type NOTIFY typeChanged)
     Q_PROPERTY(State state READ state NOTIFY stateChanged)
     Q_PROPERTY(QString name READ name NOTIFY nameChanged)
@@ -82,6 +84,8 @@ public:
     };
 
     //getters
+    int requestedX() const;
+    int requestedY() const;
     Type type() const;
     State state() const;
     QString name() const;
@@ -110,6 +114,8 @@ public:
             Qt::TouchPointStates touchPointStates);
 
 Q_SIGNALS:
+    void requestedXChanged();
+    void requestedYChanged();
     void typeChanged();
     void stateChanged();
     void nameChanged();
