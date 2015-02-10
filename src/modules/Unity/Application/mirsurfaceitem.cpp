@@ -248,6 +248,7 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     , m_lastTouchEvent(nullptr)
 {
     qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::MirSurfaceItem";
+    qRegisterMetaType<MirSurfaceAttrib>("MirSurfaceAttrib");
 
     m_surfaceObserver = observer;
     if (observer) {

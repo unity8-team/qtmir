@@ -179,18 +179,14 @@ void Session::addSurface(MirSurfaceItem *newSurface)
     newSurface->setSession(this);
 
     if (newSurface->isFirstFrameDrawn()) {
-        m_surfaces.append(newSurface);
-        Q_EMIT surfacesChanged();
-        updateFullscreenProperty();
+        addSurfaceToModel(newSurface);
         qCDebug(QTMIR_SESSIONS) << "Session::addSurface - added to model";
     } else {
         // Only notify QML of surface creation once it has drawn its first frame.
         connect(newSurface, &MirSurfaceItem::firstFrameDrawn, this,
                 [this](MirSurfaceItem *item) {
-                    m_surfaces.append(item);
-                    Q_EMIT surfacesChanged();
+                    addSurfaceToModel(newSurface);
                     m_notDrawnToSurfaces.removeOne(item);
-                    updateFullscreenProperty();
                     qCDebug(QTMIR_SESSIONS) << "Session::addSurface - added to model after first frame drew";
         });
         m_notDrawnToSurfaces.append(newSurface);
@@ -198,6 +194,14 @@ void Session::addSurface(MirSurfaceItem *newSurface)
 
     connect(newSurface, &MirSurfaceItem::stateChanged,
         this, &Session::updateFullscreenProperty);
+}
+
+void Session::addSurfaceToModel(MirSurfaceItem *newSurface)
+{
+    m_surfaces.append(newSurface);
+
+    Q_EMIT surfacesChanged();
+    updateFullscreenProperty();
 }
 
 void Session::removeSurface(MirSurfaceItem *surface)

@@ -105,13 +105,16 @@ Rectangle {
                         id: decoration
                         readonly property var surface: modelData
                         Component.onCompleted: {
-                            var decorationHeight = (surface.type === MirSurfaceItem.Normal) ? 20 : 0
+                            var decorationHeight = (surface.type === MirSurfaceItem.Normal || surface.type === MirSurfaceItem.Dialog) ? 20 : 0
 
-                            decoration.width = surface.width
-                            decoration.height = surface.height + decorationHeight
+                            decoration.width = Qt.binding(function(){ return surface.width; })
+                            decoration.height = Qt.binding(function(){ return surface.height + decorationHeight; })
+                            decoration.x = surface.requestedX
+                            decoration.y = surface.requestedY
                             surface.parent = decoration
                             surface.anchors.fill = decoration
                             surface.anchors.topMargin = decorationHeight
+                            decoration.visible = Qt.binding(function(){ return surface.state !== MirSurfaceItem.Minimized })
                         }
 
                         visible: surface.state !== MirSurfaceItem.Minimized
@@ -134,7 +137,7 @@ Rectangle {
     Connections {
         target: SurfaceManager
         onSurfaceCreated: {
-            print("new surface", surface.name, surface.width, surface.height)
+            print("new surface", surface.name, "type", surface.type, "state", surface.state, "geom", surface.requestedX, surface.requestedY, surface.width, surface.height)
         }
         onSurfaceDestroyed: {
             print("surface destroying", surface.name, surface.width, surface.height)

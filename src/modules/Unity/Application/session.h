@@ -87,6 +87,7 @@ private:
     QQmlListProperty<qtmir::MirSurfaceItem> surfaces() override;
 
     void setParentSession(Session* session);
+    void addSurfaceToModel(MirSurfaceItem *newSurface);
 
     void stopPromptSessions();
 
