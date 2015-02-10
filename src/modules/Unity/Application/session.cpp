@@ -185,7 +185,7 @@ void Session::addSurface(MirSurfaceItem *newSurface)
         // Only notify QML of surface creation once it has drawn its first frame.
         connect(newSurface, &MirSurfaceItem::firstFrameDrawn, this,
                 [this](MirSurfaceItem *item) {
-                    addSurfaceToModel(newSurface);
+                    addSurfaceToModel(item);
                     m_notDrawnToSurfaces.removeOne(item);
                     qCDebug(QTMIR_SESSIONS) << "Session::addSurface - added to model after first frame drew";
         });

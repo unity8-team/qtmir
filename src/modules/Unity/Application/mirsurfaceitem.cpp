@@ -239,6 +239,7 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
                                SessionInterface* session,
                                MirShell *shell,
                                std::shared_ptr<SurfaceObserver> observer,
+                               MirSurfaceItem *parentSurface,
                                QQuickItem *parent)
     : QQuickItem(parent)
     , m_surface(surface)
@@ -248,6 +249,7 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     , m_live(true)
     , m_orientation(Qt::PortraitOrientation)
     , m_textureProvider(nullptr)
+    , m_parentSurfaceItem(parentSurface)
     , m_lastTouchEvent(nullptr)
 {
     qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::MirSurfaceItem";
@@ -320,6 +322,9 @@ MirSurfaceItem::~MirSurfaceItem()
     if (m_session) {
         m_session->removeSurface(this);
     }
+    if (m_parentSurfaceItem) {
+        m_parentSurfaceItem->removeChildSurface(this);
+    }
 
     qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::~MirSurfaceItem - this=" << this;
     QMutexLocker locker(&m_mutex);
@@ -328,6 +333,12 @@ MirSurfaceItem::~MirSurfaceItem()
         m_textureProvider->deleteLater();
 
     delete m_lastTouchEvent;
+}
+
+// Ask client nicely to close surface
+void MirSurfaceItem::requestClose()
+{
+    m_surface->request_client_surface_close();
 }
 
 // For QML to destroy this surface
@@ -364,6 +375,42 @@ MirSurfaceItem::Type MirSurfaceItem::type() const
 MirSurfaceItem::State MirSurfaceItem::state() const
 {
     return static_cast<MirSurfaceItem::State>(m_surface->state());
+}
+
+MirSurfaceItem* MirSurfaceItem::parentSurface() const
+{
+    return m_parentSurfaceItem;
+}
+
+QQmlListProperty<MirSurfaceItem> MirSurfaceItem::childSurfaces()
+{
+    return QQmlListProperty<MirSurfaceItem>(this, 0,
+            [] (QQmlListProperty<MirSurfaceItem> *list) -> int // count function
+            {
+                auto _this = qobject_cast<MirSurfaceItem *>(list->object);
+                return _this->m_childSurfaceItems.count();
+            },
+            [] (QQmlListProperty<MirSurfaceItem> *list, int at) -> MirSurfaceItem* // at function
+            {
+                auto _this = qobject_cast<MirSurfaceItem *>(list->object);
+                return _this->m_childSurfaceItems.at(at);
+            }
+    );
+}
+
+void MirSurfaceItem::addChildSurface(MirSurfaceItem *child)
+{
+    if (!m_childSurfaceItems.contains(child)) {
+        m_childSurfaceItems.append(child);
+        Q_EMIT childSurfacesChanged();
+    }
+}
+
+void MirSurfaceItem::removeChildSurface(MirSurfaceItem *child)
+{
+    if (m_childSurfaceItems.removeOne(child)) {
+        Q_EMIT childSurfacesChanged();
+    }
 }
 
 Qt::ScreenOrientation MirSurfaceItem::orientation() const
