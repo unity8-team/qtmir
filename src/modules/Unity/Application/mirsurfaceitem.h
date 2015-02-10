@@ -223,6 +223,7 @@ private:
     } *m_lastTouchEvent;
 
     friend class MirSurfaceManager;
+    friend class Session;
 };
 
 } // namespace qtmir

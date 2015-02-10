@@ -198,7 +198,26 @@ void Session::addSurface(MirSurfaceItem *newSurface)
 
 void Session::addSurfaceToModel(MirSurfaceItem *newSurface)
 {
-    m_surfaces.append(newSurface);
+    if (!newSurface->m_childSurfaceItems.isEmpty()) {
+        // if it has children, ensure it positioned before them in the list
+        int childIndex = -1;
+        for (int i=0; i<newSurface->m_childSurfaceItems.count(); i++) {
+            auto surface = newSurface->m_childSurfaceItems.at(i);
+            if (surface->parentSurface() == newSurface) {
+                childIndex = i;
+                break;
+            }
+        }
+
+        if (childIndex >= 0) {
+            qCDebug(QTMIR_SESSIONS) << "INSERTING into position" << childIndex;
+            m_surfaces.insert(childIndex, newSurface);
+        } else {
+            m_surfaces.append(newSurface);
+        }
+    } else {
+        m_surfaces.append(newSurface);
+    }
 
     Q_EMIT surfacesChanged();
     updateFullscreenProperty();

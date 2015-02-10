@@ -105,7 +105,7 @@ Rectangle {
                         id: decoration
                         readonly property var surface: modelData
                         Component.onCompleted: {
-                            var decorationHeight = (surface.type === MirSurfaceItem.Normal || surface.type === MirSurfaceItem.Dialog) ? 20 : 0
+                            var decorationHeight = 0 //(surface.type === MirSurfaceItem.Normal || surface.type === MirSurfaceItem.Dialog) ? 20 : 0
 
                             decoration.width = Qt.binding(function(){ return surface.width; })
                             decoration.height = Qt.binding(function(){ return surface.height + decorationHeight; })
