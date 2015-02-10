@@ -23,6 +23,7 @@
 #include "mirbuffersgtexture.h"
 #include "session.h"
 #include "mirsurfaceitem.h"
+#include "mirshell.h"
 #include "logging.h"
 #include "ubuntukeyboardinfo.h"
 
@@ -236,11 +237,13 @@ public Q_SLOTS:
 
 MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
                                SessionInterface* session,
+                               MirShell *shell,
                                std::shared_ptr<SurfaceObserver> observer,
                                QQuickItem *parent)
     : QQuickItem(parent)
     , m_surface(surface)
     , m_session(session)
+    , m_shell(shell)
     , m_firstFrameDrawn(false)
     , m_live(true)
     , m_orientation(Qt::PortraitOrientation)
@@ -451,11 +454,11 @@ bool MirSurfaceItem::updateTexture()    // called by rendering thread (scene gra
     ensureProvider();
     bool textureUpdated = false;
 
-    const void* const user_id = (void*)123;
+    const void* const userId = (void*)123;
     std::unique_ptr<mg::Renderable> renderable =
-        m_surface->compositor_snapshot(user_id);
+        m_surface->compositor_snapshot(userId);
 
-    if (m_surface->buffers_ready_for_compositor(user_id) > 0) {
+    if (m_surface->buffers_ready_for_compositor(userId) > 0) {
         if (!m_textureProvider->t) {
             m_textureProvider->t = new MirBufferSGTexture(renderable->buffer());
         } else {
@@ -467,7 +470,7 @@ bool MirSurfaceItem::updateTexture()    // called by rendering thread (scene gra
         textureUpdated = true;
     }
 
-    if (m_surface->buffers_ready_for_compositor(user_id) > 0) {
+    if (m_surface->buffers_ready_for_compositor(userId) > 0) {
         QTimer::singleShot(0, this, SLOT(update()));
         // restart the frame dropper so that we have enough time to render the next frame.
         m_frameDropperTimer.start();
@@ -680,14 +683,14 @@ bool MirSurfaceItem::hasTouchInsideUbuntuKeyboard(const QList<QTouchEvent::Touch
 void MirSurfaceItem::setType(const Type &type)
 {
     if (this->type() != type) {
-        m_surface->configure(mir_surface_attrib_type, static_cast<int>(type));
+        m_shell->set_surface_attribute(m_session->session(), m_surface, mir_surface_attrib_type, static_cast<int>(type));
     }
 }
 
 void MirSurfaceItem::setState(const State &state)
 {
     if (this->state() != state) {
-        m_surface->configure(mir_surface_attrib_state, static_cast<int>(state));
+        m_shell->set_surface_attribute(m_session->session(), m_surface, mir_surface_attrib_state, static_cast<int>(state));
     }
 }
 
@@ -749,9 +752,9 @@ void MirSurfaceItem::updateMirSurfaceFocus(bool focused)
 {
     qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::updateMirSurfaceFocus" << focused;
     if (focused) {
-        m_surface->configure(mir_surface_attrib_focus, mir_surface_focused);
+        m_shell->set_surface_attribute(m_session->session(), m_surface, mir_surface_attrib_focus, mir_surface_focused);
     } else {
-        m_surface->configure(mir_surface_attrib_focus, mir_surface_unfocused);
+        m_shell->set_surface_attribute(m_session->session(), m_surface, mir_surface_attrib_focus, mir_surface_unfocused);
     }
 }
 
@@ -759,17 +762,17 @@ void MirSurfaceItem::dropPendingBuffers()
 {
     QMutexLocker locker(&m_mutex);
 
-    const void* const user_id = (void*)123;  // TODO: Multimonitor support
+    const void* const userId = (void*)123;  // TODO: Multimonitor support
 
-    while (m_surface->buffers_ready_for_compositor(user_id) > 0) {
+    while (m_surface->buffers_ready_for_compositor(userId) > 0) {
         // The line below looks like an innocent, effect-less, getter. But as this
         // method returns a unique_pointer, not holding its reference causes the
         // buffer to be destroyed/released straight away.
-        m_surface->compositor_snapshot(user_id)->buffer();
+        m_surface->compositor_snapshot(userId)->buffer();
         qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::dropPendingBuffers()"
             << "surface =" << this
             << "buffer dropped."
-            << m_surface->buffers_ready_for_compositor(user_id)
+            << m_surface->buffers_ready_for_compositor(userId)
             << "left.";
     }
 }
