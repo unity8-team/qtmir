@@ -124,8 +124,8 @@ void MirSurfaceManager::onSessionCreatedSurface(const mir::scene::Session *mirSe
     // Only notify QML of surface creation once it has drawn its first frame.
     connect(qmlSurface, &MirSurfaceItem::firstFrameDrawn, this, [&](MirSurfaceItem *item) {
         tracepoint(qtmir, firstFrameDrawn);
-        if (item->parent()) {
-            qobject_cast<MirSurfaceItem *>(item->parent())->addChildSurface(item);
+        if (item->parentSurface()) {
+            qobject_cast<MirSurfaceItem *>(item->parentSurface())->addChildSurface(item);
         }
 
         Q_EMIT surfaceCreated(item);
