@@ -36,7 +36,6 @@ public:
     // QObject methods.
     void customEvent(QEvent* event) override;
 
-    // TODO: Update to use MirEvent
     void postEvent(UbuntuWindow* window, const MirEvent *event);
     UbuntuClientIntegration* integration() const { return mIntegration; }
 

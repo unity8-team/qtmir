@@ -195,7 +195,7 @@ void UbuntuInput::customEvent(QEvent* event)
     UbuntuEvent* ubuntuEvent = static_cast<UbuntuEvent*>(event);
     const MirEvent *nativeEvent = ubuntuEvent->nativeEvent;
 
-    if (ubuntuEvent->window == nullptr) {
+    if ((ubuntuEvent->window == nullptr) || (ubuntuEvent->window->window() == nullptr)) {
         qWarning() << "Attempted to deliver an event to a non-existent window, ignoring.";
         return;
     }
@@ -209,7 +209,7 @@ void UbuntuInput::customEvent(QEvent* event)
         return;
     }
 
-    DLOG("UbuntuInput::customEvent(type=%s)", nativeEventTypeToStr(mir_event_get_type(nativeEvent)));
+    //DLOG("UbuntuInput::customEvent(type=%s)", nativeEventTypeToStr(mir_event_get_type(nativeEvent)));
 
     // Event dispatching.
     switch (mir_event_get_type(nativeEvent)) 
@@ -237,7 +237,7 @@ void UbuntuInput::customEvent(QEvent* event)
         dispatchOrientationEvent(ubuntuEvent->window->window(), mir_event_get_orientation_event(nativeEvent));
         break;
     default:
-        DLOG("unhandled event type");
+        DLOG("unhandled event type: %d", static_cast<int>(mir_event_get_type(nativeEvent)));
     }
 }
 
@@ -246,12 +246,12 @@ void UbuntuInput::postEvent(UbuntuWindow *platformWindow, const MirEvent *event)
     QWindow *window = platformWindow->window();
 
     QCoreApplication::postEvent(this, new UbuntuEvent(
-            platformWindow, reinterpret_cast<const MirEvent*>(event), mEventType));
+            platformWindow, event, mEventType));
 
     if ((window->flags() && Qt::WindowTransparentForInput) && window->parent()) {
         QCoreApplication::postEvent(this, new UbuntuEvent(
                     static_cast<UbuntuWindow*>(platformWindow->QPlatformWindow::parent()),
-                    reinterpret_cast<const MirEvent*>(event), mEventType));
+                    event, mEventType));
     }
 }
 
@@ -361,9 +361,8 @@ Qt::KeyboardModifiers qt_modifiers_from_mir(MirInputEventModifiers modifiers)
 }
 }
 
-void UbuntuInput::dispatchKeyEvent(QWindow *window, const MirInputEvent *ev)
+void UbuntuInput::dispatchKeyEvent(QWindow *window, const MirInputEvent *event)
 {
-    const MirInputEvent *event = reinterpret_cast<const MirInputEvent*>(ev);
     const MirKeyInputEvent *key_event = mir_input_event_get_key_input_event(event);
 
     ulong timestamp = mir_input_event_get_event_time(event) / 1000000;
