@@ -155,6 +155,7 @@ private Q_SLOTS:
     void scheduleMirSurfaceSizeUpdate();
     void updateMirSurfaceSize();
 
+    void parentDestroyed(QObject *);
     void updateMirSurfaceFocus(bool focused);
 
 private:

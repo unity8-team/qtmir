@@ -315,6 +315,9 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     if (m_session) {
         connect(m_session.data(), &Session::stateChanged, this, &MirSurfaceItem::onSessionStateChanged);
     }
+
+    // For cases when the parent is destroyed before the client is
+    connect(m_parentSurfaceItem, &MirSurfaceItem::destroyed, this, &MirSurfaceItem::parentDestroyed);
 }
 
 MirSurfaceItem::~MirSurfaceItem()
@@ -411,6 +414,12 @@ void MirSurfaceItem::removeChildSurface(MirSurfaceItem *child)
     if (m_childSurfaceItems.removeOne(child)) {
         Q_EMIT childSurfacesChanged();
     }
+}
+
+void MirSurfaceItem::parentDestroyed(QObject *)
+{
+    m_parentSurfaceItem = nullptr;
+    this->deleteLater();
 }
 
 Qt::ScreenOrientation MirSurfaceItem::orientation() const
