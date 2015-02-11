@@ -14,7 +14,8 @@ FocusScope {
             model: ApplicationManager
             delegate: Repeater {
                 model: (session) ? session.surfaces : null
-                readonly property var session: ApplicationManager.get(index).session
+                readonly property var session: application.session
+                readonly property var application: ApplicationManager.get(index)
 
                 Component.onCompleted: print('new app!')
 
@@ -23,9 +24,10 @@ FocusScope {
                     windowData: modelData
                     focus: true
                     Component.onCompleted: {
-                        if (windowView.activeFocus) {
+                        //if (windowView.activeFocus) {
+                            ApplicationManager.focusApplication(application.appId)
                             forceActiveFocus(Qt.ActiveWindowFocusReason);
-                        }
+                        //}
                     }
                 }
             }
@@ -40,15 +42,6 @@ FocusScope {
             }
         }
         return null;
-    }
-
-    Connections {
-        target: renderer.model
-        onFocusWindow: {
-            if (windowView.activeFocus) {
-                renderer.forceActiveFocus(Qt.MouseFocusReason);
-            }
-        }
     }
 
     MouseArea {
@@ -82,8 +75,10 @@ FocusScope {
                     return
 
                 //windowList.requestFocusWindow(window.windowId)
+                window.forceActiveFocus(Qt.MouseFocusReason)
                 mouse.accepted = false
             } else if (name === "decoration") {
+                window.forceActiveFocus(Qt.MouseFocusReason)
                 if (!window.movable) {
                     mouse.accepted = false
                     return

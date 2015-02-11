@@ -8,14 +8,14 @@ FocusScope {
     property var windowData
 
     width: windowWidth + d.resizeEdge
-    height: windowHeight + d.resizeEdge
+    height: windowHeight + decoration.height + d.resizeEdge
     visible: windowData.state !== MirSurfaceItem.Minimized
     readonly property int windowX: x
     readonly property int windowY: y + decoration.height
     readonly property int windowWidth: windowData.width
     readonly property int windowHeight: windowData.height
     readonly property alias resizable: d.resizable
-    readonly property bool movable: true //windowData.movable // false implies is anchored to parent
+    readonly property bool movable: d.movable // false implies is anchored to parent
 
     /* Other info */
     readonly property string type: windowData.type     // regular, floating, dialog, satellite, popup, gloss, tip, freestyle (for info purposes only)
@@ -27,28 +27,15 @@ FocusScope {
 
     Component.onCompleted: {
         windowData.parent = surfaceContainer
+        windowData.height = Qt.binding( function() { return surfaceContainer.height } )
+        windowData.width = Qt.binding( function() { return surfaceContainer.width } )
 
-        // Initial positioning
-        if (windowData.parentSurface) {
-            // position relative to parent
-            var parentWindow = windowView.getWindowForSurface(windowData.parentSurface)
-            if (!parentWindow) {
-                print("Error: unable to find parent Window for surface")
-                root.x = windowData.requestedX
-                root.y = windowData.requestedY
-            } else {
-                root.x = Qt.binding( function() { return parentWindow.windowX + windowData.requestedX; } )
-                root.y = Qt.binding( function() { return parentWindow.windowY + windowData.requestedY; } )
-            }
-        } else {
-            root.x = windowData.requestedX
-            root.y = windowData.requestedY
-        }
+        d.setPosition(windowData)
     }
 
     QtObject {
         id: d
-        property int resizeEdge: (resizable) ? units.gu(1) : 0
+        property int resizeEdge: (resizable) ? units.gu(2) : 0
 
         readonly property string title: windowData.name
 
@@ -66,9 +53,22 @@ FocusScope {
             }
         }
 
+        readonly property bool movable: {
+            switch (windowData.type) {
+            case MirSurfaceItem.Normal:
+            case MirSurfaceItem.Freestyle:
+            case MirSurfaceItem.Utility:
+                return true;
+            case MirSurfaceItem.Dialog:
+            case MirSurfaceItem.Popover:
+            case MirSurfaceItem.Overlay:
+            case MirSurfaceItem.InputMethod:
+                return false;
+            }
+        }
+
         /* Decoration */
         readonly property string decorationType: { // normal, small, none, client-specified
-            print('WIN TYPE', windowData.type, MirSurfaceItem.Normal)
             switch (windowData.type) {
             case MirSurfaceItem.Normal:
             case MirSurfaceItem.Dialog:
@@ -92,6 +92,24 @@ FocusScope {
         readonly property bool canBeClosed: {
             return windowData.type === MirSurfaceItem.Normal || windowData.type === MirSurfaceItem.Dialog
         }
+
+        function setPosition(surface) {
+            var parentWindow = windowView.getWindowForSurface(surface.parentSurface)
+            if (!surface.parentSurface || !parentWindow) {
+                root.x = surface.requestedX
+                root.y = surface.requestedY
+                return;
+            }
+
+            // position relative to parent - for Dialogs position in center of parent
+            if (surface.type === MirSurfaceItem.Dialog && surface.requestedX === 0 && surface.requestedX === 0) {
+                root.x = Qt.binding( function() { return parentWindow.windowX + (parentWindow.width - root.width) / 2; } )
+                root.y = Qt.binding( function() { return parentWindow.windowY - decoration.height + (parentWindow.height - root.height) / 2; } )
+            } else {
+                root.x = Qt.binding( function() { return parentWindow.windowX + surface.requestedX; } )
+                root.y = Qt.binding( function() { return parentWindow.windowY + surface.requestedY; } )
+            }
+        }
     }
 
     focus: interactive
@@ -100,7 +118,7 @@ FocusScope {
         objectName: "resizeHandle"
         anchors {
             fill: root
-            margins: -units.gu(20)
+            margins: -units.gu(2)
         }
         source: "dropshadow2gu.sci"
         opacity: .3
@@ -138,5 +156,6 @@ FocusScope {
         objectName: "window"
         anchors { left: decoration.left; top: decoration.bottom; right: decoration.right; bottom: parent.bottom;
                   bottomMargin: d.resizeEdge}
+        Rectangle { anchors.fill: parent; color: "red"}
     }
 }
