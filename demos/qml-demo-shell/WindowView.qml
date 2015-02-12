@@ -5,9 +5,11 @@ FocusScope {
     id: windowView
     focus: true
 
-    Item {
+    MultiPointTouchArea {
         id: rendererContainer
         anchors.fill: parent
+        minimumTouchPoints: 3
+        maximumTouchPoints: 4
 
         Repeater {
             id: renderer
@@ -32,6 +34,46 @@ FocusScope {
                 }
             }
         }
+
+        property Item window: null
+        property point previousPoint
+
+        onPressed: {
+            // center point of touchpoints
+            var target = average(touchPoints)
+
+            // if at least 2 touch points are within a Window, select that Window for moving
+            window = rendererContainer.childAt(target.x, target.y);
+            if (!window || !window.movable) return;
+
+            // save mouse position
+            previousPoint = target
+        }
+
+        onUpdated: {
+            if (!window) return;
+
+            var target = average(touchPoints)
+            var movedBy = target - previousPoint
+            window.x += target.x - previousPoint.x
+            window.y += target.y - previousPoint.y
+            previousPoint = target
+        }
+
+        onReleased: {
+            window = null
+        }
+
+        function average(touchPoints) {
+            var point = Qt.point(0, 0)
+            for (var i=0; i<touchPoints.length; i++) {
+                point.x += touchPoints[i].x
+                point.y += touchPoints[i].y
+            }
+            point.x /= touchPoints.length
+            point.y /= touchPoints.length
+            return point
+        }
     }
 
     function getWindowForSurface(surface) {
@@ -43,42 +85,6 @@ FocusScope {
         }
         return null;
     }
-
-//    MultiPointTouchArea {
-//        anchors.fill: parent
-//        minimumTouchPoints: 3
-//        maximumTouchPoints: 4
-//        touchPoints: [
-//            TouchPoint { id: point }
-//        ]
-//        //mouseEnabled: false
-//        property Item window: null
-//        property real previousX: 0
-//        property real previousY: 0
-
-//        onPressed: {
-//            // if at least 2 touch points are within a Window, select that Window
-//            window = rendererContainer.childAt(point.x, point.y);
-
-//            // save mouse position
-//            previousX = point.x
-//            previousY = point.y
-//        }
-
-//        onUpdated: {
-//            if (!window) return;
-
-//            var offset = point.x - previousX
-//            window.x = offset
-
-//            offset = point.y - previousY
-//            window.y = offset
-//        }
-
-//        onReleased: {
-//            window = null
-//        }
-//    }
 
     Connections {
         target: SurfaceManager
