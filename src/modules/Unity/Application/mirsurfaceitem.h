@@ -101,6 +101,7 @@ public:
     MirSurfaceItemModel* childSurfaces();
 
     Q_INVOKABLE void requestClose();
+    Q_INVOKABLE void requestResize(const int width, const int height);
     Q_INVOKABLE void release();
 
     // Item surface/texture management
@@ -152,9 +153,6 @@ private Q_SLOTS:
     void dropPendingBuffers();
     void scheduleTextureUpdate();
 
-    void scheduleMirSurfaceSizeUpdate();
-    void updateMirSurfaceSize();
-
     void parentDestroyed(QObject *);
     void updateMirSurfaceFocus(bool focused);
 
@@ -198,10 +196,9 @@ private:
     MirSurfaceItemModel m_childSurfaceItems;
 
     std::shared_ptr<SurfaceObserver> m_surfaceObserver;
+    QSize m_requestedSize;
 
     QTimer m_frameDropperTimer;
-
-    QTimer m_updateMirSurfaceSizeTimer;
 
     class TouchEvent {
     public:

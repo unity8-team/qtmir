@@ -301,12 +301,6 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     m_frameDropperTimer.setInterval(200);
     m_frameDropperTimer.setSingleShot(false);
 
-    m_updateMirSurfaceSizeTimer.setSingleShot(true);
-    m_updateMirSurfaceSizeTimer.setInterval(1);
-    connect(&m_updateMirSurfaceSizeTimer, &QTimer::timeout, this, &MirSurfaceItem::updateMirSurfaceSize);
-    connect(this, &QQuickItem::widthChanged, this, &MirSurfaceItem::scheduleMirSurfaceSizeUpdate);
-    connect(this, &QQuickItem::heightChanged, this, &MirSurfaceItem::scheduleMirSurfaceSizeUpdate);
-
     // FIXME - setting surface unfocused immediately breaks camera & video apps, but is
     // technically the correct thing to do (surface should be unfocused until shell focuses it)
     //m_surface->configure(mir_surface_attrib_focus, mir_surface_unfocused);
@@ -368,6 +362,13 @@ int MirSurfaceItem::requestedX() const
 int MirSurfaceItem::requestedY() const
 {
     return m_surface->top_left().y.as_int();
+}
+
+void MirSurfaceItem::requestResize(const int width, const int height)
+{
+    m_requestedSize.setWidth(width);
+    m_requestedSize.setHeight(height);
+    update();
 }
 
 MirSurfaceItem::Type MirSurfaceItem::type() const
@@ -516,6 +517,16 @@ bool MirSurfaceItem::updateTexture()    // called by rendering thread (scene gra
         QTimer::singleShot(0, this, SLOT(update()));
         // restart the frame dropper so that we have enough time to render the next frame.
         m_frameDropperTimer.start();
+    }
+
+    if (m_requestedSize != QSize(implicitWidth(), implicitHeight())) { // FIXME - this could keep firing
+        mir::geometry::Size newMirSize(m_requestedSize.width(), m_requestedSize.height());
+        m_surface->resize(newMirSize);
+    }
+
+    if (m_textureProvider->t->textureSize() != QSize(width(), height())) {
+        setImplicitWidth(m_textureProvider->t->textureSize().width());
+        setImplicitHeight(m_textureProvider->t->textureSize().height());
     }
 
     m_textureProvider->smooth = smooth();
@@ -759,37 +770,6 @@ void MirSurfaceItem::setAttribute(const MirSurfaceAttrib attribute, const int /*
     }
 }
 
-void MirSurfaceItem::scheduleMirSurfaceSizeUpdate()
-{
-    if (clientIsRunning() && !m_updateMirSurfaceSizeTimer.isActive()) {
-        m_updateMirSurfaceSizeTimer.start();
-    }
-}
-
-void MirSurfaceItem::updateMirSurfaceSize()
-{
-    int mirWidth = m_surface->size().width.as_int();
-    int mirHeight = m_surface->size().height.as_int();
-
-    int qmlWidth = (int)width();
-    int qmlHeight = (int)height();
-
-    bool mirSizeIsDifferent = qmlWidth != mirWidth || qmlHeight != mirHeight;
-
-    const char *didResize = clientIsRunning() && mirSizeIsDifferent ? "surface resized" : "surface NOT resized";
-    qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::updateMirSurfaceSize"
-            << "surface =" << this
-            << ", old (" << mirWidth << "," << mirHeight << ")"
-            << ", new (" << qmlWidth << "," << qmlHeight << ")"
-            << didResize;
-
-    if (clientIsRunning() && mirSizeIsDifferent) {
-        mir::geometry::Size newMirSize(qmlWidth, qmlHeight);
-        m_surface->resize(newMirSize);
-        setImplicitSize(qmlWidth, qmlHeight);
-    }
-}
-
 void MirSurfaceItem::updateMirSurfaceFocus(bool focused)
 {
     qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::updateMirSurfaceFocus" << focused;
@@ -868,8 +848,6 @@ void MirSurfaceItem::syncSurfaceSizeWithItemSize()
 
     if ((int)width() != mirWidth || (int)height() != mirHeight) {
         qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::syncSurfaceSizeWithItemSize()";
-        mir::geometry::Size newMirSize((int)width(), (int)height());
-        m_surface->resize(newMirSize);
         setImplicitSize(width(), height());
     }
 }

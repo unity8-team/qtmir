@@ -12,8 +12,8 @@ FocusScope {
     visible: (windowData.state !== MirSurfaceItem.Minimized)
     readonly property int windowX: 0
     readonly property int windowY: decoration.height
-    readonly property int windowWidth: windowData.width
-    readonly property int windowHeight: windowData.height
+    readonly property int windowWidth: windowData.implicitWidth
+    readonly property int windowHeight: windowData.implicitHeight
     readonly property alias resizable: d.resizable
     readonly property bool movable: d.movable // false implies is anchored to parent
 
@@ -26,8 +26,6 @@ FocusScope {
 
     Component.onCompleted: {
         windowData.parent = surfaceContainer
-        windowData.height = Qt.binding( function() { return surfaceContainer.height } )
-        windowData.width = Qt.binding( function() { return surfaceContainer.width } )
 
         d.setPosition(windowData)
     }
@@ -205,5 +203,7 @@ FocusScope {
         anchors { left: decoration.left; top: decoration.bottom; right: decoration.right; bottom: parent.bottom;
                   bottomMargin: d.resizeEdge}
         Rectangle { anchors.fill: parent; color: "red"}
+        onWidthChanged: windowData.requestResize(width, height)
+        onHeightChanged: windowData.requestResize(width, height)
     }
 }

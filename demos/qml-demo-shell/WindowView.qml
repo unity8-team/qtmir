@@ -97,14 +97,14 @@ FocusScope {
                 // right edge drag?
                 if (mouse.x > window.windowWidth) {
                     resizeWidth = true;
-                    startX = mouseX;
+                    startX = mouse.x;
                     startWidth = window.windowWidth;
                     mouse.accepted = true;
                 }
                 // bottom edge drag?
-                if (mouseY > window.windowHeight) {
+                if (mouse.y > window.windowHeight) {
                     resizeHeight = true;
-                    startY = mouseY;
+                    startY = mouse.y;
                     startHeight = window.windowHeight;
                     mouse.accepted = true;
                 }
