@@ -84,9 +84,9 @@ Session::~Session()
     if (m_application) {
         m_application->setSession(nullptr);
     }
-    for (auto surface : m_surfaces.list()) { // GERRY - no animation??
-        delete surface;
-    }
+//    for (auto surface : m_surfaces.list()) { // GERRY - no animation??
+//        delete surface;
+//    }
     delete m_children; m_children = nullptr;
 }
 

@@ -44,116 +44,6 @@ FocusScope {
         return null;
     }
 
-    MouseArea {
-        anchors.fill: parent
-
-        hoverEnabled: true
-
-        property bool resizeWidth: false
-        property bool resizeHeight: false
-        property bool moving: false
-        property Window window: null
-        property int startX: 0
-        property int startWidth: 0
-        property int startY: 0
-        property int startHeight: 0
-
-        onPressed: {
-            mouse.accepted = false // only accepted if desired action detected
-
-            window = rendererContainer.childAt(mouse.x, mouse.y)
-            if (!window)
-                return
-
-            // item can be either the window surface, shadow or decoration. Need to figure out which
-            var mapped = rendererContainer.mapToItem(window, mouse.x, mouse.y)
-            var windowComponent = window.childAt(mapped.x, mapped.y)
-            if (!windowComponent)
-                return
-
-            var name = windowComponent.objectName
-            if (name === "window") { // clicked on the window contents
-                if (!window.interactive) {
-                    mouse.accepted = true;
-                    return
-                }
-
-                //windowList.requestFocusWindow(window.windowId)
-                window.forceActiveFocus(Qt.MouseFocusReason)
-            } else if (name === "decoration") {
-                window.forceActiveFocus(Qt.MouseFocusReason)
-                if (!window.movable) {
-                    return
-                }
-
-                moving = true;
-                startX = mouse.x - window.x
-                startY = mouse.y - window.y
-                mouse.accepted = true
-            } else if (name === "resizeHandle") {
-                if (!window.resizable) {
-                    return
-                }
-                // right edge drag?
-                if (mouse.x > window.windowWidth) {
-                    resizeWidth = true;
-                    startX = mouse.x;
-                    startWidth = window.windowWidth;
-                    mouse.accepted = true;
-                }
-                // bottom edge drag?
-                if (mouse.y > window.windowHeight) {
-                    resizeHeight = true;
-                    startY = mouse.y;
-                    startHeight = window.windowHeight;
-                    mouse.accepted = true;
-                }
-            }
-        }
-
-        onPositionChanged: {
-            mouse.accepted = false
-
-            if (!window)
-                return;
-
-            if (moving) {
-                //windowList.moveWindow(window.windowId, mouse.x - startX, mouse.y - startY)
-                window.x = mouse.x - startX
-                window.y = mouse.y - startY
-                mouse.accepted = true
-            } else if (resizeWidth || resizeHeight) {
-                var newWidth, newHeight
-                if (resizeWidth) {
-                    newWidth = startWidth + mouse.x - startX
-                } else {
-                    newWidth = window.windowWidth
-                }
-
-                if (resizeHeight) {
-                    newHeight = startHeight + mouse.y - startY
-                } else {
-                    newHeight = window.windowHeight
-                }
-
-                //windowList.resizeWindow(window.windowId, newWidth, newHeight)
-                window.width = newWidth
-                window.height = newHeight
-                mouse.accepted = true
-            }
-        }
-
-        onReleased: {
-            if (moving || resizeWidth || resizeHeight) {
-                mouse.accepted = false
-            }
-            window = null;
-            moving = false;
-            resizeWidth = false;
-            resizeHeight = false;
-        }
-    }
-
 //    MultiPointTouchArea {
 //        anchors.fill: parent
 //        minimumTouchPoints: 3
@@ -190,15 +80,20 @@ FocusScope {
 //        }
 //    }
 
-    // Debug output
     Connections {
         target: SurfaceManager
         onSurfaceCreated: {
             print("new surface", surface.name, "type", surface.type, "state", surface.state, "geom", surface.requestedX, surface.requestedY, surface.width, surface.height)
         }
         onSurfaceDestroyed: {
-            print("surface destroying", surface.name, surface.width, surface.height)
-            surface.release()
+            print("surface destroying", surface, surface.width, surface.height)
+            var window = getWindowForSurface(surface);
+            if (window) {
+                window.state = "closed"
+                //surface.release() - will be called by Window after close animation completed
+            } else {
+                print("Unknown surface closed?!")
+            }
         }
     }
 }

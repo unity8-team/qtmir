@@ -26,8 +26,10 @@ FocusScope {
 
     Component.onCompleted: {
         windowData.parent = surfaceContainer
+        windowData.focus = true
 
         d.setPosition(windowData)
+        state = "open"; // animates surface opening
     }
 
     QtObject {
@@ -160,6 +162,13 @@ FocusScope {
 
     focus: interactive
 
+    WindowMoveResizeArea {
+        target: root
+        minWidth: 120
+        minHeight: 80
+        resizeHandleWidth: units.gu(0.5)
+    }
+
     BorderImage {
         objectName: "resizeHandle"
         anchors {
@@ -202,8 +211,37 @@ FocusScope {
         objectName: "window"
         anchors { left: decoration.left; top: decoration.bottom; right: decoration.right; bottom: parent.bottom;
                   bottomMargin: d.resizeEdge}
-        Rectangle { anchors.fill: parent; color: "red"}
+//        Rectangle { anchors.fill: parent; color: "red"}
         onWidthChanged: windowData.requestResize(width, height)
         onHeightChanged: windowData.requestResize(width, height)
     }
+
+    state: "closed"
+
+    states: [
+        State {
+            name: "open"
+            PropertyChanges { target: root; opacity: 1; scale: 1 }
+        },
+        State {
+            name: "closed"
+            PropertyChanges { target: root; opacity: 0; scale: 0.9 }
+        }
+    ]
+
+    transitions: [
+        Transition {
+            from: "closed"
+            to: "open"
+            PropertyAnimation { target: root; properties: "opacity, scale"; duration: 200 }
+        },
+        Transition {
+            from: "open"
+            to: "closed"
+            SequentialAnimation {
+                PropertyAnimation { target: root; properties: "opacity, scale"; duration: 200 }
+                ScriptAction { script: windowData.release(); }
+            }
+        }
+    ]
 }
