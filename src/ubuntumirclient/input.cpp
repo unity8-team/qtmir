@@ -417,14 +417,30 @@ void UbuntuInput::dispatchPointerEvent(QWindow *window, const MirInputEvent *ev)
     auto timestamp = mir_input_event_get_event_time(ev) / 1000000;
 
     auto pev = mir_input_event_get_pointer_input_event(ev);
-    auto modifiers = qt_modifiers_from_mir(mir_pointer_input_event_get_modifiers(pev));
-    auto buttons = extract_buttons(pev);
-
-    auto local_point = QPointF(mir_pointer_input_event_get_axis_value(pev, mir_pointer_input_axis_x),
+    auto action = mir_pointer_input_event_get_action(pev);
+    auto localPoint = QPointF(mir_pointer_input_event_get_axis_value(pev, mir_pointer_input_axis_x),
                                mir_pointer_input_event_get_axis_value(pev, mir_pointer_input_axis_y));
     
-    QWindowSystemInterface::handleMouseEvent(window, timestamp, local_point, local_point /* Should we omit global point instead? */,
-                                             buttons, modifiers);
+    switch (action) {
+    case mir_pointer_input_event_action_button_up:
+    case mir_pointer_input_event_action_button_down:
+    case mir_pointer_input_event_action_motion:
+    {
+        auto modifiers = qt_modifiers_from_mir(mir_pointer_input_event_get_modifiers(pev));
+        auto buttons = extract_buttons(pev);
+        QWindowSystemInterface::handleMouseEvent(window, timestamp, localPoint, localPoint /* Should we omit global point instead? */,
+                                                 buttons, modifiers);
+        break;
+    }
+    case mir_pointer_input_event_action_enter:
+        QWindowSystemInterface::handleEnterEvent(window, localPoint, localPoint);
+        break;
+    case mir_pointer_input_event_action_leave:
+        QWindowSystemInterface::handleLeaveEvent(window);
+        break;
+    default:
+        DLOG("Unrecognized pointer event");
+    }
 }
 
 #if (LOG_EVENTS != 0)
