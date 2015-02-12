@@ -27,7 +27,7 @@ FocusScope {
     Component.onCompleted: {
         windowData.parent = surfaceContainer
         windowData.focus = true
-
+        windowData.focusRequested.connect(d.stealFocus)
         d.setPosition(windowData)
         state = "open"; // animates surface opening
     }
@@ -156,6 +156,11 @@ FocusScope {
                 var childWindow = windowView.getWindowForSurface(child)
                 childWindow.setPosition(child)
             }
+        }
+
+        function stealFocus() {
+            // FIXME: Should only steal focus it has not a modal child
+            windowData.forceActiveFocus(Qt.MouseFocusReason)
         }
     }
 

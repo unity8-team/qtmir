@@ -692,6 +692,9 @@ void MirSurfaceItem::touchEvent(QTouchEvent *event)
             event->touchPoints(),
             event->touchPointStates());
     event->setAccepted(accepted);
+    if (!hasActiveFocus() && accepted) {
+        Q_EMIT focusRequested();
+    }
 }
 
 bool MirSurfaceItem::processTouchEvent(

@@ -131,6 +131,7 @@ Q_SIGNALS:
     void orientationChanged();
     void liveChanged(bool live);
     void firstFrameDrawn(MirSurfaceItem *item);
+    void focusRequested();
 
 protected Q_SLOTS:
     void onSessionStateChanged(SessionInterface::State state);
