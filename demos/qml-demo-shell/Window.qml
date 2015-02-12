@@ -15,7 +15,7 @@ FocusScope {
     readonly property int windowWidth: windowData.implicitWidth
     readonly property int windowHeight: windowData.implicitHeight
     readonly property alias resizable: d.resizable
-    readonly property bool movable: d.movable // false implies is anchored to parent
+    readonly property alias movable: d.movable // false implies is anchored to parent
 
     /* Other info */
     readonly property string type: windowData.type     // regular, floating, dialog, satellite, popup, gloss, tip, freestyle (for info purposes only)
@@ -100,6 +100,20 @@ FocusScope {
         readonly property bool canBeClosed: {
             return windowData.type === MirSurfaceItem.Normal || windowData.type === MirSurfaceItem.Dialog
         }
+        readonly property int animationDuration: {
+            switch (windowData.type) {
+            case MirSurfaceItem.Normal:
+            case MirSurfaceItem.Dialog:
+                return 200;
+            case MirSurfaceItem.Utility:
+            case MirSurfaceItem.Popover:
+                return 100;
+            case MirSurfaceItem.Freestyle:
+            case MirSurfaceItem.Overlay:
+            case MirSurfaceItem.InputMethod:
+                return 0;
+            }
+        }
 
         function setPosition(surface) { print("POSITIONING", surface, "with parent", surface.parentSurface, "and children", surface.childSurfaces)
             // Root surface (i.e. no parent)
@@ -160,13 +174,13 @@ FocusScope {
         }
     }
 
-    focus: interactive
-
     WindowMoveResizeArea {
         target: root
         minWidth: 120
         minHeight: 80
         resizeHandleWidth: units.gu(0.5)
+        resizable: d.resizable
+        movable: d.movable
     }
 
     BorderImage {
@@ -211,12 +225,11 @@ FocusScope {
         objectName: "window"
         anchors { left: decoration.left; top: decoration.bottom; right: decoration.right; bottom: parent.bottom;
                   bottomMargin: d.resizeEdge}
-//        Rectangle { anchors.fill: parent; color: "red"}
         onWidthChanged: windowData.requestResize(width, height)
         onHeightChanged: windowData.requestResize(width, height)
     }
 
-    state: "closed"
+    state: "closed" // to be opened shortly!
 
     states: [
         State {
@@ -233,13 +246,13 @@ FocusScope {
         Transition {
             from: "closed"
             to: "open"
-            PropertyAnimation { target: root; properties: "opacity, scale"; duration: 200 }
+            PropertyAnimation { target: root; properties: "opacity, scale"; duration: d.animationDuration }
         },
         Transition {
             from: "open"
             to: "closed"
             SequentialAnimation {
-                PropertyAnimation { target: root; properties: "opacity, scale"; duration: 200 }
+                PropertyAnimation { target: root; properties: "opacity, scale"; duration: d.animationDuration }
                 ScriptAction { script: windowData.release(); }
             }
         }

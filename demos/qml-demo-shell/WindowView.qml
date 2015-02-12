@@ -19,18 +19,24 @@ FocusScope {
                 readonly property var session: (application) ? application.session : null
                 readonly property var application: ApplicationManager.get(index)
 
-                Component.onCompleted: print('new app!')
-
                 delegate: Window {
                     id: decoration
                     windowData: modelData
                     focus: true
-                    Component.onCompleted: {
-                        //if (windowView.activeFocus) {
+
+                    onActiveFocusChanged: {
+                        if (activeFocus) {
                             ApplicationManager.focusApplication(application.appId)
-                            forceActiveFocus(Qt.ActiveWindowFocusReason);
-                        //}
+                        }
                     }
+                }
+
+                onItemRemoved: decideFocus()
+                onItemAdded: decideFocus()
+
+                function decideFocus() { // focus last item in model
+                    var lastWindow = itemAt(count-1)
+                    lastWindow.forceActiveFocus(Qt.ActiveWindowFocusReason);
                 }
             }
         }

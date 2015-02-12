@@ -30,6 +30,8 @@ MouseArea {
     property int resizeHandleWidth: 0
     property int minWidth: 0
     property int minHeight: 0
+    property bool resizable: false
+    property bool movable: false
 
     QtObject {
         id: priv
@@ -39,9 +41,9 @@ MouseArea {
         property var startPoint
 
         property bool resizeTop: false
-        property bool resizeBottom: false
+        property bool resizeBottom: true
         property bool resizeLeft: false
-        property bool resizeRight: false
+        property bool resizeRight: true
 
     }
 
@@ -60,7 +62,7 @@ MouseArea {
         var sizeDiff = Qt.point(0, 0);
         var maxSizeDiff = Qt.point(root.minWidth - root.target.width, root.minHeight - root.target.height)
 
-        if (priv.resizeTop || priv.resizeBottom || priv.resizeLeft || priv.resizeRight) {
+        if (resizable && (priv.resizeTop || priv.resizeBottom || priv.resizeLeft || priv.resizeRight)) {
             if (priv.resizeTop) {
                 sizeDiff.y = Math.max(maxSizeDiff.y, -currentPoint.y + priv.startPoint.y)
                 moveDiff.y = -sizeDiff.y
@@ -82,7 +84,7 @@ MouseArea {
             target.y += moveDiff.y;
             target.width += sizeDiff.x;
             target.height += sizeDiff.y;
-        } else {
+        } else if (movable){
             target.x += mouseDiff.x;
             target.y += mouseDiff.y;
         }
