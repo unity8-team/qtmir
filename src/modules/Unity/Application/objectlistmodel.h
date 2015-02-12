@@ -36,6 +36,8 @@ public:
 
     const QList<TYPE*>& list() const { return m_items; }
     bool contains(TYPE* item) const { return m_items.contains(item); }
+    Q_INVOKABLE int count() { return m_items.count(); }
+    Q_INVOKABLE bool isEmpty() { return m_items.isEmpty(); }
 
     void insert(uint index, TYPE* item)
     {
@@ -51,6 +53,11 @@ public:
         }
     }
 
+    void append(TYPE* item)
+    {
+        insert((uint)m_items.count(), item);
+    }
+
     void remove(TYPE* item)
     {
         int existingIndex = m_items.indexOf(item);
@@ -59,6 +66,14 @@ public:
             m_items.removeAt(existingIndex);
             endRemoveRows();
         }
+    }
+
+    Q_INVOKABLE QVariant get(int index) const {
+        if (index < 0 || index > m_items.count() - 1) {
+            return nullptr;
+        }
+        TYPE *item = m_items.at(index);
+        return QVariant::fromValue(item);
     }
 
     // from QAbstractItemModel

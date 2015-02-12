@@ -9,9 +9,9 @@ FocusScope {
 
     width: windowWidth + d.resizeEdge
     height: windowHeight + decoration.height + d.resizeEdge
-    visible: windowData.state !== MirSurfaceItem.Minimized
-    readonly property int windowX: x
-    readonly property int windowY: y + decoration.height
+    visible: (windowData.state !== MirSurfaceItem.Minimized)
+    readonly property int windowX: 0
+    readonly property int windowY: decoration.height
     readonly property int windowWidth: windowData.width
     readonly property int windowHeight: windowData.height
     readonly property alias resizable: d.resizable
@@ -19,8 +19,7 @@ FocusScope {
 
     /* Other info */
     readonly property string type: windowData.type     // regular, floating, dialog, satellite, popup, gloss, tip, freestyle (for info purposes only)
-    readonly property string windowState: "normal" // windowData.state   // normal, maximized, minimized, fullscreen
-    readonly property bool interactive: true //windowData.interactive // may not be necessary, could go in MirSurface instead
+    readonly property bool interactive: d.interactive
 //    readonly property int parentId: windowData.parentId
 //    readonly property int windowId: windowData.id
 //    readonly property var childrenIds: windowData.childrenIds
@@ -67,7 +66,6 @@ FocusScope {
             }
         }
 
-        /* Decoration */
         readonly property string decorationType: { // normal, small, none, client-specified
             switch (windowData.type) {
             case MirSurfaceItem.Normal:
@@ -83,6 +81,16 @@ FocusScope {
             }
         }
 
+        readonly property string interactive: {
+            if (!windowData.enabled
+                    || !windowData.live
+                    || windowData.type === MirSurfaceItem.Overlay) {
+                return false
+            } else {
+                return true
+            }
+        }
+
         readonly property bool canBeMaximized: {
             return windowData.type === MirSurfaceItem.Normal
         }
@@ -93,21 +101,61 @@ FocusScope {
             return windowData.type === MirSurfaceItem.Normal || windowData.type === MirSurfaceItem.Dialog
         }
 
-        function setPosition(surface) {
-            var parentWindow = windowView.getWindowForSurface(surface.parentSurface)
-            if (!surface.parentSurface || !parentWindow) {
+        function setPosition(surface) { print("POSITIONING", surface, "with parent", surface.parentSurface, "and children", surface.childSurfaces)
+            // Root surface (i.e. no parent)
+            if (!surface.parentSurface) {
                 root.x = surface.requestedX
                 root.y = surface.requestedY
+                positionChildren()
+                return
+            }
+
+            var parentWindow = windowView.getWindowForSurface(surface.parentSurface)
+
+            // Has a root surface, but its Window not created yet (for clients with a child which made visible before parent)
+            if (!parentWindow) {
+                // maybe set invisible immediately, mark visible only when parent appears??
                 return;
             }
 
+            // set the parent/child relationship in QML
+            // root.parent = parentWindow; - FIXME - does not do as I expect: change child's coordinates to be relative to parent
+            // relevant error: "QQuickItem::stackAfter: Cannot stack after 0x2048600, which must be a sibling"
+
             // position relative to parent - for Dialogs position in center of parent
             if (surface.type === MirSurfaceItem.Dialog && surface.requestedX === 0 && surface.requestedX === 0) {
-                root.x = Qt.binding( function() { return parentWindow.windowX + (parentWindow.width - root.width) / 2; } )
-                root.y = Qt.binding( function() { return parentWindow.windowY - decoration.height + (parentWindow.height - root.height) / 2; } )
+                root.x = Qt.binding( function() { return  parentWindow.x + (parentWindow.width - root.width) / 2; } )
+                root.y = Qt.binding( function() { return  parentWindow.y + parentWindow.windowY + (parentWindow.height - root.height) / 2; } )
             } else {
-                root.x = Qt.binding( function() { return parentWindow.windowX + surface.requestedX; } )
-                root.y = Qt.binding( function() { return parentWindow.windowY + surface.requestedY; } )
+                root.x = Qt.binding( function() { return parentWindow.x + surface.requestedX + parentWindow.windowX; } )
+                root.y = Qt.binding( function() { return parentWindow.y + surface.requestedY + parentWindow.windowY; } )
+            }
+            positionChildren()
+        }
+
+        function positionChildren() {
+            // If I have children before I'm fully created, reposition them relative to me
+            // FIXME: how do I iterate over the childSurfaces model? QML insists it is a QAbstractListModel and I cannot
+            // call count or get methods. Instead I use Repeater to get at the individual list items
+            for (var i = 0; i < childSurfacesRepeater.count; i++) {
+                var child = childSurfacesRepeater.itemAt(i).child;
+                var childWindow = windowView.getWindowForSurface(child)
+                childWindow.setPosition(child)
+            }
+        }
+    }
+
+    function setPosition(surface) {
+        d.setPosition(surface)
+    }
+
+    Item {
+        visible: false
+        Repeater {
+            id: childSurfacesRepeater
+            model: windowData.childSurfaces
+            delegate: Item {
+                readonly property var child: modelData
             }
         }
     }
@@ -146,7 +194,7 @@ FocusScope {
         canBeMaximized: d.canBeMaximized
         canBeMinimized: d.canBeMinimized
         canBeClosed: d.canBeClosed
-        onClose: root.close();
+        onClose: windowData.requestClose();
         onMaximize: root.maximize();
         onMinimize: root.minimize();
     }

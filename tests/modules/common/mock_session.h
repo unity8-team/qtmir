@@ -31,7 +31,7 @@ public:
 
     MOCK_CONST_METHOD0(name, QString());
     MOCK_CONST_METHOD0(application, unity::shell::application::ApplicationInfoInterface*());
-    MOCK_METHOD0(surfaces, QQmlListProperty<MirSurfaceItem>());
+    MOCK_METHOD0(surfaces, MirSurfaceItemModel*());
     MOCK_CONST_METHOD0(parentSession, SessionInterface*());
     MOCK_CONST_METHOD0(state, State());
     MOCK_CONST_METHOD0(fullscreen, bool());

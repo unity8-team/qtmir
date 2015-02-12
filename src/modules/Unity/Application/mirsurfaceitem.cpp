@@ -385,35 +385,21 @@ MirSurfaceItem* MirSurfaceItem::parentSurface() const
     return m_parentSurfaceItem;
 }
 
-QQmlListProperty<MirSurfaceItem> MirSurfaceItem::childSurfaces()
+MirSurfaceItemModel* MirSurfaceItem::childSurfaces()
 {
-    return QQmlListProperty<MirSurfaceItem>(this, 0,
-            [] (QQmlListProperty<MirSurfaceItem> *list) -> int // count function
-            {
-                auto _this = qobject_cast<MirSurfaceItem *>(list->object);
-                return _this->m_childSurfaceItems.count();
-            },
-            [] (QQmlListProperty<MirSurfaceItem> *list, int at) -> MirSurfaceItem* // at function
-            {
-                auto _this = qobject_cast<MirSurfaceItem *>(list->object);
-                return _this->m_childSurfaceItems.at(at);
-            }
-    );
+    return &m_childSurfaceItems;
 }
 
 void MirSurfaceItem::addChildSurface(MirSurfaceItem *child)
 {
     if (!m_childSurfaceItems.contains(child)) {
         m_childSurfaceItems.append(child);
-        Q_EMIT childSurfacesChanged();
     }
 }
 
 void MirSurfaceItem::removeChildSurface(MirSurfaceItem *child)
 {
-    if (m_childSurfaceItems.removeOne(child)) {
-        Q_EMIT childSurfacesChanged();
-    }
+    m_childSurfaceItems.remove(child);
 }
 
 void MirSurfaceItem::parentDestroyed(QObject *)

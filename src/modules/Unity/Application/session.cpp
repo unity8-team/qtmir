@@ -84,7 +84,7 @@ Session::~Session()
     if (m_application) {
         m_application->setSession(nullptr);
     }
-    for (auto surface : m_surfaces) { // GERRY - no animation??
+    for (auto surface : m_surfaces.list()) { // GERRY - no animation??
         delete surface;
     }
     delete m_children; m_children = nullptr;
@@ -121,22 +121,9 @@ ApplicationInfoInterface* Session::application() const
     return m_application;
 }
 
-QQmlListProperty<qtmir::MirSurfaceItem> Session::surfaces()
+MirSurfaceItemModel* Session::surfaces()
 {
-    return QQmlListProperty<MirSurfaceItem>(this, 0,
-            [] (QQmlListProperty<MirSurfaceItem> *list) -> int // count function
-            {
-                auto _this = qobject_cast<Session *>(list->object);
-                return _this->m_surfaces.count();
-            },
-            [] (QQmlListProperty<MirSurfaceItem> *list, int at) -> MirSurfaceItem* // at function
-            {
-                auto _this = qobject_cast<Session *>(list->object);
-                return _this->m_surfaces.at(at);
-            }
-    );
-
-    // Only notify QML of surface creation once it has drawn its first frame.
+    return &m_surfaces;
 }
 
 SessionInterface* Session::parentSession() const
@@ -173,7 +160,7 @@ void Session::addSurface(MirSurfaceItem *newSurface)
     if (!newSurface || m_surfaces.contains(newSurface)) {
         return;
     }
-    qCDebug(QTMIR_SESSIONS) << "Session::addSurface - session=" << newSurface->name() << "surface=" << newSurface;
+    qCDebug(QTMIR_SESSIONS) << "Session::addSurface - session=" << newSurface->name() << "surface=" << newSurface << "parentSurface" << newSurface->parentSurface();
 
     newSurface->setParent(this);
     newSurface->setSession(this);
@@ -202,7 +189,7 @@ void Session::addSurfaceToModel(MirSurfaceItem *newSurface)
         // if it has children, ensure it positioned before them in the list
         int childIndex = -1;
         for (int i=0; i<newSurface->m_childSurfaceItems.count(); i++) {
-            auto surface = newSurface->m_childSurfaceItems.at(i);
+            auto surface = newSurface->m_childSurfaceItems.list().at(i);
             if (surface->parentSurface() == newSurface) {
                 childIndex = i;
                 break;
@@ -219,7 +206,6 @@ void Session::addSurfaceToModel(MirSurfaceItem *newSurface)
         m_surfaces.append(newSurface);
     }
 
-    Q_EMIT surfacesChanged();
     updateFullscreenProperty();
 }
 
@@ -234,15 +220,14 @@ void Session::removeSurface(MirSurfaceItem *surface)
     connect(surface, &MirSurfaceItem::destroyed,
             [&](QObject *item){
                 auto surface = static_cast<MirSurfaceItem *>(item);
-                m_surfaces.removeOne(surface);
-                Q_EMIT surfacesChanged();
+                m_surfaces.remove(surface);
     });
 }
 
 void Session::updateFullscreenProperty()
 {
     if (!m_surfaces.isEmpty()) {
-        setFullscreen(m_surfaces.first()->state() == MirSurfaceItem::Fullscreen);
+        setFullscreen(m_surfaces.list().first()->state() == MirSurfaceItem::Fullscreen);
     } else {
         // Keep the current value of the fullscreen property until we get a new
         // surface

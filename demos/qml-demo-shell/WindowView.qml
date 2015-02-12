@@ -14,7 +14,7 @@ FocusScope {
             model: ApplicationManager
             delegate: Repeater {
                 model: (session) ? session.surfaces : null
-                readonly property var session: application.session
+                readonly property var session: (application) ? application.session : null
                 readonly property var application: ApplicationManager.get(index)
 
                 Component.onCompleted: print('new app!')
@@ -59,6 +59,8 @@ FocusScope {
         property int startHeight: 0
 
         onPressed: {
+            mouse.accepted = false // only accepted if desired action detected
+
             window = rendererContainer.childAt(mouse.x, mouse.y)
             if (!window)
                 return
@@ -71,26 +73,25 @@ FocusScope {
 
             var name = windowComponent.objectName
             if (name === "window") { // clicked on the window contents
-                if (!window.interactive)
-                    return
-
-                //windowList.requestFocusWindow(window.windowId)
-                window.forceActiveFocus(Qt.MouseFocusReason)
-                mouse.accepted = false
-            } else if (name === "decoration") {
-                window.forceActiveFocus(Qt.MouseFocusReason)
-                if (!window.movable) {
-                    mouse.accepted = false
+                if (!window.interactive) {
+                    mouse.accepted = true;
                     return
                 }
 
-                // check if mouse over close/min/max buttons
+                //windowList.requestFocusWindow(window.windowId)
+                window.forceActiveFocus(Qt.MouseFocusReason)
+            } else if (name === "decoration") {
+                window.forceActiveFocus(Qt.MouseFocusReason)
+                if (!window.movable) {
+                    return
+                }
+
                 moving = true;
                 startX = mouse.x - window.x
                 startY = mouse.y - window.y
+                mouse.accepted = true
             } else if (name === "resizeHandle") {
                 if (!window.resizable) {
-                    mouse.accepted = false
                     return
                 }
                 // right edge drag?
@@ -107,13 +108,12 @@ FocusScope {
                     startHeight = window.windowHeight;
                     mouse.accepted = true;
                 }
-            } else {
-                print("Unknown object grabbed!")
             }
-
         }
 
         onPositionChanged: {
+            mouse.accepted = false
+
             if (!window)
                 return;
 
@@ -121,6 +121,7 @@ FocusScope {
                 //windowList.moveWindow(window.windowId, mouse.x - startX, mouse.y - startY)
                 window.x = mouse.x - startX
                 window.y = mouse.y - startY
+                mouse.accepted = true
             } else if (resizeWidth || resizeHeight) {
                 var newWidth, newHeight
                 if (resizeWidth) {
@@ -138,10 +139,14 @@ FocusScope {
                 //windowList.resizeWindow(window.windowId, newWidth, newHeight)
                 window.width = newWidth
                 window.height = newHeight
+                mouse.accepted = true
             }
         }
 
         onReleased: {
+            if (moving || resizeWidth || resizeHeight) {
+                mouse.accepted = false
+            }
             window = null;
             moving = false;
             resizeWidth = false;

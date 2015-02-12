@@ -41,6 +41,7 @@ class Application;
 class Session : public SessionInterface
 {
     Q_OBJECT
+
 public:
     explicit Session(const std::shared_ptr<mir::scene::Session>& session,
                      const std::shared_ptr<mir::scene::PromptSessionManager>& promptSessionManager,
@@ -56,6 +57,8 @@ public:
     State state() const override;
     bool fullscreen() const override;
     bool live() const override;
+
+    MirSurfaceItemModel* surfaces() override;
 
     void setApplication(unity::shell::application::ApplicationInfoInterface* item) override;
     void addSurface(MirSurfaceItem* surface) override;
@@ -84,8 +87,6 @@ private Q_SLOTS:
     void updateFullscreenProperty();
 
 private:
-    QQmlListProperty<qtmir::MirSurfaceItem> surfaces() override;
-
     void setParentSession(Session* session);
     void addSurfaceToModel(MirSurfaceItem *newSurface);
 
@@ -93,7 +94,7 @@ private:
 
     std::shared_ptr<mir::scene::Session> m_session;
     Application* m_application;
-    QList<MirSurfaceItem *> m_surfaces;
+    MirSurfaceItemModel m_surfaces;
     QList<MirSurfaceItem *> m_notDrawnToSurfaces;
     SessionInterface* m_parentSession;
     SessionModel* m_children;

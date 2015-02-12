@@ -28,6 +28,7 @@
 
 // local
 #include "sessionmodel.h"
+#include "mirsurfaceitemmodel.h"
 
 namespace mir {
     namespace scene {
@@ -43,7 +44,7 @@ class MirSurfaceItem;
 class SessionInterface : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(QQmlListProperty<qtmir::MirSurfaceItem> surfaces READ surfaces NOTIFY surfacesChanged)
+    Q_PROPERTY(MirSurfaceItemModel* surfaces READ surfaces CONSTANT)
     Q_PROPERTY(unity::shell::application::ApplicationInfoInterface* application READ application NOTIFY applicationChanged DESIGNABLE false)
     Q_PROPERTY(SessionInterface* parentSession READ parentSession NOTIFY parentSessionChanged DESIGNABLE false)
     Q_PROPERTY(SessionModel* childSessions READ childSessions DESIGNABLE false CONSTANT)
@@ -67,6 +68,8 @@ public:
     virtual bool fullscreen() const = 0;
     virtual bool live() const = 0;
 
+    virtual MirSurfaceItemModel* surfaces() = 0;
+
     virtual void setApplication(unity::shell::application::ApplicationInfoInterface* item) = 0;
     virtual void addSurface(MirSurfaceItem* surface) = 0;
     virtual void removeSurface(MirSurfaceItem* surface) = 0;
@@ -85,7 +88,6 @@ public:
     virtual SessionModel* childSessions() const = 0;
 
 Q_SIGNALS:
-    void surfacesChanged();
     void parentSessionChanged(SessionInterface*);
     void applicationChanged(unity::shell::application::ApplicationInfoInterface* application);
     void aboutToBeDestroyed();
@@ -97,7 +99,6 @@ Q_SIGNALS:
     void resumed();
 
 protected:
-    virtual QQmlListProperty<qtmir::MirSurfaceItem> surfaces() = 0;
     virtual void setFullscreen(bool fullscreen) = 0;
     virtual void setLive(const bool) = 0;
     virtual void appendPromptSession(const std::shared_ptr<mir::scene::PromptSession>& session) = 0;

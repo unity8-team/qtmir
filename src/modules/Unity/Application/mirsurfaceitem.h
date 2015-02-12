@@ -25,13 +25,13 @@
 #include <QSet>
 #include <QQuickItem>
 #include <QTimer>
-#include <QQmlListProperty>
 
 // mir
 #include <mir/scene/surface.h>
 #include <mir_toolkit/common.h>
 
 #include "session_interface.h"
+#include "mirsurfaceitemmodel.h"
 
 class SurfaceObserver;
 class MirShell;
@@ -57,7 +57,7 @@ class MirSurfaceItem : public QQuickItem
     Q_PROPERTY(bool live READ live NOTIFY liveChanged)
     Q_PROPERTY(Qt::ScreenOrientation orientation READ orientation WRITE setOrientation NOTIFY orientationChanged DESIGNABLE false)
     Q_PROPERTY(MirSurfaceItem* parentSurface READ parentSurface CONSTANT)
-    Q_PROPERTY(QQmlListProperty<qtmir::MirSurfaceItem> childSurfaces READ childSurfaces NOTIFY childSurfacesChanged)
+    Q_PROPERTY(MirSurfaceItemModel* childSurfaces READ childSurfaces CONSTANT)
 
 public:
     explicit MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
@@ -98,6 +98,7 @@ public:
     Qt::ScreenOrientation orientation() const;
     SessionInterface *session() const;
     MirSurfaceItem* parentSurface() const;
+    MirSurfaceItemModel* childSurfaces();
 
     Q_INVOKABLE void requestClose();
     Q_INVOKABLE void release();
@@ -129,7 +130,6 @@ Q_SIGNALS:
     void orientationChanged();
     void liveChanged(bool live);
     void firstFrameDrawn(MirSurfaceItem *item);
-    void childSurfacesChanged();
 
 protected Q_SLOTS:
     void onSessionStateChanged(SessionInterface::State state);
@@ -159,8 +159,6 @@ private Q_SLOTS:
     void updateMirSurfaceFocus(bool focused);
 
 private:
-    QQmlListProperty<MirSurfaceItem> childSurfaces();
-
     bool updateTexture();
     void ensureProvider();
 
@@ -197,7 +195,7 @@ private:
 
     QMirSurfaceTextureProvider *m_textureProvider;
     MirSurfaceItem *m_parentSurfaceItem;
-    QList<MirSurfaceItem *> m_childSurfaceItems;
+    MirSurfaceItemModel m_childSurfaceItems;
 
     std::shared_ptr<SurfaceObserver> m_surfaceObserver;
 
