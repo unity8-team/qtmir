@@ -236,6 +236,9 @@ void UbuntuInput::customEvent(QEvent* event)
     case mir_event_type_orientation:
         dispatchOrientationEvent(ubuntuEvent->window->window(), mir_event_get_orientation_event(nativeEvent));
         break;
+    case mir_event_type_close_surface:
+        QWindowSystemInterface::handleCloseEvent(ubuntuEvent->window->window());
+        break;
     default:
         DLOG("unhandled event type: %d", static_cast<int>(mir_event_get_type(nativeEvent)));
     }
