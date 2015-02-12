@@ -86,6 +86,10 @@ MouseArea {
             target.x += mouseDiff.x;
             target.y += mouseDiff.y;
         }
+    }
 
+    onReleased: {
+        target.x = Math.floor(target.x)
+        target.y = Math.floor(target.y)
     }
 }

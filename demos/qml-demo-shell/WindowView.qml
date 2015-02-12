@@ -54,13 +54,14 @@ FocusScope {
             if (!window) return;
 
             var target = average(touchPoints)
-            var movedBy = target - previousPoint
             window.x += target.x - previousPoint.x
             window.y += target.y - previousPoint.y
             previousPoint = target
         }
 
         onReleased: {
+            window.x = Math.floor(window.x)
+            window.y = Math.floor(window.y)
             window = null
         }
 
