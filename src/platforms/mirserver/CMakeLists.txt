@@ -58,6 +58,7 @@ set(MIRSERVER_QPA_PLUGIN_SRC
     services.cpp
     ubuntutheme.cpp
     clipboard.cpp
+    offscreensurface.cpp
     tracepoints.c
     )
 

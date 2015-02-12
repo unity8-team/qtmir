@@ -68,6 +68,8 @@ public:
 
     QPlatformNativeInterface *nativeInterface() const override;
 
+    QPlatformOffscreenSurface* createPlatformOffscreenSurface(QOffscreenSurface *surface) const override;
+
 private:
     QSharedPointer<MirServer> m_mirServer;
 

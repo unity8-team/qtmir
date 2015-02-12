@@ -52,6 +52,7 @@
 #include "displaywindow.h"
 #include "miropenglcontext.h"
 #include "nativeinterface.h"
+#include "offscreensurface.h"
 #include "qmirserver.h"
 #include "services.h"
 #include "ubuntutheme.h"
@@ -215,4 +216,10 @@ QPlatformNativeInterface *MirServerIntegration::nativeInterface() const
 QPlatformClipboard *MirServerIntegration::clipboard() const
 {
     return m_clipboard.data();
+}
+
+QPlatformOffscreenSurface *MirServerIntegration::createPlatformOffscreenSurface(
+        QOffscreenSurface *surface) const
+{
+    return new OffscreenSurface(surface);
 }
