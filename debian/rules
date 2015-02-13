@@ -49,10 +49,11 @@ endif
 	dh_auto_build -B$(DESKTOP_DIR)
 
 override_dh_auto_test:
-ifeq ($(DEB_HOST_ARCH),$(USES_GLES2))
-	dh_auto_test -B$(ANDROID_DIR)
-endif
-	dh_auto_test -B$(DESKTOP_DIR)
+	echo "Skip tests"
+#ifeq ($(DEB_HOST_ARCH),$(USES_GLES2))
+#	dh_auto_test -B$(ANDROID_DIR)
+#endif
+#	dh_auto_test -B$(DESKTOP_DIR)
 
 override_dh_auto_install:
 ifeq ($(DEB_HOST_ARCH),$(USES_GLES2))

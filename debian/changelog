@@ -1,3 +1,15 @@
+qtmir (0.4.5+2) vivid; urgency=medium
+
+  * Disabling tests for arm builder
+
+ -- Gerry Boland <gerry.boland@canonical.com>  Fri, 13 Feb 2015 12:33:59 +0000
+
+qtmir (0.4.5+1) vivid; urgency=medium
+
+  * Demo for capetown
+
+ -- Gerry Boland <gerry.boland@canonical.com>  Fri, 13 Feb 2015 10:58:25 +0000
+
 qtmir (0.4.4+15.04.20150209-0ubuntu1) vivid; urgency=medium
 
   [ Daniel van Vugt ]

@@ -20,12 +20,16 @@ $ cmake -DNO_TESTS=true
 To test, enter the demos directory, run:
 
 $ export QT_QPA_PLATFORM=mirserver
+$ export DESKTOP_SESSION=unity8-mir
 
 then run the Qt application of your choice (qmlscene best). As example, try
 
 $ qmlscene qml-demo-shell/qml-demo-shell.qml
 
-and then try running an application:
+To run an application, first ensure a correct MIR_SOCKET environment variable is set and the socket 
+has correct permissions to be connected to:
+$ export MIR_SOCKET=/tmp/mir_socket
+and can then run:
 
 $ mir_demo_client_egltriangle --desktop_file_hint=/usr/share/applications/gallery-app.desktop
 or
