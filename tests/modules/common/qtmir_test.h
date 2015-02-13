@@ -111,6 +111,7 @@ public:
         }
         , surfaceManager{
             mirServer,
+            mirShell,
             &sessionManager
         }
     {
@@ -150,6 +151,7 @@ public:
     testing::NiceMock<testing::MockDesktopFileReaderFactory> desktopFileReaderFactory;
     testing::NiceMock<testing::MockSharedWakelock> sharedWakelock;
     QSharedPointer<FakeMirServer> mirServer;
+    MirShell *mirShell{nullptr};
     QSharedPointer<TaskController> taskController;
     ApplicationManager applicationManager;
     SessionManager sessionManager;
