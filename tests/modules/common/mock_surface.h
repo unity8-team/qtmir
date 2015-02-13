@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015 Canonical, Ltd.
+ * Copyright (C) 2014 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -36,6 +36,7 @@ struct MockSurface : public mir::scene::Surface
     MOCK_CONST_METHOD0(input_bounds, geometry::Rectangle());
     MOCK_CONST_METHOD0(top_left, geometry::Point());
     MOCK_CONST_METHOD0(size, geometry::Size());
+    MOCK_CONST_METHOD0(parent, std::shared_ptr<Surface>());
 
     std::unique_ptr<graphics::Renderable> compositor_snapshot(void const* /*compositor_id*/) const
     {
@@ -65,7 +66,6 @@ struct MockSurface : public mir::scene::Surface
     MOCK_METHOD1(set_reception_mode, void(input::InputReceptionMode mode));
     MOCK_METHOD0(request_client_surface_close, void());
     MOCK_CONST_METHOD1(buffers_ready_for_compositor, int(void const*));
-    MOCK_CONST_METHOD0(parent, std::shared_ptr<mir::scene::Surface>());
 
     // from mir::input::surface
     MOCK_CONST_METHOD1(input_area_contains, bool(geometry::Point const& point));

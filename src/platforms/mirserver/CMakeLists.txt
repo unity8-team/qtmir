@@ -38,15 +38,14 @@ add_definitions(-DBYTE_ORDER=__BYTE_ORDER)
 
 set(MIRSERVER_QPA_PLUGIN_SRC
     ../../common/debughelpers.cpp
+    mirshell.cpp
     qteventfeeder.cpp
     plugin.cpp
     qmirserver.cpp
     sessionauthorizer.cpp
     sessionlistener.cpp
-    surfaceconfigurator.cpp
     surfaceobserver.cpp
     promptsessionlistener.cpp
-    mirplacementstrategy.cpp
     mirserver.cpp
     mirserverstatuslistener.cpp
     display.cpp
