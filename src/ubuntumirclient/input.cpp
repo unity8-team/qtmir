@@ -344,7 +344,7 @@ namespace
 {
 Qt::KeyboardModifiers qt_modifiers_from_mir(MirInputEventModifiers modifiers)
 {
-    int q_modifiers = Qt::NoModifier;
+    Qt::KeyboardModifiers q_modifiers = Qt::NoModifier;
     if (modifiers & mir_input_event_modifier_shift) {
         q_modifiers |= Qt::ShiftModifier;
     }
@@ -357,7 +357,7 @@ Qt::KeyboardModifiers qt_modifiers_from_mir(MirInputEventModifiers modifiers)
     if (modifiers & mir_input_event_modifier_meta) {
         q_modifiers |= Qt::MetaModifier;
     }
-    return static_cast<Qt::KeyboardModifiers>(q_modifiers);
+    return q_modifiers;
 }
 }
 
@@ -396,9 +396,9 @@ void UbuntuInput::dispatchKeyEvent(QWindow *window, const MirInputEvent *event)
 
 namespace
 {
-Qt::MouseButton extract_buttons(const MirPointerInputEvent *pev)
+Qt::MouseButtons extract_buttons(const MirPointerInputEvent *pev)
 {
-    int buttons = Qt::NoButton;
+    Qt::MouseButtons buttons = Qt::NoButton;
     if (mir_pointer_input_event_get_button_state(pev, mir_pointer_input_button_primary))
         buttons |= Qt::LeftButton;
     if (mir_pointer_input_event_get_button_state(pev, mir_pointer_input_button_secondary))
@@ -408,7 +408,7 @@ Qt::MouseButton extract_buttons(const MirPointerInputEvent *pev)
 
     // TODO: Should mir back and forward buttons exist?
     // should they be Qt::X button 1 and 2?
-    return static_cast<Qt::MouseButton>(buttons);
+    return buttons;
 }
 }
 
