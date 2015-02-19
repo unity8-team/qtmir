@@ -19,14 +19,12 @@
 #include "mirserver.h"
 
 // local
-#include "focussetter.h"
+#include "mirshell.h"
 #include "mirglconfig.h"
-#include "mirplacementstrategy.h"
 #include "mirserverstatuslistener.h"
 #include "promptsessionlistener.h"
 #include "screencontroller.h"
 #include "sessionlistener.h"
-#include "surfaceconfigurator.h"
 #include "sessionauthorizer.h"
 #include "qtcompositor.h"
 #include "qteventfeeder.h"
@@ -62,11 +60,6 @@ MirServer::MirServer(int argc, char const* argv[], ScreenController *screenContr
 
     screenController->setMirServer(this); // Bad Gerry
 
-    override_the_placement_strategy([this]
-        {
-            return std::make_shared<MirPlacementStrategy>(the_shell_display_layout());
-        });
-
     override_the_session_listener([]
         {
             return std::make_shared<SessionListener>();
@@ -75,11 +68,6 @@ MirServer::MirServer(int argc, char const* argv[], ScreenController *screenContr
     override_the_prompt_session_listener([]
         {
             return std::make_shared<PromptSessionListener>();
-        });
-
-    override_the_surface_configurator([]
-        {
-            return std::make_shared<SurfaceConfigurator>();
         });
 
     override_the_session_authorizer([]
@@ -99,10 +87,6 @@ MirServer::MirServer(int argc, char const* argv[], ScreenController *screenContr
 
     override_the_gl_config([]
         {
-#ifdef QTMIR_USE_OPENGL
-            // Should desktop-GL be desired, need to bind that API before a context is created
-            eglBindAPI(EGL_OPENGL_API);
-#endif
             return std::make_shared<MirGLConfig>();
         });
 
@@ -111,9 +95,17 @@ MirServer::MirServer(int argc, char const* argv[], ScreenController *screenContr
             return std::make_shared<MirServerStatusListener>();
         });
 
-    override_the_shell_focus_setter([]
+    override_the_shell([this]
         {
-            return std::make_shared<FocusSetter>();
+            auto const shell = std::make_shared<MirShell>(
+                the_input_targeter(),
+                the_surface_coordinator(),
+                the_session_coordinator(),
+                the_prompt_session_manager(),
+                the_shell_display_layout());
+
+            m_shell = shell;
+            return shell;
         });
 
     wrap_display_configuration_policy(
@@ -173,10 +165,7 @@ PromptSessionListener *MirServer::promptSessionListener()
     return static_cast<PromptSessionListener*>(sharedPtr.get());
 }
 
-SurfaceConfigurator *MirServer::surfaceConfigurator()
+MirShell *MirServer::shell()
 {
-    auto sharedPtr = the_surface_configurator();
-    if (sharedPtr.unique()) return 0;
-
-    return static_cast<SurfaceConfigurator*>(sharedPtr.get());
+    return m_shell.lock().get();
 }

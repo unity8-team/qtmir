@@ -24,7 +24,7 @@
 class QtEventFeeder;
 class SessionListener;
 class SessionAuthorizer;
-class SurfaceConfigurator;
+class MirShell;
 class PromptSessionListener;
 class ScreenController;
 
@@ -36,7 +36,7 @@ class MirServer : public QObject, private virtual mir::Server
 
     Q_PROPERTY(SessionAuthorizer* sessionAuthorizer READ sessionAuthorizer CONSTANT)
     Q_PROPERTY(SessionListener* sessionListener READ sessionListener CONSTANT)
-    Q_PROPERTY(SurfaceConfigurator* surfaceConfigurator READ surfaceConfigurator CONSTANT)
+    Q_PROPERTY(MirShell* shell READ shell CONSTANT)
     Q_PROPERTY(PromptSessionListener* promptSessionListener READ promptSessionListener CONSTANT)
 
 public:
@@ -61,9 +61,11 @@ public:
     SessionAuthorizer *sessionAuthorizer();
     SessionListener *sessionListener();
     PromptSessionListener *promptSessionListener();
-    SurfaceConfigurator *surfaceConfigurator();
+    MirShell *shell();
 
 private:
+    std::shared_ptr<QtEventFeeder> m_qtEventFeeder;
+    std::weak_ptr<MirShell> m_shell;
 };
 
 #endif // MIRSERVER_H

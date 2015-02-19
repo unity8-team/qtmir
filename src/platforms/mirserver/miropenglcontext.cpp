@@ -76,11 +76,7 @@ MirOpenGLContext::MirOpenGLContext(const QSharedPointer<MirServer> &server, cons
     }
 
     QSurfaceFormat formatCopy = format;
-#ifdef QTMIR_USE_OPENGL
-    formatCopy.setRenderableType(QSurfaceFormat::OpenGL);
-#else
     formatCopy.setRenderableType(QSurfaceFormat::OpenGLES);
-#endif
 
     m_format = q_glFormatFromConfig(m_eglDisplay, eglConfig, formatCopy);
 
@@ -117,10 +113,6 @@ QSurfaceFormat MirOpenGLContext::format() const
 
 void MirOpenGLContext::swapBuffers(QPlatformSurface *surface)
 {
-#ifdef QTMIR_USE_OPENGL
-    eglBindAPI(EGL_OPENGL_API);
-#endif
-
     if (surface->surface()->surfaceClass() == QSurface::Offscreen) {
         // NOOP
     } else {
@@ -132,10 +124,6 @@ void MirOpenGLContext::swapBuffers(QPlatformSurface *surface)
 
 bool MirOpenGLContext::makeCurrent(QPlatformSurface *surface)
 {
-#ifdef QTMIR_USE_OPENGL
-    eglBindAPI(EGL_OPENGL_API);
-#endif
-
     if (surface->surface()->surfaceClass() == QSurface::Offscreen) {
         auto offscreen = static_cast<OffscreenSurface *>(surface);
         if (!offscreen->buffer()) {
@@ -170,9 +158,5 @@ void MirOpenGLContext::doneCurrent()
 
 QFunctionPointer MirOpenGLContext::getProcAddress(const QByteArray &procName)
 {
-#ifdef QTMIR_USE_OPENGL
-    eglBindAPI(EGL_OPENGL_API);
-#endif
-
     return eglGetProcAddress(procName.constData());
 }

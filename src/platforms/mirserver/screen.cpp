@@ -197,8 +197,7 @@ void Screen::setMirDisplayConfiguration(const mir::graphics::DisplayConfiguratio
     // DPI - TODO
 
     if (m_geometry != oldGeometry) {
-        QWindowSystemInterface::handleScreenGeometryChange(this->screen(), m_geometry);
-        QWindowSystemInterface::handleScreenAvailableGeometryChange(this->screen(), m_geometry);
+        QWindowSystemInterface::handleScreenGeometryChange(this->screen(), m_geometry, m_geometry);
         if (!m_screenWindow.isNull()) { // resize corresponding window immediately
             m_screenWindow->setGeometry(m_geometry);
         }
