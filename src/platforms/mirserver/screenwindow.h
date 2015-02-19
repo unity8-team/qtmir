@@ -16,30 +16,29 @@
  * Author: Gerry Boland <gerry.boland@canonical.com>
  */
 
-#ifndef DISPLAYWINDOW_H
-#define DISPLAYWINDOW_H
+#ifndef SCREENWINDOW_H
+#define SCREENWINDOW_H
 
 #include <qpa/qplatformwindow.h>
 
-#include <mir/graphics/display_buffer.h>
-
 #include <QObject>
 
-// DisplayWindow wraps the whatever implementation Mir creates of a DisplayBuffer,
-// which is the buffer output for an individual display.
+// ScreenWindow implements the basics of a QPlatformWindow. Any Mir
+// specifics live in the associated Screen object.
 
-class DisplayWindow : public QObject, public QPlatformWindow
+class ScreenWindow : public QObject, public QPlatformWindow
 {
     Q_OBJECT
 public:
-    explicit DisplayWindow(QWindow *window, mir::graphics::DisplayBuffer*);
+    explicit ScreenWindow(QWindow *window);
+    virtual ~ScreenWindow();
 
     QRect geometry() const override;
     void setGeometry(const QRect &rect) override;
 
     WId winId() const override { return m_winId; }
 
-    bool isExposed() const override;
+    //bool isExposed() const override;
 
     bool event(QEvent *event) override;
 
@@ -50,7 +49,6 @@ public:
 private:
     bool m_isExposed;
     WId m_winId;
-    mir::graphics::DisplayBuffer *m_displayBuffer;
 };
 
-#endif // DISPLAYWINDOW_H
+#endif // SCREENWINDOW_H

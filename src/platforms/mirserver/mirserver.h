@@ -44,6 +44,7 @@ public:
     /* mir specific */
     using mir::Server::run;
     using mir::Server::stop;
+    using mir::Server::the_compositor;
     using mir::Server::the_display;
     using mir::Server::the_gl_config;
     using mir::Server::the_main_loop;

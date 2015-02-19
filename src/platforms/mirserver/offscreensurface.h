@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -12,30 +12,32 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Author: Gerry Boland <gerry.boland@canonical.com>
  */
 
-#ifndef DISPLAY_H
-#define DISPLAY_H
+#ifndef OFFSCREENSURFACE_H
+#define OFFSCREENSURFACE_H
 
-#include <QObject>
-#include <qpa/qplatformscreen.h>
+#include <qpa/qplatformoffscreensurface.h>
+#include <QSurfaceFormat>
+#include <QSharedPointer>
 
 class MirServer;
+class QOpenGLFramebufferObject;
 
-class Display : public QObject
+class OffscreenSurface : public QPlatformOffscreenSurface
 {
-    Q_OBJECT
 public:
-    Display(const QSharedPointer<MirServer> &server, QObject *parent = 0);
-    ~Display();
+    OffscreenSurface(QOffscreenSurface *offscreenSurface);
 
-    QList<QPlatformScreen *> screens() const { return m_screens; }
+    QSurfaceFormat format() const override;
+    bool isValid() const override;
+
+    QOpenGLFramebufferObject* buffer() const;
+    void setBuffer(QOpenGLFramebufferObject *buffer);
 
 private:
-    QList<QPlatformScreen *> m_screens;
-    const QSharedPointer<MirServer> m_mirServer;
+    QOpenGLFramebufferObject *m_buffer;
+    QSurfaceFormat m_format;
 };
 
-#endif // DISPLAY_H
+#endif // OFFSCREENSURFACE_H

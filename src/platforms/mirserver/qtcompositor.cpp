@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013,2014 Canonical, Ltd.
+ * Copyright (C) 2013-2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -18,44 +18,23 @@
  */
 
 #include "qtcompositor.h"
-#include "displaywindow.h"
+#include "logging.h"
 
-#include <QGuiApplication>
-#include <QWindow>
+// Mir
+#include <mir/graphics/display.h>
 
-#include <QDebug>
 
-QtCompositor::QtCompositor()
-{
-
-}
-
+// Lives in a Mir thread
 void QtCompositor::start()
 {
-    // (Re)Start Qt's render thread by setting all its windows to exposed
-    setAllWindowsExposed(true);
+    qCDebug(QTMIR_SCREENS) << "QtCompositor::start";
+
+    Q_EMIT starting(); // blocks
 }
 
 void QtCompositor::stop()
 {
-    // Stop Qt's render threads by setting all its windows it obscured
-    setAllWindowsExposed(false);
-}
+    qCDebug(QTMIR_SCREENS) << "QtCompositor::stop";
 
-void QtCompositor::setAllWindowsExposed(const bool exposed)
-{
-    qDebug() << "QtCompositor::setAllWindowsExposed" << exposed;
-    QList<QWindow *> windowList = QGuiApplication::allWindows();
-
-    // manipulate Qt object's indirectly via posted events as we're not in Qt's GUI thread
-    auto iterator = windowList.constBegin();
-    while (iterator != windowList.constEnd()) {
-        QWindow *window = *iterator;
-        DisplayWindow *displayWindow = static_cast<DisplayWindow*>(window->handle());
-        if (displayWindow) {
-            QCoreApplication::postEvent(displayWindow,
-                                        new QEvent( (exposed) ? QEvent::Show : QEvent::Hide));
-        }
-        iterator++;
-    }
+    Q_EMIT stopping(); // blocks
 }

@@ -18,12 +18,14 @@
 
 #include "miropenglcontext.h"
 
-#include "displaywindow.h"
-#include "mirserver.h"
+#include "offscreensurface.h"
 #include "mirglconfig.h"
+#include "mirserver.h"
+#include "screenwindow.h"
 
 #include <QDebug>
 
+#include <QOpenGLFramebufferObject>
 #include <QSurfaceFormat>
 #include <QtPlatformSupport/private/qeglconvenience_p.h>
 
@@ -47,17 +49,17 @@ MirOpenGLContext::MirOpenGLContext(const QSharedPointer<MirServer> &server, cons
     std::unique_ptr<mir::graphics::GLContext> mirContext = display->create_gl_context();
     mirContext->make_current();
 
-    EGLDisplay eglDisplay = eglGetCurrentDisplay();
-    if (eglDisplay == EGL_NO_DISPLAY) {
+    m_eglDisplay = eglGetCurrentDisplay();
+    if (m_eglDisplay == EGL_NO_DISPLAY) {
         qFatal("Unable to determine current EGL Display");
     }
-    EGLContext eglContext = eglGetCurrentContext();
-    if (eglContext == EGL_NO_CONTEXT) {
+    m_eglContext = eglGetCurrentContext();
+    if (m_eglContext == EGL_NO_CONTEXT) {
         qFatal("Unable to determine current EGL Context");
     }
     EGLint eglConfigId = -1;
     EGLBoolean result;
-    result = eglQueryContext(eglDisplay, eglContext, EGL_CONFIG_ID, &eglConfigId);
+    result = eglQueryContext(m_eglDisplay, m_eglContext, EGL_CONFIG_ID, &eglConfigId);
     if (result != EGL_TRUE || eglConfigId < 0) {
         qFatal("Unable to determine current EGL Config ID");
     }
@@ -68,7 +70,7 @@ MirOpenGLContext::MirOpenGLContext(const QSharedPointer<MirServer> &server, cons
         EGL_CONFIG_ID, eglConfigId,
         EGL_NONE
     };
-    result = eglChooseConfig(eglDisplay, attribList, &eglConfig, 1, &matchingEglConfigCount);
+    result = eglChooseConfig(m_eglDisplay, attribList, &eglConfig, 1, &matchingEglConfigCount);
     if (result != EGL_TRUE || eglConfig == nullptr || matchingEglConfigCount < 1) {
         qFatal("Unable to select EGL Config with the supposed current config ID");
     }
@@ -76,7 +78,7 @@ MirOpenGLContext::MirOpenGLContext(const QSharedPointer<MirServer> &server, cons
     QSurfaceFormat formatCopy = format;
     formatCopy.setRenderableType(QSurfaceFormat::OpenGLES);
 
-    m_format = q_glFormatFromConfig(eglDisplay, eglConfig, formatCopy);
+    m_format = q_glFormatFromConfig(m_eglDisplay, eglConfig, formatCopy);
 
     // FIXME: the temporary gl context created by Mir does not have the attributes we specified
     // in the GLConfig, so need to set explicitly for now
@@ -95,7 +97,7 @@ MirOpenGLContext::MirOpenGLContext(const QSharedPointer<MirServer> &server, cons
     qDebug() << "OpenGL ES Shading Language version:" << qPrintable(string);
     string = (const char*) glGetString(GL_EXTENSIONS);
     qDebug() << "OpenGL ES extensions:" << qPrintable(string);
-    q_printEglConfig(eglDisplay, eglConfig);
+    q_printEglConfig(m_eglDisplay, eglConfig);
 
 #if GL_DEBUG
     QObject::connect(m_logger, &QOpenGLDebugLogger::messageLogged,
@@ -111,17 +113,30 @@ QSurfaceFormat MirOpenGLContext::format() const
 
 void MirOpenGLContext::swapBuffers(QPlatformSurface *surface)
 {
-    // ultimately calls Mir's DisplayBuffer::post_update()
-    DisplayWindow *displayBuffer = static_cast<DisplayWindow*>(surface);
-    displayBuffer->swapBuffers(); //blocks for vsync
+    if (surface->surface()->surfaceClass() == QSurface::Offscreen) {
+        // NOOP
+    } else {
+        // ultimately calls Mir's DisplayBuffer::post_update()
+        ScreenWindow *screenWindow = static_cast<ScreenWindow*>(surface);
+        screenWindow->swapBuffers(); //blocks for vsync
+    }
 }
 
 bool MirOpenGLContext::makeCurrent(QPlatformSurface *surface)
 {
+    if (surface->surface()->surfaceClass() == QSurface::Offscreen) {
+        auto offscreen = static_cast<OffscreenSurface *>(surface);
+        if (!offscreen->buffer()) {
+            auto buffer = new QOpenGLFramebufferObject(surface->surface()->size());
+            offscreen->setBuffer(buffer);
+        }
+        return offscreen->buffer()->bind();
+    }
+
     // ultimately calls Mir's DisplayBuffer::make_current()
-    DisplayWindow *displayBuffer = static_cast<DisplayWindow*>(surface);
-    if (displayBuffer) {
-        displayBuffer->makeCurrent();
+    ScreenWindow *screenWindow = static_cast<ScreenWindow*>(surface);
+    if (screenWindow) {
+        screenWindow->makeCurrent();
 
 #if GL_DEBUG
         if (!m_logger->isLogging() && m_logger->initialize()) {

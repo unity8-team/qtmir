@@ -20,20 +20,28 @@
 #ifndef SCREEN_H
 #define SCREEN_H
 
+// Qt
 #include <QObject>
 #include <QTimer>
+#include <QPointer>
 #include <QtDBus/QDBusInterface>
 #include <qpa/qplatformscreen.h>
 
+// Mir
 #include "mir/graphics/display_configuration.h"
 
+// local
+#include "screenwindow.h"
+
 class QOrientationSensor;
+namespace mir { namespace graphics { class DisplayBuffer; }}
 
 class Screen : public QObject, public QPlatformScreen
 {
     Q_OBJECT
 public:
-    Screen(mir::graphics::DisplayConfigurationOutput const&);
+    Screen(const mir::graphics::DisplayConfigurationOutput &);
+    ~Screen();
 
     // QPlatformScreen methods.
     QRect geometry() const override { return m_geometry; }
@@ -45,6 +53,8 @@ public:
     Qt::ScreenOrientation orientation() const override { return m_currentOrientation; }
 
     void toggleSensors(const bool enable) const;
+
+    ScreenWindow* window() const;
 
     // QObject methods.
     void customEvent(QEvent* event) override;
@@ -58,7 +68,11 @@ public Q_SLOTS:
    void onOrientationReadingChanged();
 
 private:
-    void readMirDisplayConfiguration(mir::graphics::DisplayConfigurationOutput const&);
+    void setWindow(ScreenWindow *window);
+
+    void setMirDisplayConfiguration(const mir::graphics::DisplayConfigurationOutput &);
+    mir::graphics::DisplayBuffer *mirDisplayBuffer() const;
+    void setMirDisplayBuffer(mir::graphics::DisplayBuffer *);
 
     QRect m_geometry;
     int m_depth;
@@ -66,11 +80,21 @@ private:
     QSizeF m_physicalSize;
     qreal m_refreshRate;
 
+    mir::graphics::DisplayBuffer *m_displayBuffer;
+    mir::graphics::DisplayConfigurationOutputId m_outputId;
+    mir::graphics::DisplayConfigurationCardId m_cardId;
+    mir::graphics::DisplayConfigurationOutputType m_type;
+    MirPowerMode m_powerMode;
+
     Qt::ScreenOrientation m_nativeOrientation;
     Qt::ScreenOrientation m_currentOrientation;
     QOrientationSensor *m_orientationSensor;
 
+    QPointer<ScreenWindow> m_screenWindow;
     QDBusInterface *m_unityScreen;
+
+    friend class ScreenController;
+    friend class ScreenWindow;
 };
 
 #endif // SCREEN_H

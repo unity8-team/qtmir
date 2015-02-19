@@ -17,9 +17,11 @@
  *          Daniel d'Andrada <daniel.dandrada@canonical.com>
  */
 
-#include "displaywindow.h"
+#include "screenwindow.h"
+#include "screen.h"
 
-#include "mir/geometry/size.h"
+#include <mir/geometry/size.h>
+#include <mir/graphics/display_buffer.h>
 
 #include <qpa/qwindowsysteminterface.h>
 #include <qpa/qplatformscreen.h>
@@ -36,14 +38,18 @@ static WId newWId()
     return ++id;
 }
 
-DisplayWindow::DisplayWindow(QWindow *window, mir::graphics::DisplayBuffer *displayBuffer)
+ScreenWindow::ScreenWindow(QWindow *window)
     : QObject(nullptr), QPlatformWindow(window)
-    , m_isExposed(true)
+    , m_isExposed(false)
     , m_winId(newWId())
-    , m_displayBuffer(displayBuffer)
 {
-    qDebug() << "DisplayWindow::DisplayWindow";
+    qDebug() << "ScreenWindow::ScreenWindow" << this;
     qWarning("Window %p: %p 0x%x\n", this, window, uint(m_winId));
+
+    // Register with the Screen it is associated with
+    auto windowscreen = static_cast<Screen *>(screen());
+    Q_ASSERT(windowscreen);
+    windowscreen->setWindow(this);
 
     QRect screenGeometry(screen()->availableGeometry());
     if (window->geometry() != screenGeometry) {
@@ -56,7 +62,12 @@ DisplayWindow::DisplayWindow(QWindow *window, mir::graphics::DisplayBuffer *disp
     requestActivateWindow();
 }
 
-QRect DisplayWindow::geometry() const
+ScreenWindow::~ScreenWindow()
+{
+    qDebug() << "ScreenWindow::~ScreenWindow" << this;
+}
+
+QRect ScreenWindow::geometry() const
 {
     // For yet-to-become-fullscreen windows report the geometry covering the entire
     // screen. This is particularly important for Quick where the root object may get
@@ -64,7 +75,7 @@ QRect DisplayWindow::geometry() const
     return screen()->availableGeometry();
 }
 
-void DisplayWindow::setGeometry(const QRect &)
+void ScreenWindow::setGeometry(const QRect &)
 {
     // We only support full-screen windows
     QRect rect(screen()->availableGeometry());
@@ -72,44 +83,49 @@ void DisplayWindow::setGeometry(const QRect &)
     QPlatformWindow::setGeometry(rect);
 }
 
-bool DisplayWindow::isExposed() const
-{
-    return m_isExposed;
-}
+//bool ScreenWindow::isExposed() const
+//{
+//    return m_isExposed;
+//}
 
-bool DisplayWindow::event(QEvent *event)
+bool ScreenWindow::event(QEvent *event)
 {
     // Intercept Hide event and convert to Expose event, as Hide causes Qt to release GL
     // resources, which we don't want. Must intercept Show to un-do hide.
     if (event->type() == QEvent::Hide) {
-        qDebug() << "DisplayWindow::event got QEvent::Hide";
+        qDebug() << "ScreenWindow::event got QEvent::Hide";
         m_isExposed = false;
-        QWindowSystemInterface::handleExposeEvent(window(), QRect());
-        QWindowSystemInterface::flushWindowSystemEvents();
-        return true;
+        //QWindowSystemInterface::handleExposeEvent(window(), QRect());
+        //QWindowSystemInterface::flushWindowSystemEvents();
+        //return true;
     } else if (event->type() == QEvent::Show) {
-        qDebug() << "DisplayWindow::event got QEvent::Show";
+        qDebug() << "ScreenWindow::event got QEvent::Show";
         m_isExposed = true;
-        QRect rect(QPoint(), geometry().size());
-        QWindowSystemInterface::handleExposeEvent(window(), rect);
-        QWindowSystemInterface::flushWindowSystemEvents();
-        return true;
+        //QRect rect(QPoint(), geometry().size());
+        //QWindowSystemInterface::handleExposeEvent(window(), rect);
+        //QWindowSystemInterface::flushWindowSystemEvents();
+        //return true;
     }
     return QObject::event(event);
 }
 
-void DisplayWindow::swapBuffers()
+void ScreenWindow::swapBuffers()
 {
-    m_displayBuffer->gl_swap_buffers();
-    m_displayBuffer->flip();
+    auto displayBuffer = static_cast<Screen *>(screen())->mirDisplayBuffer();
+    displayBuffer->gl_swap_buffers();
+    displayBuffer->flip();
 }
 
-void DisplayWindow::makeCurrent()
+void ScreenWindow::makeCurrent()
 {
-    m_displayBuffer->make_current();
+    auto displayBuffer = static_cast<Screen *>(screen())->mirDisplayBuffer();
+    displayBuffer->make_current();
 }
 
-void DisplayWindow::doneCurrent()
+void ScreenWindow::doneCurrent()
 {
-    m_displayBuffer->release_current();
+    qDebug() << "ScreenWindow::doneCurrent";
+
+    auto displayBuffer = static_cast<Screen *>(screen())->mirDisplayBuffer();
+    displayBuffer->release_current();
 }

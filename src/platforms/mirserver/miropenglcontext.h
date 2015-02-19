@@ -27,6 +27,9 @@
 #include <QOpenGLDebugLogger>
 #endif
 
+#define MESA_EGL_NO_X11_HEADERS
+#include <EGL/egl.h>
+
 class MirServer;
 
 class MirOpenGLContext : public QObject, public QPlatformOpenGLContext
@@ -54,6 +57,8 @@ public:
 private:
     const QSharedPointer<MirServer> m_mirServer;
     QSurfaceFormat m_format;
+    EGLDisplay m_eglDisplay;
+    EGLContext m_eglContext;
 #if GL_DEBUG
     QOpenGLDebugLogger *m_logger;
 #endif

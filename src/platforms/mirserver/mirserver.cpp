@@ -23,15 +23,21 @@
 #include "mirglconfig.h"
 #include "mirserverstatuslistener.h"
 #include "promptsessionlistener.h"
+#include "screencontroller.h"
 #include "sessionlistener.h"
 #include "sessionauthorizer.h"
 #include "qtcompositor.h"
 #include "qteventfeeder.h"
 #include "logging.h"
 
+// std
+#include <memory>
+
 // egl
+#define MESA_EGL_NO_X11_HEADERS
 #include <EGL/egl.h>
 
+namespace mg = mir::graphics;
 namespace mo  = mir::options;
 namespace msh = mir::shell;
 namespace ms = mir::scene;
@@ -66,7 +72,7 @@ MirServer::MirServer(int argc, char const* argv[], QObject* parent)
             return std::make_shared<SessionAuthorizer>();
         });
 
-    override_the_compositor([]
+    override_the_compositor([this]
         {
             return std::make_shared<QtCompositor>();
         });

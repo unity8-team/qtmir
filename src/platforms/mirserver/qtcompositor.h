@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2013-2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -19,18 +19,27 @@
 #ifndef QTCOMPOSITOR_H
 #define QTCOMPOSITOR_H
 
-#include "mir/compositor/compositor.h"
+#include <mir/compositor/compositor.h>
 
-class QtCompositor : public mir::compositor::Compositor
+// Qt
+#include <QObject>
+#include <QMutex>
+
+class QtCompositor : public QObject, public mir::compositor::Compositor
 {
+    Q_OBJECT
 public:
-    QtCompositor();
+    QtCompositor() = default;
+    virtual ~QtCompositor() noexcept = default;
 
     void start();
     void stop();
 
+Q_SIGNALS:
+    void starting();
+    void stopping();
+
 private:
-    void setAllWindowsExposed(const bool exposed);
 };
 
 #endif // QTCOMPOSITOR_H

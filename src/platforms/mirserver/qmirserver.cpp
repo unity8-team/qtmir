@@ -23,6 +23,8 @@
 
 // local
 #include "qmirserver.h"
+#include "screencontroller.h"
+#include "screen.h"
 
 
 void MirServerWorker::run()
@@ -51,26 +53,20 @@ bool MirServerWorker::wait_for_mir_startup()
     return mir_running;
 }
 
-QMirServer::QMirServer(const QSharedPointer<MirServer> &server, QObject *parent)
+QMirServer::QMirServer(int argc, const char *argv[], QObject *parent)
     : QObject(parent)
-    , m_mirServer(new MirServerWorker(server))
+    , m_screenController(new ScreenController())
+    , m_server(new MirServer(argc, argv))
+    , m_mirServer(new MirServerWorker(m_server))
 {
+    m_screenController->setMirServer(m_server);
     m_mirServer->moveToThread(&m_mirThread);
 
-    connect(this, &QMirServer::run, m_mirServer, &MirServerWorker::run);
-    connect(this, &QMirServer::stop, m_mirServer, &MirServerWorker::stop);
+    connect(this, &QMirServer::runServer, m_mirServer.data(), &MirServerWorker::run);
+    connect(this, &QMirServer::stopServer, m_mirServer.data(), &MirServerWorker::stop);
 
     connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this, &QMirServer::shutDownMirServer);
-    connect(m_mirServer, &MirServerWorker::stopped, this, &QMirServer::shutDownQApplication, Qt::DirectConnection); // since no event loop
-
-    m_mirThread.start(QThread::TimeCriticalPriority);
-    Q_EMIT run();
-
-    if (!m_mirServer->wait_for_mir_startup())
-    {
-        qCritical() << "ERROR: QMirServer - Mir failed to start";
-        QCoreApplication::quit();
-    }
+    connect(m_mirServer.data(), &MirServerWorker::stopped, this, &QMirServer::shutDownQApplication, Qt::DirectConnection); // since no event loop
 }
 
 QMirServer::~QMirServer()
@@ -78,9 +74,28 @@ QMirServer::~QMirServer()
     shutDownMirServer();
 }
 
+void QMirServer::run()
+{
+    m_mirThread.start(QThread::HighPriority);
+    Q_EMIT runServer();
+
+    if (!m_mirServer->wait_for_mir_startup())
+    {
+        qCritical() << "ERROR: QMirServer - Mir failed to start";
+        QCoreApplication::quit();
+    }
+    m_screenController->init();
+}
+
+void QMirServer::stop()
+{
+    shutDownMirServer();
+}
+
 void QMirServer::shutDownMirServer()
 {
     if (m_mirThread.isRunning()) {
+        delete m_screenController;
         m_mirServer->stop();
         m_mirThread.wait();
     }
@@ -88,11 +103,17 @@ void QMirServer::shutDownMirServer()
 
 void QMirServer::shutDownQApplication()
 {
-    if (m_mirThread.isRunning())
+    if (m_mirThread.isRunning()) {
         m_mirThread.quit();
+    }
 
     // if unexpected mir server stop, better quit the QApplication
     if (!QCoreApplication::closingDown()) {
         QCoreApplication::quit();
     }
+}
+
+ScreenController* QMirServer::screenController() const
+{
+    return m_screenController;
 }
