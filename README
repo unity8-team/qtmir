@@ -19,6 +19,7 @@ $ cmake -DNO_TESTS=true
 
 To test, enter the demos directory, run:
 
+$ export DESKTOP_SESSION=unity8-mir
 $ export QT_QPA_PLATFORM=mirserver
 
 then run the Qt application of your choice (qmlscene best). As example, try
