@@ -60,6 +60,7 @@ MirSurfaceState qtWindowStateToMirSurfaceState(Qt::WindowState state)
     }
 }
 
+#if !defined(QT_NO_DEBUG)
 const char *qtWindowStateToStr(Qt::WindowState state)
 {
     switch (state) {
@@ -79,6 +80,7 @@ const char *qtWindowStateToStr(Qt::WindowState state)
         return "!?";
     }
 }
+#endif
 
 } // anonymous namespace
 
