@@ -427,7 +427,9 @@ void UbuntuWindow::setVisible(bool visible)
         QWindowSystemInterface::handleExposeEvent(window(), QRect());
         QWindowSystemInterface::flushWindowSystemEvents();
     } else {
-        mir_wait_for(mir_surface_set_state(d->surface, mir_surface_state_hidden));
+        // TODO: Use the new mir_surface_state_hidden state instead of mir_surface_state_minimized.
+        //       Will have to change qtmir and unity8 for that.
+        mir_wait_for(mir_surface_set_state(d->surface, mir_surface_state_minimized));
     }
 }
 
