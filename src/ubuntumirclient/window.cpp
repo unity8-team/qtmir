@@ -37,6 +37,51 @@
 
 #define IS_OPAQUE_FLAG 1
 
+namespace
+{
+MirSurfaceState qtWindowStateToMirSurfaceState(Qt::WindowState state)
+{
+    switch (state) {
+    case Qt::WindowNoState:
+        return mir_surface_state_restored;
+
+    case Qt::WindowFullScreen:
+        return mir_surface_state_fullscreen;
+
+    case Qt::WindowMaximized:
+        return mir_surface_state_maximized;
+
+    case Qt::WindowMinimized:
+        return mir_surface_state_minimized;
+
+    default:
+        LOG("Unexpected Qt::WindowState: %d", state);
+        return mir_surface_state_restored;
+    }
+}
+
+const char *qtWindowStateToStr(Qt::WindowState state)
+{
+    switch (state) {
+    case Qt::WindowNoState:
+        return "NoState";
+
+    case Qt::WindowFullScreen:
+        return "FullScreen";
+
+    case Qt::WindowMaximized:
+        return "Maximized";
+
+    case Qt::WindowMinimized:
+        return "Minimized";
+
+    default:
+        return "!?";
+    }
+}
+
+} // anonymous namespace
+
 class UbuntuWindowPrivate
 {
 public:
@@ -342,35 +387,14 @@ void UbuntuWindow::forceRedraw()
 void UbuntuWindow::setWindowState(Qt::WindowState state)
 {
     QMutexLocker(&d->mutex);
+    DLOG("UbuntuWindow::setWindowState (this=%p, %s)", this,  qtWindowStateToStr(state));
+
     if (state == d->state)
         return;
 
     // TODO: Perhaps we should check if the states are applied?
-    switch (state) {
-    case Qt::WindowNoState:
-        DLOG("setting window state: 'NoState'");
-        mir_wait_for(mir_surface_set_state(d->surface, mir_surface_state_restored));
-        d->state = Qt::WindowNoState;
-        break;
-    case Qt::WindowFullScreen:
-        DLOG("setting window state: 'FullScreen'");
-        mir_wait_for(mir_surface_set_state(d->surface, mir_surface_state_fullscreen));
-        d->state = Qt::WindowFullScreen;
-        break;
-    case Qt::WindowMaximized:
-        DLOG("setting window state: 'Maximized'");
-        mir_wait_for(mir_surface_set_state(d->surface, mir_surface_state_maximized));
-        d->state = Qt::WindowMaximized;
-        break;
-    case Qt::WindowMinimized:
-        DLOG("setting window state: 'Minimized'");
-        mir_wait_for(mir_surface_set_state(d->surface, mir_surface_state_minimized));
-        d->state = Qt::WindowMinimized;
-        break;
-    default:
-        DLOG("Unexpected window state");
-        break;
-    }
+    mir_wait_for(mir_surface_set_state(d->surface, qtWindowStateToMirSurfaceState(state)));
+    d->state = state;
 }
 
 void UbuntuWindow::setGeometry(const QRect& rect)
@@ -392,16 +416,17 @@ void UbuntuWindow::setGeometry(const QRect& rect)
 
 void UbuntuWindow::setVisible(bool visible)
 {
-  DLOG("UbuntuWindow::setVisible (this=%p, visible=%s)", this, visible ? "true" : "false");
+    QMutexLocker(&d->mutex);
+    DLOG("UbuntuWindow::setVisible (this=%p, visible=%s)", this, visible ? "true" : "false");
 
-  if (visible) {
-    setWindowState(Qt::WindowNoState);
+    if (visible) {
+        mir_wait_for(mir_surface_set_state(d->surface, qtWindowStateToMirSurfaceState(d->state)));
 
-    QWindowSystemInterface::handleExposeEvent(window(), QRect());
-    QWindowSystemInterface::flushWindowSystemEvents();
-  } else {
-    setWindowState(Qt::WindowMinimized);
-  }
+        QWindowSystemInterface::handleExposeEvent(window(), QRect());
+        QWindowSystemInterface::flushWindowSystemEvents();
+    } else {
+        mir_wait_for(mir_surface_set_state(d->surface, mir_surface_state_hidden));
+    }
 }
 
 void* UbuntuWindow::eglSurface() const
