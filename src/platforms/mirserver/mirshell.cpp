@@ -46,16 +46,27 @@ mir::frontend::SurfaceId MirShell::create_surface(const std::shared_ptr<ms::Sess
      //       unity8 must bear in mind that the called function will be on a Mir thread though.
      //       The QPA shouldn't be deciding for itself on such things.
 
+//     ms::SurfaceCreationParameters placedParameters = requestParameters;
+
+//     // Just make it fullscreen for now
+//     mir::geometry::Rectangle rect{requestParameters.top_left, requestParameters.size};
+//     m_displayLayout->size_to_output(rect);
+//     placedParameters.size = rect.size;
+
+//     qCDebug(QTMIR_MIR_MESSAGES) << "MirShell::create_surface(): size requested ("
+//         << requestParameters.size.width.as_int() << "," << requestParameters.size.height.as_int() << ") and placed ("
+//         << placedParameters.size.width.as_int() << "," << placedParameters.size.height.as_int() << ")";
+
      ms::SurfaceCreationParameters placedParameters = requestParameters;
 
-     // Just make it fullscreen for now
-     mir::geometry::Rectangle rect{requestParameters.top_left, requestParameters.size};
-     m_displayLayout->size_to_output(rect);
-     placedParameters.size = rect.size;
+     // Read client requested positioning rectangle & edge attachment & calculate position
+     if (requestParameters.aux_rect.is_set()) {
+         placedParameters.top_left = requestParameters.aux_rect.value().top_left;
+     }
 
-     qCDebug(QTMIR_MIR_MESSAGES) << "MirShell::create_surface(): size requested ("
-         << requestParameters.size.width.as_int() << "," << requestParameters.size.height.as_int() << ") and placed ("
-         << placedParameters.size.width.as_int() << "," << placedParameters.size.height.as_int() << ")";
+     qCDebug(QTMIR_MIR_MESSAGES) << "MirShell::create_surface(): geometry ("
+        << placedParameters.top_left.x.as_int() << "," << placedParameters.top_left.y.as_int() << " "
+        << placedParameters.size.width.as_int() << "x" << placedParameters.size.height.as_int() << ")";
 
      tracepoint(qtmirserver, surfacePlacementEnd);
 
