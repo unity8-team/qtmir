@@ -74,6 +74,7 @@ private:
 
     QTouchDevice *mTouchDevice;
     QtWindowSystemInterface *mQtWindowSystem;
+    qreal m_devicePixelRatio;
 
     // Maps the id of an active touch to its last known state
     QHash<int, QWindowSystemInterface::TouchPoint> mActiveTouches;

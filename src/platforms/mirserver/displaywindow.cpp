@@ -72,6 +72,14 @@ void DisplayWindow::setGeometry(const QRect &)
     QPlatformWindow::setGeometry(rect);
 }
 
+qreal DisplayWindow::devicePixelRatio() const
+{
+    QByteArray stringValue = qgetenv("QT_DEVICE_PIXEL_RATIO");
+    bool ok;
+    float value = stringValue.toFloat(&ok);
+    return ok ? value : 1.0;
+}
+
 bool DisplayWindow::isExposed() const
 {
     return m_isExposed;

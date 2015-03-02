@@ -36,6 +36,7 @@ public:
 
     QRect geometry() const override;
     void setGeometry(const QRect &rect) override;
+    qreal devicePixelRatio() const override;
 
     WId winId() const override { return m_winId; }
 

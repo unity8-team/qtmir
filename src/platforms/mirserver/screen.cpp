@@ -111,6 +111,11 @@ Screen::Screen(mir::graphics::DisplayConfigurationOutput const &screen)
     , m_orientationSensor(new QOrientationSensor(this))
     , m_unityScreen(nullptr)
 {
+    QByteArray stringValue = qgetenv("QT_DEVICE_PIXEL_RATIO");
+    bool ok;
+    float value = stringValue.toFloat(&ok);
+    m_devicePixelRatio = ok ? value : 1.0;
+
     readMirDisplayConfiguration(screen);
 
     // Set the default orientation based on the initial screen dimmensions.
@@ -168,8 +173,8 @@ void Screen::readMirDisplayConfiguration(mir::graphics::DisplayConfigurationOutp
 
     // Mode = Resolution & refresh rate
     mir::graphics::DisplayConfigurationMode mode = screen.modes.at(screen.current_mode_index);
-    m_geometry.setWidth(mode.size.width.as_int());
-    m_geometry.setHeight(mode.size.height.as_int());
+    m_geometry.setWidth(mode.size.width.as_int() / m_devicePixelRatio);
+    m_geometry.setHeight(mode.size.height.as_int() / m_devicePixelRatio);
 
     m_refreshRate = mode.vrefresh_hz;
 }

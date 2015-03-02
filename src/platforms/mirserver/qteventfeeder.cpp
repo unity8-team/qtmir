@@ -207,6 +207,10 @@ QtEventFeeder::QtEventFeeder(QtEventFeeder::QtWindowSystemInterface *windowSyste
             QTouchDevice::Position | QTouchDevice::Area | QTouchDevice::Pressure |
             QTouchDevice::NormalizedPosition);
     mQtWindowSystem->registerTouchDevice(mTouchDevice);
+    QByteArray stringValue = qgetenv("QT_DEVICE_PIXEL_RATIO");
+    bool ok;
+    float value = stringValue.toFloat(&ok);
+    m_devicePixelRatio = ok ? value : 1.0;
 }
 
 QtEventFeeder::~QtEventFeeder()
@@ -322,10 +326,10 @@ void QtEventFeeder::dispatchMotion(MirMotionEvent const& event)
     for (int i = 0; i < kPointerCount; ++i) {
         QWindowSystemInterface::TouchPoint touchPoint;
 
-        const float kX = event.pointer_coordinates[i].x;
-        const float kY = event.pointer_coordinates[i].y;
-        const float kW = event.pointer_coordinates[i].touch_major;
-        const float kH = event.pointer_coordinates[i].touch_minor;
+        const float kX = event.pointer_coordinates[i].x / m_devicePixelRatio;
+        const float kY = event.pointer_coordinates[i].y / m_devicePixelRatio;
+        const float kW = event.pointer_coordinates[i].touch_major / m_devicePixelRatio;
+        const float kH = event.pointer_coordinates[i].touch_minor / m_devicePixelRatio;
         const float kP = event.pointer_coordinates[i].pressure;
         touchPoint.id = event.pointer_coordinates[i].id;
         touchPoint.normalPosition = QPointF(kX / kWindowGeometry.width(), kY / kWindowGeometry.height());

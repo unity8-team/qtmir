@@ -43,6 +43,7 @@ public:
     qreal refreshRate() const override { return m_refreshRate; }
     Qt::ScreenOrientation nativeOrientation() const override { return m_nativeOrientation; }
     Qt::ScreenOrientation orientation() const override { return m_currentOrientation; }
+    qreal devicePixelRatio() const override { return m_devicePixelRatio; }
 
     void toggleSensors(const bool enable) const;
 
@@ -65,6 +66,7 @@ private:
     QImage::Format m_format;
     QSizeF m_physicalSize;
     qreal m_refreshRate;
+    qreal m_devicePixelRatio;
 
     Qt::ScreenOrientation m_nativeOrientation;
     Qt::ScreenOrientation m_currentOrientation;

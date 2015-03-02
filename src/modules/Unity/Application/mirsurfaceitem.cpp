@@ -814,11 +814,12 @@ void MirSurfaceItem::syncSurfaceSizeWithItemSize()
     int mirWidth = m_surface->size().width.as_int();
     int mirHeight = m_surface->size().width.as_int();
 
-    if ((int)width() != mirWidth || (int)height() != mirHeight) {
+    // mzanetti note: This would scale things
+    if ((int)width()*2 != mirWidth || (int)height()*2 != mirHeight) {
         qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::syncSurfaceSizeWithItemSize()";
-        mir::geometry::Size newMirSize((int)width(), (int)height());
+        mir::geometry::Size newMirSize((int)width()*2, (int)height()*2);
         m_surface->resize(newMirSize);
-        setImplicitSize(width(), height());
+        setImplicitSize(width()*2, height()*2);
     }
 }
 
