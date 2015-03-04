@@ -235,8 +235,9 @@ void UbuntuScreen::handleWindowSurfaceResize(int windowWidth, int windowHeight)
 
         DLOG("UbuntuScreen::handleWindowSurfaceResize - new screen geometry (w=%d, h=%d)",
             mGeometry.width(), mGeometry.height());
-        QWindowSystemInterface::handleScreenGeometryChange(screen(), mGeometry);
-        QWindowSystemInterface::handleScreenAvailableGeometryChange(screen(), mGeometry);
+        QWindowSystemInterface::handleScreenGeometryChange(screen(),
+                                                           mGeometry /* newGeometry */,
+                                                           mGeometry /* newAvailableGeometry */);
 
         if (mGeometry.width() < mGeometry.height()) {
             mCurrentOrientation = Qt::PortraitOrientation;
