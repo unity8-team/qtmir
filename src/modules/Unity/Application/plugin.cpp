@@ -71,6 +71,9 @@ class UnityApplicationPlugin : public QQmlExtensionPlugin {
         qCDebug(QTMIR_APPLICATIONS) << "UnityApplicationPlugin::registerTypes - this=" << this << "uri=" << uri;
         Q_ASSERT(QLatin1String(uri) == QLatin1String("Unity.Application"));
 
+        qmlRegisterUncreatableType<qtmir::Globals>(
+                    uri, 0, 1, "QtMir", "QtMir provides enum values, it can't be instantiated");
+
         qRegisterMetaType<qtmir::ApplicationManager*>("ApplicationManager*"); //need for queueing signals
         qRegisterMetaType<qtmir::Application*>("Application*");
         qRegisterMetaType<qtmir::MirSurfaceItem*>("MirSurfaceItem*");

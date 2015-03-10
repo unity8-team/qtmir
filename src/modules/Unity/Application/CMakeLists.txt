@@ -33,6 +33,7 @@ set(QMLMIRPLUGIN_SRC
     taskcontroller.cpp
     mirsurfacemanager.cpp
     ubuntukeyboardinfo.cpp
+    mirsurface.cpp
     mirsurfaceitem.cpp
     mirbuffersgtexture.cpp
     proc_info.cpp
