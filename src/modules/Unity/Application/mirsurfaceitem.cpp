@@ -256,6 +256,7 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     if (observer) {
         connect(observer.get(), &SurfaceObserver::framesPosted, this, &MirSurfaceItem::surfaceDamaged);
         observer->setListener(this);
+        m_firstFrameDrawn = observer->framesAvailable();
     }
 
     setSmooth(true);
@@ -280,23 +281,6 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     // might create a less error-prone API design (concern: QML forgets to call "release()"
     // for a surface, and thus Mir will not release the surface buffers etc.)
     QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
-
-    connect(&m_frameDropperTimer, &QTimer::timeout,
-            this, &MirSurfaceItem::dropPendingBuffers);
-    // Rationale behind the frame dropper and its interval value:
-    //
-    // We want to give ample room for Qt scene graph to have a chance to fetch and render
-    // the next pending buffer before we take the drastic action of dropping it (so don't set
-    // it anywhere close to our target render interval).
-    //
-    // We also want to guarantee a minimal frames-per-second (fps) frequency for client applications
-    // as they get stuck on swap_buffers() if there's no free buffer to swap to yet (ie, they
-    // are all pending consumption by the compositor, us). But on the other hand, we don't want
-    // that minimal fps to be too high as that would mean this timer would be triggered way too often
-    // for nothing causing unnecessary overhead as actually dropping frames from an app should
-    // in practice rarely happen.
-    m_frameDropperTimer.setInterval(200);
-    m_frameDropperTimer.setSingleShot(false);
 
     m_updateMirSurfaceSizeTimer.setSingleShot(true);
     m_updateMirSurfaceSizeTimer.setInterval(1);
@@ -427,7 +411,7 @@ void MirSurfaceItem::ensureProvider()
     }
 }
 
-void MirSurfaceItem::surfaceDamaged()
+void MirSurfaceItem::surfaceDamaged(int /*framesAvailable*/)
 {
     if (!m_firstFrameDrawn) {
         m_firstFrameDrawn = true;
@@ -461,9 +445,6 @@ bool MirSurfaceItem::updateTexture()    // called by rendering thread (scene gra
 
     if (m_surface->buffers_ready_for_compositor(userId) > 0) {
         QTimer::singleShot(0, this, SLOT(update()));
-        // restart the frame dropper so that we have enough time to render the next frame.
-        // queued since the timer lives in a different thread
-        QMetaObject::invokeMethod(&m_frameDropperTimer, "start", Qt::QueuedConnection);
     }
 
     m_textureProvider->smooth = smooth();
@@ -767,30 +748,12 @@ void MirSurfaceItem::dropPendingBuffers()
     }
 }
 
-void MirSurfaceItem::stopFrameDropper()
-{
-    qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::stopFrameDropper surface = " << this;
-    QMutexLocker locker(&m_mutex);
-    m_frameDropperTimer.stop();
-}
-
-void MirSurfaceItem::startFrameDropper()
-{
-    qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::startFrameDropper surface = " << this;
-    QMutexLocker locker(&m_mutex);
-    if (!m_frameDropperTimer.isActive()) {
-        m_frameDropperTimer.start();
-    }
-}
-
 void MirSurfaceItem::scheduleTextureUpdate()
 {
     QMutexLocker locker(&m_mutex);
 
     // Notify QML engine that this needs redrawing, schedules call to updatePaintItem
     update();
-    // restart the frame dropper so that we have enough time to render the next frame.
-    m_frameDropperTimer.start();
 }
 
 void MirSurfaceItem::setSession(SessionInterface *session)

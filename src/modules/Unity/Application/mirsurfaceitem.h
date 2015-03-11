@@ -97,9 +97,6 @@ public:
     bool isTextureProvider() const { return true; }
     QSGTextureProvider *textureProvider() const;
 
-    void stopFrameDropper();
-    void startFrameDropper();
-
     bool isFirstFrameDrawn() const { return m_firstFrameDrawn; }
 
     void setOrientation(const Qt::ScreenOrientation orientation);
@@ -136,7 +133,7 @@ protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *);
 
 private Q_SLOTS:
-    void surfaceDamaged();
+    void surfaceDamaged(int framesAvailable);
     void dropPendingBuffers();
     void scheduleTextureUpdate();
 
@@ -181,8 +178,6 @@ private:
     QMirSurfaceTextureProvider *m_textureProvider;
 
     std::shared_ptr<SurfaceObserver> m_surfaceObserver;
-
-    QTimer m_frameDropperTimer;
 
     QTimer m_updateMirSurfaceSizeTimer;
 

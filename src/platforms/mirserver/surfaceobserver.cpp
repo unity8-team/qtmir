@@ -20,20 +20,33 @@
 
 SurfaceObserver::SurfaceObserver()
     : m_listener(nullptr)
-    , m_framesPosted(false)
+    , m_framesAvailable(0)
 {
 }
 
-void SurfaceObserver::setListener(QObject *listener) {
+void SurfaceObserver::setListener(QObject *listener) // called in Qt Gui thread
+{
+    m_listenerLock.lockForWrite();
     m_listener = listener;
-    if (m_framesPosted) {
-        Q_EMIT framesPosted();
+    m_listenerLock.unlock();
+
+    if (m_framesAvailable > 0) {
+        Q_EMIT framesPosted(m_framesAvailable);
     }
 }
 
-void SurfaceObserver::frame_posted(int /*frames_available*/) {
-    m_framesPosted = true;
+void SurfaceObserver::frame_posted(int framesAvailable) //called in Mir thread
+{
+    m_framesAvailable = framesAvailable;
+
+    m_listenerLock.lockForRead();
     if (m_listener) {
-        Q_EMIT framesPosted();
+        Q_EMIT framesPosted(framesAvailable);
     }
+    m_listenerLock.unlock();
+}
+
+int SurfaceObserver::framesAvailable() const
+{
+    return m_framesAvailable;
 }

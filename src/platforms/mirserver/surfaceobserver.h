@@ -18,6 +18,8 @@
 #define SESSIONOBSERVER_H
 
 #include <QObject>
+#include <QReadWriteLock>
+
 #include <mir/scene/surface_observer.h>
 
 class SurfaceObserver : public QObject, public mir::scene::SurfaceObserver {
@@ -34,7 +36,7 @@ public:
     void hidden_set_to(bool) override {}
 
     // Get new frame notifications from Mir, called from a Mir thread.
-    void frame_posted(int frames_available) override;
+    void frame_posted(int framesAvailable) override;
 
     void alpha_set_to(float) override {}
     void transformation_set_to(glm::mat4 const&) override {}
@@ -43,12 +45,15 @@ public:
     void orientation_set_to(MirOrientation) override {}
     void client_surface_close_requested() override {}
 
+    int framesAvailable() const;
+
 Q_SIGNALS:
-    void framesPosted();
+    void framesPosted(int framesAvailable);
 
 private:
     QObject *m_listener;
-    bool m_framesPosted;
+    int m_framesAvailable;
+    QReadWriteLock m_listenerLock;
 };
 
 #endif
