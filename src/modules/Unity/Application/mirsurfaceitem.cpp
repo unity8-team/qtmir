@@ -254,7 +254,7 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
 
     m_surfaceObserver = observer;
     if (observer) {
-        connect(observer.get(), &SurfaceObserver::framesPosted, this, &MirSurfaceItem::surfaceDamaged);
+        connect(observer.get(), &SurfaceObserver::framesPosted, this, &MirSurfaceItem::onFramesPosted);
         observer->setListener(this);
         m_firstFrameDrawn = observer->framesAvailable();
     }
@@ -296,6 +296,10 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     if (m_session) {
         connect(m_session.data(), &Session::stateChanged, this, &MirSurfaceItem::onSessionStateChanged);
     }
+
+    if (window()) {
+        connect(window(), &QQuickWindow::frameSwapped, this, &MirSurfaceItem::onRendered);
+    }
 }
 
 MirSurfaceItem::~MirSurfaceItem()
@@ -305,7 +309,6 @@ MirSurfaceItem::~MirSurfaceItem()
     }
 
     qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::~MirSurfaceItem - this=" << this;
-    QMutexLocker locker(&m_mutex);
     m_surface->remove_observer(m_surfaceObserver);
     if (m_textureProvider)
         m_textureProvider->deleteLater();
@@ -411,19 +414,29 @@ void MirSurfaceItem::ensureProvider()
     }
 }
 
-void MirSurfaceItem::surfaceDamaged(int /*framesAvailable*/)
+void MirSurfaceItem::onFramesPosted(int /*framesAvailable*/)
 {
     if (!m_firstFrameDrawn) {
         m_firstFrameDrawn = true;
         Q_EMIT firstFrameDrawn(this);
     }
 
-    scheduleTextureUpdate();
+    // Notify QML engine that this needs redrawing, schedules call to updatePaintItem
+    update();
 }
 
-bool MirSurfaceItem::updateTexture()    // called by rendering thread (scene graph)
+void MirSurfaceItem::onRendered()    // called by rendering thread (scene graph), GUI thread *not* blocked at this time
 {
-    QMutexLocker locker(&m_mutex);
+    if (m_surface->buffers_ready_for_compositor((void*)123) > 1) {
+        // release buffer back to client immediately, gives it more time to render its next frame
+        m_textureProvider->t->freeBuffer();
+        // schedule a new render pass
+        QMetaObject::invokeMethod(this, "update", Qt::QueuedConnection);
+    }
+}
+
+bool MirSurfaceItem::updateTexture()    // called by rendering thread (scene graph), GUI thread blocked at this time
+{
     ensureProvider();
     bool textureUpdated = false;
 
@@ -443,16 +456,12 @@ bool MirSurfaceItem::updateTexture()    // called by rendering thread (scene gra
         textureUpdated = true;
     }
 
-    if (m_surface->buffers_ready_for_compositor(userId) > 0) {
-        QTimer::singleShot(0, this, SLOT(update()));
-    }
-
     m_textureProvider->smooth = smooth();
 
     return textureUpdated;
 }
 
-QSGNode *MirSurfaceItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)    // called by render thread
+QSGNode *MirSurfaceItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)    // called by render thread, GUI thread blocked at this time
 {
     if (!m_surface) {
         delete oldNode;
@@ -727,33 +736,6 @@ void MirSurfaceItem::updateMirSurfaceFocus(bool focused)
     } else {
         m_shell->set_surface_attribute(m_session->session(), m_surface, mir_surface_attrib_focus, mir_surface_unfocused);
     }
-}
-
-void MirSurfaceItem::dropPendingBuffers()
-{
-    QMutexLocker locker(&m_mutex);
-
-    const void* const userId = (void*)123;  // TODO: Multimonitor support
-
-    while (m_surface->buffers_ready_for_compositor(userId) > 0) {
-        // The line below looks like an innocent, effect-less, getter. But as this
-        // method returns a unique_pointer, not holding its reference causes the
-        // buffer to be destroyed/released straight away.
-        m_surface->compositor_snapshot(userId)->buffer();
-        qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::dropPendingBuffers()"
-            << "surface =" << this
-            << "buffer dropped."
-            << m_surface->buffers_ready_for_compositor(userId)
-            << "left.";
-    }
-}
-
-void MirSurfaceItem::scheduleTextureUpdate()
-{
-    QMutexLocker locker(&m_mutex);
-
-    // Notify QML engine that this needs redrawing, schedules call to updatePaintItem
-    update();
 }
 
 void MirSurfaceItem::setSession(SessionInterface *session)

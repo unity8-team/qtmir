@@ -133,9 +133,8 @@ protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *);
 
 private Q_SLOTS:
-    void surfaceDamaged(int framesAvailable);
-    void dropPendingBuffers();
-    void scheduleTextureUpdate();
+    void onFramesPosted(int framesAvailable);
+    void onRendered();
 
     void scheduleMirSurfaceSizeUpdate();
     void updateMirSurfaceSize();
@@ -165,8 +164,6 @@ private:
             ulong timestamp,
             const QList<QTouchEvent::TouchPoint> &touchPoints,
             Qt::TouchPointStates touchPointStates);
-
-    QMutex m_mutex;
 
     std::shared_ptr<mir::scene::Surface> m_surface;
     QPointer<SessionInterface> m_session;

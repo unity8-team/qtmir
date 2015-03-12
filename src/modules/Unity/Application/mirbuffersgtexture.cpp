@@ -59,7 +59,9 @@ MirBufferSGTexture::~MirBufferSGTexture()
 
 void MirBufferSGTexture::freeBuffer()
 {
-    m_mirBuffer.reset();
+    if (m_mirBuffer) {
+        m_mirBuffer.reset();
+    }
 }
 
 void MirBufferSGTexture::setBuffer(std::shared_ptr<mir::graphics::Buffer> buffer)
