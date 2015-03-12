@@ -244,20 +244,18 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     , m_surface(surface)
     , m_session(session)
     , m_shell(shell)
-    , m_firstFrameDrawn(false)
+    , m_surfaceObserver(observer)
+    , m_firstFramePosted(m_surfaceObserver->firstFramePosted())
     , m_live(true)
     , m_orientation(Qt::PortraitOrientation)
     , m_textureProvider(nullptr)
+    , m_renderCallback(false)
     , m_lastTouchEvent(nullptr)
 {
     qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::MirSurfaceItem";
 
-    m_surfaceObserver = observer;
-    if (observer) {
-        connect(observer.get(), &SurfaceObserver::framesPosted, this, &MirSurfaceItem::onFramesPosted);
-        observer->setListener(this);
-        m_firstFrameDrawn = observer->framesAvailable();
-    }
+    connect(m_surfaceObserver.get(), &SurfaceObserver::framePosted, this, &MirSurfaceItem::onFramePosted);
+    m_surfaceObserver->setListener(this);
 
     setSmooth(true);
     setFlag(QQuickItem::ItemHasContents, true); //so scene graph will render this item
@@ -295,10 +293,6 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
 
     if (m_session) {
         connect(m_session.data(), &Session::stateChanged, this, &MirSurfaceItem::onSessionStateChanged);
-    }
-
-    if (window()) {
-        connect(window(), &QQuickWindow::frameSwapped, this, &MirSurfaceItem::onRendered);
     }
 }
 
@@ -414,10 +408,10 @@ void MirSurfaceItem::ensureProvider()
     }
 }
 
-void MirSurfaceItem::onFramesPosted(int /*framesAvailable*/)
+void MirSurfaceItem::onFramePosted()
 {
-    if (!m_firstFrameDrawn) {
-        m_firstFrameDrawn = true;
+    if (!m_firstFramePosted) {
+        m_firstFramePosted = true;
         Q_EMIT firstFrameDrawn(this);
     }
 
@@ -435,23 +429,44 @@ void MirSurfaceItem::onRendered()    // called by rendering thread (scene graph)
     }
 }
 
+void MirSurfaceItem::connectToRenderedSignal(bool connectToSignal) //thread safe
+{
+    QMutexLocker mutex(&m_renderCallbackMutex);
+    if (connectToSignal == m_renderCallback || !window())
+        return;
+
+    m_renderCallback = connectToSignal;
+    if (connectToSignal) { qDebug() << "enable";
+        connect(window(), &QQuickWindow::frameSwapped, this, &MirSurfaceItem::onRendered, Qt::DirectConnection);
+    } else {qDebug() << "disable";
+        disconnect(window(), &QQuickWindow::frameSwapped, this, &MirSurfaceItem::onRendered);
+    }
+}
+
+
 bool MirSurfaceItem::updateTexture()    // called by rendering thread (scene graph), GUI thread blocked at this time
 {
     ensureProvider();
     bool textureUpdated = false;
 
     const void* const userId = (void*)123;
-    std::unique_ptr<mg::Renderable> renderable =
-        m_surface->compositor_snapshot(userId);
+    std::unique_ptr<mg::Renderable> renderable = m_surface->compositor_snapshot(userId);
 
     if (m_surface->buffers_ready_for_compositor(userId) > 0) {
-        if (!m_textureProvider->t) {
+        if (Q_UNLIKELY(!m_textureProvider->t)) {
             m_textureProvider->t = new MirBufferSGTexture(renderable->buffer());
         } else {
             // Avoid holding two buffers for the compositor at the same time. Thus free the current
             // before acquiring the next
             m_textureProvider->t->freeBuffer();
             m_textureProvider->t->setBuffer(renderable->buffer());
+
+            if (m_surface->buffers_ready_for_compositor(userId) > 0) {
+                // there is already another buffer in the queue
+                connectToRenderedSignal(true);
+            } else {
+                connectToRenderedSignal(false);
+            }
         }
         textureUpdated = true;
     }

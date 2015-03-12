@@ -97,7 +97,7 @@ public:
     bool isTextureProvider() const { return true; }
     QSGTextureProvider *textureProvider() const;
 
-    bool isFirstFrameDrawn() const { return m_firstFrameDrawn; }
+    bool isFirstFrameDrawn() const { return m_firstFramePosted; }
 
     void setOrientation(const Qt::ScreenOrientation orientation);
     void setSession(SessionInterface *app);
@@ -133,7 +133,7 @@ protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *);
 
 private Q_SLOTS:
-    void onFramesPosted(int framesAvailable);
+    void onFramePosted();
     void onRendered();
 
     void scheduleMirSurfaceSizeUpdate();
@@ -144,6 +144,7 @@ private Q_SLOTS:
 private:
     bool updateTexture();
     void ensureProvider();
+    void connectToRenderedSignal(bool connect);
 
     void setType(const Type&);
     void setState(const State&);
@@ -168,13 +169,15 @@ private:
     std::shared_ptr<mir::scene::Surface> m_surface;
     QPointer<SessionInterface> m_session;
     MirShell *const m_shell;
-    bool m_firstFrameDrawn;
+    std::shared_ptr<SurfaceObserver> m_surfaceObserver;
+    bool m_firstFramePosted;
     bool m_live;
     Qt::ScreenOrientation m_orientation; //FIXME -  have to save the state as Mir has no getter for it (bug:1357429)
 
     QMirSurfaceTextureProvider *m_textureProvider;
 
-    std::shared_ptr<SurfaceObserver> m_surfaceObserver;
+    QMutex m_renderCallbackMutex;
+    bool m_renderCallback;
 
     QTimer m_updateMirSurfaceSizeTimer;
 

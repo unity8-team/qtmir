@@ -20,7 +20,7 @@
 
 SurfaceObserver::SurfaceObserver()
     : m_listener(nullptr)
-    , m_framesAvailable(0)
+    , m_firstFramePosted(false)
 {
 }
 
@@ -30,23 +30,24 @@ void SurfaceObserver::setListener(QObject *listener) // called in Qt Gui thread
     m_listener = listener;
     m_listenerLock.unlock();
 
-    if (m_framesAvailable > 0) {
-        Q_EMIT framesPosted(m_framesAvailable);
+    if (m_firstFramePosted) {
+        Q_EMIT framePosted();
     }
 }
 
-void SurfaceObserver::frame_posted(int framesAvailable) //called in Mir thread
+void SurfaceObserver::frame_posted(int /*framesAvailable*/) //called in Mir thread
 {
-    m_framesAvailable = framesAvailable;
+    // framesAvailable is always set to 1, even if not the case. Mir plans to remove the parameter
+    m_firstFramePosted = true;
 
     m_listenerLock.lockForRead();
     if (m_listener) {
-        Q_EMIT framesPosted(framesAvailable);
+        Q_EMIT framePosted();
     }
     m_listenerLock.unlock();
 }
 
-int SurfaceObserver::framesAvailable() const
+bool SurfaceObserver::firstFramePosted() const
 {
-    return m_framesAvailable;
+    return m_firstFramePosted;
 }

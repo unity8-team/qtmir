@@ -45,14 +45,14 @@ public:
     void orientation_set_to(MirOrientation) override {}
     void client_surface_close_requested() override {}
 
-    int framesAvailable() const;
+    bool firstFramePosted() const;
 
 Q_SIGNALS:
-    void framesPosted(int framesAvailable);
+    void framePosted();
 
 private:
     QObject *m_listener;
-    int m_framesAvailable;
+    bool m_firstFramePosted;
     QReadWriteLock m_listenerLock;
 };
 
