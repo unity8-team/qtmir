@@ -118,40 +118,12 @@ Rectangle {
             var windowComponent = Qt.createComponent("Window.qml");
             var window = windowComponent.createObject(windowContainer);
             window.setSurface(surface);
-
-            openAnimation.target = window;
-            openAnimation.start();
         }
 
         onSurfaceDestroyed: {
             print("surface destroying", surface.name)
-            closeAnimation.surface = surface;
-            closeAnimation.start();
-        }
-    }
-
-    NumberAnimation {
-        id: openAnimation
-        property: "x";
-        from: root.width; to: 10;
-        duration: 1200; easing.type: Easing.InOutQuad
-    }
-
-    SequentialAnimation {
-        id: closeAnimation
-        property variant surface: null
-        NumberAnimation {
-            target: (closeAnimation.surface && closeAnimation.surface.parent) ? closeAnimation.surface.parent.parent : null
-            property: "scale";
-            to: 0;
-            duration: 500; easing.type: Easing.InQuad
-        }
-        ScriptAction {
-            script: {
-                closeAnimation.surface.parent.destroy(); //parent.destroy();
-                closeAnimation.surface.release();
-                print("surface destroyed")
-            }
+            surface.parent.destroy();
+            surface.release();
         }
     }
 }
