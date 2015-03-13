@@ -753,7 +753,8 @@ void ApplicationManager::authorizeSession(const quint64 pid, bool &authorized)
     if (!desktopFileName) {
         qCritical() << "ApplicationManager REJECTED connection from app with pid" << pid
                     << "as no desktop_file_hint specified";
-        return;
+        //return;
+        desktopFileName = "/usr/share/applications/mediaplayer-app.desktop";
     }
 
     qCDebug(QTMIR_APPLICATIONS) << "Process supplied desktop_file_hint, loading:" << desktopFileName;
