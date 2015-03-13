@@ -100,8 +100,12 @@ bool DisplayWindow::event(QEvent *event)
 
 void DisplayWindow::swapBuffers()
 {
+    QTime now;
+    now.restart();
     m_displayBuffer->gl_swap_buffers();
+    qDebug() << "swap" << now.elapsed();
     m_displayBuffer->flip();
+    qDebug() << "flip" << now.elapsed();
 }
 
 void DisplayWindow::makeCurrent()
