@@ -40,6 +40,8 @@ namespace mg = mir::geometry;
 
 Q_LOGGING_CATEGORY(QTMIR_SENSOR_MESSAGES, "qtmir.sensor")
 
+#define DEFAULT_GRID_UNIT_PX 8
+
 namespace {
 bool isLittleEndian() {
     unsigned int i = 1;
@@ -111,10 +113,10 @@ Screen::Screen(mir::graphics::DisplayConfigurationOutput const &screen)
     , m_orientationSensor(new QOrientationSensor(this))
     , m_unityScreen(nullptr)
 {
-    QByteArray stringValue = qgetenv("QT_DEVICE_PIXEL_RATIO");
+    QByteArray stringValue = qgetenv("GRID_UNIT_PX");
     bool ok;
     float value = stringValue.toFloat(&ok);
-    m_devicePixelRatio = ok ? value : 1.0;
+    m_devicePixelRatio = ok ? (value / DEFAULT_GRID_UNIT_PX) : 1.0;
 
     readMirDisplayConfiguration(screen);
 

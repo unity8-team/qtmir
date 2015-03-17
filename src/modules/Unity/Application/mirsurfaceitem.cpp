@@ -47,6 +47,8 @@
 #include <mir/geometry/rectangle.h>
 #include <mir_toolkit/event.h>
 
+#define DEFAULT_GRID_UNIT_PX 8
+
 namespace mg = mir::graphics;
 
 namespace qtmir {
@@ -252,6 +254,11 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
 {
     qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::MirSurfaceItem";
 
+    QByteArray stringValue = qgetenv("GRID_UNIT_PX");
+    bool ok;
+    float value = stringValue.toFloat(&ok);
+    m_devicePixelRatio = ok ? (value / DEFAULT_GRID_UNIT_PX) : 1.0;
+
     m_surfaceObserver = observer;
     if (observer) {
         connect(observer.get(), &SurfaceObserver::framesPosted, this, &MirSurfaceItem::surfaceDamaged);
@@ -268,6 +275,7 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     setAcceptHoverEvents(true);
 
     // fetch surface geometry
+    qDebug() << "**** init surface:" << m_surface->size().width.as_float() << m_surface->size().height.as_float();
     setImplicitSize(static_cast<qreal>(m_surface->size().width.as_float()),
                     static_cast<qreal>(m_surface->size().height.as_float()));
 
@@ -719,8 +727,8 @@ void MirSurfaceItem::updateMirSurfaceSize()
     int mirWidth = m_surface->size().width.as_int();
     int mirHeight = m_surface->size().height.as_int();
 
-    int qmlWidth = (int)width();
-    int qmlHeight = (int)height();
+    int qmlWidth = (int)width() * m_devicePixelRatio;
+    int qmlHeight = (int)height() * m_devicePixelRatio;
 
     bool mirSizeIsDifferent = qmlWidth != mirWidth || qmlHeight != mirHeight;
 
@@ -814,12 +822,14 @@ void MirSurfaceItem::syncSurfaceSizeWithItemSize()
     int mirWidth = m_surface->size().width.as_int();
     int mirHeight = m_surface->size().width.as_int();
 
-    // mzanetti note: This would scale things
-    if ((int)width()*2 != mirWidth || (int)height()*2 != mirHeight) {
+    int scaledWidth = width() * m_devicePixelRatio;
+    int scaledHeight = height() * m_devicePixelRatio;
+    if (scaledHeight != mirWidth || scaledHeight != mirHeight) {
         qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::syncSurfaceSizeWithItemSize()";
-        mir::geometry::Size newMirSize((int)width()*2, (int)height()*2);
+        mir::geometry::Size newMirSize(scaledWidth, scaledHeight);
         m_surface->resize(newMirSize);
-        setImplicitSize(width()*2, height()*2);
+        qDebug() << "**** syncSurfaceSizeWithItemSize" << width() << height();
+        setImplicitSize(scaledWidth, scaledHeight);
     }
 }
 

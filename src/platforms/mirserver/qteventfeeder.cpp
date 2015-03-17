@@ -32,6 +32,8 @@
 
 Q_LOGGING_CATEGORY(QTMIR_MIR_INPUT, "qtmir.mir.input")
 
+#define DEFAULT_GRID_UNIT_PX 8
+
 // from android-input AMOTION_EVENT_ACTION_*, hidden inside mir bowels
 // mir headers should define them
 const int QtEventFeeder::MirEventActionMask = 0xff;
@@ -207,10 +209,10 @@ QtEventFeeder::QtEventFeeder(QtEventFeeder::QtWindowSystemInterface *windowSyste
             QTouchDevice::Position | QTouchDevice::Area | QTouchDevice::Pressure |
             QTouchDevice::NormalizedPosition);
     mQtWindowSystem->registerTouchDevice(mTouchDevice);
-    QByteArray stringValue = qgetenv("QT_DEVICE_PIXEL_RATIO");
+    QByteArray stringValue = qgetenv("GRID_UNIT_PX");
     bool ok;
     float value = stringValue.toFloat(&ok);
-    m_devicePixelRatio = ok ? value : 1.0;
+    m_devicePixelRatio = ok ? (value / DEFAULT_GRID_UNIT_PX) : 1.0;
 }
 
 QtEventFeeder::~QtEventFeeder()
