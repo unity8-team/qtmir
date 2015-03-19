@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Canonical, Ltd.
+ * Copyright (C) 2014-2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -20,6 +20,8 @@
 // Qt
 #include <qpa/qwindowsysteminterface.h>
 
+#include <mir_toolkit/mir_client_library.h>
+
 class UbuntuClientIntegration;
 class UbuntuWindow;
 
@@ -34,13 +36,16 @@ public:
     // QObject methods.
     void customEvent(QEvent* event) override;
 
-    void postEvent(UbuntuWindow* window, const void* event);
+    void postEvent(UbuntuWindow* window, const MirEvent *event);
     UbuntuClientIntegration* integration() const { return mIntegration; }
 
 protected:
-    void dispatchKeyEvent(QWindow* window, const void* event);
-    void dispatchMotionEvent(QWindow* window, const void* event);
-    void dispatchOrientationEvent(QWindow* window, const void* event);
+    void dispatchKeyEvent(QWindow *window, const MirInputEvent *event);
+    void dispatchPointerEvent(QWindow *window, const MirInputEvent *event);
+    void dispatchTouchEvent(QWindow *window, const MirInputEvent *event);
+    void dispatchInputEvent(QWindow *window, const MirInputEvent *event);
+    
+    void dispatchOrientationEvent(QWindow* window, const MirOrientationEvent *event);
 
 private:
     UbuntuClientIntegration* mIntegration;

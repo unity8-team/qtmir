@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Canonical, Ltd.
+ * Copyright (C) 2014-2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -20,6 +20,8 @@
 #include <qpa/qplatformwindow.h>
 #include <QSharedPointer>
 
+#include <mir_toolkit/mir_client_library.h>
+
 class UbuntuClipboard;
 class UbuntuInput;
 class UbuntuScreen;
@@ -29,8 +31,8 @@ class UbuntuWindow : public QObject, public QPlatformWindow
 {
     Q_OBJECT
 public:
-    UbuntuWindow(QWindow* w, QSharedPointer<UbuntuClipboard> clipboard, UbuntuScreen* screen,
-                 UbuntuInput* input, void* instance);
+    UbuntuWindow(QWindow *w, QSharedPointer<UbuntuClipboard> clipboard, UbuntuScreen *screen,
+                 UbuntuInput *input, MirConnection *mir_connection);
     virtual ~UbuntuWindow();
 
     // QPlatformWindow methods.

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Canonical, Ltd.
+ * Copyright (C) 2014-2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -156,7 +156,7 @@ QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window) 
 QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window)
 {
     QPlatformWindow* platformWindow = new UbuntuWindow(
-            window, mClipboard, static_cast<UbuntuScreen*>(mScreen), mInput, mInstance);
+            window, mClipboard, static_cast<UbuntuScreen*>(mScreen), mInput, u_application_instance_get_mir_connection(mInstance));
     platformWindow->requestActivateWindow();
     return platformWindow;
 }
