@@ -56,7 +56,6 @@ private:
     EGLDisplay mEglDisplay;
     EGLConfig mEglConfig;
     EGLNativeDisplayType mEglNativeDisplay;
-    QRect mActualGeometry;
 };
 
 #endif // UBUNTU_SCREEN_H

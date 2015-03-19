@@ -164,7 +164,6 @@ UbuntuScreen::UbuntuScreen()
     ua_ui_display_destroy(display);
 
     mGeometry = QRect(0, 0, kScreenWidth, kScreenHeight);
-    mActualGeometry = mGeometry;
 
     DLOG("QUbuntuScreen::QUbuntuScreen (this=%p)", this);
 
