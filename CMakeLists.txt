@@ -81,8 +81,6 @@ pkg_check_modules(LTTNG lttng-ust)
 pkg_check_modules(QTDBUSTEST libqtdbustest-1 REQUIRED)
 pkg_check_modules(QTDBUSMOCK libqtdbusmock-1 REQUIRED)
 
-add_definitions(-DMIR_REQUIRE_DEPRECATED_EVENT_OPT_IN=1)
-
 # We expect this to be set via debian/rules for GLES builds
 if ("${USE_OPENGLES}" STREQUAL 1)
     message(STATUS "Qt5 determined to be compiled with GLES support")

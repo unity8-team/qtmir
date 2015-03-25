@@ -71,7 +71,10 @@ struct MockSurface : public mir::scene::Surface
     // from mir::input::surface
     MOCK_CONST_METHOD1(input_area_contains, bool(geometry::Point const& point));
     MOCK_CONST_METHOD0(reception_mode, input::InputReceptionMode());
-    MOCK_METHOD1(consume, void(MirEvent const& event));
+
+    // TODO: We can't mock this because GMock wants to be able to default construct the now opaque MirEvent
+    void consume(MirEvent const& event) { consume(&event); }
+    MOCK_METHOD1(consume, void(MirEvent const*));
 
     // from mir::frontend::surface
     MOCK_CONST_METHOD0(pixel_format, MirPixelFormat());
