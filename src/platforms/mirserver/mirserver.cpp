@@ -88,7 +88,9 @@ MirServer::MirServer(int argc, char const* argv[], QObject* parent)
 
     override_the_window_manager_builder([this](mir::shell::FocusController*)
         {
-            return std::make_shared<MirWindowManager>(the_shell_display_layout());
+            auto const result = std::make_shared<MirWindowManager>(the_shell_display_layout());
+            m_windowManager = result;
+            return result;
         });
 
     set_terminator([&](int)
