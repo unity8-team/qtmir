@@ -51,9 +51,9 @@ void connectToSessionListener(MirSurfaceManager *manager, SessionListener *liste
                      manager, &MirSurfaceManager::onSessionDestroyingSurface);
 }
 
-void connectToShell(MirSurfaceManager *manager, MirWindowManager *shell)
+void connectToWindowManager(MirSurfaceManager *manager, MirWindowManager *windowManager)
 {
-    QObject::connect(shell, &MirWindowManager::surfaceAttributeChanged,
+    QObject::connect(windowManager, &MirWindowManager::surfaceAttributeChanged,
                      manager, &MirSurfaceManager::onSurfaceAttributeChanged);
 }
 
@@ -76,7 +76,7 @@ MirSurfaceManager* MirSurfaceManager::singleton()
         the_surface_manager = new MirSurfaceManager(nativeInterface->m_mirServer, shell.lock().get(), SessionManager::singleton());
 
         connectToSessionListener(the_surface_manager, sessionListener);
-        connectToShell(the_surface_manager, window_manager);
+        connectToWindowManager(the_surface_manager, window_manager);
     }
     return the_surface_manager;
 }
