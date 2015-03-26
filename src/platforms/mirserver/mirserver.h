@@ -23,7 +23,7 @@
 class QtEventFeeder;
 class SessionListener;
 class SessionAuthorizer;
-class MirShell;
+class MirWindowManager;
 class PromptSessionListener;
 
 // We use virtual inheritance of mir::Server to facilitate derived classes (e.g. testing)
@@ -34,7 +34,7 @@ class MirServer : public QObject, private virtual mir::Server
 
     Q_PROPERTY(SessionAuthorizer* sessionAuthorizer READ sessionAuthorizer CONSTANT)
     Q_PROPERTY(SessionListener* sessionListener READ sessionListener CONSTANT)
-    Q_PROPERTY(MirShell* shell READ shell CONSTANT)
+    Q_PROPERTY(MirWindowManager* shell READ shell CONSTANT)
     Q_PROPERTY(PromptSessionListener* promptSessionListener READ promptSessionListener CONSTANT)
 
 public:
@@ -51,17 +51,18 @@ public:
     using mir::Server::the_prompt_session_manager;
     using mir::Server::the_session_authorizer;
     using mir::Server::the_session_listener;
+    using mir::Server::the_shell;
 
     /* qt specific */
     // getters
     SessionAuthorizer *sessionAuthorizer();
     SessionListener *sessionListener();
     PromptSessionListener *promptSessionListener();
-    MirShell *shell();
+    MirWindowManager *shell();
 
 private:
     std::shared_ptr<QtEventFeeder> m_qtEventFeeder;
-    std::weak_ptr<MirShell> m_shell;
+    std::weak_ptr<MirWindowManager> m_shell;
 };
 
 #endif // MIRSERVER_H

@@ -46,6 +46,7 @@
 // Mir
 #include <mir/geometry/rectangle.h>
 #include <mir/events/event_builders.h>
+#include <mir/shell/shell.h>
 #include <mir_toolkit/event.h>
 
 namespace mg = mir::graphics;
@@ -187,7 +188,7 @@ public Q_SLOTS:
 
 MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
                                SessionInterface* session,
-                               MirShell *shell,
+                               mir::shell::Shell *shell,
                                std::shared_ptr<SurfaceObserver> observer,
                                QQuickItem *parent)
     : QQuickItem(parent)

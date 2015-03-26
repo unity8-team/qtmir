@@ -17,7 +17,7 @@
 #ifndef QPAMIRSERVER_SHELL_H
 #define QPAMIRSERVER_SHELL_H
 
-#include <mir/shell/abstract_shell.h>
+#include <mir/shell/null_window_manager.h>
 #include <QObject>
 
 namespace mir {
@@ -26,23 +26,22 @@ namespace mir {
     }
 }
 
-class MirShell : public QObject, public mir::shell::AbstractShell
+class MirWindowManager : public QObject, public mir::shell::NullWindowManager
 {
     Q_OBJECT
 
 public:
-    MirShell(
-        const std::shared_ptr<mir::shell::InputTargeter> &inputTargeter,
-        const std::shared_ptr<mir::scene::SurfaceCoordinator> &surfaceCoordinator,
-        const std::shared_ptr<mir::scene::SessionCoordinator> &sessionCoordinator,
-        const std::shared_ptr<mir::scene::PromptSessionManager> &promptSessionManager,
-        const std::shared_ptr<mir::shell::DisplayLayout> &displayLayout);
+    explicit MirWindowManager(const std::shared_ptr<mir::shell::DisplayLayout> &displayLayout);
 
-    virtual mir::frontend::SurfaceId create_surface(const std::shared_ptr<mir::scene::Session>& session, const mir::scene::SurfaceCreationParameters &params);
+    auto add_surface(
+        std::shared_ptr<mir::scene::Session> const& session,
+        mir::scene::SurfaceCreationParameters const& params,
+        std::function<mir::frontend::SurfaceId(std::shared_ptr<mir::scene::Session> const& session, mir::scene::SurfaceCreationParameters const& params)> const& build)
+    -> mir::frontend::SurfaceId override;
 
     int set_surface_attribute(
-        const std::shared_ptr<mir::scene::Session> &session,
-        const std::shared_ptr<mir::scene::Surface> &surface,
+        std::shared_ptr<mir::scene::Session> const& session,
+        std::shared_ptr<mir::scene::Surface> const& surface,
         MirSurfaceAttrib attrib,
         int value) override;
 
