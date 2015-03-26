@@ -31,7 +31,7 @@
 #include "nativeinterface.h"
 #include "mirserver.h"
 #include "sessionlistener.h"
-#include "mirshell.h"
+#include "mirwindowmanager.h"
 #include "logging.h"
 
 Q_LOGGING_CATEGORY(QTMIR_SURFACES, "qtmir.surfaces")

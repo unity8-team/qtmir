@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mirshell.h"
+#include "mirwindowmanager.h"
 #include "logging.h"
 #include "tracepoints.h" // generated from tracepoints.tp
 

@@ -14,8 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef QPAMIRSERVER_SHELL_H
-#define QPAMIRSERVER_SHELL_H
+#ifndef MIRWINDOWMANAGER_H
+#define MIRWINDOWMANAGER_H
 
 #include <mir/shell/null_window_manager.h>
 #include <QObject>
@@ -52,4 +52,4 @@ private:
     std::shared_ptr<mir::shell::DisplayLayout> const m_displayLayout;
 };
 
-#endif /* QPAMIRSERVER_SHELL_H */
+#endif /* MIRWINDOWMANAGER_H */

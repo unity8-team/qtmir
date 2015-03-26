@@ -19,7 +19,7 @@
 #include "mirserver.h"
 
 // local
-#include "mirshell.h"
+#include "mirwindowmanager.h"
 #include "mirglconfig.h"
 #include "mirserverstatuslistener.h"
 #include "promptsessionlistener.h"
