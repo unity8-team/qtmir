@@ -47,10 +47,7 @@ public:
     using mir::Server::the_display;
     using mir::Server::the_gl_config;
     using mir::Server::the_main_loop;
-    using mir::Server::the_prompt_session_listener;
     using mir::Server::the_prompt_session_manager;
-    using mir::Server::the_session_authorizer;
-    using mir::Server::the_session_listener;
     using mir::Server::the_shell;
 
     /* qt specific */
@@ -62,6 +59,9 @@ public:
 
 private:
     std::shared_ptr<QtEventFeeder> m_qtEventFeeder;
+    std::weak_ptr<SessionAuthorizer> m_sessionAuthorizer;
+    std::weak_ptr<SessionListener> m_sessionListener;
+    std::weak_ptr<PromptSessionListener> m_promptSessionListener;
     std::weak_ptr<MirWindowManager> m_windowManager;
 };
 
