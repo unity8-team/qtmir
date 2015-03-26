@@ -30,7 +30,7 @@ namespace ms = mir::scene;
 MirWindowManager::MirWindowManager(const std::shared_ptr<mir::shell::DisplayLayout> &displayLayout) :
         m_displayLayout{displayLayout}
 {
-    qCDebug(QTMIR_MIR_MESSAGES) << "MirShell::MirShell";
+    qCDebug(QTMIR_MIR_MESSAGES) << "MirWindowManager::MirWindowManager";
 }
 
 auto MirWindowManager::add_surface(
@@ -52,7 +52,7 @@ auto MirWindowManager::add_surface(
     m_displayLayout->size_to_output(rect);
     placedParameters.size = rect.size;
 
-    qCDebug(QTMIR_MIR_MESSAGES) << "MirShell::create_surface(): size requested ("
+    qCDebug(QTMIR_MIR_MESSAGES) << "MirWindowManager::add_surface(): size requested ("
         << requestParameters.size.width.as_int() << "," << requestParameters.size.height.as_int() << ") and placed ("
         << placedParameters.size.width.as_int() << "," << placedParameters.size.height.as_int() << ")";
 
