@@ -53,21 +53,21 @@ MirServer::MirServer(int argc, char const* argv[], QObject* parent)
 
     override_the_session_listener([this]
         {
-            auto const result = std::make_shared<SessionListener>();
+            const auto result = std::make_shared<SessionListener>();
             m_sessionListener = result;
             return result;
         });
 
     override_the_prompt_session_listener([this]
         {
-            auto const result = std::make_shared<PromptSessionListener>();
+            const auto result = std::make_shared<PromptSessionListener>();
             m_promptSessionListener = result;
             return result;
         });
 
     override_the_session_authorizer([this]
         {
-            auto const result = std::make_shared<SessionAuthorizer>();
+            const auto result = std::make_shared<SessionAuthorizer>();
             m_sessionAuthorizer = result;
             return result;
         });
@@ -94,7 +94,7 @@ MirServer::MirServer(int argc, char const* argv[], QObject* parent)
 
     override_the_window_manager_builder([this](mir::shell::FocusController*)
         {
-            auto const result = std::make_shared<MirWindowManager>(the_shell_display_layout());
+            const auto result = std::make_shared<MirWindowManager>(the_shell_display_layout());
             m_windowManager = result;
             return result;
         });
