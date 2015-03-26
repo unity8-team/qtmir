@@ -141,7 +141,7 @@ PromptSessionListener *MirServer::promptSessionListener()
     return static_cast<PromptSessionListener*>(sharedPtr.get());
 }
 
-MirWindowManager *MirServer::shell()
+MirWindowManager *MirServer::windowManager()
 {
-    return m_shell.lock().get();
+    return m_windowManager.lock().get();
 }

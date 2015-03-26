@@ -34,7 +34,7 @@ class MirServer : public QObject, private virtual mir::Server
 
     Q_PROPERTY(SessionAuthorizer* sessionAuthorizer READ sessionAuthorizer CONSTANT)
     Q_PROPERTY(SessionListener* sessionListener READ sessionListener CONSTANT)
-    Q_PROPERTY(MirWindowManager* shell READ shell CONSTANT)
+    Q_PROPERTY(MirWindowManager* windowManager READ windowManager CONSTANT)
     Q_PROPERTY(PromptSessionListener* promptSessionListener READ promptSessionListener CONSTANT)
 
 public:
@@ -58,11 +58,11 @@ public:
     SessionAuthorizer *sessionAuthorizer();
     SessionListener *sessionListener();
     PromptSessionListener *promptSessionListener();
-    MirWindowManager *shell();
+    MirWindowManager *windowManager();
 
 private:
     std::shared_ptr<QtEventFeeder> m_qtEventFeeder;
-    std::weak_ptr<MirWindowManager> m_shell;
+    std::weak_ptr<MirWindowManager> m_windowManager;
 };
 
 #endif // MIRSERVER_H

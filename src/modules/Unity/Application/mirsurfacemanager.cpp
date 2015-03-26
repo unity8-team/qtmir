@@ -70,7 +70,7 @@ MirSurfaceManager* MirSurfaceManager::singleton()
         }
 
         SessionListener *sessionListener = static_cast<SessionListener*>(nativeInterface->nativeResourceForIntegration("SessionListener"));
-        MirWindowManager *window_manager = static_cast<MirWindowManager*>(nativeInterface->nativeResourceForIntegration("Shell"));
+        MirWindowManager *window_manager = static_cast<MirWindowManager*>(nativeInterface->nativeResourceForIntegration("WindowManager"));
 
         std::weak_ptr<mir::shell::Shell> shell = nativeInterface->m_mirServer->the_shell();
         the_surface_manager = new MirSurfaceManager(nativeInterface->m_mirServer, shell.lock().get(), SessionManager::singleton());
