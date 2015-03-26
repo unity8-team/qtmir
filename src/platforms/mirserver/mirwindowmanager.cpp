@@ -71,3 +71,40 @@ int MirWindowManager::set_surface_attribute(
     Q_EMIT surfaceAttributeChanged(surface.get(), attrib, result);
     return result;
 }
+
+void MirWindowManager::add_session(std::shared_ptr<mir::scene::Session> const& /*session*/)
+{
+}
+
+void MirWindowManager::remove_session(std::shared_ptr<mir::scene::Session> const& /*session*/)
+{
+}
+
+void MirWindowManager::remove_surface(
+    std::shared_ptr<mir::scene::Session> const& /*session*/,
+    std::weak_ptr<mir::scene::Surface> const& /*surface*/)
+{
+}
+
+void MirWindowManager::add_display(mir::geometry::Rectangle const& /*area*/)
+{
+}
+
+void MirWindowManager::remove_display(mir::geometry::Rectangle const& /*area*/)
+{
+}
+
+bool MirWindowManager::handle_key_event(MirKeyInputEvent const* /*event*/)
+{
+    return false;
+}
+
+bool MirWindowManager::handle_touch_event(MirTouchInputEvent const* /*event*/)
+{
+    return false;
+}
+
+bool MirWindowManager::handle_pointer_event(MirPointerInputEvent const* /*event*/)
+{
+    return false;
+}

@@ -17,7 +17,7 @@
 #ifndef MIRWINDOWMANAGER_H
 #define MIRWINDOWMANAGER_H
 
-#include <mir/shell/null_window_manager.h>
+#include <mir/shell/window_manager.h>
 #include <QObject>
 
 namespace mir {
@@ -26,7 +26,7 @@ namespace mir {
     }
 }
 
-class MirWindowManager : public QObject, public mir::shell::NullWindowManager
+class MirWindowManager : public QObject, public mir::shell::WindowManager
 {
     Q_OBJECT
 
@@ -44,6 +44,24 @@ public:
         std::shared_ptr<mir::scene::Surface> const& surface,
         MirSurfaceAttrib attrib,
         int value) override;
+
+    void add_session(std::shared_ptr<mir::scene::Session> const& session) override;
+
+    void remove_session(std::shared_ptr<mir::scene::Session> const& session) override;
+
+    void remove_surface(
+        std::shared_ptr<mir::scene::Session> const& session,
+        std::weak_ptr<mir::scene::Surface> const& surface) override;
+
+    void add_display(mir::geometry::Rectangle const& area) override;
+
+    void remove_display(mir::geometry::Rectangle const& area) override;
+
+    bool handle_key_event(MirKeyInputEvent const* event) override;
+
+    bool handle_touch_event(MirTouchInputEvent const* event) override;
+
+    bool handle_pointer_event(MirPointerInputEvent const* event) override;
 
 Q_SIGNALS:
     void surfaceAttributeChanged(mir::scene::Surface const*, const MirSurfaceAttrib, const int);
