@@ -56,7 +56,6 @@ class MirSurfaceManager : public MirSurfaceItemModel
 
 public:
     explicit MirSurfaceManager(
-        const QSharedPointer<MirServer>& mirServer,
         mir::shell::Shell *shell,
         SessionManager* sessionManager,
         QObject *parent = 0
@@ -83,7 +82,6 @@ protected:
     QMutex m_mutex;
 
 private:
-    QSharedPointer<MirServer> m_mirServer;
     mir::shell::Shell *const m_shell;
     SessionManager* m_sessionManager;
     static MirSurfaceManager *the_surface_manager;

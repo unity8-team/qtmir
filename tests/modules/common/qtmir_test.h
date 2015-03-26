@@ -109,7 +109,6 @@ public:
             &applicationManager,
         }
         , surfaceManager{
-            mirServer,
             mirShell,
             &sessionManager
         }

@@ -73,7 +73,7 @@ MirSurfaceManager* MirSurfaceManager::singleton()
         MirWindowManager *window_manager = static_cast<MirWindowManager*>(nativeInterface->nativeResourceForIntegration("WindowManager"));
 
         std::weak_ptr<mir::shell::Shell> shell = nativeInterface->m_mirServer->the_shell();
-        the_surface_manager = new MirSurfaceManager(nativeInterface->m_mirServer, shell.lock().get(), SessionManager::singleton());
+        the_surface_manager = new MirSurfaceManager(shell.lock().get(), SessionManager::singleton());
 
         connectToSessionListener(the_surface_manager, sessionListener);
         connectToWindowManager(the_surface_manager, window_manager);
@@ -82,12 +82,10 @@ MirSurfaceManager* MirSurfaceManager::singleton()
 }
 
 MirSurfaceManager::MirSurfaceManager(
-        const QSharedPointer<MirServer>& mirServer,
         mir::shell::Shell *shell,
         SessionManager* sessionManager,
         QObject *parent)
     : MirSurfaceItemModel(parent)
-    , m_mirServer(mirServer)
     , m_shell(shell)
     , m_sessionManager(sessionManager)
 {
