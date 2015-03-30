@@ -19,13 +19,11 @@
 #include "mirserver.h"
 
 // local
-#include "focussetter.h"
+#include "mirshell.h"
 #include "mirglconfig.h"
-#include "mirplacementstrategy.h"
 #include "mirserverstatuslistener.h"
 #include "promptsessionlistener.h"
 #include "sessionlistener.h"
-#include "surfaceconfigurator.h"
 #include "sessionauthorizer.h"
 #include "qtcompositor.h"
 #include "qteventfeeder.h"
@@ -53,12 +51,6 @@ MirServer::MirServer(int argc, char const* argv[], QObject* parent)
     set_command_line_handler(&ignore_unparsed_arguments);
     set_command_line(argc, argv);
 
-    override_the_placement_strategy([this]
-        {
-            m_placementStrategy = std::make_shared<MirPlacementStrategy>(the_shell_display_layout());
-            return m_placementStrategy;
-        });
-
     override_the_session_listener([]
         {
             return std::make_shared<SessionListener>();
@@ -67,11 +59,6 @@ MirServer::MirServer(int argc, char const* argv[], QObject* parent)
     override_the_prompt_session_listener([]
         {
             return std::make_shared<PromptSessionListener>();
-        });
-
-    override_the_surface_configurator([]
-        {
-            return std::make_shared<SurfaceConfigurator>();
         });
 
     override_the_session_authorizer([]
@@ -99,9 +86,16 @@ MirServer::MirServer(int argc, char const* argv[], QObject* parent)
             return std::make_shared<MirServerStatusListener>();
         });
 
-    override_the_shell_focus_setter([]
+    override_the_shell([this]
         {
-            return std::make_shared<FocusSetter>();
+            auto const shell = std::make_shared<MirShell>(
+                the_input_targeter(),
+                the_surface_coordinator(),
+                the_session_coordinator(),
+                the_prompt_session_manager());
+
+            m_shell = shell;
+            return shell;
         });
 
     set_terminator([&](int)
@@ -154,19 +148,7 @@ PromptSessionListener *MirServer::promptSessionListener()
     return static_cast<PromptSessionListener*>(sharedPtr.get());
 }
 
-SurfaceConfigurator *MirServer::surfaceConfigurator()
+MirShell *MirServer::shell()
 {
-    auto sharedPtr = the_surface_configurator();
-    if (sharedPtr.unique()) return 0;
-
-    return static_cast<SurfaceConfigurator*>(sharedPtr.get());
+    return m_shell.lock().get();
 }
-
-MirPlacementStrategy *MirServer::placementStrategy()
-{
-    //auto sharedPtr = the_placement_strategy(); - re-instate when bug lp:1407687 fixed
-    if (m_placementStrategy.unique()) return 0;
-
-    return static_cast<MirPlacementStrategy*>(m_placementStrategy.get());
-}
-

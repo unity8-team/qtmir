@@ -23,9 +23,8 @@
 class QtEventFeeder;
 class SessionListener;
 class SessionAuthorizer;
-class SurfaceConfigurator;
+class MirShell;
 class PromptSessionListener;
-class MirPlacementStrategy;
 
 // We use virtual inheritance of mir::Server to facilitate derived classes (e.g. testing)
 // calling initialization functions before MirServer is constructed.
@@ -35,9 +34,8 @@ class MirServer : public QObject, private virtual mir::Server
 
     Q_PROPERTY(SessionAuthorizer* sessionAuthorizer READ sessionAuthorizer CONSTANT)
     Q_PROPERTY(SessionListener* sessionListener READ sessionListener CONSTANT)
-    Q_PROPERTY(SurfaceConfigurator* surfaceConfigurator READ surfaceConfigurator CONSTANT)
+    Q_PROPERTY(MirShell* shell READ shell CONSTANT)
     Q_PROPERTY(PromptSessionListener* promptSessionListener READ promptSessionListener CONSTANT)
-    Q_PROPERTY(MirPlacementStrategy* placementStrategy READ placementStrategy CONSTANT)
 
 public:
     MirServer(int argc, char const* argv[], QObject* parent = 0);
@@ -60,12 +58,11 @@ public:
     SessionAuthorizer *sessionAuthorizer();
     SessionListener *sessionListener();
     PromptSessionListener *promptSessionListener();
-    SurfaceConfigurator *surfaceConfigurator();
-    MirPlacementStrategy *placementStrategy();
+    MirShell *shell();
 
 private:
     std::shared_ptr<QtEventFeeder> m_qtEventFeeder;
-    std::shared_ptr<MirPlacementStrategy> m_placementStrategy; // remove when bug lp:1407687 fixed
+    std::weak_ptr<MirShell> m_shell;
 };
 
 #endif // MIRSERVER_H

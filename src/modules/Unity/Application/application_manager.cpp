@@ -28,7 +28,7 @@
 
 // mirserver
 #include "mirserver.h"
-#include "mirplacementstrategy.h"
+#include "mirshell.h"
 #include "nativeinterface.h"
 #include "sessionlistener.h"
 #include "sessionauthorizer.h"
@@ -119,9 +119,9 @@ void connectToSessionAuthorizer(ApplicationManager *manager, SessionAuthorizer *
                      manager, &ApplicationManager::authorizeSession, Qt::BlockingQueuedConnection);
 }
 
-void connectToSurfacePlacementStrategy(ApplicationManager *manager, MirPlacementStrategy *placer)
+void connectToMirShell(ApplicationManager *manager, MirShell *shell)
 {
-    QObject::connect(placer, &MirPlacementStrategy::sessionAboutToCreateSurface,
+    QObject::connect(shell, &MirShell::sessionAboutToCreateSurface,
                      manager, &ApplicationManager::onSessionAboutToCreateSurface, Qt::BlockingQueuedConnection);
 }
 
@@ -155,7 +155,6 @@ ApplicationManager* ApplicationManager::Factory::Factory::create(QJSEngine *jsEn
 
     SessionListener *sessionListener = static_cast<SessionListener*>(nativeInterface->nativeResourceForIntegration("SessionListener"));
     SessionAuthorizer *sessionAuthorizer = static_cast<SessionAuthorizer*>(nativeInterface->nativeResourceForIntegration("SessionAuthorizer"));
-    MirPlacementStrategy *placementStrategy = static_cast<MirPlacementStrategy*>(nativeInterface->nativeResourceForIntegration("SurfacePlacementStrategy"));
 
     QSharedPointer<upstart::ApplicationController> appController(new upstart::ApplicationController());
     QSharedPointer<TaskController> taskController(new TaskController(nullptr, appController));
@@ -179,7 +178,7 @@ ApplicationManager* ApplicationManager::Factory::Factory::create(QJSEngine *jsEn
 
     connectToSessionListener(appManager, sessionListener);
     connectToSessionAuthorizer(appManager, sessionAuthorizer);
-    connectToSurfacePlacementStrategy(appManager, placementStrategy);
+    connectToMirShell(appManager, mirServer->shell());
     connectToTaskController(appManager, taskController.data());
 
     // Emit signal to notify Upstart that Mir is ready to receive client connections
@@ -407,9 +406,12 @@ bool ApplicationManager::suspendApplication(Application *application)
         return false;
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::suspendApplication - appId=" << application->appId();
 
-    // Present in exceptions list, return.
-    if (!m_lifecycleExceptions.filter(application->appId().section('_',0,0)).empty())
+    // Present in exceptions list, explicitly release wakelock and return. There's no need to keep the wakelock
+    // as the process is never suspended and thus has no cleanup to perform when (for example) the display is blanked
+    if (!m_lifecycleExceptions.filter(application->appId().section('_',0,0)).empty()) {
+        m_sharedWakelock->release(application);
         return false;
+    }
 
     if (m_forceDashActive && application->appId() == "unity8-dash") {
         return false;
@@ -906,10 +908,11 @@ void ApplicationManager::onSessionStopping(std::shared_ptr<ms::Session> const& s
     m_hiddenPIDs.removeOne(session->process_id());
 }
 
-void ApplicationManager::onSessionAboutToCreateSurface(const ms::Session &session, SurfaceParameters &params)
+void ApplicationManager::onSessionAboutToCreateSurface(const std::shared_ptr<mir::scene::Session> &session,
+                                                       qtmir::SurfaceParameters &params)
 {
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onSessionAboutToCreateSurface - sessionName="
-                                << session.name().c_str() << "geometry=" << params.geometry
+                                << session->name().c_str() << "geometry=" << params.geometry
                                 << "state" << params.state;
 
     if (m_surfaceAboutToBeCreatedCallback.isCallable()) {
@@ -918,7 +921,7 @@ void ApplicationManager::onSessionAboutToCreateSurface(const ms::Session &sessio
         argument.setProperty("height", params.geometry.height());
         argument.setProperty("state", params.state);
 
-        Application* application = findApplicationWithSession(&session);
+        Application* application = findApplicationWithSession(session.get());
         if (application)
             argument.setProperty("appId", application->appId());
 

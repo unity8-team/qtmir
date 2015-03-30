@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2014 Canonical, Ltd.
+ * Copyright (C) 2013-2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -34,6 +34,7 @@
 #include "globals.h"
 
 class SurfaceObserver;
+class MirShell;
 
 namespace qtmir {
 
@@ -55,6 +56,7 @@ class MirSurfaceItem : public QQuickItem
 public:
     explicit MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
                             SessionInterface* session,
+                            MirShell *shell,
                             std::shared_ptr<SurfaceObserver> observer,
                             QQuickItem *parent = 0);
     ~MirSurfaceItem();
@@ -84,6 +86,7 @@ public:
     // to allow easy touch event injection from tests
     bool processTouchEvent(int eventType,
             ulong timestamp,
+            Qt::KeyboardModifiers modifiers,
             const QList<QTouchEvent::TouchPoint> &touchPoints,
             Qt::TouchPointStates touchPointStates);
 
@@ -102,6 +105,9 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
+    void hoverEnterEvent(QHoverEvent *event) override;
+    void hoverLeaveEvent(QHoverEvent *event) override;
+    void hoverMoveEvent(QHoverEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
 
     void keyPressEvent(QKeyEvent *event) override;
@@ -134,6 +140,7 @@ private:
     void setSurfaceValid(const bool);
 
     bool hasTouchInsideUbuntuKeyboard(const QList<QTouchEvent::TouchPoint> &touchPoints);
+    bool isMouseInsideUbuntuKeyboard(const QMouseEvent *event);
     void syncSurfaceSizeWithItemSize();
 
     bool clientIsRunning() const;
@@ -142,6 +149,7 @@ private:
     void endCurrentTouchSequence(ulong timestamp);
     void validateAndDeliverTouchEvent(int eventType,
             ulong timestamp,
+            Qt::KeyboardModifiers modifiers,
             const QList<QTouchEvent::TouchPoint> &touchPoints,
             Qt::TouchPointStates touchPointStates);
 
@@ -149,6 +157,7 @@ private:
 
     std::shared_ptr<mir::scene::Surface> m_surface;
     QPointer<SessionInterface> m_session;
+    MirShell *const m_shell;
     bool m_firstFrameDrawn;
     bool m_live;
     Qt::ScreenOrientation m_orientation; //FIXME -  have to save the state as Mir has no getter for it (bug:1357429)
@@ -166,6 +175,7 @@ private:
         TouchEvent &operator= (const QTouchEvent &qtEvent) {
             type = qtEvent.type();
             timestamp = qtEvent.timestamp();
+            modifiers = qtEvent.modifiers();
             touchPoints = qtEvent.touchPoints();
             touchPointStates = qtEvent.touchPointStates();
             return *this;
@@ -175,6 +185,7 @@ private:
 
         int type;
         ulong timestamp;
+        Qt::KeyboardModifiers modifiers;
         QList<QTouchEvent::TouchPoint> touchPoints;
         Qt::TouchPointStates touchPointStates;
     } *m_lastTouchEvent;

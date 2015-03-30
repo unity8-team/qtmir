@@ -18,6 +18,7 @@
 #define GLOBALS_H
 
 #include <QObject>
+#include <QSize>
 #include <mir_toolkit/common.h>
 
 namespace qtmir {
@@ -52,6 +53,15 @@ public:
 private:
     Globals() = default;
     ~Globals() = default;
+};
+
+
+
+
+struct SurfaceParameters
+{
+    QSize geometry;
+    Globals::SurfaceState state;
 };
 
 } // namespace qtmir

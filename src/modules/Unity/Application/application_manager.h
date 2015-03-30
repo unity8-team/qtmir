@@ -29,9 +29,9 @@
 #include <unity/shell/application/ApplicationManagerInterface.h>
 
 // local
+#include "globals.h"
 #include "application.h"
 #include "desktopfilereader.h"
-#include "mirplacementstrategy.h"
 
 namespace mir {
     namespace scene {
@@ -131,8 +131,10 @@ public Q_SLOTS:
     void onSessionStarting(const std::shared_ptr<mir::scene::Session> &session);
     void onSessionStopping(const std::shared_ptr<mir::scene::Session> &session);
 
-    void onSessionAboutToCreateSurface(const mir::scene::Session &session, SurfaceParameters &surfaceParameters);
-    void onSessionCreatedSurface(const mir::scene::Session *session, const std::shared_ptr<mir::scene::Surface> &surface);
+    void onSessionAboutToCreateSurface(const std::shared_ptr<mir::scene::Session> &session,
+                                       SurfaceParameters &surfaceParameters);
+    void onSessionCreatedSurface(const mir::scene::Session *session,
+                                 const std::shared_ptr<mir::scene::Surface> &surface);
 
     void onProcessStarting(const QString& appId);
     void onProcessStopped(const QString& appId);
@@ -142,6 +144,7 @@ public Q_SLOTS:
 
 Q_SIGNALS:
     void emptyChanged();
+    void surfaceAboutToBeCreatedCallbackChanged();
 
 private Q_SLOTS:
     void onAppDataChanged(const int role);
