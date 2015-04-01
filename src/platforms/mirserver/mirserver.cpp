@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2014 Canonical, Ltd.
+ * Copyright (C) 2013-2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -19,7 +19,7 @@
 #include "mirserver.h"
 
 // local
-#include "mirshell.h"
+#include "mirwindowmanager.h"
 #include "mirglconfig.h"
 #include "mirserverstatuslistener.h"
 #include "promptsessionlistener.h"
@@ -51,19 +51,25 @@ MirServer::MirServer(int argc, char const* argv[], QObject* parent)
     set_command_line_handler(&ignore_unparsed_arguments);
     set_command_line(argc, argv);
 
-    override_the_session_listener([]
+    override_the_session_listener([this]
         {
-            return std::make_shared<SessionListener>();
+            const auto result = std::make_shared<SessionListener>();
+            m_sessionListener = result;
+            return result;
         });
 
-    override_the_prompt_session_listener([]
+    override_the_prompt_session_listener([this]
         {
-            return std::make_shared<PromptSessionListener>();
+            const auto result = std::make_shared<PromptSessionListener>();
+            m_promptSessionListener = result;
+            return result;
         });
 
-    override_the_session_authorizer([]
+    override_the_session_authorizer([this]
         {
-            return std::make_shared<SessionAuthorizer>();
+            const auto result = std::make_shared<SessionAuthorizer>();
+            m_sessionAuthorizer = result;
+            return result;
         });
 
     override_the_compositor([]
@@ -86,17 +92,11 @@ MirServer::MirServer(int argc, char const* argv[], QObject* parent)
             return std::make_shared<MirServerStatusListener>();
         });
 
-    override_the_shell([this]
+    override_the_window_manager_builder([this](mir::shell::FocusController*)
         {
-            auto const shell = std::make_shared<MirShell>(
-                the_input_targeter(),
-                the_surface_coordinator(),
-                the_session_coordinator(),
-                the_prompt_session_manager(),
-                the_shell_display_layout());
-
-            m_shell = shell;
-            return shell;
+            const auto result = std::make_shared<MirWindowManager>(the_shell_display_layout());
+            m_windowManager = result;
+            return result;
         });
 
     set_terminator([&](int)
@@ -113,43 +113,25 @@ MirServer::MirServer(int argc, char const* argv[], QObject* parent)
 
 /************************************ Shell side ************************************/
 
-//
-// Note about the
-//     if (sharedPtr.unique()) return 0;
-// constructs used in the functions below.
-// The rationale is that if when you do
-//     the_session_authorizer()
-// get a pointer that is unique means that Mir is not
-// holding the pointer and thus when we return from the
-//     sessionAuthorizer()
-// scope the unique pointer will be destroyed so we return 0
-//
+// Note about the"weak_ptr<X>.lock().get();" constructs used in the functions below.
+// An empty weak_ptr<> means that Mir is not holding the pointer so we return nullptr.
 
 SessionAuthorizer *MirServer::sessionAuthorizer()
 {
-    auto sharedPtr = the_session_authorizer();
-    if (sharedPtr.unique()) return 0;
-
-    return static_cast<SessionAuthorizer*>(sharedPtr.get());
+    return m_sessionAuthorizer.lock().get();
 }
 
 SessionListener *MirServer::sessionListener()
 {
-    auto sharedPtr = the_session_listener();
-    if (sharedPtr.unique()) return 0;
-
-    return static_cast<SessionListener*>(sharedPtr.get());
+    return m_sessionListener.lock().get();
 }
 
 PromptSessionListener *MirServer::promptSessionListener()
 {
-    auto sharedPtr = the_prompt_session_listener();
-    if (sharedPtr.unique()) return 0;
-
-    return static_cast<PromptSessionListener*>(sharedPtr.get());
+    return m_promptSessionListener.lock().get();
 }
 
-MirShell *MirServer::shell()
+MirWindowManager *MirServer::windowManager()
 {
-    return m_shell.lock().get();
+    return m_windowManager.lock().get();
 }

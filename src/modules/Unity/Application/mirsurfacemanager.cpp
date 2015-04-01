@@ -31,7 +31,7 @@
 #include "nativeinterface.h"
 #include "mirserver.h"
 #include "sessionlistener.h"
-#include "mirshell.h"
+#include "mirwindowmanager.h"
 #include "logging.h"
 
 Q_LOGGING_CATEGORY(QTMIR_SURFACES, "qtmir.surfaces")
@@ -51,9 +51,9 @@ void connectToSessionListener(MirSurfaceManager *manager, SessionListener *liste
                      manager, &MirSurfaceManager::onSessionDestroyingSurface);
 }
 
-void connectToShell(MirSurfaceManager *manager, MirShell *shell)
+void connectToWindowManager(MirSurfaceManager *manager, MirWindowManager *windowManager)
 {
-    QObject::connect(shell, &MirShell::surfaceAttributeChanged,
+    QObject::connect(windowManager, &MirWindowManager::surfaceAttributeChanged,
                      manager, &MirSurfaceManager::onSurfaceAttributeChanged);
 }
 
@@ -70,23 +70,22 @@ MirSurfaceManager* MirSurfaceManager::singleton()
         }
 
         SessionListener *sessionListener = static_cast<SessionListener*>(nativeInterface->nativeResourceForIntegration("SessionListener"));
-        MirShell *shell = static_cast<MirShell*>(nativeInterface->nativeResourceForIntegration("Shell"));
+        MirWindowManager *window_manager = static_cast<MirWindowManager*>(nativeInterface->nativeResourceForIntegration("WindowManager"));
+        mir::shell::Shell *const shell = static_cast<mir::shell::Shell*>(nativeInterface->nativeResourceForIntegration("mir::shell::Shell"));
 
-        the_surface_manager = new MirSurfaceManager(nativeInterface->m_mirServer, shell, SessionManager::singleton());
+        the_surface_manager = new MirSurfaceManager(shell, SessionManager::singleton());
 
         connectToSessionListener(the_surface_manager, sessionListener);
-        connectToShell(the_surface_manager, shell);
+        connectToWindowManager(the_surface_manager, window_manager);
     }
     return the_surface_manager;
 }
 
 MirSurfaceManager::MirSurfaceManager(
-        const QSharedPointer<MirServer>& mirServer,
-        MirShell *shell,
+        mir::shell::Shell *shell,
         SessionManager* sessionManager,
         QObject *parent)
     : MirSurfaceItemModel(parent)
-    , m_mirServer(mirServer)
     , m_shell(shell)
     , m_sessionManager(sessionManager)
 {
