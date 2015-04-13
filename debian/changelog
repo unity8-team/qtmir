@@ -4,6 +4,18 @@ qtubuntu (0.61) UNRELEASED; urgency=medium
 
  -- Daniel d'Andrada <daniel.dandrada@canonical.com>  Fri, 31 Oct 2014 16:39:11 -0200
 
+qtubuntu (0.60+15.04.20150318-0ubuntu3) vivid; urgency=medium
+
+  * No-change rebuild against latest platform-api
+
+ -- Ricardo Salveti de Araujo <ricardo.salveti@canonical.com>  Thu, 19 Mar 2015 22:37:16 -0300
+
+qtubuntu (0.60+15.04.20150318-0ubuntu2) vivid; urgency=medium
+
+  * No-change rebuild to correct platform-api dependency
+
+ -- Timo Jyrinki <timo-jyrinki@ubuntu.com>  Thu, 19 Mar 2015 11:54:20 +0200
+
 qtubuntu (0.60+15.04.20150318-0ubuntu1) vivid; urgency=medium
 
   [ Alberto Aguirre ]
