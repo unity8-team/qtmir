@@ -40,13 +40,15 @@ namespace mg = mir::geometry;
 
 Q_LOGGING_CATEGORY(QTMIR_SENSOR_MESSAGES, "qtmir.sensor")
 
-#define DEFAULT_GRID_UNIT_PX 8
-
 namespace {
 bool isLittleEndian() {
     unsigned int i = 1;
     char *c = (char*)&i;
     return *c == 1;
+}
+
+int qGetEnvIntValue(const char *varName, bool *ok) {
+    return qgetenv(varName).toInt(ok);
 }
 
 enum QImage::Format qImageFormatFromMirPixelFormat(MirPixelFormat mirPixelFormat) {
@@ -113,11 +115,11 @@ Screen::Screen(mir::graphics::DisplayConfigurationOutput const &screen)
     , m_orientationSensor(new QOrientationSensor(this))
     , m_unityScreen(nullptr)
 {
-    QByteArray stringValue = qgetenv("GRID_UNIT_PX");
+    // Get screen resolution and properties.
     bool ok;
-    float value = stringValue.toFloat(&ok);
-    m_devicePixelRatio = ok ? (value / DEFAULT_GRID_UNIT_PX) : 1.0;
-
+    const int dpr = qGetEnvIntValue("QT_DEVICE_PIXEL_RATIO", &ok);
+    m_devicePixelRatio = (ok && dpr > 0) ? dpr : 1.0;
+qDebug() << "DPR" << m_devicePixelRatio;
     readMirDisplayConfiguration(screen);
 
     // Set the default orientation based on the initial screen dimmensions.

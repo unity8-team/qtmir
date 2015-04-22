@@ -32,8 +32,6 @@
 
 Q_LOGGING_CATEGORY(QTMIR_MIR_INPUT, "qtmir.mir.input")
 
-#define DEFAULT_GRID_UNIT_PX 8
-
 // XKB Keysyms which do not map directly to Qt types (i.e. Unicode points)
 static const uint32_t KeyTable[] = {
     XKB_KEY_Escape,                  Qt::Key_Escape,
@@ -155,6 +153,12 @@ class QtWindowSystem : public QtEventFeeder::QtWindowSystemInterface {
         return mTopLevelWindow->geometry();
     }
 
+    qreal targetWindowDevicePixelRatio() override
+    {
+        Q_ASSERT(!mTopLevelWindow.isNull());
+        return mTopLevelWindow->devicePixelRatio();
+    }
+
     void registerTouchDevice(QTouchDevice *device) override
     {
         QWindowSystemInterface::registerTouchDevice(device);
@@ -211,10 +215,6 @@ QtEventFeeder::QtEventFeeder(QtEventFeeder::QtWindowSystemInterface *windowSyste
             QTouchDevice::Position | QTouchDevice::Area | QTouchDevice::Pressure |
             QTouchDevice::NormalizedPosition);
     mQtWindowSystem->registerTouchDevice(mTouchDevice);
-    QByteArray stringValue = qgetenv("GRID_UNIT_PX");
-    bool ok;
-    float value = stringValue.toFloat(&ok);
-    m_devicePixelRatio = ok ? (value / DEFAULT_GRID_UNIT_PX) : 1.0;
 }
 
 QtEventFeeder::~QtEventFeeder()
@@ -366,6 +366,7 @@ void QtEventFeeder::dispatchTouch(MirInputEvent const* event)
     //     needs to be fixed as soon as the compat input lib adds query support.
     const float kMaxPressure = 1.28;
     const QRect kWindowGeometry = mQtWindowSystem->targetWindowGeometry();
+    const qreal dpr = mQtWindowSystem->targetWindowDevicePixelRatio();
     QList<QWindowSystemInterface::TouchPoint> touchPoints;
 
     // TODO: Is it worth setting the Qt::TouchPointStationary ones? Currently they are left
@@ -374,10 +375,10 @@ void QtEventFeeder::dispatchTouch(MirInputEvent const* event)
     for (int i = 0; i < kPointerCount; ++i) {
         QWindowSystemInterface::TouchPoint touchPoint;
 
-        const float kX = mir_touch_input_event_get_touch_axis_value(tev, i, mir_touch_input_axis_x) / m_devicePixelRatio;
-        const float kY = mir_touch_input_event_get_touch_axis_value(tev, i, mir_touch_input_axis_y) / m_devicePixelRatio;
-        const float kW = mir_touch_input_event_get_touch_axis_value(tev, i, mir_touch_input_axis_touch_major) / m_devicePixelRatio;
-        const float kH = mir_touch_input_event_get_touch_axis_value(tev, i, mir_touch_input_axis_touch_minor) / m_devicePixelRatio;
+        const float kX = mir_touch_input_event_get_touch_axis_value(tev, i, mir_touch_input_axis_x) / dpr;
+        const float kY = mir_touch_input_event_get_touch_axis_value(tev, i, mir_touch_input_axis_y) / dpr;
+        const float kW = mir_touch_input_event_get_touch_axis_value(tev, i, mir_touch_input_axis_touch_major) / dpr;
+        const float kH = mir_touch_input_event_get_touch_axis_value(tev, i, mir_touch_input_axis_touch_minor) / dpr;
         const float kP = mir_touch_input_event_get_touch_axis_value(tev, i, mir_touch_input_axis_pressure);
         touchPoint.id = mir_touch_input_event_get_touch_id(tev, i);
 

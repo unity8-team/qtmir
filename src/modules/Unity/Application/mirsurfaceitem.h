@@ -182,7 +182,6 @@ private:
     MirShell *const m_shell;
     bool m_firstFrameDrawn;
     bool m_live;
-    qreal m_devicePixelRatio;
     Qt::ScreenOrientation m_orientation; //FIXME -  have to save the state as Mir has no getter for it (bug:1357429)
 
     QMirSurfaceTextureProvider *m_textureProvider;

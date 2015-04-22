@@ -48,8 +48,6 @@
 #include <mir/events/event_builders.h>
 #include <mir_toolkit/event.h>
 
-#define DEFAULT_GRID_UNIT_PX 8
-
 namespace mg = mir::graphics;
 
 namespace qtmir {
@@ -203,11 +201,6 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     , m_lastTouchEvent(nullptr)
 {
     qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::MirSurfaceItem";
-
-    QByteArray stringValue = qgetenv("GRID_UNIT_PX");
-    bool ok;
-    float value = stringValue.toFloat(&ok);
-    m_devicePixelRatio = ok ? (value / DEFAULT_GRID_UNIT_PX) : 1.0;
 
     m_surfaceObserver = observer;
     if (observer) {
@@ -722,8 +715,10 @@ void MirSurfaceItem::updateMirSurfaceSize()
     int mirWidth = m_surface->size().width.as_int();
     int mirHeight = m_surface->size().height.as_int();
 
-    int qmlWidth = (int)width() * m_devicePixelRatio;
-    int qmlHeight = (int)height() * m_devicePixelRatio;
+    const qreal dpr = window() ? window()->devicePixelRatio() : 1.0;
+
+    int qmlWidth = (int)width() * dpr;
+    int qmlHeight = (int)height() * dpr;
 
     bool mirSizeIsDifferent = qmlWidth != mirWidth || qmlHeight != mirHeight;
 
@@ -817,8 +812,10 @@ void MirSurfaceItem::syncSurfaceSizeWithItemSize()
     int mirWidth = m_surface->size().width.as_int();
     int mirHeight = m_surface->size().width.as_int();
 
-    int scaledWidth = width() * m_devicePixelRatio;
-    int scaledHeight = height() * m_devicePixelRatio;
+    const qreal dpr = window() ? window()->devicePixelRatio() : 1.0;
+
+    int scaledWidth = width() * dpr;
+    int scaledHeight = height() * dpr;
     if (scaledHeight != mirWidth || scaledHeight != mirHeight) {
         qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::syncSurfaceSizeWithItemSize()";
         mir::geometry::Size newMirSize(scaledWidth, scaledHeight);

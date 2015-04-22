@@ -26,8 +26,6 @@
 
 #include <QDebug>
 
-#define DEFAULT_GRID_UNIT_PX 8
-
 static WId newWId()
 {
     static WId id = 0;
@@ -74,17 +72,14 @@ void DisplayWindow::setGeometry(const QRect &)
     QPlatformWindow::setGeometry(rect);
 }
 
-qreal DisplayWindow::devicePixelRatio() const
-{
-    QByteArray stringValue = qgetenv("GRID_UNIT_PX");
-    bool ok;
-    float value = stringValue.toFloat(&ok);
-    return ok ? (value / DEFAULT_GRID_UNIT_PX) : 1.0;
-}
-
 bool DisplayWindow::isExposed() const
 {
     return m_isExposed;
+}
+
+qreal DisplayWindow::devicePixelRatio() const
+{
+    return screen()->devicePixelRatio();
 }
 
 bool DisplayWindow::event(QEvent *event)
