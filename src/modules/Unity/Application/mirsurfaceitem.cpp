@@ -71,7 +71,7 @@ getMirModifiersFromQt(Qt::KeyboardModifiers mods)
     return m_mods;
 }
 
-mir::EventUPtr makeMirEvent(QMouseEvent *qtEvent, MirPointerInputEventAction action)
+mir::EventUPtr makeMirEvent(QMouseEvent *qtEvent, MirPointerInputEventAction action, qreal dpr)
 {
     auto timestamp = qtEvent->timestamp() * 1000000;
     auto modifiers = getMirModifiersFromQt(qtEvent->modifiers());
@@ -85,17 +85,17 @@ mir::EventUPtr makeMirEvent(QMouseEvent *qtEvent, MirPointerInputEventAction act
         buttons.push_back(mir_pointer_input_button_tertiary);
 
     return mir::events::make_event(0 /*DeviceID */, timestamp, modifiers, action,
-                                   buttons, qtEvent->x(), qtEvent->y(), 0, 0);
+                                   buttons, qtEvent->x() * dpr, qtEvent->y() * dpr, 0, 0);
 }
 
-mir::EventUPtr makeMirEvent(QHoverEvent *qtEvent, MirPointerInputEventAction action)
+mir::EventUPtr makeMirEvent(QHoverEvent *qtEvent, MirPointerInputEventAction action, qreal dpr)
 {
     auto timestamp = qtEvent->timestamp() * 1000000;
 
     std::vector<MirPointerInputEventButton> buttons;
 
     return mir::events::make_event(0 /*DeviceID */, timestamp, mir_input_event_modifier_none, action,
-                                   buttons, qtEvent->posF().x(), qtEvent->posF().y(), 0, 0);
+                                   buttons, qtEvent->posF().x() * dpr, qtEvent->posF().y() * dpr, 0, 0);
 }
 
 mir::EventUPtr makeMirEvent(QKeyEvent *qtEvent)
@@ -124,7 +124,8 @@ mir::EventUPtr makeMirEvent(QKeyEvent *qtEvent)
 mir::EventUPtr makeMirEvent(Qt::KeyboardModifiers qmods,
                             const QList<QTouchEvent::TouchPoint> &qtTouchPoints,
                             Qt::TouchPointStates /* qtTouchPointStates */,
-                            ulong qtTimestamp)
+                            ulong qtTimestamp,
+                            qreal dpr)
 {
     auto modifiers = getMirModifiersFromQt(qmods);
     auto ev = mir::events::make_event(0, static_cast<int64_t>(qtTimestamp) * 1000000,
@@ -149,10 +150,10 @@ mir::EventUPtr makeMirEvent(Qt::KeyboardModifiers qmods,
             tooltype = mir_touch_input_tool_type_stylus;
 
         mir::events::add_touch(*ev, id, action, tooltype,
-                               touchPoint.pos().x(), touchPoint.pos().y(),
+                               touchPoint.pos().x() * dpr, touchPoint.pos().y() * dpr,
                                touchPoint.pressure(),
-                               touchPoint.rect().width(),
-                               touchPoint.rect().height(),
+                               touchPoint.rect().width() * dpr,
+                               touchPoint.rect().height() * dpr,
                                0 /* size */);
     }
 
@@ -218,7 +219,6 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     setAcceptHoverEvents(true);
 
     // fetch surface geometry
-    qDebug() << "**** init surface:" << m_surface->size().width.as_float() << m_surface->size().height.as_float();
     setImplicitSize(static_cast<qreal>(m_surface->size().width.as_float()),
                     static_cast<qreal>(m_surface->size().height.as_float()));
 
@@ -466,14 +466,14 @@ void MirSurfaceItem::mousePressEvent(QMouseEvent *event)
     if (type() == InputMethod) {
         // FIXME: Hack to get the VKB use case working while we don't have the proper solution in place.
         if (isMouseInsideUbuntuKeyboard(event)) {
-            auto ev = makeMirEvent(event, mir_pointer_input_event_action_button_down);
+            auto ev = makeMirEvent(event, mir_pointer_input_event_action_button_down, devicePixelRatio());
             m_surface->consume(*ev);
             event->accept();
         } else {
             event->ignore();
         }
     } else {
-        auto ev = makeMirEvent(event, mir_pointer_input_event_action_button_down);
+        auto ev = makeMirEvent(event, mir_pointer_input_event_action_button_down, devicePixelRatio());
         m_surface->consume(*ev);
         event->accept();
     }
@@ -481,14 +481,14 @@ void MirSurfaceItem::mousePressEvent(QMouseEvent *event)
 
 void MirSurfaceItem::mouseMoveEvent(QMouseEvent *event)
 {
-    auto ev = makeMirEvent(event, mir_pointer_input_event_action_motion);
+    auto ev = makeMirEvent(event, mir_pointer_input_event_action_motion, devicePixelRatio());
     m_surface->consume(*ev);
     event->accept();
 }
 
 void MirSurfaceItem::mouseReleaseEvent(QMouseEvent *event)
 {
-    auto ev = makeMirEvent(event, mir_pointer_input_event_action_button_up);
+    auto ev = makeMirEvent(event, mir_pointer_input_event_action_button_up, devicePixelRatio());
     m_surface->consume(*ev);
     event->accept();
 }
@@ -500,21 +500,21 @@ void MirSurfaceItem::wheelEvent(QWheelEvent *event)
 
 void MirSurfaceItem::hoverEnterEvent(QHoverEvent *event)
 {
-    auto ev = makeMirEvent(event, mir_pointer_input_event_action_enter);
+    auto ev = makeMirEvent(event, mir_pointer_input_event_action_enter, devicePixelRatio());
     m_surface->consume(*ev);
     event->accept();
 }
 
 void MirSurfaceItem::hoverLeaveEvent(QHoverEvent *event)
 {
-    auto ev = makeMirEvent(event, mir_pointer_input_event_action_leave);
+    auto ev = makeMirEvent(event, mir_pointer_input_event_action_leave, devicePixelRatio());
     m_surface->consume(*ev);
     event->accept();
 }
 
 void MirSurfaceItem::hoverMoveEvent(QHoverEvent *event)
 {
-    auto ev = makeMirEvent(event, mir_pointer_input_event_action_motion);
+    auto ev = makeMirEvent(event, mir_pointer_input_event_action_motion, devicePixelRatio());
     m_surface->consume(*ev);
     event->accept();
 }
@@ -570,7 +570,7 @@ void MirSurfaceItem::endCurrentTouchSequence(ulong timestamp)
         touchEvent.updateTouchPointStatesAndType();
 
         auto ev = makeMirEvent(touchEvent.modifiers, touchEvent.touchPoints, 
-                               touchEvent.touchPointStates, touchEvent.timestamp);
+                               touchEvent.touchPointStates, touchEvent.timestamp, devicePixelRatio());
         m_surface->consume(*ev);
 
         *m_lastTouchEvent = touchEvent;
@@ -592,7 +592,7 @@ void MirSurfaceItem::validateAndDeliverTouchEvent(int eventType,
         endCurrentTouchSequence(timestamp);
     }
 
-    auto ev = makeMirEvent(mods, touchPoints, touchPointStates, timestamp);
+    auto ev = makeMirEvent(mods, touchPoints, touchPointStates, timestamp, devicePixelRatio());
     m_surface->consume(*ev);
 
     if (!m_lastTouchEvent) {
@@ -715,8 +715,7 @@ void MirSurfaceItem::updateMirSurfaceSize()
     int mirWidth = m_surface->size().width.as_int();
     int mirHeight = m_surface->size().height.as_int();
 
-    const qreal dpr = window() ? window()->devicePixelRatio() : 1.0;
-
+    const qreal dpr = devicePixelRatio();
     int qmlWidth = (int)width() * dpr;
     int qmlHeight = (int)height() * dpr;
 
@@ -791,6 +790,11 @@ void MirSurfaceItem::scheduleTextureUpdate()
     m_frameDropperTimer.start();
 }
 
+qreal MirSurfaceItem::devicePixelRatio() const
+{
+    return window() ? window()->devicePixelRatio() : 1.0;
+}
+
 void MirSurfaceItem::setSession(SessionInterface *session)
 {
     m_session = session;
@@ -812,15 +816,13 @@ void MirSurfaceItem::syncSurfaceSizeWithItemSize()
     int mirWidth = m_surface->size().width.as_int();
     int mirHeight = m_surface->size().width.as_int();
 
-    const qreal dpr = window() ? window()->devicePixelRatio() : 1.0;
-
+    const qreal dpr = devicePixelRatio();
     int scaledWidth = width() * dpr;
     int scaledHeight = height() * dpr;
     if (scaledHeight != mirWidth || scaledHeight != mirHeight) {
         qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::syncSurfaceSizeWithItemSize()";
         mir::geometry::Size newMirSize(scaledWidth, scaledHeight);
         m_surface->resize(newMirSize);
-        qDebug() << "**** syncSurfaceSizeWithItemSize" << width() << height();
         setImplicitSize(scaledWidth, scaledHeight);
     }
 }

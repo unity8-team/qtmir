@@ -152,6 +152,7 @@ private Q_SLOTS:
 private:
     bool updateTexture();
     void ensureProvider();
+    qreal devicePixelRatio() const;
 
     void setType(const Type&);
     void setState(const State&);

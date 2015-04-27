@@ -119,7 +119,7 @@ Screen::Screen(mir::graphics::DisplayConfigurationOutput const &screen)
     bool ok;
     const int dpr = qGetEnvIntValue("QT_DEVICE_PIXEL_RATIO", &ok);
     m_devicePixelRatio = (ok && dpr > 0) ? dpr : 1.0;
-qDebug() << "DPR" << m_devicePixelRatio;
+
     readMirDisplayConfiguration(screen);
 
     // Set the default orientation based on the initial screen dimmensions.
