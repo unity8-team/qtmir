@@ -219,8 +219,9 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     setAcceptHoverEvents(true);
 
     // fetch surface geometry
-    setImplicitSize(static_cast<qreal>(m_surface->size().width.as_float()),
-                    static_cast<qreal>(m_surface->size().height.as_float()));
+    const qreal dpr = devicePixelRatio();
+    setImplicitSize(static_cast<qreal>(m_surface->size().width.as_float() / dpr),
+                    static_cast<qreal>(m_surface->size().height.as_float() / dpr));
 
     if (!UbuntuKeyboardInfo::instance()) {
         new UbuntuKeyboardInfo;
@@ -731,7 +732,7 @@ void MirSurfaceItem::updateMirSurfaceSize()
     if (clientIsRunning() && mirSizeIsDifferent) {
         mir::geometry::Size newMirSize(qmlWidthPx, qmlHeightPx);
         m_surface->resize(newMirSize);
-        setImplicitSize(qmlWidthPx, qmlHeightPx);
+        setImplicitSize(width(), height());
     }
 }
 
@@ -823,7 +824,7 @@ void MirSurfaceItem::syncSurfaceSizeWithItemSize()
         qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::syncSurfaceSizeWithItemSize()";
         mir::geometry::Size newMirSize(qmlWidthPx, qmlHeightPx);
         m_surface->resize(newMirSize);
-        setImplicitSize(qmlWidthPx, qmlHeightPx);
+        setImplicitSize(width(), height());
     }
 }
 
