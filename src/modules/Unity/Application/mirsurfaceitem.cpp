@@ -813,17 +813,17 @@ void MirSurfaceItem::onSessionStateChanged(SessionInterface::State state)
 
 void MirSurfaceItem::syncSurfaceSizeWithItemSize()
 {
-    int mirWidth = m_surface->size().width.as_int();
-    int mirHeight = m_surface->size().width.as_int();
+    const int mirWidthPx = m_surface->size().width.as_int();
+    const int mirHeightPx = m_surface->size().width.as_int();
 
     const qreal dpr = devicePixelRatio();
-    int scaledWidth = width() * dpr;
-    int scaledHeight = height() * dpr;
-    if (scaledHeight != mirWidth || scaledHeight != mirHeight) {
+    const int qmlWidthPx = int(width() * dpr);
+    const int qmlHeightPx = int(height() * dpr);
+    if (qmlHeightPx != mirWidthPx || qmlHeightPx != mirHeightPx) {
         qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::syncSurfaceSizeWithItemSize()";
-        mir::geometry::Size newMirSize(scaledWidth, scaledHeight);
+        mir::geometry::Size newMirSize(qmlWidthPx, qmlHeightPx);
         m_surface->resize(newMirSize);
-        setImplicitSize(scaledWidth, scaledHeight);
+        setImplicitSize(qmlWidthPx, qmlHeightPx);
     }
 }
 
