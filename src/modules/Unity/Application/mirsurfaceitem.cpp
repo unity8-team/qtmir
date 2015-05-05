@@ -186,6 +186,12 @@ public Q_SLOTS:
     }
 };
 
+
+/*
+ * Note: all geometry is in device-pixels, except that contained in variables with the
+ * suffix "Px" - whose units are pixels
+ */
+
 MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
                                SessionInterface* session,
                                MirShell *shell,
