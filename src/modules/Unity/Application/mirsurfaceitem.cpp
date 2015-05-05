@@ -712,26 +712,26 @@ void MirSurfaceItem::scheduleMirSurfaceSizeUpdate()
 
 void MirSurfaceItem::updateMirSurfaceSize()
 {
-    int mirWidth = m_surface->size().width.as_int();
-    int mirHeight = m_surface->size().height.as_int();
+    const int mirWidthPx = m_surface->size().width.as_int();
+    const int mirHeightPx = m_surface->size().height.as_int();
 
     const qreal dpr = devicePixelRatio();
-    int qmlWidth = (int)width() * dpr;
-    int qmlHeight = (int)height() * dpr;
+    const int qmlWidthPx = (int)(width() * dpr);
+    const int qmlHeightPx = (int)(height() * dpr);
 
-    bool mirSizeIsDifferent = qmlWidth != mirWidth || qmlHeight != mirHeight;
+    bool mirSizeIsDifferent = qmlWidthPx != mirWidthPx || qmlHeightPx != mirHeightPx;
 
     const char *didResize = clientIsRunning() && mirSizeIsDifferent ? "surface resized" : "surface NOT resized";
     qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::updateMirSurfaceSize"
             << "surface =" << this
-            << ", old (" << mirWidth << "," << mirHeight << ")"
-            << ", new (" << qmlWidth << "," << qmlHeight << ")"
+            << ", old (" << mirWidthPx << "," << mirHeightPx << ")"
+            << ", new (" << qmlWidthPx << "," << qmlHeightPx << ")"
             << didResize;
 
     if (clientIsRunning() && mirSizeIsDifferent) {
-        mir::geometry::Size newMirSize(qmlWidth, qmlHeight);
+        mir::geometry::Size newMirSize(qmlWidthPx, qmlHeightPx);
         m_surface->resize(newMirSize);
-        setImplicitSize(qmlWidth, qmlHeight);
+        setImplicitSize(qmlWidthPx, qmlHeightPx);
     }
 }
 
