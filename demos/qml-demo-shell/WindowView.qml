@@ -10,6 +10,7 @@ FocusScope {
         anchors.fill: parent
         minimumTouchPoints: 3
         maximumTouchPoints: 4
+        mouseEnabled: false
 
         Repeater {
             id: renderer

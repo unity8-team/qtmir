@@ -158,7 +158,7 @@ FocusScope {
             }
         }
 
-        function stealFocus() {
+        function stealFocus() { print("STEAL")
             // FIXME: Should only steal focus it has not a modal child
             windowData.forceActiveFocus(Qt.MouseFocusReason)
         }
