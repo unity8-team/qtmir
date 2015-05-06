@@ -37,7 +37,7 @@ add_definitions(-DBYTE_ORDER=__BYTE_ORDER)
 
 set(MIRSERVER_QPA_PLUGIN_SRC
     ../../common/debughelpers.cpp
-    mirshell.cpp
+    mirwindowmanager.cpp
     qteventfeeder.cpp
     plugin.cpp
     qmirserver.cpp

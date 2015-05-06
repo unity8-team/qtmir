@@ -151,7 +151,7 @@ private:
 
     Application* findApplicationWithPromptSession(const mir::scene::PromptSession* promptSession);
 
-    QSharedPointer<MirServer> m_mirServer;
+    const QSharedPointer<MirServer> m_mirServer;
 
     QList<Application*> m_applications;
     Application* m_focusedApplication;
