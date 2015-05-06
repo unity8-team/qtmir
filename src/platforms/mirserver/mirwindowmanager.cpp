@@ -60,8 +60,29 @@ auto MirWindowManager::add_surface(
     return build(session, placedParameters);
 }
 
-void MirWindowManager::modify_surface(std::shared_ptr<mir::scene::Session> const&, std::shared_ptr<mir::scene::Surface> const&, mir::shell::SurfaceSpecification const&)
+void MirWindowManager::modify_surface(
+    std::shared_ptr<mir::scene::Session> const& /*session*/,
+    std::shared_ptr<mir::scene::Surface> const& surface,
+    mir::shell::SurfaceSpecification const& modifications)
 {
+    // TODO ought to wire up some window management logic around here
+    // Here's a very basic implementation
+
+    if (modifications.name.is_set())
+        surface->rename(modifications.name.value());
+
+    if (modifications.width.is_set() || modifications.height.is_set())
+    {
+        auto new_size = surface->size();
+
+        if (modifications.width.is_set())
+            new_size.width = modifications.width.value();
+
+        if (modifications.height.is_set())
+            new_size.height = modifications.height.value();
+
+        surface->resize(new_size);
+    }
 }
 
 int MirWindowManager::set_surface_attribute(
