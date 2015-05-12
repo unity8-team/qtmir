@@ -160,6 +160,7 @@ UbuntuInput::~UbuntuInput()
 #ifndef QT_NO_DEBUG
 
 
+/*
 static const char* nativeEventTypeToStr(MirEventType t)
 {
     switch (t)
@@ -185,7 +186,7 @@ static const char* nativeEventTypeToStr(MirEventType t)
         return "invalid";
     }
 }
-
+*/
 
 #endif
 
