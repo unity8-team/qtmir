@@ -248,7 +248,7 @@ void UbuntuInput::postEvent(UbuntuWindow *platformWindow, const MirEvent *event)
     QCoreApplication::postEvent(this, new UbuntuEvent(
             platformWindow, event, mEventType));
 
-    if ((window->flags() && Qt::WindowTransparentForInput) && window->parent()) {
+    if ((window->flags().testFlag(Qt::WindowTransparentForInput)) && window->parent()) {
         QCoreApplication::postEvent(this, new UbuntuEvent(
                     static_cast<UbuntuWindow*>(platformWindow->QPlatformWindow::parent()),
                     event, mEventType));
