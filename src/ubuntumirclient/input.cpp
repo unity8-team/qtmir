@@ -275,7 +275,7 @@ void UbuntuInput::dispatchInputEvent(QWindow *window, const MirInputEvent *ev)
 
 void UbuntuInput::dispatchTouchEvent(QWindow *window, const MirInputEvent *ev)
 {
-    const MirTouchInputEvent *tev = mir_input_event_get_touch_input_event(ev);
+    const MirTouchEvent *tev = mir_input_event_get_touch_event(ev);
 
     // FIXME(loicm) Max pressure is device specific. That one is for the Samsung Galaxy Nexus. That
     //     needs to be fixed as soon as the compat input lib adds query support.
@@ -286,30 +286,30 @@ void UbuntuInput::dispatchTouchEvent(QWindow *window, const MirInputEvent *ev)
 
     // TODO: Is it worth setting the Qt::TouchPointStationary ones? Currently they are left
     //       as Qt::TouchPointMoved
-    const unsigned int kPointerCount = mir_touch_input_event_get_touch_count(tev);
+    const unsigned int kPointerCount = mir_touch_event_point_count(tev);
     for (unsigned int i = 0; i < kPointerCount; ++i) {
         QWindowSystemInterface::TouchPoint touchPoint;
 
-        const float kX = mir_touch_input_event_get_touch_axis_value(tev, i, mir_touch_input_axis_x) + kWindowGeometry.x();
-        const float kY = mir_touch_input_event_get_touch_axis_value(tev, i, mir_touch_input_axis_y) + kWindowGeometry.y(); // see bug lp:1346633 workaround comments elsewhere
-        const float kW = mir_touch_input_event_get_touch_axis_value(tev, i, mir_touch_input_axis_touch_major);
-        const float kH = mir_touch_input_event_get_touch_axis_value(tev, i, mir_touch_input_axis_touch_minor);
-        const float kP = mir_touch_input_event_get_touch_axis_value(tev, i, mir_touch_input_axis_pressure);
-        touchPoint.id = mir_touch_input_event_get_touch_id(tev, i);
+        const float kX = mir_touch_event_axis_value(tev, i, mir_touch_axis_x) + kWindowGeometry.x();
+        const float kY = mir_touch_event_axis_value(tev, i, mir_touch_axis_y) + kWindowGeometry.y(); // see bug lp:1346633 workaround comments elsewhere
+        const float kW = mir_touch_event_axis_value(tev, i, mir_touch_axis_touch_major);
+        const float kH = mir_touch_event_axis_value(tev, i, mir_touch_axis_touch_minor);
+        const float kP = mir_touch_event_axis_value(tev, i, mir_touch_axis_pressure);
+        touchPoint.id = mir_touch_event_id(tev, i);
         touchPoint.normalPosition = QPointF(kX / kWindowGeometry.width(), kY / kWindowGeometry.height());
         touchPoint.area = QRectF(kX - (kW / 2.0), kY - (kH / 2.0), kW, kH);
         touchPoint.pressure = kP / kMaxPressure;
 
-        MirTouchInputEventTouchAction touch_action = mir_touch_input_event_get_touch_action(tev, i);
+        MirTouchAction touch_action = mir_touch_event_action(tev, i);
         switch (touch_action)
         {
-        case mir_touch_input_event_action_down:
+        case mir_touch_action_down:
             touchPoint.state = Qt::TouchPointPressed;
             break;
-        case mir_touch_input_event_action_up:
+        case mir_touch_action_up:
             touchPoint.state = Qt::TouchPointReleased;
             break;
-        case mir_touch_input_event_action_change:
+        case mir_touch_action_change:
         default:
             touchPoint.state = Qt::TouchPointMoved;
         }
@@ -363,23 +363,23 @@ Qt::KeyboardModifiers qt_modifiers_from_mir(MirInputEventModifiers modifiers)
 
 void UbuntuInput::dispatchKeyEvent(QWindow *window, const MirInputEvent *event)
 {
-    const MirKeyInputEvent *key_event = mir_input_event_get_key_input_event(event);
+    const MirKeyboardEvent *key_event = mir_input_event_get_keyboard_event(event);
 
     ulong timestamp = mir_input_event_get_event_time(event) / 1000000;
-    xkb_keysym_t xk_sym = mir_key_input_event_get_key_code(key_event);
+    xkb_keysym_t xk_sym = mir_keyboard_event_key_code(key_event);
 
     // Key modifier and unicode index mapping.
-    auto modifiers = qt_modifiers_from_mir(mir_key_input_event_get_modifiers(key_event));
+    auto modifiers = qt_modifiers_from_mir(mir_keyboard_event_modifiers(key_event));
 
-    MirKeyInputEventAction action = mir_key_input_event_get_action(key_event);
-    QEvent::Type keyType = action == mir_key_input_event_action_up
+    MirKeyboardAction action = mir_keyboard_event_action(key_event);
+    QEvent::Type keyType = action == mir_keyboard_action_up
         ? QEvent::KeyRelease : QEvent::KeyPress;
 
     char s[2];
     int sym = translateKeysym(xk_sym, s, sizeof(s));
     QString text = QString::fromLatin1(s);
 
-    bool is_auto_rep = action == mir_key_input_event_action_repeat;
+    bool is_auto_rep = action == mir_keyboard_action_repeat;
 
     QPlatformInputContext *context = QGuiApplicationPrivate::platformIntegration()->inputContext();
     if (context) {
@@ -396,14 +396,14 @@ void UbuntuInput::dispatchKeyEvent(QWindow *window, const MirInputEvent *event)
 
 namespace
 {
-Qt::MouseButtons extract_buttons(const MirPointerInputEvent *pev)
+Qt::MouseButtons extract_buttons(const MirPointerEvent *pev)
 {
     Qt::MouseButtons buttons = Qt::NoButton;
-    if (mir_pointer_input_event_get_button_state(pev, mir_pointer_input_button_primary))
+    if (mir_pointer_event_button_state(pev, mir_pointer_button_primary))
         buttons |= Qt::LeftButton;
-    if (mir_pointer_input_event_get_button_state(pev, mir_pointer_input_button_secondary))
+    if (mir_pointer_event_button_state(pev, mir_pointer_button_secondary))
         buttons |= Qt::RightButton;
-    if (mir_pointer_input_event_get_button_state(pev, mir_pointer_input_button_tertiary))
+    if (mir_pointer_event_button_state(pev, mir_pointer_button_tertiary))
         buttons |= Qt::MidButton;
 
     // TODO: Should mir back and forward buttons exist?
@@ -416,12 +416,12 @@ void UbuntuInput::dispatchPointerEvent(QWindow *window, const MirInputEvent *ev)
 {
     auto timestamp = mir_input_event_get_event_time(ev) / 1000000;
 
-    auto pev = mir_input_event_get_pointer_input_event(ev);
-    auto modifiers = qt_modifiers_from_mir(mir_pointer_input_event_get_modifiers(pev));
+    auto pev = mir_input_event_get_pointer_event(ev);
+    auto modifiers = qt_modifiers_from_mir(mir_pointer_event_modifiers(pev));
     auto buttons = extract_buttons(pev);
 
-    auto local_point = QPointF(mir_pointer_input_event_get_axis_value(pev, mir_pointer_input_axis_x),
-                               mir_pointer_input_event_get_axis_value(pev, mir_pointer_input_axis_y));
+    auto local_point = QPointF(mir_pointer_event_axis_value(pev, mir_pointer_axis_x),
+                               mir_pointer_event_axis_value(pev, mir_pointer_axis_y));
     
     QWindowSystemInterface::handleMouseEvent(window, timestamp, local_point, local_point /* Should we omit global point instead? */,
                                              buttons, modifiers);
