@@ -219,7 +219,14 @@ void UbuntuInput::customEvent(QEvent* event)
         break;
     case mir_event_type_resize:
     {
+        Q_ASSERT(ubuntuEvent->window->screen() == mIntegration->screen());
+
         auto resizeEvent = mir_event_get_resize_event(nativeEvent);
+
+        mIntegration->screen()->handleWindowSurfaceResize(
+                mir_resize_event_get_width(resizeEvent),
+                mir_resize_event_get_height(resizeEvent));
+
         ubuntuEvent->window->handleSurfaceResize(mir_resize_event_get_width(resizeEvent),
             mir_resize_event_get_height(resizeEvent));
         break;

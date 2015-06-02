@@ -1,3 +1,9 @@
+qtubuntu (0.61) UNRELEASED; urgency=medium
+
+  * Flip screen dimensions to compensate for a rotated window
+
+ -- Daniel d'Andrada <daniel.dandrada@canonical.com>  Fri, 31 Oct 2014 16:39:11 -0200
+
 qtubuntu (0.60+15.04.20150318-0ubuntu3) vivid; urgency=medium
 
   * No-change rebuild against latest platform-api
