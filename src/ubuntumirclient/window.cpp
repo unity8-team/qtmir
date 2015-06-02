@@ -118,8 +118,7 @@ static void surfaceCreateCallback(MirSurface* surface, void* context)
     UbuntuWindow* platformWindow = static_cast<UbuntuWindow*>(context);
     platformWindow->priv()->surface = surface;
 
-    MirEventDelegate handler = {eventCallback, context};
-    mir_surface_set_event_handler(surface, &handler);
+    mir_surface_set_event_handler(surface, eventCallback, context);
 }
 
 UbuntuWindow::UbuntuWindow(QWindow* w, QSharedPointer<UbuntuClipboard> clipboard, UbuntuScreen* screen,
@@ -278,7 +277,7 @@ void UbuntuWindow::createWindow()
     mir_surface_spec_release(spec);
 
     DASSERT(d->surface != NULL);
-    d->createEGLSurface((EGLNativeWindowType)mir_surface_get_egl_native_window(d->surface));
+    d->createEGLSurface((EGLNativeWindowType)mir_buffer_stream_get_egl_native_window(mir_surface_get_buffer_stream(d->surface)));
 
     if (d->state == Qt::WindowFullScreen) {
     // TODO: We could set this on creation once surface spec supports it (mps already up)
