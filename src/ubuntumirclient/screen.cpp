@@ -14,6 +14,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// local
+#include "screen.h"
+#include "logging.h"
+#include "orientationchangeevent_p.h"
+
 // Qt
 #include <QCoreApplication>
 #include <QtCore/qmath.h>
@@ -21,11 +26,6 @@
 #include <QThread>
 #include <qpa/qwindowsysteminterface.h>
 #include <QtPlatformSupport/private/qeglconvenience_p.h>
-
-// local
-#include "screen.h"
-#include "logging.h"
-#include "orientationchangeevent_p.h"
 
 // platform-api
 #include <ubuntu/application/ui/display.h>

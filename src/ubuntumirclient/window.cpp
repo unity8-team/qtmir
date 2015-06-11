@@ -15,9 +15,9 @@
  */
 
 // Local
+#include "window.h"
 #include "clipboard.h"
 #include "input.h"
-#include "window.h"
 #include "screen.h"
 #include "logging.h"
 

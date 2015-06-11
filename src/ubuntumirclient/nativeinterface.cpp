@@ -14,16 +14,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// Local
+#include "nativeinterface.h"
+#include "screen.h"
+#include "glcontext.h"
+
 // Qt
 #include <private/qguiapplication_p.h>
 #include <QtGui/qopenglcontext.h>
 #include <QtGui/qscreen.h>
 #include <QtCore/QMap>
-
-// Local
-#include "nativeinterface.h"
-#include "screen.h"
-#include "glcontext.h"
 
 class UbuntuResourceMap : public QMap<QByteArray, UbuntuNativeInterface::ResourceType>
 {

@@ -14,6 +14,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// Local
+#include "integration.h"
+#include "backingstore.h"
+#include "clipboard.h"
+#include "glcontext.h"
+#include "input.h"
+#include "logging.h"
+#include "nativeinterface.h"
+#include "screen.h"
+#include "theme.h"
+#include "window.h"
+
 // Qt
 #include <QGuiApplication>
 #include <private/qguiapplication_p.h>
@@ -23,18 +35,6 @@
 #include <QtPlatformSupport/private/qgenericunixfontdatabase_p.h>
 #include <QtPlatformSupport/private/qgenericunixeventdispatcher_p.h>
 #include <QOpenGLContext>
-
-// Local
-#include "backingstore.h"
-#include "clipboard.h"
-#include "glcontext.h"
-#include "input.h"
-#include "integration.h"
-#include "logging.h"
-#include "nativeinterface.h"
-#include "screen.h"
-#include "theme.h"
-#include "window.h"
 
 // platform-api
 #include <ubuntu/application/lifecycle_delegate.h>
