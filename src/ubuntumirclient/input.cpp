@@ -157,38 +157,6 @@ UbuntuInput::~UbuntuInput()
   // Qt will take care of deleting mTouchDevice.
 }
 
-#ifndef QT_NO_DEBUG
-
-
-static const char* nativeEventTypeToStr(MirEventType t)
-{
-    switch (t)
-    {
-    case mir_event_type_key:
-        return "mir_event_type_key";
-    case mir_event_type_motion:
-        return "mir_event_type_motion";
-    case mir_event_type_surface:
-        return "mir_event_type_surface";
-    case mir_event_type_resize:
-        return "mir_event_type_resize";
-    case mir_event_type_prompt_session_state_change:
-        return "mir_event_type_prompt_session_state_change";
-    case mir_event_type_orientation:
-        return "mir_event_type_orientation";
-    case mir_event_type_close_surface:
-        return "mir_event_type_close_surface";
-    case mir_event_type_input:
-        return "mir_event_type_input";
-    default:
-        DLOG("Invalid event type %d", t);
-        return "invalid";
-    }
-}
-
-
-#endif
-
 void UbuntuInput::customEvent(QEvent* event)
 {
     DASSERT(QThread::currentThread() == thread());
@@ -208,8 +176,6 @@ void UbuntuInput::customEvent(QEvent* event)
         DLOG("event filtered out by native interface");
         return;
     }
-
-    //DLOG("UbuntuInput::customEvent(type=%s)", nativeEventTypeToStr(mir_event_get_type(nativeEvent)));
 
     // Event dispatching.
     switch (mir_event_get_type(nativeEvent)) 
