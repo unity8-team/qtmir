@@ -308,8 +308,13 @@ void UbuntuWindow::createWindow()
 
 void UbuntuWindow::moveResize(const QRect& rect)
 {
-    (void) rect;
-    // TODO: Not yet supported by mir.
+    LOG("UbuntuWindow::moveResize(width=%d, height=%d)", rect.width(), rect.height());
+
+    auto spec = mir_connection_create_spec_for_changes(d->connection);
+    mir_surface_spec_set_width(spec, rect.width());
+    mir_surface_spec_set_height(spec, rect.height());
+    mir_surface_apply_spec(d->surface, spec);
+    mir_surface_spec_release(spec);
 }
 
 void UbuntuWindow::handleSurfaceResize(int width, int height)
