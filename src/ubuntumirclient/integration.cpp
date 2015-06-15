@@ -166,11 +166,9 @@ bool UbuntuClientIntegration::hasCapability(QPlatformIntegration::Capability cap
     switch (cap) {
     case ThreadedPixmaps:
         return true;
-        break;
 
     case OpenGL:
         return true;
-        break;
 
     case ThreadedOpenGL:
         if (qEnvironmentVariableIsEmpty("QTUBUNTU_NO_THREADED_OPENGL")) {
@@ -179,8 +177,8 @@ bool UbuntuClientIntegration::hasCapability(QPlatformIntegration::Capability cap
             DLOG("ubuntumirclient: disabled threaded OpenGL");
             return false;
         }
-        break;
-
+    case MultipleWindows:
+        return true;
     default:
         return QPlatformIntegration::hasCapability(cap);
     }
