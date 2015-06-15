@@ -35,8 +35,6 @@
 
 #include <EGL/egl.h>
 
-#define IS_OPAQUE_FLAG 1
-
 namespace
 {
 MirSurfaceState qtWindowStateToMirSurfaceState(Qt::WindowState state)
@@ -217,12 +215,6 @@ void UbuntuWindow::createWindow()
     QVariant roleVariant = window()->property("role");
     int role = roleVariant.isValid() ? roleVariant.toUInt() : 1;  // 1 is the default role for apps.
     QVariant opaqueVariant = window()->property("opaque");
-    uint flags = opaqueVariant.isValid() ?
-        opaqueVariant.toUInt() ? static_cast<uint>(IS_OPAQUE_FLAG) : 0 : 0;
-
-    // FIXME(loicm) Opaque flag is forced for now for non-system sessions (applications) for
-    //     performance reasons.
-    flags |= static_cast<uint>(IS_OPAQUE_FLAG);
 
     const QByteArray title = (!window()->title().isNull()) ? window()->title().toUtf8() : "Window 1"; // legacy title
     const int panelHeight = d->panelHeight();
@@ -230,7 +222,6 @@ void UbuntuWindow::createWindow()
 #if !defined(QT_NO_DEBUG)
     LOG("panelHeight: '%d'", panelHeight);
     LOG("role: '%d'", role);
-    LOG("flags: '%s'", (flags & static_cast<uint>(1)) ? "Opaque" : "NotOpaque");
     LOG("title: '%s'", title.constData());
 #endif
 
