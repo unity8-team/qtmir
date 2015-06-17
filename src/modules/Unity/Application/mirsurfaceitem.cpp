@@ -71,28 +71,28 @@ getMirModifiersFromQt(Qt::KeyboardModifiers mods)
     return m_mods;
 }
 
-mir::EventUPtr makeMirEvent(QMouseEvent *qtEvent, MirPointerInputEventAction action, qreal dpr)
+mir::EventUPtr makeMirEvent(QMouseEvent *qtEvent, MirPointerAction action, qreal dpr)
 {
     auto timestamp = qtEvent->timestamp() * 1000000;
     auto modifiers = getMirModifiersFromQt(qtEvent->modifiers());
 
-    std::vector<MirPointerInputEventButton> buttons;
+    std::vector<MirPointerButton> buttons;
     if (qtEvent->buttons() & Qt::LeftButton)
-        buttons.push_back(mir_pointer_input_button_primary);
+        buttons.push_back(mir_pointer_button_primary);
     if (qtEvent->buttons() & Qt::RightButton)
-        buttons.push_back(mir_pointer_input_button_secondary);
+        buttons.push_back(mir_pointer_button_secondary);
     if (qtEvent->buttons() & Qt::MidButton)
-        buttons.push_back(mir_pointer_input_button_tertiary);
+        buttons.push_back(mir_pointer_button_tertiary);
 
     return mir::events::make_event(0 /*DeviceID */, timestamp, modifiers, action,
                                    buttons, qtEvent->x() * dpr, qtEvent->y() * dpr, 0, 0);
 }
 
-mir::EventUPtr makeMirEvent(QHoverEvent *qtEvent, MirPointerInputEventAction action, qreal dpr)
+mir::EventUPtr makeMirEvent(QHoverEvent *qtEvent, MirPointerAction action, qreal dpr)
 {
     auto timestamp = qtEvent->timestamp() * 1000000;
 
-    std::vector<MirPointerInputEventButton> buttons;
+    std::vector<MirPointerButton> buttons;
 
     return mir::events::make_event(0 /*DeviceID */, timestamp, mir_input_event_modifier_none, action,
                                    buttons, qtEvent->posF().x() * dpr, qtEvent->posF().y() * dpr, 0, 0);
@@ -100,20 +100,20 @@ mir::EventUPtr makeMirEvent(QHoverEvent *qtEvent, MirPointerInputEventAction act
 
 mir::EventUPtr makeMirEvent(QKeyEvent *qtEvent)
 {
-    MirKeyInputEventAction action = mir_key_input_event_action_down;
+    MirKeyboardAction action = mir_keyboard_action_down;
     switch (qtEvent->type())
     {
     case QEvent::KeyPress:
-        action = mir_key_input_event_action_down;
+        action = mir_keyboard_action_down;
         break;
     case QEvent::KeyRelease:
-        action = mir_key_input_event_action_up;
+        action = mir_keyboard_action_up;
         break;
     default:
         break;
     }
     if (qtEvent->isAutoRepeat())
-        action = mir_key_input_event_action_repeat;
+        action = mir_keyboard_action_repeat;
 
     return mir::events::make_event(0 /* DeviceID */, qtEvent->timestamp() * 1000000,
                            action, qtEvent->nativeVirtualKey(),
@@ -135,19 +135,19 @@ mir::EventUPtr makeMirEvent(Qt::KeyboardModifiers qmods,
         auto touchPoint = qtTouchPoints.at(i);
         auto id = touchPoint.id();
 
-        MirTouchInputEventTouchAction action = mir_touch_input_event_action_change;
+        MirTouchAction action = mir_touch_action_change;
         if (touchPoint.state() == Qt::TouchPointReleased)
         {
-            action = mir_touch_input_event_action_up;
+            action = mir_touch_action_up;
         }
         if (touchPoint.state() == Qt::TouchPointPressed)
         {
-            action = mir_touch_input_event_action_down;
+            action = mir_touch_action_down;
         }
 
-        MirTouchInputEventTouchTooltype tooltype = mir_touch_input_tool_type_finger;
+        MirTouchTooltype tooltype = mir_touch_tooltype_finger;
         if (touchPoint.flags() & QTouchEvent::TouchPoint::Pen)
-            tooltype = mir_touch_input_tool_type_stylus;
+            tooltype = mir_touch_tooltype_stylus;
 
         mir::events::add_touch(*ev, id, action, tooltype,
                                touchPoint.pos().x() * dpr, touchPoint.pos().y() * dpr,
@@ -203,7 +203,7 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     , m_shell(shell)
     , m_firstFrameDrawn(false)
     , m_live(true)
-    , m_orientation(Qt::PortraitOrientation)
+    , m_orientationAngle(Angle0)
     , m_textureProvider(nullptr)
     , m_lastTouchEvent(nullptr)
 {
@@ -212,6 +212,7 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     m_surfaceObserver = observer;
     if (observer) {
         connect(observer.get(), &SurfaceObserver::framesPosted, this, &MirSurfaceItem::surfaceDamaged);
+        connect(observer.get(), &SurfaceObserver::attributeChanged, this, &MirSurfaceItem::onAttributeChanged);
         observer->setListener(this);
     }
 
@@ -313,49 +314,42 @@ MirSurfaceItem::State MirSurfaceItem::state() const
     return static_cast<MirSurfaceItem::State>(m_surface->state());
 }
 
-Qt::ScreenOrientation MirSurfaceItem::orientation() const
+MirSurfaceItem::OrientationAngle MirSurfaceItem::orientationAngle() const
 {
-    return m_orientation;
+    return m_orientationAngle;
 }
 
-void MirSurfaceItem::setOrientation(const Qt::ScreenOrientation orientation)
+void MirSurfaceItem::setOrientationAngle(MirSurfaceItem::OrientationAngle angle)
 {
-    qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::setOrientation - orientation=" << orientation;
+    qCDebug(QTMIR_SURFACES, "MirSurfaceItem::setOrientationAngle(%d)", angle);
 
-    if (m_orientation == orientation)
+    if (m_orientationAngle == angle)
         return;
 
     MirOrientation mirOrientation;
-    Qt::ScreenOrientation nativeOrientation = QGuiApplication::primaryScreen()->nativeOrientation();
-    const bool landscapeNativeOrientation = (nativeOrientation == Qt::LandscapeOrientation);
 
-    Qt::ScreenOrientation requestedOrientation = orientation;
-    if (orientation == Qt::PrimaryOrientation) { // means orientation equals native orientation, set it as such
-        requestedOrientation = nativeOrientation;
-    }
-
-    switch(requestedOrientation) {
-    case Qt::PortraitOrientation:
-        mirOrientation = (landscapeNativeOrientation) ? mir_orientation_right : mir_orientation_normal;
+    switch (angle) {
+    case Angle0:
+        mirOrientation = mir_orientation_normal;
         break;
-    case Qt::LandscapeOrientation:
-        mirOrientation = (landscapeNativeOrientation) ? mir_orientation_normal : mir_orientation_left;
+    case Angle90:
+        mirOrientation = mir_orientation_right;
         break;
-    case Qt::InvertedPortraitOrientation:
-        mirOrientation = (landscapeNativeOrientation) ? mir_orientation_left : mir_orientation_inverted;
+    case Angle180:
+        mirOrientation = mir_orientation_inverted;
         break;
-    case Qt::InvertedLandscapeOrientation:
-        mirOrientation = (landscapeNativeOrientation) ? mir_orientation_inverted : mir_orientation_right;
+    case Angle270:
+        mirOrientation = mir_orientation_left;
         break;
     default:
-        qWarning("Unrecognized Qt::ScreenOrientation!");
+        qCWarning(QTMIR_SURFACES, "Unsupported orientation angle: %d", angle);
         return;
     }
 
     m_surface->set_orientation(mirOrientation);
 
-    m_orientation = orientation;
-    Q_EMIT orientationChanged();
+    m_orientationAngle = angle;
+    Q_EMIT orientationAngleChanged(angle);
 }
 
 QString MirSurfaceItem::name() const
@@ -473,14 +467,14 @@ void MirSurfaceItem::mousePressEvent(QMouseEvent *event)
     if (type() == InputMethod) {
         // FIXME: Hack to get the VKB use case working while we don't have the proper solution in place.
         if (isMouseInsideUbuntuKeyboard(event)) {
-            auto ev = makeMirEvent(event, mir_pointer_input_event_action_button_down, devicePixelRatio());
+            auto ev = makeMirEvent(event, mir_pointer_action_button_down, devicePixelRatio());
             m_surface->consume(*ev);
             event->accept();
         } else {
             event->ignore();
         }
     } else {
-        auto ev = makeMirEvent(event, mir_pointer_input_event_action_button_down, devicePixelRatio());
+        auto ev = makeMirEvent(event, mir_pointer_action_button_down, devicePixelRatio());
         m_surface->consume(*ev);
         event->accept();
     }
@@ -488,14 +482,14 @@ void MirSurfaceItem::mousePressEvent(QMouseEvent *event)
 
 void MirSurfaceItem::mouseMoveEvent(QMouseEvent *event)
 {
-    auto ev = makeMirEvent(event, mir_pointer_input_event_action_motion, devicePixelRatio());
+    auto ev = makeMirEvent(event, mir_pointer_action_motion, devicePixelRatio());
     m_surface->consume(*ev);
     event->accept();
 }
 
 void MirSurfaceItem::mouseReleaseEvent(QMouseEvent *event)
 {
-    auto ev = makeMirEvent(event, mir_pointer_input_event_action_button_up, devicePixelRatio());
+    auto ev = makeMirEvent(event, mir_pointer_action_button_up, devicePixelRatio());
     m_surface->consume(*ev);
     event->accept();
 }
@@ -507,21 +501,21 @@ void MirSurfaceItem::wheelEvent(QWheelEvent *event)
 
 void MirSurfaceItem::hoverEnterEvent(QHoverEvent *event)
 {
-    auto ev = makeMirEvent(event, mir_pointer_input_event_action_enter, devicePixelRatio());
+    auto ev = makeMirEvent(event, mir_pointer_action_enter, devicePixelRatio());
     m_surface->consume(*ev);
     event->accept();
 }
 
 void MirSurfaceItem::hoverLeaveEvent(QHoverEvent *event)
 {
-    auto ev = makeMirEvent(event, mir_pointer_input_event_action_leave, devicePixelRatio());
+    auto ev = makeMirEvent(event, mir_pointer_action_leave, devicePixelRatio());
     m_surface->consume(*ev);
     event->accept();
 }
 
 void MirSurfaceItem::hoverMoveEvent(QHoverEvent *event)
 {
-    auto ev = makeMirEvent(event, mir_pointer_input_event_action_motion, devicePixelRatio());
+    auto ev = makeMirEvent(event, mir_pointer_action_motion, devicePixelRatio());
     m_surface->consume(*ev);
     event->accept();
 }
@@ -695,8 +689,7 @@ void MirSurfaceItem::setLive(const bool live)
     }
 }
 
-// Called by MirSurfaceItemManager upon a msh::Surface attribute change
-void MirSurfaceItem::setAttribute(const MirSurfaceAttrib attribute, const int /*value*/)
+void MirSurfaceItem::onAttributeChanged(const MirSurfaceAttrib attribute, const int /*value*/)
 {
     switch (attribute) {
     case mir_surface_attrib_type:

@@ -176,14 +176,14 @@ const char *mirSurfaceVisibilityToStr(int value)
     }
 }
 
-const char *mirTouchActionToStr(MirTouchInputEventTouchAction action)
+const char *mirTouchActionToStr(MirTouchAction action)
 {
     switch (action) {
-    case mir_touch_input_event_action_up:
+    case mir_touch_action_up:
         return "up";
-    case mir_touch_input_event_action_down:
+    case mir_touch_action_down:
         return "down";
-    case mir_touch_input_event_action_change:
+    case mir_touch_action_change:
         return "change";
     default:
         return "???";
@@ -205,5 +205,52 @@ const char *applicationStateToStr(int state)
         return "stopped";
     default:
         return "???";
+    }
+}
+
+QString mirTouchEventToString(MirTouchEvent const* event)
+{
+    const int pointerCount = mir_touch_event_point_count(event);
+
+    QString string("MirTouchInputEvent(");
+
+    for (int i = 0; i < pointerCount; ++i) {
+
+        if (i > 0) {
+            string.append(",");
+        }
+
+        MirTouchAction touchAction = mir_touch_event_action(event, i);
+
+        QString touchStr = QString("(id=%1,action=%2,x=%3,y=%4)")
+            .arg(mir_touch_event_id(event, i))
+            .arg(mirTouchActionToString(touchAction))
+            .arg(mir_touch_event_axis_value(event, i, mir_touch_axis_x))
+            .arg(mir_touch_event_axis_value(event, i, mir_touch_axis_y));
+
+        string.append(touchStr);
+    }
+
+    string.append(")");
+
+    return string;
+}
+
+const char *mirTouchActionToString(MirTouchAction touchAction)
+{
+    switch (touchAction)
+    {
+    case mir_touch_action_up:
+        return "up";
+        break;
+    case mir_touch_action_down:
+        return "down";
+        break;
+    case mir_touch_action_change:
+        return "change";
+        break;
+    default:
+        return "???";
+        break;
     }
 }
