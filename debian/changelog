@@ -14,12 +14,6 @@ qtubuntu (0.61+15.10.20150611-0ubuntu1) wily; urgency=medium
 
  -- CI Train Bot <ci-train-bot@canonical.com>  Thu, 11 Jun 2015 09:10:57 +0000
 
-qtubuntu (0.61) UNRELEASED; urgency=medium
-
-  * Flip screen dimensions to compensate for a rotated window
-
- -- Daniel d'Andrada <daniel.dandrada@canonical.com>  Fri, 31 Oct 2014 16:39:11 -0200
-
 qtubuntu (0.60+15.04.20150318-0ubuntu3) vivid; urgency=medium
 
   * No-change rebuild against latest platform-api
