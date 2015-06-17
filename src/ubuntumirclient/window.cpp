@@ -21,6 +21,8 @@
 #include "screen.h"
 #include "logging.h"
 
+#include <mir_toolkit/mir_client_library.h>
+
 // Qt
 #include <qpa/qwindowsysteminterface.h>
 #include <qpa/qwindowsysteminterface.h>
@@ -37,6 +39,55 @@
 
 namespace
 {
+
+struct MirSpecDeleter
+{
+    void operator()(MirSurfaceSpec *spec) { mir_surface_spec_release(spec); }
+};
+
+EGLNativeWindowType nativeWindowFor(MirSurface *surf)
+{
+    auto stream = mir_surface_get_buffer_stream(surf);
+    return reinterpret_cast<EGLNativeWindowType>(mir_buffer_stream_get_egl_native_window(stream));
+}
+
+class Surface
+{
+public:
+    Surface(MirSurface *surface, UbuntuScreen *screen)
+    :  mirSurface_{surface},
+       eglDisplay{screen->eglDisplay()},
+       eglConfig{screen->eglConfig()},
+       eglSurface_{EGL_NO_SURFACE}
+    {
+    }
+
+    ~Surface()
+    {
+        if (eglSurface_ != EGL_NO_SURFACE)
+            eglDestroySurface(eglDisplay, eglSurface_);
+        if (mirSurface_)
+            mir_surface_release_sync(mirSurface_);
+    }
+
+    EGLSurface eglSurface()
+    {
+        if (eglSurface_ == EGL_NO_SURFACE)
+        {
+            eglSurface_ = eglCreateWindowSurface(eglDisplay, eglConfig, nativeWindowFor(mirSurface_), nullptr);
+        }
+        return eglSurface_;
+    }
+
+    MirSurface *mirSurface() const { return mirSurface_; }
+
+private:
+    MirSurface * const mirSurface_;
+    const EGLDisplay eglDisplay;
+    const EGLConfig eglConfig;
+    EGLSurface eglSurface_;
+};
+
 MirSurfaceState qtWindowStateToMirSurfaceState(Qt::WindowState state)
 {
     switch (state) {
@@ -80,103 +131,85 @@ const char *qtWindowStateToStr(Qt::WindowState state)
 }
 #endif
 
-} // anonymous namespace
-
-class UbuntuWindowPrivate
+WId generateWindowID()
 {
-public:
-    void createEGLSurface(EGLNativeWindowType nativeWindow);
-    void destroyEGLSurface();
-    int panelHeight();
+    static int id = 1;
+    return ++id;
+}
 
-    UbuntuScreen* screen;
-    EGLSurface eglSurface;
-    WId id;
-    UbuntuInput* input;
-    Qt::WindowState state;
+MirPixelFormat defaultPixelFormat(MirConnection *connection)
+{
+    MirPixelFormat format;
+    unsigned int nformats;
+    mir_connection_get_available_surface_formats(connection, &format, 1, &nformats);
+    return format;
+}
+}
+
+struct UbuntuWindowPrivate
+{
+    UbuntuWindowPrivate(UbuntuWindow *w, UbuntuScreen *screen, UbuntuInput *input, Qt::WindowState state,
+        MirConnection *connection, const QSharedPointer<UbuntuClipboard>& clipboard, const QRect& geom)
+        : window{w}, screen{screen}, input{input}, connection{connection}, pixelFormat{defaultPixelFormat(connection)},
+          clipboard{clipboard}, id{generateWindowID()}, geometry{geom}, state{state}
+    {}
+
+    UAUiWindowRole role();
+    UbuntuWindow *transientParent();
+    MirSurface *parentSurface();
+
+    void createWindow();
+    std::unique_ptr<MirSurfaceSpec, MirSpecDeleter> createSpec(const QRect& rect);
+    void createSurface(QRect& geom, const char *name);
+
+    void resize(const QRect& rect);
+    void setSurfaceState(Qt::WindowState state);
+
+    EGLSurface eglSurface()
+    {
+        // Sometimes an egl surface is requested without making the window visible first
+        createWindow();
+        return surface->eglSurface();
+    }
+    MirSurface *mirSurface() const { return surface->mirSurface(); }
+
+    UbuntuWindow * const window;
+    UbuntuScreen * const screen;
+    UbuntuInput * const input;
+    MirConnection * const connection;
+    const MirPixelFormat pixelFormat;
+    const QSharedPointer<UbuntuClipboard> clipboard;
+    const WId id;
     QRect geometry;
-    MirConnection *connection;
-    MirSurface* surface;
+    Qt::WindowState state;
+    std::unique_ptr<Surface> surface;
     QSize bufferSize;
     QSize targetBufferSize;
     QMutex mutex;
-    QSharedPointer<UbuntuClipboard> clipboard;
 };
 
-static void eventCallback(MirSurface* surface, const MirEvent *event, void* context)
+namespace
+{
+void eventCallback(MirSurface* surface, const MirEvent *event, void* context)
 {
     (void) surface;
     DASSERT(context != NULL);
-    UbuntuWindow* platformWindow = static_cast<UbuntuWindow*>(context);
-    platformWindow->priv()->input->postEvent(platformWindow, event);
+    UbuntuWindowPrivate *priv = static_cast<UbuntuWindowPrivate*>(context);
+    priv->input->postEvent(priv->window, event);
 }
 
-static void surfaceCreateCallback(MirSurface* surface, void* context)
+void surfaceCreateCallback(MirSurface* surface, void* context)
 {
     DASSERT(context != NULL);
-    UbuntuWindow* platformWindow = static_cast<UbuntuWindow*>(context);
-    platformWindow->priv()->surface = surface;
+    UbuntuWindowPrivate *priv = static_cast<UbuntuWindowPrivate*>(context);
+    priv->surface = std::move(std::unique_ptr<Surface>(new Surface(surface, priv->screen)));
 
     mir_surface_set_event_handler(surface, eventCallback, context);
 }
 
-UbuntuWindow::UbuntuWindow(QWindow* w, QSharedPointer<UbuntuClipboard> clipboard, UbuntuScreen* screen,
-                           UbuntuInput* input, MirConnection* connection)
-    : QObject(nullptr), QPlatformWindow(w)
-{
-    DASSERT(screen != NULL);
-
-    d = new UbuntuWindowPrivate;
-    d->screen = screen;
-    d->eglSurface = EGL_NO_SURFACE;
-    d->input = input;
-    d->state = window()->windowState();
-    d->connection = connection;
-    d->clipboard = clipboard;
-
-    static int id = 1;
-    d->id = id++;
-
-    // Use client geometry if set explicitly, use available screen geometry otherwise.
-    d->geometry = window()->geometry() != screen->geometry() ?
-        window()->geometry() : screen->availableGeometry();
-    createWindow();
-    DLOG("UbuntuWindow::UbuntuWindow (this=%p, w=%p, screen=%p, input=%p)", this, w, screen, input);
-}
-
-UbuntuWindow::~UbuntuWindow()
-{
-    DLOG("UbuntuWindow::~UbuntuWindow");
-    d->destroyEGLSurface();
-
-    mir_surface_release_sync(d->surface);
-
-    delete d;
-}
-
-void UbuntuWindowPrivate::createEGLSurface(EGLNativeWindowType nativeWindow)
-{
-  DLOG("UbuntuWindowPrivate::createEGLSurface (this=%p, nativeWindow=%p)",
-          this, reinterpret_cast<void*>(nativeWindow));
-
-  eglSurface = eglCreateWindowSurface(screen->eglDisplay(), screen->eglConfig(),
-          nativeWindow, nullptr);
-
-  DASSERT(eglSurface != EGL_NO_SURFACE);
-}
-
-void UbuntuWindowPrivate::destroyEGLSurface()
-{
-    DLOG("UbuntuWindowPrivate::destroyEGLSurface (this=%p)", this);
-    if (eglSurface != EGL_NO_SURFACE) {
-        eglDestroySurface(screen->eglDisplay(), eglSurface);
-        eglSurface = EGL_NO_SURFACE;
-    }
-}
-
 // FIXME - in order to work around https://bugs.launchpad.net/mir/+bug/1346633
 // we need to guess the panel height (3GU + 2DP)
-int UbuntuWindowPrivate::panelHeight()
+int panelHeight()
 {
     const int defaultGridUnit = 8;
     int gridUnit = defaultGridUnit;
@@ -191,48 +224,135 @@ int UbuntuWindowPrivate::panelHeight()
     qreal densityPixelRatio = static_cast<qreal>(gridUnit) / defaultGridUnit;
     return gridUnit * 3 + qFloor(densityPixelRatio) * 2;
 }
-
-namespace
-{
-static MirPixelFormat
-mir_choose_default_pixel_format(MirConnection *connection)
-{
-    MirPixelFormat format[mir_pixel_formats];
-    unsigned int nformats;
-
-    mir_connection_get_available_surface_formats(connection,
-        format, mir_pixel_formats, &nformats);
-
-    return format[0];
-}
 }
 
-void UbuntuWindow::createWindow()
+UAUiWindowRole UbuntuWindowPrivate::role()
 {
-    DLOG("UbuntuWindow::createWindow (this=%p)", this);
+    QWindow *qWindow = window->window();
+    QVariant roleVariant = qWindow->property("role");
 
-    // Get surface role and flags.
-    QVariant roleVariant = window()->property("role");
-    int role = roleVariant.isValid() ? roleVariant.toUInt() : 1;  // 1 is the default role for apps.
-    QVariant opaqueVariant = window()->property("opaque");
+    if (!roleVariant.isValid())
+        return U_MAIN_ROLE;
 
-    const QByteArray title = (!window()->title().isNull()) ? window()->title().toUtf8() : "Window 1"; // legacy title
-    const int panelHeight = d->panelHeight();
+    uint role = roleVariant.toUInt();
+    if (role < U_MAIN_ROLE || role > U_SHUTDOWN_DIALOG_ROLE)
+        return U_MAIN_ROLE;
+
+    return static_cast<UAUiWindowRole>(role);
+}
+
+UbuntuWindow *UbuntuWindowPrivate::transientParent()
+{
+    QWindow *qWindow = window->window();
+    QWindow *parent = qWindow->transientParent();
+    return parent ? dynamic_cast<UbuntuWindow *>(parent->handle()) : nullptr;
+}
+
+MirSurface *UbuntuWindowPrivate::parentSurface()
+{
+    UbuntuWindow *parent = transientParent();
+
+    // Sometimes children become visible before their parents - create the
+    // parent window at this time if that's the case.
+    if (parent->d->surface == nullptr) {
+        DLOG("[ubuntumirclient QPA] (window=%p) creating parent window before it is visible!", window);
+        parent->d->createWindow();
+    }
+
+    return parent->d->surface->mirSurface();
+}
+
+std::unique_ptr<MirSurfaceSpec, MirSpecDeleter> UbuntuWindowPrivate::createSpec(const QRect& rect)
+{
+   using up = std::unique_ptr<MirSurfaceSpec, MirSpecDeleter>;
+
+   const QWindow *qWindow = window->window();
+   const UAUiWindowRole windowRole = role();
+   const int width = rect.width();
+   const int height = rect.height();
+
+   if (windowRole == U_ON_SCREEN_KEYBOARD_ROLE)
+       return up{mir_connection_create_spec_for_input_method(connection, width, height, pixelFormat)};
+
+   Qt::WindowType type = qWindow->type();
+   if (type == Qt::Popup) {
+       auto parent = transientParent();
+       if (parent) {
+           auto pos = window->geometry().topLeft();
+           pos -= parent->geometry().topLeft();
+           MirRectangle location{pos.x(), pos.y(), 0, 0};
+           DLOG("[ubuntumirclient QPA] createSpec(window=%p) - creating menu surface", window);
+           return up{mir_connection_create_spec_for_menu(
+               connection, width, height, pixelFormat, parentSurface(),
+               &location, mir_edge_attachment_any)};
+       }
+   } else if (type == Qt::Dialog) {
+       auto parent = transientParent();
+       if (parent) {
+           // Modal dialog
+           DLOG("[ubuntumirclient QPA] createSpec(window=%p) - creating modal dialog", window);
+           return up{mir_connection_create_spec_for_modal_dialog(
+               connection, width, height, pixelFormat, parentSurface())};
+       } else {
+           // TODO: do Qt parentless dialogs have the same semantics as mir?
+           DLOG("[ubuntumirclient QPA] createSpec(window=%p) - creating parentless dialog", window);
+           return up{mir_connection_create_spec_for_dialog(connection, width, height, pixelFormat)};
+       }
+   }
+   DLOG("[ubuntumirclient QPA] createSpec(window=%p) - creating normal surface(type=0x%x)", window, type);
+   return up{mir_connection_create_spec_for_normal_surface(connection, width, height, pixelFormat)};
+}
+
+void UbuntuWindowPrivate::createSurface(QRect& geom, const char *name)
+{
+    auto spec = createSpec(geom);
+    mir_surface_spec_set_name(spec.get(), name);
+
+    if (state == Qt::WindowFullScreen) {
+        auto displayConfig = mir_connection_create_display_config(connection);
+        if (displayConfig->num_outputs > 0) {
+            auto outputId = displayConfig->outputs[0].output_id;
+            mir_surface_spec_set_fullscreen_on_output(spec.get(), outputId);
+        }
+    }
+    mir_wait_for(mir_surface_create(spec.get(), surfaceCreateCallback, this));
+
+    // Window manager can give us a final size different from what we asked for
+    // so let's check what we ended up getting
+    MirSurfaceParameters parameters;
+    mir_surface_get_parameters(surface->mirSurface(), &parameters);
+
+    geom.setWidth(parameters.width);
+    geom.setHeight(parameters.height);
+}
+
+void UbuntuWindowPrivate::createWindow()
+{
+    // Already created
+    if (surface != nullptr)
+        return;
+
+    DLOG("[ubuntumirclient QPA] createWindow(window=%p)", window);
+
+    QWindow *qWindow = window->window();
+
+    const QByteArray title = qWindow->title().isNull() ? "Window 1" : qWindow->title().toUtf8(); // legacy title
+    const int panelHeight = ::panelHeight();
 
 #if !defined(QT_NO_DEBUG)
-    LOG("panelHeight: '%d'", panelHeight);
-    LOG("role: '%d'", role);
-    LOG("title: '%s'", title.constData());
+    DLOG("[ubuntumirclient QPA] panelHeight: '%d'", panelHeight);
+    DLOG("[ubuntumirclient QPA] role: '%d'", role());
+    DLOG("[ubuntumirclient QPA] title: '%s'", title.constData());
 #endif
 
     // Get surface geometry.
-    QRect geometry;
-    if (d->state == Qt::WindowFullScreen) {
-        printf("UbuntuWindow - fullscreen geometry\n");
-        geometry = screen()->geometry();
-    } else if (d->state == Qt::WindowMaximized) {
-        printf("UbuntuWindow - maximized geometry\n");
-        geometry = screen()->availableGeometry();
+    QRect geom;
+    if (state == Qt::WindowFullScreen) {
+        DLOG("[ubuntumirclient QPA] fullscreen geometry chosen\n");
+        geom = screen->geometry();
+    } else if (state == Qt::WindowMaximized) {
+        DLOG("[ubuntumirclient QPA] maximized geometry chosen\n");
+        geom = screen->availableGeometry();
         /*
          * FIXME: Autopilot relies on being able to convert coordinates relative of the window
          * into absolute screen coordinates. Mir does not allow this, see bug lp:1346633
@@ -241,82 +361,67 @@ void UbuntuWindow::createWindow()
          *
          * Assumption: this method only used on phone devices!
          */
-        geometry.setY(panelHeight);
+        geom.setY(panelHeight);
     } else {
-        printf("UbuntuWindow - regular geometry\n");
-        geometry = d->geometry;
-        geometry.setY(panelHeight);
+        DLOG("[ubuntumirclient QPA] regular geometry chosen\n");
+        geom = geometry;
     }
 
     DLOG("[ubuntumirclient QPA] creating surface at (%d, %d) with size (%d, %d) with title '%s'\n",
-            geometry.x(), geometry.y(), geometry.width(), geometry.height(), title.data());
+            geom.x(), geom.y(), geom.width(), geom.height(), title.data());
 
-    MirSurfaceSpec *spec;
-    if (role == U_ON_SCREEN_KEYBOARD_ROLE)
-    {
-        spec = mir_connection_create_spec_for_input_method(d->connection, geometry.width(),
-            geometry.height(), mir_choose_default_pixel_format(d->connection));
-    }
-    else
-    {
-        spec = mir_connection_create_spec_for_normal_surface(d->connection, geometry.width(),
-            geometry.height(), mir_choose_default_pixel_format(d->connection));
-    }
-    mir_surface_spec_set_name(spec, title.data());
+    createSurface(geom, title.data());
 
-    // Create platform window
-    mir_wait_for(mir_surface_create(spec, surfaceCreateCallback, this));
-    mir_surface_spec_release(spec);
-
-    DASSERT(d->surface != NULL);
-    d->createEGLSurface((EGLNativeWindowType)mir_buffer_stream_get_egl_native_window(mir_surface_get_buffer_stream(d->surface)));
-
-    if (d->state == Qt::WindowFullScreen) {
-    // TODO: We could set this on creation once surface spec supports it (mps already up)
-        mir_wait_for(mir_surface_set_state(d->surface, mir_surface_state_fullscreen));
-    }
-
-    // Window manager can give us a final size different from what we asked for
-    // so let's check what we ended up getting
-    {
-        MirSurfaceParameters parameters;
-        mir_surface_get_parameters(d->surface, &parameters);
-
-        geometry.setWidth(parameters.width);
-        geometry.setHeight(parameters.height);
-    }
-
-    DLOG("[ubuntumirclient QPA] created surface has size (%d, %d)",
-            geometry.width(), geometry.height());
+    DLOG("[ubuntumirclient QPA] created surface has size (%d, %d)", geom.width(), geom.height());
 
     // Assume that the buffer size matches the surface size at creation time
-    d->bufferSize = geometry.size();
+    bufferSize = geom.size();
 
     // Tell Qt about the geometry.
-    QWindowSystemInterface::handleGeometryChange(window(), geometry);
-    QPlatformWindow::setGeometry(geometry);
+    QWindowSystemInterface::handleGeometryChange(qWindow, geom);
+    window->QPlatformWindow::setGeometry(geom);
 }
 
-void UbuntuWindow::moveResize(const QRect& rect)
+void UbuntuWindowPrivate::resize(const QRect& rect)
 {
-    LOG("UbuntuWindow::moveResize(width=%d, height=%d)", rect.width(), rect.height());
+    DLOG("[ubuntumirclient QPA] resize(window=%p, width=%d, height=%d)", window, rect.width(), rect.height());
 
-    auto spec = mir_connection_create_spec_for_changes(d->connection);
-    mir_surface_spec_set_width(spec, rect.width());
-    mir_surface_spec_set_height(spec, rect.height());
-    mir_surface_apply_spec(d->surface, spec);
-    mir_surface_spec_release(spec);
+    if (surface == nullptr)
+        return;
+
+    using up = std::unique_ptr<MirSurfaceSpec, MirSpecDeleter>;
+    auto spec = up{mir_connection_create_spec_for_changes(connection)};
+    mir_surface_spec_set_width(spec.get(), rect.width());
+    mir_surface_spec_set_height(spec.get(), rect.height());
+    mir_surface_apply_spec(mirSurface(), spec.get());
+}
+
+void UbuntuWindowPrivate::setSurfaceState(Qt::WindowState new_state)
+{
+    mir_wait_for(mir_surface_set_state(surface->mirSurface(), qtWindowStateToMirSurfaceState(new_state)));
+}
+
+UbuntuWindow::UbuntuWindow(QWindow *w, QSharedPointer<UbuntuClipboard> clipboard, UbuntuScreen *screen,
+                           UbuntuInput *input, MirConnection *connection)
+    : QObject(nullptr), QPlatformWindow(w), d(new UbuntuWindowPrivate{
+        this, screen, input, w->windowState(), connection, clipboard,
+        w->geometry() != screen->geometry() ? w->geometry() : screen->availableGeometry()})
+{
+    DLOG("[ubuntumirclient QPA] UbuntuWindow(window=%p, w=%p, screen=%p, input=%p, priv=%p)", this, w, screen, input, d.get());
+}
+
+UbuntuWindow::~UbuntuWindow()
+{
+    DLOG("[ubuntumirclient QPA] ~UbuntuWindow(window=%p)", this);
 }
 
 void UbuntuWindow::handleSurfaceResize(int width, int height)
 {
-    LOG("UbuntuWindow::handleSurfaceResize(width=%d, height=%d)", width, height);
+    DLOG("[ubuntumirclient QPA] handleSurfaceResize(window=%p, width=%d, height=%d)", this, width, height);
 
     // The current buffer size hasn't actually changed. so just render on it and swap
     // buffers until we render on a buffer with the target size.
-
     bool shouldSwapBuffers;
-
     {
         QMutexLocker(&d->mutex);
         d->targetBufferSize.rwidth() = width;
@@ -336,10 +441,10 @@ void UbuntuWindow::handleSurfaceResize(int width, int height)
 
 void UbuntuWindow::handleSurfaceFocusChange(bool focused)
 {
-    LOG("UbuntuWindow::handleSurfaceFocusChange(focused=%s)", focused ? "true" : "false");
+    DLOG("[ubuntumirclient QPA] handleSurfaceFocusChange(window=%p, focused=%s)", this, focused ? "true" : "false");
     QWindow *activatedWindow = focused ? window() : nullptr;
 
-    // System clipboard contents might have changed while this window was unfocused and wihtout
+    // System clipboard contents might have changed while this window was unfocused and without
     // this process getting notified about it because it might have been suspended (due to
     // application lifecycle policies), thus unable to listen to any changes notified through
     // D-Bus.
@@ -354,7 +459,7 @@ void UbuntuWindow::handleSurfaceFocusChange(bool focused)
 
 void UbuntuWindow::handleBufferResize(int width, int height)
 {
-    DLOG("UbuntuWindow::handleBufferResize(width=%d, height=%d)", width, height);
+    DLOG("[ubuntumirclient QPA] handleBufferResize(window=%p, width=%d, height=%d)", this, width, height);
 
     QRect oldGeometry;
     QRect newGeometry;
@@ -384,53 +489,54 @@ void UbuntuWindow::forceRedraw()
 void UbuntuWindow::setWindowState(Qt::WindowState state)
 {
     QMutexLocker(&d->mutex);
-    DLOG("UbuntuWindow::setWindowState (this=%p, %s)", this,  qtWindowStateToStr(state));
+    DLOG("UbuntuWindow::setWindowState(window=%p, %s)", this, qtWindowStateToStr(state));
 
     if (state == d->state)
         return;
 
-    // TODO: Perhaps we should check if the states are applied?
-    mir_wait_for(mir_surface_set_state(d->surface, qtWindowStateToMirSurfaceState(state)));
+    d->setSurfaceState(state);
     d->state = state;
 }
 
 void UbuntuWindow::setGeometry(const QRect& rect)
 {
-    DLOG("UbuntuWindow::setGeometry (this=%p)", this);
+    DLOG("[ubuntumirclient QPA] setGeometry (window=%p, x=%d, y=%d, width=%d, height=%d)", this, rect.x(), rect.y(), rect.width(), rect.height());
 
-    bool doMoveResize;
-
+    bool resize;
     {
         QMutexLocker(&d->mutex);
+        resize = d->state != Qt::WindowFullScreen &&
+                 d->state != Qt::WindowMaximized &&
+                 d->geometry.size() != rect.size();
         d->geometry = rect;
-        doMoveResize = d->state != Qt::WindowFullScreen && d->state != Qt::WindowMaximized;
     }
 
-    if (doMoveResize) {
-        moveResize(rect);
+    if (resize) {
+        d->resize(rect);
     }
 }
 
 void UbuntuWindow::setVisible(bool visible)
 {
     QMutexLocker(&d->mutex);
-    DLOG("UbuntuWindow::setVisible (this=%p, visible=%s)", this, visible ? "true" : "false");
+    DLOG("[ubuntumirclient QPA] setVisible (window=%p, visible=%s)", this, visible ? "true" : "false");
 
     if (visible) {
-        mir_wait_for(mir_surface_set_state(d->surface, qtWindowStateToMirSurfaceState(d->state)));
+        d->createWindow();
+        d->setSurfaceState(d->state);
 
         QWindowSystemInterface::handleExposeEvent(window(), QRect());
         QWindowSystemInterface::flushWindowSystemEvents();
     } else {
         // TODO: Use the new mir_surface_state_hidden state instead of mir_surface_state_minimized.
         //       Will have to change qtmir and unity8 for that.
-        mir_wait_for(mir_surface_set_state(d->surface, mir_surface_state_minimized));
+        d->setSurfaceState(Qt::WindowMinimized);
     }
 }
 
 void* UbuntuWindow::eglSurface() const
 {
-    return d->eglSurface;
+    return d->eglSurface();
 }
 
 WId UbuntuWindow::winId() const

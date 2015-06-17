@@ -20,15 +20,18 @@
 #include <qpa/qplatformwindow.h>
 #include <QSharedPointer>
 
-#include <mir_toolkit/mir_client_library.h>
+#include <memory>
 
 class UbuntuClipboard;
 class UbuntuInput;
 class UbuntuScreen;
-class UbuntuWindowPrivate;
+struct UbuntuWindowPrivate;
+struct MirConnection;
 
 class UbuntuWindow : public QObject, public QPlatformWindow
 {
+    friend struct UbuntuWindowPrivate;
+
     Q_OBJECT
 public:
     UbuntuWindow(QWindow *w, QSharedPointer<UbuntuClipboard> clipboard, UbuntuScreen *screen,
@@ -47,17 +50,12 @@ public:
     void handleSurfaceFocusChange(bool focused);
     void onBuffersSwapped_threadSafe(int newBufferWidth, int newBufferHeight);
 
-    UbuntuWindowPrivate* priv() { return d; }
-
 public Q_SLOTS:
     void handleBufferResize(int width, int height);
     void forceRedraw();
 
 private:
-    void createWindow();
-    void moveResize(const QRect& rect);
-
-    UbuntuWindowPrivate *d;
+    std::unique_ptr<UbuntuWindowPrivate> d;
 };
 
 #endif // UBUNTU_WINDOW_H
