@@ -159,8 +159,8 @@ void ScreenController::update()
     }
 
     // Match up the new Mir DisplayBuffers with each Screen
-    display->for_each_display_buffer(
-        [&](mg::DisplayBuffer& buffer) {
+    display->for_each_display_sync_group([&](mg::DisplaySyncGroup &group) {
+        group.for_each_display_buffer([&](mg::DisplayBuffer &buffer) {
             // only way to match Screen to a DisplayBuffer is by matching the geometry
             QRect dbGeom(buffer.view_area().top_left.x.as_int(),
                          buffer.view_area().top_left.y.as_int(),
@@ -169,17 +169,16 @@ void ScreenController::update()
 
             for (auto screen : m_screenList) {
                 if (dbGeom == screen->geometry()) {
-                    screen->setMirDisplayBuffer(&buffer);
+                    screen->setMirDisplayBuffer(&buffer, &group);
                 }
             }
-        }
-    );
+        });
+    });
 
     qCDebug(QTMIR_SCREENS) << "=======================================";
     for (auto screen: m_screenList) {
         qCDebug(QTMIR_SCREENS) << "Screen - id:" << screen->m_outputId.as_value()
                                << "geometry:" << screen->geometry()
-                               << "buffer:" << screen->mirDisplayBuffer()
                                << "window:" << screen->window();
     }
     qCDebug(QTMIR_SCREENS) << "=======================================";

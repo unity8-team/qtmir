@@ -24,6 +24,9 @@
 
 // Mir
 #include "mir/geometry/size.h"
+#include "mir/graphics/buffer.h"
+#include "mir/graphics/display_buffer.h"
+#include "mir/graphics/display.h"
 
 // Qt
 #include <QCoreApplication>
@@ -280,13 +283,37 @@ void Screen::setWindow(ScreenWindow *window)
     m_screenWindow = window;
 }
 
-mir::graphics::DisplayBuffer* Screen::mirDisplayBuffer() const
-{
-    return m_displayBuffer;
-}
-
-void Screen::setMirDisplayBuffer(mir::graphics::DisplayBuffer *buffer)
+void Screen::setMirDisplayBuffer(mir::graphics::DisplayBuffer *buffer, mir::graphics::DisplaySyncGroup *group)
 {
     // This operation should only be performed while rendering is stopped
     m_displayBuffer = buffer;
+    m_displayGroup = group;
+}
+
+void Screen::swapBuffers()
+{
+    m_displayBuffer->gl_swap_buffers();
+
+    /* FIXME this exposes a QtMir architecture problem, as Screen is supposed to wrap a mg::DisplayBuffer.
+     * We use Qt's multithreaded renderer, where each Screen is rendered to relatively independently, and
+     * post() called also individually.
+     *
+     * But if this is a native server on Android, in the multimonitor case a DisplaySyncGroup can contain
+     * 2+ DisplayBuffers, one post() call will submit all mg::DisplayBuffers in the group for flipping.
+     * This will cause just one Screen to be updated, blocking the swap call for the other Screens, which
+     * will slow rendering dramatically.
+     *
+     * Integrating the Qt Scenegraph renderer as a Mir renderer should solve this issue.
+     */
+    m_displayGroup->post();
+}
+
+void Screen::makeCurrent()
+{
+    m_displayBuffer->make_current();
+}
+
+void Screen::doneCurrent()
+{
+    m_displayBuffer->release_current();
 }

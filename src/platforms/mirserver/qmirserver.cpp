@@ -81,7 +81,7 @@ void QMirServer::run()
     if (!m_mirServer->wait_for_mir_startup())
     {
         qCritical() << "ERROR: QMirServer - Mir failed to start";
-        QCoreApplication::quit();
+        exit(2);
     }
     m_screenController->init();
 }

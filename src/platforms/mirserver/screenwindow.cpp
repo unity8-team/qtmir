@@ -111,21 +111,17 @@ bool ScreenWindow::event(QEvent *event)
 
 void ScreenWindow::swapBuffers()
 {
-    auto displayBuffer = static_cast<Screen *>(screen())->mirDisplayBuffer();
-    displayBuffer->gl_swap_buffers();
-    displayBuffer->flip();
+    static_cast<Screen *>(screen())->swapBuffers();
 }
 
 void ScreenWindow::makeCurrent()
 {
-    auto displayBuffer = static_cast<Screen *>(screen())->mirDisplayBuffer();
-    displayBuffer->make_current();
+    static_cast<Screen *>(screen())->makeCurrent();
 }
 
 void ScreenWindow::doneCurrent()
 {
     qDebug() << "ScreenWindow::doneCurrent";
-
-    auto displayBuffer = static_cast<Screen *>(screen())->mirDisplayBuffer();
-    displayBuffer->release_current();
+    static_cast<Screen *>(screen())->doneCurrent();
 }
+

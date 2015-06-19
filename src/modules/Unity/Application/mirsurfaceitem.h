@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2014 Canonical, Ltd.
+ * Copyright (C) 2013-2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -48,12 +48,17 @@ class MirSurfaceItem : public QQuickItem
     Q_OBJECT
     Q_ENUMS(Type)
     Q_ENUMS(State)
+    Q_ENUMS(OrientationAngle)
 
     Q_PROPERTY(Type type READ type NOTIFY typeChanged)
     Q_PROPERTY(State state READ state NOTIFY stateChanged)
     Q_PROPERTY(QString name READ name NOTIFY nameChanged)
     Q_PROPERTY(bool live READ live NOTIFY liveChanged)
-    Q_PROPERTY(Qt::ScreenOrientation orientation READ orientation WRITE setOrientation NOTIFY orientationChanged DESIGNABLE false)
+
+    // How many degrees, clockwise, the UI in the surface has to rotate to match with the
+    // shell UI orientation
+    Q_PROPERTY(OrientationAngle orientationAngle READ orientationAngle WRITE setOrientationAngle
+               NOTIFY orientationAngleChanged DESIGNABLE false)
 
 public:
     explicit MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
@@ -83,12 +88,18 @@ public:
         Fullscreen = mir_surface_state_fullscreen,
     };
 
+    enum OrientationAngle {
+        Angle0 = 0,
+        Angle90 = 90,
+        Angle180 = 180,
+        Angle270 = 270
+    };
+
     //getters
     Type type() const;
     State state() const;
     QString name() const;
     bool live() const;
-    Qt::ScreenOrientation orientation() const;
     SessionInterface *session() const;
 
     Q_INVOKABLE void release();
@@ -102,12 +113,15 @@ public:
 
     bool isFirstFrameDrawn() const { return m_firstFrameDrawn; }
 
-    void setOrientation(const Qt::ScreenOrientation orientation);
+    OrientationAngle orientationAngle() const;
+    void setOrientationAngle(OrientationAngle angle);
+
     void setSession(SessionInterface *app);
 
     // to allow easy touch event injection from tests
     bool processTouchEvent(int eventType,
             ulong timestamp,
+            Qt::KeyboardModifiers modifiers,
             const QList<QTouchEvent::TouchPoint> &touchPoints,
             Qt::TouchPointStates touchPointStates);
 
@@ -115,7 +129,7 @@ Q_SIGNALS:
     void typeChanged();
     void stateChanged();
     void nameChanged();
-    void orientationChanged();
+    void orientationAngleChanged(OrientationAngle angle);
     void liveChanged(bool live);
     void firstFrameDrawn(MirSurfaceItem *item);
 
@@ -126,6 +140,9 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
+    void hoverEnterEvent(QHoverEvent *event) override;
+    void hoverLeaveEvent(QHoverEvent *event) override;
+    void hoverMoveEvent(QHoverEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
 
     void keyPressEvent(QKeyEvent *event) override;
@@ -144,6 +161,7 @@ private Q_SLOTS:
     void updateMirSurfaceSize();
 
     void updateMirSurfaceFocus(bool focused);
+    void onAttributeChanged(const MirSurfaceAttrib, const int);
 
 private:
     bool updateTexture();
@@ -154,10 +172,10 @@ private:
     void setLive(const bool);
 
     // called by MirSurfaceManager
-    void setAttribute(const MirSurfaceAttrib, const int);
     void setSurfaceValid(const bool);
 
     bool hasTouchInsideUbuntuKeyboard(const QList<QTouchEvent::TouchPoint> &touchPoints);
+    bool isMouseInsideUbuntuKeyboard(const QMouseEvent *event);
     void syncSurfaceSizeWithItemSize();
 
     bool clientIsRunning() const;
@@ -166,6 +184,7 @@ private:
     void endCurrentTouchSequence(ulong timestamp);
     void validateAndDeliverTouchEvent(int eventType,
             ulong timestamp,
+            Qt::KeyboardModifiers modifiers,
             const QList<QTouchEvent::TouchPoint> &touchPoints,
             Qt::TouchPointStates touchPointStates);
 
@@ -176,7 +195,9 @@ private:
     MirShell *const m_shell;
     bool m_firstFrameDrawn;
     bool m_live;
-    Qt::ScreenOrientation m_orientation; //FIXME -  have to save the state as Mir has no getter for it (bug:1357429)
+
+    //FIXME -  have to save the state as Mir has no getter for it (bug:1357429)
+    OrientationAngle m_orientationAngle;
 
     QMirSurfaceTextureProvider *m_textureProvider;
 
@@ -191,6 +212,7 @@ private:
         TouchEvent &operator= (const QTouchEvent &qtEvent) {
             type = qtEvent.type();
             timestamp = qtEvent.timestamp();
+            modifiers = qtEvent.modifiers();
             touchPoints = qtEvent.touchPoints();
             touchPointStates = qtEvent.touchPointStates();
             return *this;
@@ -200,6 +222,7 @@ private:
 
         int type;
         ulong timestamp;
+        Qt::KeyboardModifiers modifiers;
         QList<QTouchEvent::TouchPoint> touchPoints;
         Qt::TouchPointStates touchPointStates;
     } *m_lastTouchEvent;
@@ -210,5 +233,6 @@ private:
 } // namespace qtmir
 
 Q_DECLARE_METATYPE(qtmir::MirSurfaceItem*)
+Q_DECLARE_METATYPE(qtmir::MirSurfaceItem::OrientationAngle)
 
 #endif // MIRSURFACEITEM_H

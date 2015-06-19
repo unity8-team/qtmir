@@ -34,7 +34,7 @@
 #include "screenwindow.h"
 
 class QOrientationSensor;
-namespace mir { namespace graphics { class DisplayBuffer; }}
+namespace mir { namespace graphics { class DisplayBuffer; class DisplaySyncGroup; }}
 
 class Screen : public QObject, public QPlatformScreen
 {
@@ -71,8 +71,10 @@ private:
     void setWindow(ScreenWindow *window);
 
     void setMirDisplayConfiguration(const mir::graphics::DisplayConfigurationOutput &);
-    mir::graphics::DisplayBuffer *mirDisplayBuffer() const;
-    void setMirDisplayBuffer(mir::graphics::DisplayBuffer *);
+    void setMirDisplayBuffer(mir::graphics::DisplayBuffer *, mir::graphics::DisplaySyncGroup *);
+    void swapBuffers();
+    void makeCurrent();
+    void doneCurrent();
 
     QRect m_geometry;
     int m_depth;
@@ -81,6 +83,7 @@ private:
     qreal m_refreshRate;
 
     mir::graphics::DisplayBuffer *m_displayBuffer;
+    mir::graphics::DisplaySyncGroup *m_displayGroup;
     mir::graphics::DisplayConfigurationOutputId m_outputId;
     mir::graphics::DisplayConfigurationCardId m_cardId;
     mir::graphics::DisplayConfigurationOutputType m_type;

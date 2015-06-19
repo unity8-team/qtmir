@@ -54,7 +54,6 @@ public:
     using mir::Server::the_prompt_session_manager;
     using mir::Server::the_session_authorizer;
     using mir::Server::the_session_listener;
-    using mir::Server::the_surface_configurator;
 
     /* qt specific */
     // getters

@@ -25,6 +25,7 @@
 #include "taskcontroller.h"
 #include "upstart/applicationcontroller.h"
 #include "tracepoints.h" // generated from tracepoints.tp
+#include "settings.h"
 
 // mirserver
 #include "mirserver.h"
@@ -60,33 +61,6 @@ namespace qtmir
 {
 
 namespace {
-
-// FIXME: AppManager should not implement policy based on display geometry, shell should do that
-bool forceAllAppsIntoMainStage(const QSharedPointer<MirServer> &mirServer)
-{
-    const int tabletModeMinimimWithGU = 100;
-
-    // Obtain display size
-    mir::geometry::Rectangles view_area;
-    mirServer->the_display()->for_each_display_buffer(
-        [&view_area](const mir::graphics::DisplayBuffer & db)
-        {
-            view_area.add(db.view_area());
-        });
-
-    // Get current Grid Unit value
-    int gridUnitPx = 8;
-    QByteArray gridUnitString = qgetenv("GRID_UNIT_PX");
-    if (!gridUnitString.isEmpty()) {
-        bool ok;
-        int value = gridUnitString.toInt(&ok);
-        if (ok) {
-            gridUnitPx = value;
-        }
-    }
-
-    return (view_area.bounding_rectangle().size.width.as_int() < tabletModeMinimimWithGU * gridUnitPx);
-}
 
 // FIXME: To be removed once shell has fully adopted short appIds!!
 QString toShortAppIdIfPossible(const QString &appId) {
@@ -152,6 +126,7 @@ ApplicationManager* ApplicationManager::Factory::Factory::create()
     QSharedPointer<DesktopFileReader::Factory> fileReaderFactory(new DesktopFileReader::Factory());
     QSharedPointer<ProcInfo> procInfo(new ProcInfo());
     QSharedPointer<SharedWakelock> sharedWakelock(new SharedWakelock);
+    QSharedPointer<Settings> settings(new Settings());
 
     // FIXME: We should use a QSharedPointer to wrap this ApplicationManager object, which requires us
     // to use the data() method to pass the raw pointer to the QML engine. However the QML engine appears
@@ -163,7 +138,8 @@ ApplicationManager* ApplicationManager::Factory::Factory::create()
                                              taskController,
                                              sharedWakelock,
                                              fileReaderFactory,
-                                             procInfo
+                                             procInfo,
+                                             settings
                                          );
 
     connectToSessionListener(appManager, sessionListener);
@@ -199,18 +175,19 @@ ApplicationManager::ApplicationManager(
         const QSharedPointer<SharedWakelock>& sharedWakelock,
         const QSharedPointer<DesktopFileReader::Factory>& desktopFileReaderFactory,
         const QSharedPointer<ProcInfo>& procInfo,
+        const QSharedPointer<SettingsInterface>& settings,
         QObject *parent)
     : ApplicationManagerInterface(parent)
     , m_mirServer(mirServer)
     , m_focusedApplication(nullptr)
     , m_mainStageApplication(nullptr)
     , m_sideStageApplication(nullptr)
-    , m_lifecycleExceptions(QStringList() << "com.ubuntu.music")
     , m_dbusWindowStack(new DBusWindowStack(this))
     , m_taskController(taskController)
     , m_desktopFileReaderFactory(desktopFileReaderFactory)
     , m_procInfo(procInfo)
     , m_sharedWakelock(sharedWakelock)
+    , m_settings(settings)
     , m_suspended(false)
     , m_forceDashActive(false)
 {
@@ -219,6 +196,11 @@ ApplicationManager::ApplicationManager(
 
     m_roleNames.insert(RoleSession, "session");
     m_roleNames.insert(RoleFullscreen, "fullscreen");
+
+    if (settings.data()) {
+        m_lifecycleExceptions = m_settings->get("lifecycleExemptAppids").toStringList();
+        connect(m_settings.data(), &Settings::changed, this, &ApplicationManager::onSettingsChanged);
+    }
 }
 
 ApplicationManager::~ApplicationManager()
@@ -372,9 +354,12 @@ bool ApplicationManager::suspendApplication(Application *application)
         return false;
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::suspendApplication - appId=" << application->appId();
 
-    // Present in exceptions list, return.
-    if (!m_lifecycleExceptions.filter(application->appId().section('_',0,0)).empty())
+    // Present in exceptions list, explicitly release wakelock and return. There's no need to keep the wakelock
+    // as the process is never suspended and thus has no cleanup to perform when (for example) the display is blanked
+    if (!m_lifecycleExceptions.filter(application->appId().section('_',0,0)).empty()) {
+        m_sharedWakelock->release(application);
         return false;
+    }
 
     if (m_forceDashActive && application->appId() == "unity8-dash") {
         return false;
@@ -541,10 +526,6 @@ void ApplicationManager::onProcessStarting(const QString &appId)
             return;
         }
 
-        // override stage if necessary (i.e. side stage invalid on phone)
-        if (application->stage() == Application::SideStage && forceAllAppsIntoMainStage(m_mirServer))
-            application->setStage(Application::MainStage);
-
         add(application);
         Q_EMIT focusRequested(appId);
     }
@@ -703,9 +684,16 @@ void ApplicationManager::onAppDataChanged(const int role)
         QModelIndex appIndex = findIndex(application);
         Q_EMIT dataChanged(appIndex, appIndex, QVector<int>() << role);
 
-        qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onAppDataChanged: Received " << m_roleNames[role] << " update", application->appId();
+        qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onAppDataChanged: Received " << m_roleNames[role] << " update" <<  application->appId();
     } else {
         qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onAppDataChanged: Received " << m_roleNames[role] << " signal but application has disappeard.";
+    }
+}
+
+void ApplicationManager::onSettingsChanged(const QString &key)
+{
+    if (key == "lifecycleExemptAppids") {
+        m_lifecycleExceptions = m_settings->get("lifecycleExemptAppids").toStringList();
     }
 }
 
@@ -748,26 +736,26 @@ void ApplicationManager::authorizeSession(const quint64 pid, bool &authorized)
         return;
     }
 
-    boost::optional<QString> desktopFileName{ info->getParameter("--desktop_file_hint=") };
+    QString desktopFileName = info->getParameter("--desktop_file_hint=");
 
-    if (!desktopFileName) {
+    if (desktopFileName.isNull()) {
         qCritical() << "ApplicationManager REJECTED connection from app with pid" << pid
-                    << "as no desktop_file_hint specified";
+                    << "as it was not launched by upstart, and no desktop_file_hint is specified";
         return;
     }
 
     qCDebug(QTMIR_APPLICATIONS) << "Process supplied desktop_file_hint, loading:" << desktopFileName;
 
     // Guess appId from the desktop file hint
-    QString appId = toShortAppIdIfPossible(desktopFileName.get().remove(QRegExp(".desktop$")).split('/').last());
+    QString appId = toShortAppIdIfPossible(desktopFileName.remove(QRegExp(".desktop$")).split('/').last());
 
     // FIXME: right now we support --desktop_file_hint=appId for historical reasons. So let's try that in
     // case we didn't get an existing .desktop file path
     DesktopFileReader* desktopData;
-    if (QFileInfo::exists(desktopFileName.get())) {
-        desktopData = m_desktopFileReaderFactory->createInstance(appId, QFileInfo(desktopFileName.get()));
+    if (QFileInfo::exists(desktopFileName)) {
+        desktopData = m_desktopFileReaderFactory->createInstance(appId, QFileInfo(desktopFileName));
     } else {
-        qCDebug(QTMIR_APPLICATIONS) << "Unable to find file:" << desktopFileName.get()
+        qCDebug(QTMIR_APPLICATIONS) << "Unable to find file:" << desktopFileName
                                     << "so will search standard paths for one named" << appId << ".desktop";
         desktopData = m_desktopFileReaderFactory->createInstance(appId, m_taskController->findDesktopFileForAppId(appId));
     }
@@ -793,9 +781,9 @@ void ApplicationManager::authorizeSession(const quint64 pid, bool &authorized)
 
     // if stage supplied in CLI, fetch that
     Application::Stage stage = Application::MainStage;
-    boost::optional<QString> stageParam = info->getParameter("--stage_hint=");
+    QString stageParam = info->getParameter("--stage_hint=");
 
-    if (stageParam && stageParam.get() == "side_stage") {
+    if (stageParam == "side_stage") {
         stage = Application::SideStage;
     }
 

@@ -23,8 +23,9 @@
 
 #include <QObject>
 
-// ScreenWindow implements the basics of a QPlatformWindow. Any Mir
-// specifics live in the associated Screen object.
+// ScreenWindow implements the basics of a QPlatformWindow.
+// QtMir enforces one Window per Screen, so Window and Screen are tightly coupled.
+// All Mir specifics live in the associated Screen object.
 
 class ScreenWindow : public QObject, public QPlatformWindow
 {

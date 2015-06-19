@@ -1,5 +1,5 @@
 /*
- * Copyright © 2013-2014 Canonical Ltd.
+ * Copyright © 2013-2015 Canonical Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -31,14 +31,10 @@
 
 #include <QDebug>
 
-Q_LOGGING_CATEGORY(QTMIR_MIR_INPUT, "qtmir.mir.input")
+// common dir
+#include <debughelpers.h>
 
-// from android-input AMOTION_EVENT_ACTION_*, hidden inside mir bowels
-// mir headers should define them
-const int QtEventFeeder::MirEventActionMask = 0xff;
-const int QtEventFeeder::MirEventActionPointerIndexMask = 0xff00;
-const int QtEventFeeder::MirEventActionPointerIndexShift = 8;
-
+Q_LOGGING_CATEGORY(QTMIR_MIR_INPUT, "qtmir.mir.input", QtWarningMsg)
 
 // XKB Keysyms which do not map directly to Qt types (i.e. Unicode points)
 static const uint32_t KeyTable[] = {
@@ -189,6 +185,13 @@ class QtWindowSystem : public QtEventFeeder::QtWindowSystemInterface
         QWindowSystemInterface::handleTouchEvent(window, timestamp, device, points, mods);
     }    
 
+    void handleMouseEvent(QWindow *window, ulong timestamp, QPointF point, Qt::MouseButton buttons,
+                          Qt::KeyboardModifiers modifiers) override
+    {
+        QWindowSystemInterface::handleMouseEvent(window, timestamp, point, point, // local and global point are the same
+            buttons, modifiers);
+    }
+
 private:
     ScreenController *m_screenController{nullptr};
 };
@@ -228,66 +231,114 @@ void QtEventFeeder::dispatch(MirEvent const& event)
     if (!mQtWindowSystem->ready())
         return;
 
-    switch (event.type) {
-    case mir_event_type_key:
-        dispatchKey(event.key);
+    auto iev = mir_event_get_input_event(&event);
+
+    switch (mir_input_event_get_type(iev)) {
+    case mir_input_event_type_key:
+        dispatchKey(iev);
         break;
-    case mir_event_type_motion:
-        dispatchMotion(event.motion);
+    case mir_input_event_type_touch:
+        dispatchTouch(iev);
         break;
-    case mir_event_type_surface:
-        // Just ignore these events: it doesn't make sense to pass them on.
-        break;
+    case mir_input_event_type_pointer:
+        dispatchPointer(iev);
     default:
-        // mir_event_type_surface and mir_event_type_resize events go through
-        // mir's own protobuf channel instead of the android_input one. The latter
-        // being the one we're dealing with here.
-        qFatal("QtEventFeeder got unsupported event type from mir");
         break;
     }
 }
 
-void QtEventFeeder::dispatchKey(MirKeyEvent const& event)
+namespace
 {
-    ulong timestamp = event.event_time / 1000000;
-    xkb_keysym_t xk_sym = static_cast<xkb_keysym_t>(event.key_code);
+
+Qt::KeyboardModifiers getQtModifiersFromMir(MirInputEventModifiers modifiers)
+{
+    int qtModifiers = Qt::NoModifier;
+    if (modifiers & mir_input_event_modifier_shift) {
+        qtModifiers |= Qt::ShiftModifier;
+    }
+    if (modifiers & mir_input_event_modifier_ctrl) {
+        qtModifiers |= Qt::ControlModifier;
+    }
+    if (modifiers & mir_input_event_modifier_alt) {
+        qtModifiers |= Qt::AltModifier;
+    }
+    if (modifiers & mir_input_event_modifier_meta) {
+        qtModifiers |= Qt::MetaModifier;
+    }
+    return static_cast<Qt::KeyboardModifiers>(qtModifiers);
+}
+
+Qt::MouseButton getQtMouseButtonsfromMirPointerEvent(MirPointerEvent const* pev)
+{
+    int buttons = Qt::NoButton;
+    if (mir_pointer_event_button_state(pev, mir_pointer_button_primary))
+        buttons |= Qt::LeftButton;
+    if (mir_pointer_event_button_state(pev, mir_pointer_button_secondary))
+        buttons |= Qt::RightButton;
+    if (mir_pointer_event_button_state(pev, mir_pointer_button_tertiary))
+        buttons |= Qt::MidButton;
+
+    // TODO: Should mir back and forward buttons exist?
+    // should they be Qt::X button 1 and 2?
+    return static_cast<Qt::MouseButton>(buttons);
+}
+}
+
+void QtEventFeeder::dispatchPointer(MirInputEvent const* ev)
+{
+    auto timestamp = mir_input_event_get_event_time(ev) / 1000000;
+
+    auto pev = mir_input_event_get_pointer_event(ev);
+    auto modifiers = getQtModifiersFromMir(mir_pointer_event_modifiers(pev));
+    auto buttons = getQtMouseButtonsfromMirPointerEvent(pev);
+
+    auto local_point = QPointF(mir_pointer_event_axis_value(pev, mir_pointer_axis_x),
+                               mir_pointer_event_axis_value(pev, mir_pointer_axis_y));
+
+    mQtWindowSystem->handleMouseEvent(mQtWindowSystem->focusedWindow(), timestamp, local_point,
+                                      buttons, modifiers);
+}
+
+void QtEventFeeder::dispatchKey(MirInputEvent const* event)
+{
+    ulong timestamp = mir_input_event_get_event_time(event) / 1000000;
+
+    auto kev = mir_input_event_get_keyboard_event(event);
+    xkb_keysym_t xk_sym = mir_keyboard_event_key_code(kev);
 
     // Key modifier and unicode index mapping.
-    const int kEventModifiers = event.modifiers;
-    Qt::KeyboardModifiers modifiers = Qt::NoModifier;
-    if (kEventModifiers & mir_key_modifier_shift) {
-        modifiers |= Qt::ShiftModifier;
-    }
-    if (kEventModifiers & mir_key_modifier_ctrl) {
-        modifiers |= Qt::ControlModifier;
-    }
-    if (kEventModifiers & mir_key_modifier_alt) {
-        modifiers |= Qt::AltModifier;
-    }
-    if (kEventModifiers & mir_key_modifier_meta) {
-        modifiers |= Qt::MetaModifier;
-    }
+    auto modifiers = getQtModifiersFromMir(mir_keyboard_event_modifiers(kev));
 
     // Key action
-    QEvent::Type keyType;
-    if (event.action == mir_key_action_down) {
+    QEvent::Type keyType = QEvent::KeyRelease;
+    bool is_auto_rep = false;
+
+    switch (mir_keyboard_event_action(kev))
+    {
+    case mir_keyboard_action_repeat:
+        is_auto_rep = true; // fall-through
+    case mir_keyboard_action_down:
         keyType = QEvent::KeyPress;
-    } else {
+        break;
+    case mir_keyboard_action_up:
         keyType = QEvent::KeyRelease;
+        break;
+    default:
+        break;
     }
 
     // Key event propagation.
     char s[2];
     int keyCode = translateKeysym(xk_sym, s, sizeof(s));
     QString text = QString::fromLatin1(s);
-    
-    bool is_auto_rep = event.repeat_count > 0;
 
     QPlatformInputContext* context = QGuiApplicationPrivate::platformIntegration()->inputContext();
     if (context) {
         // TODO: consider event.repeat_count
         QKeyEvent qKeyEvent(keyType, keyCode, modifiers,
-                            event.scan_code, event.key_code, event.modifiers,
+                            mir_keyboard_event_scan_code(kev),
+                            mir_keyboard_event_key_code(kev),
+                            mir_keyboard_event_modifiers(kev),
                             text, is_auto_rep);
         qKeyEvent.setTimestamp(timestamp);
         if (context->filterEvent(&qKeyEvent)) {
@@ -296,36 +347,34 @@ void QtEventFeeder::dispatchKey(MirKeyEvent const& event)
         }
     }
 
-    mQtWindowSystem->handleExtendedKeyEvent(mQtWindowSystem->focusedWindow(), timestamp, keyType, keyCode, modifiers,
-            event.scan_code, event.key_code, event.modifiers, text, is_auto_rep);
+    mQtWindowSystem->handleExtendedKeyEvent(mQtWindowSystem->focusedWindow(),
+        timestamp, keyType, keyCode, modifiers,
+        mir_keyboard_event_scan_code(kev),
+        mir_keyboard_event_key_code(kev),
+        mir_keyboard_event_modifiers(kev), text, is_auto_rep);
 }
 
-void QtEventFeeder::dispatchMotion(MirMotionEvent const& event)
+void QtEventFeeder::dispatchTouch(MirInputEvent const* event)
 {
-    const int mirMotionAction = event.action & MirEventActionMask;
-
-    // Ignore the events that do not interest us (or that we currently don't support or know
-    // how to translate into Qt events)
-    if (mirMotionAction != mir_motion_action_move
-            && mirMotionAction != mir_motion_action_down
-            && mirMotionAction != mir_motion_action_up
-            && mirMotionAction != mir_motion_action_pointer_down
-            && mirMotionAction != mir_motion_action_pointer_up
-            && mirMotionAction != mir_motion_action_cancel) {
-        return;
-    }
-
+    auto tev = mir_input_event_get_touch_event(event);
+    qCDebug(QTMIR_MIR_INPUT) << "Received" << qPrintable(mirTouchEventToString(tev));
 
     // FIXME(loicm) Max pressure is device specific. That one is for the Samsung Galaxy Nexus. That
     //     needs to be fixed as soon as the compat input lib adds query support.
     const float kMaxPressure = 1.28;
-    const int kPointerCount = (int) event.pointer_count;
+    const int kPointerCount = mir_touch_event_point_count(tev);
     QList<QWindowSystemInterface::TouchPoint> touchPoints;
     QWindow *window = nullptr;
 
     if (kPointerCount > 0) {
-        window = mQtWindowSystem->getWindowForTouchPoint(QPoint(event.pointer_coordinates[0].x,
-                                                                event.pointer_coordinates[0].y));
+        window = mQtWindowSystem->getWindowForTouchPoint(
+                    QPoint(mir_touch_event_axis_value(tev, 0, mir_touch_axis_x),
+                           mir_touch_event_axis_value(tev, 0, mir_touch_axis_y)));
+
+        if (!window) {
+            qDebug() << "REJECTING INPUT EVENT, no matching window";
+            return;
+        }
 
         const QRect kWindowGeometry = window->geometry();
 
@@ -334,73 +383,46 @@ void QtEventFeeder::dispatchMotion(MirMotionEvent const& event)
         for (int i = 0; i < kPointerCount; ++i) {
             QWindowSystemInterface::TouchPoint touchPoint;
 
-            const float kX = event.pointer_coordinates[i].x;
-            const float kY = event.pointer_coordinates[i].y;
-            const float kW = event.pointer_coordinates[i].touch_major;
-            const float kH = event.pointer_coordinates[i].touch_minor;
-            const float kP = event.pointer_coordinates[i].pressure;
-            touchPoint.id = event.pointer_coordinates[i].id;
+            const float kX = mir_touch_event_axis_value(tev, i, mir_touch_axis_x);
+            const float kY = mir_touch_event_axis_value(tev, i, mir_touch_axis_y);
+            const float kW = mir_touch_event_axis_value(tev, i, mir_touch_axis_touch_major);
+            const float kH = mir_touch_event_axis_value(tev, i, mir_touch_axis_touch_minor);
+            const float kP = mir_touch_event_axis_value(tev, i, mir_touch_axis_pressure);
+            touchPoint.id = mir_touch_event_id(tev, i);
+
             touchPoint.normalPosition = QPointF(kX / kWindowGeometry.width(), kY / kWindowGeometry.height());
             touchPoint.area = QRectF(kX - (kW / 2.0), kY - (kH / 2.0), kW, kH);
             touchPoint.pressure = kP / kMaxPressure;
-            touchPoint.state = Qt::TouchPointMoved;
+            switch (mir_touch_event_action(tev, i))
+            {
+            case mir_touch_action_up:
+                touchPoint.state = Qt::TouchPointReleased;
+                break;
+            case mir_touch_action_down:
+                touchPoint.state = Qt::TouchPointPressed;
+                break;
+            case mir_touch_action_change:
+                touchPoint.state = Qt::TouchPointMoved;
+                break;
+            default:
+                break;
+            }
 
             touchPoints.append(touchPoint);
         }
     }
 
-    if (!window) {
-        qDebug() << "REJECTING INPUT EVENT";
-    }
-
-    switch (mirMotionAction) {
-    case mir_motion_action_move:
-        // No extra work needed.
-        break;
-
-    case mir_motion_action_down:
-        // NB: hardcoded index 0 because there's only a single touch point in this case
-        touchPoints[0].state = Qt::TouchPointPressed;
-        break;
-
-    case mir_motion_action_up:
-        touchPoints[0].state = Qt::TouchPointReleased;
-        break;
-
-    case mir_motion_action_pointer_down: {
-        const int index = (event.action & MirEventActionPointerIndexMask) >>
-            MirEventActionPointerIndexShift;
-        touchPoints[index].state = Qt::TouchPointPressed;
-        break;
-        }
-
-    case mir_motion_action_cancel:
-    case mir_motion_action_pointer_up: {
-        const int index = (event.action & MirEventActionPointerIndexMask) >>
-            MirEventActionPointerIndexShift;
-        touchPoints[index].state = Qt::TouchPointReleased;
-        break;
-        }
-
-    case mir_motion_action_outside:
-    case mir_motion_action_hover_move:
-    case mir_motion_action_scroll:
-    case mir_motion_action_hover_enter:
-    case mir_motion_action_hover_exit:
-    default:
-        // Should never reach this point. If so, it's a programming error.
-        qFatal("Trying to handle unsupported motion event action");
-    }
-
     // Qt needs a happy, sane stream of touch events. So let's make sure we're not forwarding
     // any insanity.
-    validateTouches(touchPoints);
+    validateTouches(mir_input_event_get_event_time(event) / 1000000, touchPoints);
 
     // Touch event propagation.
+    qCDebug(QTMIR_MIR_INPUT) << "Sending to Qt" << qPrintable(touchesToString(touchPoints));
     mQtWindowSystem->handleTouchEvent(window,
-            event.event_time / 1000000, //scales down the nsec_t (int64) to fit a ulong, precision lost but time difference suitable
-            mTouchDevice,
-            touchPoints);
+        //scales down the nsec_t (int64) to fit a ulong, precision lost but time difference suitable
+        mir_input_event_get_event_time(event) / 1000000,
+        mTouchDevice,
+        touchPoints);
 }
 
 void QtEventFeeder::start()
@@ -424,7 +446,8 @@ void QtEventFeeder::device_reset(int32_t device_id, std::chrono::nanoseconds whe
     Q_UNUSED(when);
 }
 
-void QtEventFeeder::validateTouches(QList<QWindowSystemInterface::TouchPoint> &touchPoints)
+void QtEventFeeder::validateTouches(ulong timestamp,
+        QList<QWindowSystemInterface::TouchPoint> &touchPoints)
 {
     QSet<int> updatedTouches;
 
@@ -441,21 +464,45 @@ void QtEventFeeder::validateTouches(QList<QWindowSystemInterface::TouchPoint> &t
         }
     }
 
-    // Release all unmentioned touches.
-    {
-        QHash<int, QWindowSystemInterface::TouchPoint>::iterator it = mActiveTouches.begin();
-        while (it != mActiveTouches.end()) {
-            if (!updatedTouches.contains(it.key())) {
-                qCWarning(QTMIR_MIR_INPUT)
-                    << "There's a touch (id =" << it.key() << ") missing. Releasing it.";
-                it.value().state = Qt::TouchPointReleased;
-                touchPoints.append(it.value());
-                it = mActiveTouches.erase(it);
-            } else {
-                ++it;
-            }
+    // Release all unmentioned touches, one by one.
+    QHash<int, QWindowSystemInterface::TouchPoint>::iterator it = mActiveTouches.begin();
+    while (it != mActiveTouches.end()) {
+        if (!updatedTouches.contains(it.key())) {
+            qCWarning(QTMIR_MIR_INPUT)
+                << "There's a touch (id =" << it.key() << ") missing. Releasing it.";
+            sendActiveTouchRelease(timestamp, it.key());
+            it = mActiveTouches.erase(it);
+        } else {
+            ++it;
         }
     }
+
+    // update mActiveTouches
+    for (int i = 0; i < touchPoints.count(); ++i) {
+        auto &touchPoint = touchPoints.at(i);
+        if (touchPoint.state == Qt::TouchPointReleased) {
+            mActiveTouches.remove(touchPoint.id);
+        } else {
+            mActiveTouches[touchPoint.id] = touchPoint;
+        }
+    }
+}
+
+void QtEventFeeder::sendActiveTouchRelease(ulong timestamp, int id)
+{
+    QList<QWindowSystemInterface::TouchPoint> touchPoints = mActiveTouches.values();
+
+    for (int i = 0; i < touchPoints.count(); ++i) {
+        QWindowSystemInterface::TouchPoint &touchPoint = touchPoints[i];
+        if (touchPoint.id == id) {
+            touchPoint.state = Qt::TouchPointReleased;
+        } else {
+            touchPoint.state = Qt::TouchPointStationary;
+        }
+    }
+
+    qCDebug(QTMIR_MIR_INPUT) << "Sending to Qt" << qPrintable(touchesToString(touchPoints));
+    mQtWindowSystem->handleTouchEvent(mQtWindowSystem->focusedWindow(), timestamp, mTouchDevice, touchPoints);
 }
 
 bool QtEventFeeder::validateTouch(QWindowSystemInterface::TouchPoint &touchPoint)
@@ -470,7 +517,6 @@ bool QtEventFeeder::validateTouch(QWindowSystemInterface::TouchPoint &touchPoint
                 << "). Making it move instead.";
             touchPoint.state = Qt::TouchPointMoved;
         }
-        mActiveTouches[touchPoint.id] = touchPoint;
         break;
     case Qt::TouchPointMoved:
         if (!mActiveTouches.contains(touchPoint.id)) {
@@ -479,7 +525,6 @@ bool QtEventFeeder::validateTouch(QWindowSystemInterface::TouchPoint &touchPoint
                 << "). Making it press instead.";
             touchPoint.state = Qt::TouchPointPressed;
         }
-        mActiveTouches[touchPoint.id] = touchPoint;
         break;
     case Qt::TouchPointStationary:
         if (!mActiveTouches.contains(touchPoint.id)) {
@@ -488,7 +533,6 @@ bool QtEventFeeder::validateTouch(QWindowSystemInterface::TouchPoint &touchPoint
                 << "). Making it press instead.";
             touchPoint.state = Qt::TouchPointPressed;
         }
-        mActiveTouches[touchPoint.id] = touchPoint;
         break;
     case Qt::TouchPointReleased:
         if (!mActiveTouches.contains(touchPoint.id)) {
@@ -496,8 +540,6 @@ bool QtEventFeeder::validateTouch(QWindowSystemInterface::TouchPoint &touchPoint
                 << "Would release a touch that wasn't pressed before (id =" << touchPoint.id
                 << "). Ignoring it.";
             ok = false;
-        } else {
-            mActiveTouches.remove(touchPoint.id);
         }
         break;
     default:
@@ -505,4 +547,22 @@ bool QtEventFeeder::validateTouch(QWindowSystemInterface::TouchPoint &touchPoint
     }
 
     return ok;
+}
+
+QString QtEventFeeder::touchesToString(const QList<struct QWindowSystemInterface::TouchPoint> &points)
+{
+    QString result;
+    for (int i = 0; i < points.count(); ++i) {
+        if (i > 0) {
+            result.append(",");
+        }
+        const struct QWindowSystemInterface::TouchPoint &point = points.at(i);
+        result.append(QString("(id=%1,state=%2,normalPosition=(%3,%4))")
+            .arg(point.id)
+            .arg(touchPointStateToString(point.state))
+            .arg(point.normalPosition.x())
+            .arg(point.normalPosition.y())
+            );
+    }
+    return result;
 }

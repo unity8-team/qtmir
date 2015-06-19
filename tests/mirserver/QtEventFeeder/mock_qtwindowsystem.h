@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Canonical, Ltd.
+ * Copyright (C) 2014-2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -69,21 +69,30 @@
 
 class MockQtWindowSystem : public QtEventFeeder::QtWindowSystemInterface {
 public:
-    MOCK_METHOD0(ready, bool());
-    MOCK_METHOD0(setScreenController, QSharedPointer<ScreenController>&());
+    MOCK_CONST_METHOD0(ready, bool());
+    MOCK_METHOD1(setScreenController, void(ScreenController*));
     MOCK_METHOD1(getWindowForTouchPoint, QWindow*(const QPoint &point));
     MOCK_METHOD0(lastWindow, QWindow*());
     MOCK_METHOD0(focusedWindow, QWindow*());
     MOCK_METHOD1(registerTouchDevice, void(QTouchDevice* device));
-    MOCK_METHOD11(handleExtendedKeyEvent, void(QWindow *window, ulong timestamp, QEvent::Type type, int key,
-            Qt::KeyboardModifiers modifiers,
-            quint32 nativeScanCode, quint32 nativeVirtualKey,
-            quint32 nativeModifiers,
-            const QString& text, bool autorep,
-            ushort count));
+
+    void handleExtendedKeyEvent(QWindow */*window*/, ulong /*timestamp*/, QEvent::Type /*type*/, int /*key*/,
+            Qt::KeyboardModifiers /*modifiers*/,
+            quint32 /*nativeScanCode*/, quint32 /*nativeVirtualKey*/,
+            quint32 /*nativeModifiers*/,
+            const QString& /*text*/ = QString(), bool /*autorep*/ = false,
+            ushort /*count*/ = 1) {}
+
+//    MOCK_METHOD11(handleExtendedKeyEvent, void(QWindow *window, ulong timestamp, QEvent::Type type, int key,
+//            Qt::KeyboardModifiers modifiers,
+//            quint32 nativeScanCode, quint32 nativeVirtualKey,
+//            quint32 nativeModifiers,
+//            const QString& text, bool autorep,
+//            ushort count));
     MOCK_METHOD5(handleTouchEvent, void(QWindow *window, ulong timestamp, QTouchDevice *device,
             const QList<struct QWindowSystemInterface::TouchPoint> &points,
             Qt::KeyboardModifiers mods));
+    MOCK_METHOD5(handleMouseEvent, void(QWindow *window, ulong, QPointF, Qt::MouseButton, Qt::KeyboardModifiers));
 };
 
 namespace testing
@@ -97,6 +106,11 @@ MATCHER(IsPressed, std::string(negation ? "isn't" : "is") + " pressed")
 MATCHER(IsReleased, std::string(negation ? "isn't" : "is") + " released")
 {
     return arg.state == Qt::TouchPointReleased;
+}
+
+MATCHER(IsStationary, std::string(negation ? "isn't" : "is") + " stationary")
+{
+    return arg.state == Qt::TouchPointStationary;
 }
 
 MATCHER(StateIsMoved, "state " + std::string(negation ? "isn't" : "is") + " 'moved'")
