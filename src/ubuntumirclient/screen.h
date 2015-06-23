@@ -21,11 +21,13 @@
 #include <QSurfaceFormat>
 #include <EGL/egl.h>
 
+struct MirConnection;
+
 class UbuntuScreen : public QObject, public QPlatformScreen
 {
     Q_OBJECT
 public:
-    UbuntuScreen();
+    UbuntuScreen(MirConnection *connection);
     virtual ~UbuntuScreen();
 
     // QPlatformScreen methods.
