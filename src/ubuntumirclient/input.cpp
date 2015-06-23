@@ -157,9 +157,7 @@ UbuntuInput::~UbuntuInput()
   // Qt will take care of deleting mTouchDevice.
 }
 
-#ifndef QT_NO_DEBUG
-
-
+#if (LOG_EVENTS != 0)
 static const char* nativeEventTypeToStr(MirEventType t)
 {
     switch (t)
@@ -185,9 +183,7 @@ static const char* nativeEventTypeToStr(MirEventType t)
         return "invalid";
     }
 }
-
-
-#endif
+#endif // LOG_EVENTS != 0
 
 void UbuntuInput::customEvent(QEvent* event)
 {
@@ -209,10 +205,12 @@ void UbuntuInput::customEvent(QEvent* event)
         return;
     }
 
-    //DLOG("UbuntuInput::customEvent(type=%s)", nativeEventTypeToStr(mir_event_get_type(nativeEvent)));
+    #if (LOG_EVENTS != 0)
+    LOG("UbuntuInput::customEvent(type=%s)", nativeEventTypeToStr(mir_event_get_type(nativeEvent)));
+    #endif
 
     // Event dispatching.
-    switch (mir_event_get_type(nativeEvent)) 
+    switch (mir_event_get_type(nativeEvent))
     {
     case mir_event_type_input:
         dispatchInputEvent(ubuntuEvent->window->window(), mir_event_get_input_event(nativeEvent));
@@ -243,6 +241,9 @@ void UbuntuInput::customEvent(QEvent* event)
     case mir_event_type_orientation:
         dispatchOrientationEvent(ubuntuEvent->window->window(), mir_event_get_orientation_event(nativeEvent));
         break;
+    case mir_event_type_close_surface:
+        QWindowSystemInterface::handleCloseEvent(ubuntuEvent->window->window());
+        break;
     default:
         DLOG("unhandled event type: %d", static_cast<int>(mir_event_get_type(nativeEvent)));
     }
@@ -255,7 +256,7 @@ void UbuntuInput::postEvent(UbuntuWindow *platformWindow, const MirEvent *event)
     QCoreApplication::postEvent(this, new UbuntuEvent(
             platformWindow, event, mEventType));
 
-    if ((window->flags() && Qt::WindowTransparentForInput) && window->parent()) {
+    if ((window->flags().testFlag(Qt::WindowTransparentForInput)) && window->parent()) {
         QCoreApplication::postEvent(this, new UbuntuEvent(
                     static_cast<UbuntuWindow*>(platformWindow->QPlatformWindow::parent()),
                     event, mEventType));
@@ -429,7 +430,7 @@ void UbuntuInput::dispatchPointerEvent(QWindow *window, const MirInputEvent *ev)
 
     auto local_point = QPointF(mir_pointer_event_axis_value(pev, mir_pointer_axis_x),
                                mir_pointer_event_axis_value(pev, mir_pointer_axis_y));
-    
+
     QWindowSystemInterface::handleMouseEvent(window, timestamp, local_point, local_point /* Should we omit global point instead? */,
                                              buttons, modifiers);
 }

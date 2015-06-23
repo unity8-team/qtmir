@@ -49,10 +49,6 @@ public:
 
     UbuntuWindowPrivate* priv() { return d; }
 
-public Q_SLOTS:
-    void handleBufferResize(int width, int height);
-    void forceRedraw();
-
 private:
     void createWindow();
     void moveResize(const QRect& rect);
