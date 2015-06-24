@@ -25,8 +25,6 @@
 // platform-api
 #include <ubuntu/application/description.h>
 #include <ubuntu/application/instance.h>
-#include <ubuntu/application/ui/options.h>
-#include <ubuntu/application/ui/session.h>
 
 class UbuntuClipboard;
 class UbuntuInput;
@@ -75,8 +73,6 @@ private:
     UApplicationOptions* mOptions;
     UApplicationDescription* mDesc;
     UApplicationInstance* mInstance;
-    UAUiSessionProperties* mProps;
-    UAUiSession* mSession;
 };
 
 #endif // UBUNTU_CLIENT_INTEGRATION_H

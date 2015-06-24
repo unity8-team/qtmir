@@ -31,7 +31,6 @@
 
 // Platform API
 #include <ubuntu/application/instance.h>
-#include <ubuntu/application/ui/window.h>
 
 #include <EGL/egl.h>
 
@@ -212,6 +211,8 @@ void UbuntuWindow::createWindow()
 {
     DLOG("UbuntuWindow::createWindow (this=%p)", this);
 
+    // FIXME: remove this remnant of an old platform-api enum - needs ubuntu-keyboard update
+    const int SCREEN_KEYBOARD_ROLE = 7;
     // Get surface role and flags.
     QVariant roleVariant = window()->property("role");
     int role = roleVariant.isValid() ? roleVariant.toUInt() : 1;  // 1 is the default role for apps.
@@ -260,7 +261,7 @@ void UbuntuWindow::createWindow()
             geometry.x(), geometry.y(), geometry.width(), geometry.height(), title.data());
 
     MirSurfaceSpec *spec;
-    if (role == U_ON_SCREEN_KEYBOARD_ROLE)
+    if (role == SCREEN_KEYBOARD_ROLE)
     {
         spec = mir_connection_create_spec_for_input_method(d->connection, geometry.width(),
             geometry.height(), mir_choose_default_pixel_format(d->connection));

@@ -178,13 +178,15 @@ UbuntuScreen::UbuntuScreen(MirConnection *connection)
     using configUp = std::unique_ptr<MirDisplayConfiguration, decltype(configDeleter)>;
     configUp displayConfig(mir_connection_create_display_config(connection), configDeleter);
     ASSERT(displayConfig != nullptr);
+
     auto const displayOutput = find_active_output(displayConfig.get());
     ASSERT(displayOutput != nullptr);
-    const MirDisplayMode *mode = &displayOutput->modes[displayOutput->current_mode];
 
+    const MirDisplayMode *mode = &displayOutput->modes[displayOutput->current_mode];
     const int kScreenWidth = mode->horizontal_resolution;
     const int kScreenHeight = mode->vertical_resolution;
     DASSERT(kScreenWidth > 0 && kScreenHeight > 0);
+
     DLOG("ubuntumirclient: screen resolution: %dx%d", kScreenWidth, kScreenHeight);
 
     mGeometry = QRect(0, 0, kScreenWidth, kScreenHeight);
