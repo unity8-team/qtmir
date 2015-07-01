@@ -45,11 +45,13 @@ namespace mg = mir::graphics;
 
 ScreenController::ScreenController(QObject *parent)
     : QObject(parent)
+    , m_server(nullptr)
     , m_watchForUpdates(true)
 {
     qCDebug(QTMIR_SCREENS) << "ScreenController::ScreenController";
 }
 
+// init only after MirServer has initialized
 void ScreenController::init(MirServer *server)
 {
     m_server = server;
@@ -71,6 +73,14 @@ void ScreenController::init(MirServer *server)
     });
 
     update();
+}
+
+// terminate before shutting down the Mir server, or else liable to deadlock with the blocking connection above
+void ScreenController::terminate()
+{
+    auto compositor = static_cast<QtCompositor *>(m_server->the_compositor().get());
+    disconnect(compositor, 0, 0, 0);
+    m_server = nullptr;
 }
 
 void ScreenController::onCompositorStarting()
@@ -119,6 +129,8 @@ void ScreenController::onCompositorStopping()
 void ScreenController::update()
 {
     qCDebug(QTMIR_SCREENS) << "ScreenController::update";
+    if (!m_server)
+        return;
     auto display = m_server->the_display();
     auto displayConfig = display->configuration();
 

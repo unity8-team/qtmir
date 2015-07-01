@@ -55,6 +55,7 @@ Q_LOGGING_CATEGORY(QTMIR_MIR_MESSAGES, "qtmir.mir")
 MirServer::MirServer(int argc, char const* argv[],
                      const QSharedPointer<ScreenController> &screenController, QObject* parent)
     : QObject(parent)
+    , m_screenController(screenController)
 {
     set_command_line_handler(&ignore_unparsed_arguments);
     set_command_line(argc, argv);
@@ -114,7 +115,7 @@ MirServer::MirServer(int argc, char const* argv[],
             return std::make_shared<TiledDisplayConfigurationPolicy>(wrapped);
         });
 
-    set_terminator([&](int)
+    set_terminator([](int)
         {
             qDebug() << "Signal caught by Mir, stopping Mir server..";
             QCoreApplication::quit();
@@ -127,6 +128,14 @@ MirServer::MirServer(int argc, char const* argv[],
     apply_settings();
 
     qCDebug(QTMIR_MIR_MESSAGES) << "MirServer created";
+}
+
+// Override default implementation to ensure we terminate the ScreenController first.
+// Code path followed when Qt tries to shutdown the server.
+void MirServer::stop()
+{
+    m_screenController->terminate();
+    mir::Server::stop();
 }
 
 

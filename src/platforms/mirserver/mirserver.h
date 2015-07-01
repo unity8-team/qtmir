@@ -45,7 +45,6 @@ public:
 
     /* mir specific */
     using mir::Server::run;
-    using mir::Server::stop;
     using mir::Server::the_compositor;
     using mir::Server::the_display;
     using mir::Server::the_gl_config;
@@ -54,6 +53,8 @@ public:
     using mir::Server::the_prompt_session_manager;
     using mir::Server::the_session_authorizer;
     using mir::Server::the_session_listener;
+
+    void stop();
 
     /* qt specific */
     // getters
@@ -64,6 +65,7 @@ public:
 
 private:
     std::weak_ptr<MirShell> m_shell;
+    const QSharedPointer<ScreenController> m_screenController;
 };
 
 #endif // MIRSERVER_H
