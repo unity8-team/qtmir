@@ -43,8 +43,9 @@ Q_LOGGING_CATEGORY(QTMIR_SCREENS, "qtmir.screens")
 namespace mg = mir::graphics;
 
 
-ScreenController::ScreenController(QObject *parent)
+ScreenController::ScreenController(const QSharedPointer<MirServer> &server, QObject *parent)
     : QObject(parent)
+    , m_server(server)
     , m_watchForUpdates(true)
 {
     qCDebug(QTMIR_SCREENS) << "ScreenController::ScreenController";

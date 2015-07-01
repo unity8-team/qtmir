@@ -39,8 +39,7 @@ public:
     class QtWindowSystemInterface {
         public:
         virtual ~QtWindowSystemInterface() {}
-        virtual bool ready() const = 0;
-        virtual void setScreenController(ScreenController *sc) = 0;
+        virtual void setScreenController(const QSharedPointer<ScreenController> &sc) = 0;
         virtual QWindow* getWindowForTouchPoint(const QPoint &point) = 0;
         virtual QWindow* focusedWindow() = 0;
         virtual void registerTouchDevice(QTouchDevice *device) = 0;
@@ -57,7 +56,7 @@ public:
                 Qt::MouseButton buttons, Qt::KeyboardModifiers modifiers) = 0;
     };
 
-    QtEventFeeder(ScreenController *screenController,
+    QtEventFeeder(const QSharedPointer<ScreenController> &screenController,
                   QtWindowSystemInterface *windowSystem = nullptr);
     virtual ~QtEventFeeder();
 

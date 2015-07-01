@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2013-2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -19,100 +19,86 @@
 #include <QCoreApplication>
 #include <QDebug>
 
-#include <mir/main_loop.h>
-
 // local
+#include "mirserver.h"
 #include "qmirserver.h"
+#include "qmirserver_p.h"
 #include "screencontroller.h"
 #include "screen.h"
 
-
-void MirServerWorker::run()
-{
-    auto const main_loop = server->the_main_loop();
-    // By enqueuing the notification code in the main loop, we are
-    // ensuring that the server has really and fully started before
-    // leaving wait_for_startup().
-    main_loop->enqueue(
-        this,
-        [&]
-        {
-            std::lock_guard<std::mutex> lock(mutex);
-            mir_running = true;
-            started_cv.notify_one();
-        });
-
-    server->run();
-    Q_EMIT stopped();
-}
-
-bool MirServerWorker::wait_for_mir_startup()
-{
-    std::unique_lock<decltype(mutex)> lock(mutex);
-    started_cv.wait_for(lock, std::chrono::seconds{10}, [&]{ return mir_running; });
-    return mir_running;
-}
-
-QMirServer::QMirServer(int argc, const char *argv[], QObject *parent)
+QMirServer::QMirServer(const QStringList &arguments, QObject *parent)
     : QObject(parent)
-    , m_screenController(new ScreenController())
-    , m_server(new MirServer(argc, argv, m_screenController))
-    , m_mirServer(new MirServerWorker(m_server))
+    , d_ptr(new QMirServerPrivate())
 {
-    m_mirServer->moveToThread(&m_mirThread);
+    Q_D(QMirServer);
 
-    connect(this, &QMirServer::runServer, m_mirServer.data(), &MirServerWorker::run);
-    connect(this, &QMirServer::stopServer, m_mirServer.data(), &MirServerWorker::stop);
+    // convert arguments back into argc-argv form that Mir wants
+    int argc = arguments.size();
+    char **argv = new char*[argc + 1];
+    for (int i = 0; i < argc; i++) {
+        argv[i] = new char[strlen(arguments.at(i).toStdString().c_str())+1];
+        memcpy(argv[i], arguments.at(i).toStdString().c_str(), strlen(arguments.at(i).toStdString().c_str())+1);
+    }
+    argv[argc] = '\0';
 
-    connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this, &QMirServer::shutDownMirServer);
-    connect(m_mirServer.data(), &MirServerWorker::stopped, this, &QMirServer::shutDownQApplication, Qt::DirectConnection); // since no event loop
+    d->screenController = QSharedPointer<ScreenController>(new ScreenController(d->server));
+
+    d->server = QSharedPointer<MirServer>(new MirServer(argc, const_cast<const char**>(argv), d->screenController));
+
+    d->serverThread = new MirServerThread(d->server);
+
+    connect(d->serverThread, &MirServerThread::stopped, this, &QMirServer::stopped);
 }
 
 QMirServer::~QMirServer()
 {
-    shutDownMirServer();
+    stop();
 }
 
-void QMirServer::run()
+bool QMirServer::start()
 {
-    m_mirThread.start(QThread::HighPriority);
-    Q_EMIT runServer();
+    Q_D(QMirServer);
 
-    if (!m_mirServer->wait_for_mir_startup())
+    d->serverThread->start(QThread::TimeCriticalPriority);
+
+    if (!d->serverThread->waitForMirStartup())
     {
         qCritical() << "ERROR: QMirServer - Mir failed to start";
-        exit(2);
+        return false;
     }
-    m_screenController->init();
+
+    Q_EMIT started();
+    return true;
 }
 
 void QMirServer::stop()
 {
-    shutDownMirServer();
-}
+    Q_D(QMirServer);
 
-void QMirServer::shutDownMirServer()
-{
-    if (m_mirThread.isRunning()) {
-        delete m_screenController;
-        m_mirServer->stop();
-        m_mirThread.wait();
+    if (d->serverThread->isRunning()) {
+        d->serverThread->stop();
+        if (!d->serverThread->wait(10000)) {
+            // do something to indicate fail during shutdown
+            qCritical() << "ERROR: QMirServer - Mir failed to shut down correctly, terminating it";
+            d->serverThread->terminate();
+        }
     }
 }
 
-void QMirServer::shutDownQApplication()
+bool QMirServer::isRunning() const
 {
-    if (m_mirThread.isRunning()) {
-        m_mirThread.quit();
-    }
-
-    // if unexpected mir server stop, better quit the QApplication
-    if (!QCoreApplication::closingDown()) {
-        QCoreApplication::quit();
-    }
+    Q_D(const QMirServer);
+    return d->serverThread->isRunning();
 }
 
-ScreenController* QMirServer::screenController() const
+QWeakPointer<MirServer> QMirServer::mirServer() const
 {
-    return m_screenController;
+    Q_D(const QMirServer);
+    return d->server.toWeakRef();
+}
+
+QWeakPointer<ScreenController> QMirServer::screenController() const
+{
+    Q_D(const QMirServer);
+    return d->screenController;
 }

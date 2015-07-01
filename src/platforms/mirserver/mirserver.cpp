@@ -52,13 +52,12 @@ void ignore_unparsed_arguments(int /*argc*/, char const* const/*argv*/[])
 
 Q_LOGGING_CATEGORY(QTMIR_MIR_MESSAGES, "qtmir.mir")
 
-MirServer::MirServer(int argc, char const* argv[], ScreenController *screenController, QObject* parent)
+MirServer::MirServer(int argc, char const* argv[],
+                     const QSharedPointer<ScreenController> &screenController, QObject* parent)
     : QObject(parent)
 {
     set_command_line_handler(&ignore_unparsed_arguments);
     set_command_line(argc, argv);
-
-    screenController->setMirServer(this); // Bad Gerry
 
     override_the_session_listener([]
         {

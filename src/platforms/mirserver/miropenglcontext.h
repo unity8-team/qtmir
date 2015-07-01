@@ -55,7 +55,6 @@ public:
 #endif
 
 private:
-    const QSharedPointer<MirServer> m_mirServer;
     QSurfaceFormat m_format;
     EGLDisplay m_eglDisplay;
     EGLContext m_eglContext;

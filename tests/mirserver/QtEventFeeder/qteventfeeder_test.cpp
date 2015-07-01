@@ -70,17 +70,21 @@ protected:
 
     MockQtWindowSystem *mockWindowSystem;
     QtEventFeeder *qtEventFeeder;
+    QWindow *window;
 };
 
 void QtEventFeederTest::SetUp()
 {
     mockWindowSystem = new MockQtWindowSystem;
+    auto screens = QSharedPointer<ScreenController>();
 
     EXPECT_CALL(*mockWindowSystem, registerTouchDevice(_));
 
-    qtEventFeeder = new QtEventFeeder(mockWindowSystem);
+    qtEventFeeder = new QtEventFeeder(screens, mockWindowSystem);
 
     ASSERT_TRUE(Mock::VerifyAndClearExpectations(mockWindowSystem));
+
+    window = new QWindow;
 }
 
 void QtEventFeederTest::TearDown()
@@ -91,12 +95,12 @@ void QtEventFeederTest::TearDown()
 
 void QtEventFeederTest::setIrrelevantMockWindowSystemExpectations()
 {
-    EXPECT_CALL(*mockWindowSystem, hasTargetWindow())
+    EXPECT_CALL(*mockWindowSystem, getWindowForTouchPoint(_))
         .Times(AnyNumber())
-        .WillRepeatedly(Return(true));
-    EXPECT_CALL(*mockWindowSystem, targetWindowGeometry())
+        .WillRepeatedly(Return(window));
+    EXPECT_CALL(*mockWindowSystem, focusedWindow())
         .Times(AnyNumber())
-        .WillRepeatedly(Return(QRect(0,0,100,100)));
+        .WillRepeatedly(Return(window));
 }
 
 
@@ -114,7 +118,7 @@ TEST_F(QtEventFeederTest, GenerateMissingTouchEnd)
 
     setIrrelevantMockWindowSystemExpectations();
 
-    EXPECT_CALL(*mockWindowSystem, handleTouchEvent(_,_,AllOf(SizeIs(1),
+    EXPECT_CALL(*mockWindowSystem, handleTouchEvent(_,_,_,AllOf(SizeIs(1),
                                                               Contains(AllOf(HasId(0),
                                                                              IsPressed()))),_)).Times(1);
 
@@ -133,12 +137,12 @@ TEST_F(QtEventFeederTest, GenerateMissingTouchEnd)
         InSequence sequence;
 
         EXPECT_CALL(*mockWindowSystem,
-                    handleTouchEvent(_,_,AllOf(SizeIs(1),
+                    handleTouchEvent(_,_,_,AllOf(SizeIs(1),
                                                Contains(AllOf(HasId(0),IsReleased()))
                                                ),_)).Times(1);
 
         EXPECT_CALL(*mockWindowSystem,
-                    handleTouchEvent(_,_,AllOf(SizeIs(1),
+                    handleTouchEvent(_,_,_,AllOf(SizeIs(1),
                                                Contains(AllOf(HasId(1),IsPressed()))
                                                ),_)).Times(1);
     }
@@ -162,7 +166,7 @@ TEST_F(QtEventFeederTest, GenerateMissingTouchEnd2)
                    10, 10, 10 /* x, y, pressure*/,
                    1, 1, 10 /* touch major, minor, size */);
 
-    EXPECT_CALL(*mockWindowSystem, handleTouchEvent(_,_,AllOf(SizeIs(1),
+    EXPECT_CALL(*mockWindowSystem, handleTouchEvent(_,_,_,AllOf(SizeIs(1),
                                                               Contains(AllOf(HasId(0),
                                                                              IsPressed()))),_)).Times(1);
     qtEventFeeder->dispatch(*ev1);
@@ -182,7 +186,7 @@ TEST_F(QtEventFeederTest, GenerateMissingTouchEnd2)
                    1, 1, 10 /* touch major, minor, size */);
 
     EXPECT_CALL(*mockWindowSystem,
-        handleTouchEvent(_,_,AllOf(SizeIs(2),
+        handleTouchEvent(_,_,_,AllOf(SizeIs(2),
                                    Contains(AllOf(HasId(0), StateIsMoved())),
                                    Contains(AllOf(HasId(1), IsPressed()))
                                    ),_)).Times(1);
@@ -209,14 +213,14 @@ TEST_F(QtEventFeederTest, GenerateMissingTouchEnd2)
 
         // first release touch 0
         EXPECT_CALL(*mockWindowSystem,
-            handleTouchEvent(_,_,AllOf(SizeIs(2),
+            handleTouchEvent(_,_,_,AllOf(SizeIs(2),
                                        Contains(AllOf(HasId(0), IsReleased())),
                                        Contains(AllOf(HasId(1), IsStationary()))
                                        ),_)).Times(1);
 
         // then press touch 2
         EXPECT_CALL(*mockWindowSystem,
-            handleTouchEvent(_,_,AllOf(SizeIs(2),
+            handleTouchEvent(_,_,_,AllOf(SizeIs(2),
                                        Contains(AllOf(HasId(1), StateIsMoved())),
                                        Contains(AllOf(HasId(2), IsPressed()))
                                        ),_)).Times(1);
@@ -231,7 +235,7 @@ TEST_F(QtEventFeederTest, PressSameTouchTwice)
 {
     setIrrelevantMockWindowSystemExpectations();
 
-    EXPECT_CALL(*mockWindowSystem, handleTouchEvent(_,_,AllOf(SizeIs(1),
+    EXPECT_CALL(*mockWindowSystem, handleTouchEvent(_,_,_,AllOf(SizeIs(1),
                                                               Contains(AllOf(HasId(0),
                                                                              IsPressed()))),_)).Times(1);
 
@@ -244,7 +248,7 @@ TEST_F(QtEventFeederTest, PressSameTouchTwice)
 
     setIrrelevantMockWindowSystemExpectations();
 
-    EXPECT_CALL(*mockWindowSystem, handleTouchEvent(_,_,AllOf(SizeIs(1),
+    EXPECT_CALL(*mockWindowSystem, handleTouchEvent(_,_,_,AllOf(SizeIs(1),
                                                               Contains(AllOf(HasId(0), StateIsMoved()))
                                                              ),_)).Times(1);
 

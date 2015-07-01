@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2014 Canonical, Ltd.
+ * Copyright (C) 2013-2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -41,10 +41,7 @@
 
 // Mir
 #include <mir/graphics/display.h>
-#include <mir/graphics/display_buffer.h>
-
-// std
-#include <csignal>
+#include <mir/graphics/display_configuration.h>
 
 // local
 #include "clipboard.h"
@@ -69,42 +66,29 @@ MirServerIntegration::MirServerIntegration()
 #if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
     , m_eventDispatcher(createUnixEventDispatcher())
 #endif
-    , m_qmirServer(nullptr)
+    , m_mirServer(new QMirServer(QCoreApplication::arguments()))
     , m_nativeInterface(nullptr)
     , m_clipboard(new Clipboard)
 {
-    // Start Mir server only once Qt has initialized its event dispatcher, see initialize()
-
-    QStringList args = QCoreApplication::arguments();
-    // convert arguments back into argc-argv form that Mir wants
-    char **argv;
-    argv = new char*[args.size() + 1];
-    for (int i = 0; i < args.size(); i++) {
-        argv[i] = new char[strlen(args.at(i).toStdString().c_str())+1];
-        memcpy(argv[i], args.at(i).toStdString().c_str(), strlen(args.at(i).toStdString().c_str())+1);
-    }
-    argv[args.size()] = '\0';
-
     // For access to sensors, qtmir uses qtubuntu-sensors. qtubuntu-sensors reads the
     // UBUNTU_PLATFORM_API_BACKEND variable to decide if to load a valid sensor backend or not.
     // For it to function we need to ensure a valid backend has been specified
     if (qEnvironmentVariableIsEmpty("UBUNTU_PLATFORM_API_BACKEND")) {
-        if (qgetenv("DESKTOP_SESSION").contains("mir")) {
+        if (qgetenv("DESKTOP_SESSION").contains("mir") || !qEnvironmentVariableIsSet("ANDROID_DATA")) {
             qputenv("UBUNTU_PLATFORM_API_BACKEND", "desktop_mirclient");
         } else {
             qputenv("UBUNTU_PLATFORM_API_BACKEND", "touch_mirclient");
         }
     }
 
+    // If Mir shuts down, quit.
+    QObject::connect(m_mirServer.data(), &QMirServer::stopped,
+                     QCoreApplication::instance(), &QCoreApplication::quit);
+
 #if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
     QGuiApplicationPrivate::instance()->setEventDispatcher(eventDispatcher_);
     initialize();
 #endif
-
-    // Creates instance of and start the Mir server in a separate thread
-    m_qmirServer = new QMirServer(args.length(), const_cast<const char**>(argv));
-    connect(m_qmirServer->screenController(), &ScreenController::screenAdded,
-            [&](QPlatformScreen *screen) { screenAdded(screen); });
 
     m_inputContext = QPlatformInputContextFactory::create();
 }
@@ -112,7 +96,6 @@ MirServerIntegration::MirServerIntegration()
 MirServerIntegration::~MirServerIntegration()
 {
     delete m_nativeInterface;
-    delete m_qmirServer;
 }
 
 bool MirServerIntegration::hasCapability(QPlatformIntegration::Capability cap) const
@@ -139,7 +122,12 @@ QPlatformWindow *MirServerIntegration::createPlatformWindow(QWindow *window) con
     QWindowSystemInterface::flushWindowSystemEvents();
 
     // If Screen was not specified, just grab an unused one, if available
-    Screen *screen = m_qmirServer->screenController()->getUnusedScreen();
+    auto screens = m_mirServer->screenController().lock();
+    if (!screens) {
+        qDebug() << "Screens are not initialized, unable to create a new QWindow/ScreenWindow";
+        return nullptr;
+    }
+    Screen *screen = screens->getUnusedScreen();
     if (!screen) {
         qDebug() << "No available Screens to create a new QWindow/ScreenWindow for";
         return nullptr;
@@ -161,7 +149,7 @@ QPlatformBackingStore *MirServerIntegration::createPlatformBackingStore(QWindow 
 QPlatformOpenGLContext *MirServerIntegration::createPlatformOpenGLContext(QOpenGLContext *context) const
 {
     qDebug() << "createPlatformOpenGLContext" << context;
-    return new MirOpenGLContext(m_qmirServer->server(), context->format());
+    return new MirOpenGLContext(m_mirServer->mirServer(), context->format());
 }
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
@@ -173,9 +161,12 @@ QAbstractEventDispatcher *MirServerIntegration::createEventDispatcher() const
 
 void MirServerIntegration::initialize()
 {
-    m_qmirServer->run();
+    // Creates instance of and start the Mir server in a separate thread
+    if (!m_mirServer->start()) {
+        exit(2);
+    }
 
-    m_nativeInterface = new NativeInterface(m_qmirServer->server());
+    m_nativeInterface = new NativeInterface(m_mirServer->mirServer());
 
     m_clipboard->setupDBusService();
 }

@@ -143,12 +143,7 @@ namespace {
 
 class QtWindowSystem : public QtEventFeeder::QtWindowSystemInterface
 {
-    bool ready() const override
-    {
-        return m_screenController != nullptr;
-    }
-
-    void setScreenController(ScreenController *sc) override
+    void setScreenController(const QSharedPointer<ScreenController> &sc) override
     {
         m_screenController = sc;
     }
@@ -193,13 +188,13 @@ class QtWindowSystem : public QtEventFeeder::QtWindowSystemInterface
     }
 
 private:
-    ScreenController *m_screenController{nullptr};
+    QSharedPointer<ScreenController> m_screenController;
 };
 
 } // anonymous namespace
 
 
-QtEventFeeder::QtEventFeeder(ScreenController *screenController,
+QtEventFeeder::QtEventFeeder(const QSharedPointer<ScreenController> &screenController,
                              QtEventFeeder::QtWindowSystemInterface *windowSystem)
 {
     if (windowSystem) {
@@ -228,9 +223,6 @@ QtEventFeeder::~QtEventFeeder()
 
 void QtEventFeeder::dispatch(MirEvent const& event)
 {
-    if (!mQtWindowSystem->ready())
-        return;
-
     auto iev = mir_event_get_input_event(&event);
 
     switch (mir_input_event_get_type(iev)) {
