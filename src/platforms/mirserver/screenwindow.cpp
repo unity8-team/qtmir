@@ -115,7 +115,7 @@ void ScreenWindow::swapBuffers()
 }
 
 void ScreenWindow::makeCurrent()
-{qDebug() << "Hi" << screen();
+{
     static_cast<Screen *>(screen())->makeCurrent();
 }
 

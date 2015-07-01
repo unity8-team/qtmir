@@ -286,7 +286,7 @@ void Screen::setWindow(ScreenWindow *window)
 }
 
 void Screen::setMirDisplayBuffer(mir::graphics::DisplayBuffer *buffer, mir::graphics::DisplaySyncGroup *group)
-{qDebug() << "setMirDisplayBuffer" << buffer << group;
+{
     // This operation should only be performed while rendering is stopped
     m_displayBuffer = buffer;
     m_displayGroup = group;
@@ -311,7 +311,7 @@ void Screen::swapBuffers()
 }
 
 void Screen::makeCurrent()
-{ qDebug() << "DB" << m_displayBuffer;
+{
     m_displayBuffer->make_current();
 }
 

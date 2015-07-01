@@ -50,14 +50,14 @@ ScreenController::ScreenController(QObject *parent)
     qCDebug(QTMIR_SCREENS) << "ScreenController::ScreenController";
 }
 
-void ScreenController::init(const QSharedPointer<MirServer> &server)
+void ScreenController::init(MirServer *server)
 {
     m_server = server;
 
     // Using Blocking Queued Connection to enforce synchronization of Qt GUI thread with Mir thread(s)
     auto compositor = static_cast<QtCompositor *>(m_server->the_compositor().get());
     connect(compositor, &QtCompositor::starting,
-            this, &ScreenController::onCompositorStarting, Qt::BlockingQueuedConnection);
+            this, &ScreenController::onCompositorStarting/*, Qt::BlockingQueuedConnection*/);
     connect(compositor, &QtCompositor::stopping,
             this, &ScreenController::onCompositorStopping, Qt::BlockingQueuedConnection);
 

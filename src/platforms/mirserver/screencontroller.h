@@ -40,7 +40,7 @@ class ScreenController : public QObject
     Q_OBJECT
 public:
     explicit ScreenController(QObject *parent = 0);
-    void init(const QSharedPointer<MirServer> &server);
+    void init(MirServer *server);
 
     Screen* getUnusedScreen();
     QList<Screen*> screens() const { return m_screenList; }
@@ -58,7 +58,7 @@ private Q_SLOTS:
 private:
     Screen* findScreenWithId(const QList<Screen*> &list, const mir::graphics::DisplayConfigurationOutputId id);
 
-    QSharedPointer<MirServer> m_server;
+    MirServer *m_server;
     QList<Screen*> m_screenList;
     bool m_watchForUpdates;
     QMutex m_mutex;

@@ -74,7 +74,7 @@ MirServer::MirServer(int argc, char const* argv[],
             return std::make_shared<SessionAuthorizer>();
         });
 
-    override_the_compositor([this]
+    override_the_compositor([]
         {
             return std::make_shared<QtCompositor>();
         });
@@ -119,6 +119,10 @@ MirServer::MirServer(int argc, char const* argv[],
             qDebug() << "Signal caught by Mir, stopping Mir server..";
             QCoreApplication::quit();
         });
+
+    add_init_callback([this, &screenController] {
+        screenController->init(this);
+    });
 
     apply_settings();
 

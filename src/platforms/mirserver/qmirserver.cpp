@@ -44,7 +44,6 @@ QMirServer::QMirServer(const QStringList &arguments, QObject *parent)
     d->screenController = QSharedPointer<ScreenController>(new ScreenController());
 
     d->server = QSharedPointer<MirServer>(new MirServer(argc, const_cast<const char**>(argv), d->screenController));
-    d->screenController->init(d->server);
 
     d->serverThread = new MirServerThread(d->server);
 

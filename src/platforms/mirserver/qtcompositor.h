@@ -24,12 +24,13 @@
 // Qt
 #include <QObject>
 #include <QMutex>
+#include <QDebug>
 
 class QtCompositor : public QObject, public mir::compositor::Compositor
 {
     Q_OBJECT
 public:
-    QtCompositor() = default;
+    QtCompositor() { qDebug() << "QtComp"; } //= default;
     virtual ~QtCompositor() noexcept = default;
 
     void start();
