@@ -176,7 +176,6 @@ class QtWindowSystem : public QtEventFeeder::QtWindowSystemInterface
     void handleTouchEvent(QWindow *window, ulong timestamp, QTouchDevice *device,
             const QList<struct QWindowSystemInterface::TouchPoint> &points, Qt::KeyboardModifiers mods) override
     {
-        qDebug() << window << points;
         QWindowSystemInterface::handleTouchEvent(window, timestamp, device, points, mods);
     }    
 
