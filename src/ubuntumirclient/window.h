@@ -50,10 +50,6 @@ public:
     void handleSurfaceFocusChange(bool focused);
     void onBuffersSwapped_threadSafe(int newBufferWidth, int newBufferHeight);
 
-public Q_SLOTS:
-    void handleBufferResize(int width, int height);
-    void forceRedraw();
-
 private:
     std::unique_ptr<UbuntuWindowPrivate> d;
 };
