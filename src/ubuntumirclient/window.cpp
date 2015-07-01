@@ -472,9 +472,7 @@ void UbuntuWindow::setGeometry(const QRect& rect)
     bool resize;
     {
         QMutexLocker(&d->mutex);
-        resize = d->state != Qt::WindowFullScreen &&
-                 d->state != Qt::WindowMaximized &&
-                 d->geometry.size() != rect.size();
+        resize = d->state != Qt::WindowFullScreen && d->state != Qt::WindowMaximized;
         QPlatformWindow::setGeometry(rect);
     }
 
