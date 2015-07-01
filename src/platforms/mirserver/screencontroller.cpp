@@ -124,12 +124,12 @@ void ScreenController::update()
 
     QMutexLocker lock(&m_mutex);
 
-    Screen *newScreen = nullptr;
+    QList<Screen*> newScreenList;
     QList<Screen*> oldScreenList = m_screenList;
     m_screenList.clear();
 
     displayConfig->for_each_output(
-        [this, &oldScreenList, &newScreen](const mg::DisplayConfigurationOutput &output) {
+        [this, &oldScreenList, &newScreenList](const mg::DisplayConfigurationOutput &output) {
             if (output.used && output.connected) {
                 Screen *screen = findScreenWithId(oldScreenList, output.id);
                 if (screen) { // we've already set up this display before, refresh its internals
@@ -138,7 +138,7 @@ void ScreenController::update()
                 } else {
                     // new display, so create Screen for it
                     screen = new Screen(output);
-                    newScreen = screen;
+                    newScreenList.append(screen);
                     qCDebug(QTMIR_SCREENS) << "Added Screen with id" << output.id.as_value()
                                            << "and geometry" << screen->geometry();
                 }
@@ -185,8 +185,8 @@ void ScreenController::update()
     }
     qCDebug(QTMIR_SCREENS) << "=======================================";
 
-    if (newScreen) {
-        Q_EMIT screenAdded(newScreen);
+    for (auto screen : newScreenList) {
+        Q_EMIT screenAdded(screen);
     }
 }
 
