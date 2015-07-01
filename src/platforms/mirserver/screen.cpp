@@ -111,6 +111,8 @@ bool Screen::skipDBusRegistration = false;
 
 Screen::Screen(const mir::graphics::DisplayConfigurationOutput &screen)
     : QObject(nullptr)
+    , m_displayBuffer(nullptr)
+    , m_displayGroup(nullptr)
     , m_orientationSensor(new QOrientationSensor(this))
     , m_unityScreen(nullptr)
 {
@@ -284,7 +286,7 @@ void Screen::setWindow(ScreenWindow *window)
 }
 
 void Screen::setMirDisplayBuffer(mir::graphics::DisplayBuffer *buffer, mir::graphics::DisplaySyncGroup *group)
-{
+{qDebug() << "setMirDisplayBuffer" << buffer << group;
     // This operation should only be performed while rendering is stopped
     m_displayBuffer = buffer;
     m_displayGroup = group;
@@ -309,7 +311,7 @@ void Screen::swapBuffers()
 }
 
 void Screen::makeCurrent()
-{
+{ qDebug() << "DB" << m_displayBuffer;
     m_displayBuffer->make_current();
 }
 

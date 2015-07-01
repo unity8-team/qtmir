@@ -166,6 +166,17 @@ void MirServerIntegration::initialize()
         exit(2);
     }
 
+    auto screens = m_mirServer->screenController().lock();
+    if (!screens) {
+        qDebug() << "ScreenController not initialized";
+        return;
+    }
+    connect(screens.data(), &ScreenController::screenAdded,
+            [this](Screen *screen) { this->screenAdded(screen); });
+    Q_FOREACH(auto screen, screens->screens()) {
+        screenAdded(screen);
+    }
+
     m_nativeInterface = new NativeInterface(m_mirServer->mirServer());
 
     m_clipboard->setupDBusService();
