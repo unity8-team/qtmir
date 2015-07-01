@@ -71,6 +71,7 @@ protected:
     MockQtWindowSystem *mockWindowSystem;
     QtEventFeeder *qtEventFeeder;
     QWindow *window;
+    QGuiApplication *app;
 };
 
 void QtEventFeederTest::SetUp()
@@ -84,6 +85,9 @@ void QtEventFeederTest::SetUp()
 
     ASSERT_TRUE(Mock::VerifyAndClearExpectations(mockWindowSystem));
 
+    int argc = 0;
+    char **argv = nullptr;
+    app = new QGuiApplication(argc, argv);
     window = new QWindow;
 }
 
@@ -91,6 +95,8 @@ void QtEventFeederTest::TearDown()
 {
     // mockWindowSystem will be deleted by QtEventFeeder
     delete qtEventFeeder;
+    delete window;
+    delete app;
 }
 
 void QtEventFeederTest::setIrrelevantMockWindowSystemExpectations()
