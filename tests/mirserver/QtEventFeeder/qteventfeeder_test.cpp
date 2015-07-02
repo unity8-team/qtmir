@@ -87,6 +87,7 @@ void QtEventFeederTest::SetUp()
 
     int argc = 0;
     char **argv = nullptr;
+    setenv("QT_QPA_PLATFORM", "minimal", 1);
     app = new QGuiApplication(argc, argv);
     window = new QWindow;
 }
