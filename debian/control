@@ -41,7 +41,7 @@ Depends: ${misc:Depends},
          ${shlibs:Depends},
          libqt5sensors5,
          qtubuntu-sensors,
-         ubuntu-application-api2-touch,
+         ubuntu-application-api3-touch,
 Description: Qt plugins for Ubuntu Platform API (mobile)
  QtUbuntu is a set of Qt5 components for the Ubuntu Platform API. It contains a
  QPA (Qt Platform Abstraction) plugin based on the Ubuntu Platform API and a
@@ -64,7 +64,7 @@ Depends: ${misc:Depends},
          ${shlibs:Depends},
          libqt5sensors5,
          qtubuntu-sensors,
-         ubuntu-application-api2-desktop,
+         ubuntu-application-api3-desktop,
 Description: Qt plugins for Ubuntu Platform API (desktop)
  QtUbuntu is a set of Qt5 components for the Ubuntu Platform API. It contains a
  QPA (Qt Platform Abstraction) plugin based on the Ubuntu Platform API and a
