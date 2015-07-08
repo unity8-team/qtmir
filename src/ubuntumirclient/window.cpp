@@ -33,12 +33,24 @@
 
 // Platform API
 #include <ubuntu/application/instance.h>
-#include <ubuntu/application/ui/window.h>
 
 #include <EGL/egl.h>
 
 namespace
 {
+
+// FIXME: this used to be defined by platform-api, but it's been removed in v3. Change ubuntu-keyboard to use
+// a different enum for window roles.
+enum UAUiWindowRole {
+    U_MAIN_ROLE = 1,
+    U_DASH_ROLE,
+    U_INDICATOR_ROLE,
+    U_NOTIFICATIONS_ROLE,
+    U_GREETER_ROLE,
+    U_LAUNCHER_ROLE,
+    U_ON_SCREEN_KEYBOARD_ROLE,
+    U_SHUTDOWN_DIALOG_ROLE,
+};
 
 struct MirSpecDeleter
 {

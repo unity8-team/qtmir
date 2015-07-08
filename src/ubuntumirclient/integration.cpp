@@ -80,7 +80,7 @@ UbuntuClientIntegration::UbuntuClientIntegration()
                "rejected the incoming connection, so check its log file");
 
     // Create default screen.
-    mScreen = new UbuntuScreen;
+    mScreen = new UbuntuScreen(u_application_instance_get_mir_connection(mInstance));
     screenAdded(mScreen);
 
     // Initialize input.
