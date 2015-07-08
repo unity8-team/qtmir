@@ -34,6 +34,7 @@
 #include <QMutexLocker>
 #include <QScreen>
 #include <QQuickWindow>
+#include <qpa/qwindowsysteminterface.h>
 
 // std
 #include <memory>
@@ -102,6 +103,11 @@ void ScreenController::onCompositorStarting()
             window->window()->show();
         }
     }
+
+    {
+        QMutexLocker lock(&m_mutex);
+        m_watchForUpdates = true;
+    }
 }
 
 void ScreenController::onCompositorStopping()
@@ -110,7 +116,7 @@ void ScreenController::onCompositorStopping()
 
     {
         QMutexLocker lock(&m_mutex);
-        m_watchForUpdates = true;
+        m_watchForUpdates = false;
     }
 
     // Stop Qt's render threads by setting all its windows it obscured. Must
@@ -124,6 +130,11 @@ void ScreenController::onCompositorStopping()
     }
 
     update();
+
+    {
+        QMutexLocker lock(&m_mutex);
+        m_watchForUpdates = true;
+    }
 }
 
 void ScreenController::update()
@@ -199,6 +210,41 @@ void ScreenController::update()
 
     for (auto screen : newScreenList) {
         Q_EMIT screenAdded(screen);
+    }
+
+    /* *** GIANT UGLY HACK ***
+     * Mir does not notify nested servers of surface resize events (lp:1294574)
+     * Have to duplicate the USC logic to choose the correct Unity8 surface size here
+     */
+    using namespace mir::geometry;
+    Size intersection{999999, 999999};
+    displayConfig->for_each_output(
+                [&](mg::DisplayConfigurationOutput const& displayConfigOutput){
+        if (!displayConfigOutput.connected || !displayConfigOutput.used)
+            return;
+
+        Size size = displayConfigOutput.extents().size;
+        if (size.width < intersection.width)
+            intersection.width = size.width;
+        if (size.height < intersection.height)
+            intersection.height = size.height;
+    });
+
+    QRect newGeometry(0, 0, intersection.width.as_int(), intersection.height.as_int());
+    qDebug() << "RESIZING shell surface to" << newGeometry;
+
+    // Now resize Unity8 surface to this value
+    ScreenWindow *shellWindow = nullptr;
+    for (auto screen : m_screenList) {
+        if (screen->window()) {
+            shellWindow = screen->window();
+            break;
+        }
+    }
+    if (shellWindow) { qDebug() << "DO";
+        shellWindow->setGeometry(newGeometry);
+        QWindowSystemInterface::handleGeometryChange(shellWindow->window(), newGeometry);
+        QWindowSystemInterface::handleExposeEvent(shellWindow->window(), newGeometry);
     }
 }
 

@@ -34,9 +34,6 @@ public:
     explicit ScreenWindow(QWindow *window);
     virtual ~ScreenWindow();
 
-    QRect geometry() const override;
-    void setGeometry(const QRect &rect) override;
-
     WId winId() const override { return m_winId; }
 
     //bool isExposed() const override;
