@@ -1,3 +1,13 @@
+qtubuntu (0.61+15.10.20150706-0ubuntu1) wily; urgency=medium
+
+  [ Alberto Aguirre ]
+  * Migrate to platform-api 3
+
+  [ CI Train Bot ]
+  * New rebuild forced.
+
+ -- CI Train Bot <ci-train-bot@canonical.com>  Mon, 06 Jul 2015 23:12:54 +0000
+
 qtubuntu (0.61+15.10.20150617-0ubuntu1) wily; urgency=medium
 
   [ Daniel d'Andrada ]
