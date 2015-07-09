@@ -21,6 +21,7 @@
 
 #include <QObject>
 #include <QMutex>
+#include <QRect>
 
 // Mir
 #include <mir/graphics/display_configuration.h>
@@ -46,6 +47,8 @@ public:
 
     QWindow* getWindowForPoint(const QPoint &point);
 
+    QRect getSurfaceSize() const { return m_surfaceSize; }
+
 Q_SIGNALS:
     void screenAdded(Screen *screen);
 
@@ -63,6 +66,7 @@ private:
     QList<Screen*> m_screenList;
     bool m_watchForUpdates;
     QMutex m_mutex;
+    QRect m_surfaceSize;
 
     friend class MirServer;
 };

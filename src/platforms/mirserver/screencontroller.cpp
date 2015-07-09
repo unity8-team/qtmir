@@ -230,7 +230,8 @@ void ScreenController::update()
             intersection.height = size.height;
     });
 
-    QRect newGeometry(0, 0, intersection.width.as_int(), intersection.height.as_int());
+    m_surfaceSize.setWidth(intersection.width.as_int());
+    m_surfaceSize.setHeight(intersection.height.as_int());
 
     // Now resize Unity8 surface to this value
     ScreenWindow *shellWindow = nullptr;
@@ -241,10 +242,10 @@ void ScreenController::update()
         }
     }
     if (shellWindow) {
-        qDebug() << "RESIZING shell surface to" << newGeometry;
-        shellWindow->setGeometry(newGeometry);
-        QWindowSystemInterface::handleGeometryChange(shellWindow->window(), newGeometry);
-        QWindowSystemInterface::handleExposeEvent(shellWindow->window(), newGeometry);
+        qDebug() << "RESIZING shell surface to" << m_surfaceSize;
+        shellWindow->setGeometry(m_surfaceSize);
+        QWindowSystemInterface::handleGeometryChange(shellWindow->window(), m_surfaceSize);
+        QWindowSystemInterface::handleExposeEvent(shellWindow->window(), m_surfaceSize);
     }
 }
 
