@@ -46,12 +46,19 @@ class Application;
 class MirSurfaceItem : public QQuickItem
 {
     Q_OBJECT
+    Q_ENUMS(Type)
+    Q_ENUMS(State)
+    Q_ENUMS(OrientationAngle)
 
     Q_PROPERTY(qtmir::Globals::SurfaceType type READ type NOTIFY typeChanged)
     Q_PROPERTY(qtmir::Globals::SurfaceState state READ state NOTIFY stateChanged)
     Q_PROPERTY(QString name READ name NOTIFY nameChanged)
     Q_PROPERTY(bool live READ live NOTIFY liveChanged)
-    Q_PROPERTY(Qt::ScreenOrientation orientation READ orientation WRITE setOrientation NOTIFY orientationChanged DESIGNABLE false)
+
+    // How many degrees, clockwise, the UI in the surface has to rotate to match with the
+    // shell UI orientation
+    Q_PROPERTY(OrientationAngle orientationAngle READ orientationAngle WRITE setOrientationAngle
+               NOTIFY orientationAngleChanged DESIGNABLE false)
 
 public:
     explicit MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
@@ -66,7 +73,6 @@ public:
     Globals::SurfaceState state() const;
     QString name() const;
     bool live() const;
-    Qt::ScreenOrientation orientation() const;
     SessionInterface *session() const;
 
     Q_INVOKABLE void release();
@@ -80,7 +86,9 @@ public:
 
     bool isFirstFrameDrawn() const { return m_firstFrameDrawn; }
 
-    void setOrientation(const Qt::ScreenOrientation orientation);
+    OrientationAngle orientationAngle() const;
+    void setOrientationAngle(OrientationAngle angle);
+
     void setSession(SessionInterface *app);
 
     // to allow easy touch event injection from tests
@@ -94,7 +102,7 @@ Q_SIGNALS:
     void typeChanged();
     void stateChanged();
     void nameChanged();
-    void orientationChanged();
+    void orientationAngleChanged(OrientationAngle angle);
     void liveChanged(bool live);
     void firstFrameDrawn(MirSurfaceItem *item);
 
@@ -126,6 +134,7 @@ private Q_SLOTS:
     void updateMirSurfaceSize();
 
     void updateMirSurfaceFocus(bool focused);
+    void onAttributeChanged(const MirSurfaceAttrib, const int);
 
 private:
     bool updateTexture();
@@ -136,7 +145,6 @@ private:
     void setLive(const bool);
 
     // called by MirSurfaceManager
-    void setAttribute(const MirSurfaceAttrib, const int);
     void setSurfaceValid(const bool);
 
     bool hasTouchInsideUbuntuKeyboard(const QList<QTouchEvent::TouchPoint> &touchPoints);
@@ -160,7 +168,9 @@ private:
     MirShell *const m_shell;
     bool m_firstFrameDrawn;
     bool m_live;
-    Qt::ScreenOrientation m_orientation; //FIXME -  have to save the state as Mir has no getter for it (bug:1357429)
+
+    //FIXME -  have to save the state as Mir has no getter for it (bug:1357429)
+    OrientationAngle m_orientationAngle;
 
     QMirSurfaceTextureProvider *m_textureProvider;
 
@@ -196,5 +206,6 @@ private:
 } // namespace qtmir
 
 Q_DECLARE_METATYPE(qtmir::MirSurfaceItem*)
+Q_DECLARE_METATYPE(qtmir::MirSurfaceItem::OrientationAngle)
 
 #endif // MIRSURFACEITEM_H

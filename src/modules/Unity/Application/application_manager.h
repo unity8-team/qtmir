@@ -51,6 +51,7 @@ class MirSurfaceManager;
 class ProcInfo;
 class SharedWakelock;
 class TaskController;
+class SettingsInterface;
 
 class ApplicationManager : public unity::shell::application::ApplicationManagerInterface
 {
@@ -89,17 +90,13 @@ public:
             const QSharedPointer<SharedWakelock> &sharedWakelock,
             const QSharedPointer<DesktopFileReader::Factory> &desktopFileReaderFactory,
             const QSharedPointer<ProcInfo> &processInfo,
+            const QSharedPointer<SettingsInterface> &settings,
             QJSEngine *jsEngine,
             QObject *parent = 0);
     virtual ~ApplicationManager();
 
     // ApplicationManagerInterface
     QString focusedApplicationId() const override;
-    bool suspended() const override;
-    void setSuspended(bool suspended) override;
-
-    bool forceDashActive() const override;
-    void setForceDashActive(bool forceDashActive) override;
 
     QJSValue surfaceAboutToBeCreatedCallback() const override;
     void setSurfaceAboutToBeCreatedCallback(const QJSValue &callback) override;
@@ -148,6 +145,7 @@ Q_SIGNALS:
 
 private Q_SLOTS:
     void onAppDataChanged(const int role);
+    void onSettingsChanged(const QString &key);
 
 private:
     void setFocused(Application *application);
@@ -175,6 +173,7 @@ private:
     QSharedPointer<DesktopFileReader::Factory> m_desktopFileReaderFactory;
     QSharedPointer<ProcInfo> m_procInfo;
     QSharedPointer<SharedWakelock> m_sharedWakelock;
+    QSharedPointer<SettingsInterface> m_settings;
     QJSValue m_surfaceAboutToBeCreatedCallback;
     QJSEngine *m_jsEngine;
     static ApplicationManager* the_application_manager;

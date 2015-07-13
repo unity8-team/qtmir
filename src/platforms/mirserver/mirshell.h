@@ -41,12 +41,6 @@ public:
     virtual mir::frontend::SurfaceId create_surface(const std::shared_ptr<mir::scene::Session> &session,
                                                     const mir::scene::SurfaceCreationParameters &params);
 
-    int set_surface_attribute(
-        const std::shared_ptr<mir::scene::Session> &session,
-        const std::shared_ptr<mir::scene::Surface> &surface,
-        MirSurfaceAttrib attrib,
-        int value) override;
-
 Q_SIGNALS:
     void sessionAboutToCreateSurface(const std::shared_ptr<mir::scene::Session> &session,
                                      qtmir::SurfaceParameters &params); // requires Qt::BlockingQueuedConnection!!
