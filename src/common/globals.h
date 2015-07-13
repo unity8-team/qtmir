@@ -50,12 +50,17 @@ public:
         InputMethod = mir_surface_type_inputmethod,
     };
 
+    enum OrientationAngle {
+        Angle0 = 0,
+        Angle90 = 90,
+        Angle180 = 180,
+        Angle270 = 270
+    };
+
 private:
     Globals() = default;
     ~Globals() = default;
 };
-
-
 
 
 struct SurfaceParameters
@@ -65,5 +70,7 @@ struct SurfaceParameters
 };
 
 } // namespace qtmir
+
+Q_DECLARE_METATYPE(qtmir::Globals::OrientationAngle)
 
 #endif // GLOBALS_H

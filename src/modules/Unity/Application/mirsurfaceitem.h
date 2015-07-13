@@ -22,16 +22,14 @@
 // Qt
 #include <QMutex>
 #include <QPointer>
-#include <QSet>
-#include <QQuickItem>
 #include <QTimer>
 #include <QQmlListProperty>
 
 // mir
 #include <mir/scene/surface.h>
 
+#include "mirsurfaceiteminterface.h"
 #include "session_interface.h"
-#include "globals.h"
 
 class SurfaceObserver;
 class MirShell;
@@ -41,24 +39,10 @@ namespace qtmir {
 class MirSurfaceManager;
 class QSGMirSurfaceNode;
 class QMirSurfaceTextureProvider;
-class Application;
 
-class MirSurfaceItem : public QQuickItem
+class MirSurfaceItem : public MirSurfaceItemInterface
 {
     Q_OBJECT
-    Q_ENUMS(Type)
-    Q_ENUMS(State)
-    Q_ENUMS(OrientationAngle)
-
-    Q_PROPERTY(qtmir::Globals::SurfaceType type READ type NOTIFY typeChanged)
-    Q_PROPERTY(qtmir::Globals::SurfaceState state READ state NOTIFY stateChanged)
-    Q_PROPERTY(QString name READ name NOTIFY nameChanged)
-    Q_PROPERTY(bool live READ live NOTIFY liveChanged)
-
-    // How many degrees, clockwise, the UI in the surface has to rotate to match with the
-    // shell UI orientation
-    Q_PROPERTY(OrientationAngle orientationAngle READ orientationAngle WRITE setOrientationAngle
-               NOTIFY orientationAngleChanged DESIGNABLE false)
 
 public:
     explicit MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
@@ -66,30 +50,29 @@ public:
                             MirShell *shell,
                             std::shared_ptr<SurfaceObserver> observer,
                             QQuickItem *parent = 0);
-    ~MirSurfaceItem();
+    virtual ~MirSurfaceItem();
 
     //getters
-    Globals::SurfaceType type() const;
-    Globals::SurfaceState state() const;
-    QString name() const;
-    bool live() const;
-    SessionInterface *session() const;
+    Globals::SurfaceType type() const override;
+    Globals::SurfaceState state() const override;
+    QString name() const override;
+    bool live() const override;
+    SessionInterface *session() const override;
+    Globals::OrientationAngle orientationAngle() const override;
 
-    Q_INVOKABLE void release();
+    Q_INVOKABLE void release() override;
 
     // Item surface/texture management
     bool isTextureProvider() const { return true; }
     QSGTextureProvider *textureProvider() const;
 
-    void stopFrameDropper();
-    void startFrameDropper();
+    void stopFrameDropper() override;
+    void startFrameDropper() override;
 
-    bool isFirstFrameDrawn() const { return m_firstFrameDrawn; }
+    bool isFirstFrameDrawn() const override { return m_firstFrameDrawn; }
 
-    OrientationAngle orientationAngle() const;
-    void setOrientationAngle(OrientationAngle angle);
-
-    void setSession(SessionInterface *app);
+    void setOrientationAngle(Globals::OrientationAngle angle) override;
+    void setSession(SessionInterface *app) override;
 
     // to allow easy touch event injection from tests
     bool processTouchEvent(int eventType,
@@ -97,14 +80,6 @@ public:
             Qt::KeyboardModifiers modifiers,
             const QList<QTouchEvent::TouchPoint> &touchPoints,
             Qt::TouchPointStates touchPointStates);
-
-Q_SIGNALS:
-    void typeChanged();
-    void stateChanged();
-    void nameChanged();
-    void orientationAngleChanged(OrientationAngle angle);
-    void liveChanged(bool live);
-    void firstFrameDrawn(MirSurfaceItem *item);
 
 protected Q_SLOTS:
     void onSessionStateChanged(SessionInterface::State state);
@@ -142,7 +117,7 @@ private:
 
     void setType(const Globals::SurfaceType&);
     void setState(const Globals::SurfaceState&);
-    void setLive(const bool);
+    void setLive(bool) override;
 
     // called by MirSurfaceManager
     void setSurfaceValid(const bool);
@@ -170,7 +145,7 @@ private:
     bool m_live;
 
     //FIXME -  have to save the state as Mir has no getter for it (bug:1357429)
-    OrientationAngle m_orientationAngle;
+    Globals::OrientationAngle m_orientationAngle;
 
     QMirSurfaceTextureProvider *m_textureProvider;
 
@@ -199,13 +174,8 @@ private:
         QList<QTouchEvent::TouchPoint> touchPoints;
         Qt::TouchPointStates touchPointStates;
     } *m_lastTouchEvent;
-
-    friend class MirSurfaceManager;
 };
 
 } // namespace qtmir
-
-Q_DECLARE_METATYPE(qtmir::MirSurfaceItem*)
-Q_DECLARE_METATYPE(qtmir::MirSurfaceItem::OrientationAngle)
 
 #endif // MIRSURFACEITEM_H

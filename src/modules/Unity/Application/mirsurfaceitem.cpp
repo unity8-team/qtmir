@@ -190,13 +190,13 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
                                MirShell *shell,
                                std::shared_ptr<SurfaceObserver> observer,
                                QQuickItem *parent)
-    : QQuickItem(parent)
+    : MirSurfaceItemInterface(parent)
     , m_surface(surface)
     , m_session(session)
     , m_shell(shell)
     , m_firstFrameDrawn(false)
     , m_live(true)
-    , m_orientationAngle(Angle0)
+    , m_orientationAngle(Globals::Angle0)
     , m_textureProvider(nullptr)
     , m_lastTouchEvent(nullptr)
 {
@@ -306,12 +306,12 @@ Globals::SurfaceState MirSurfaceItem::state() const
     return static_cast<Globals::SurfaceState>(m_surface->state());
 }
 
-MirSurfaceItem::OrientationAngle MirSurfaceItem::orientationAngle() const
+Globals::OrientationAngle MirSurfaceItem::orientationAngle() const
 {
     return m_orientationAngle;
 }
 
-void MirSurfaceItem::setOrientationAngle(MirSurfaceItem::OrientationAngle angle)
+void MirSurfaceItem::setOrientationAngle(Globals::OrientationAngle angle)
 {
     qCDebug(QTMIR_SURFACES, "MirSurfaceItem::setOrientationAngle(%d)", angle);
 
@@ -321,16 +321,16 @@ void MirSurfaceItem::setOrientationAngle(MirSurfaceItem::OrientationAngle angle)
     MirOrientation mirOrientation;
 
     switch (angle) {
-    case Angle0:
+    case Globals::Angle0:
         mirOrientation = mir_orientation_normal;
         break;
-    case Angle90:
+    case Globals::Angle90:
         mirOrientation = mir_orientation_right;
         break;
-    case Angle180:
+    case Globals::Angle180:
         mirOrientation = mir_orientation_inverted;
         break;
-    case Angle270:
+    case Globals::Angle270:
         mirOrientation = mir_orientation_left;
         break;
     default:
@@ -375,7 +375,7 @@ void MirSurfaceItem::surfaceDamaged()
 {
     if (!m_firstFrameDrawn) {
         m_firstFrameDrawn = true;
-        Q_EMIT firstFrameDrawn(this);
+        Q_EMIT firstFrameDrawn();
     }
 
     scheduleTextureUpdate();
@@ -562,7 +562,7 @@ void MirSurfaceItem::endCurrentTouchSequence(ulong timestamp)
 
         touchEvent.updateTouchPointStatesAndType();
 
-        auto ev = makeMirEvent(touchEvent.modifiers, touchEvent.touchPoints, 
+        auto ev = makeMirEvent(touchEvent.modifiers, touchEvent.touchPoints,
                                touchEvent.touchPointStates, touchEvent.timestamp);
         m_surface->consume(*ev);
 
@@ -673,7 +673,7 @@ void MirSurfaceItem::setState(const Globals::SurfaceState &state)
     }
 }
 
-void MirSurfaceItem::setLive(const bool live)
+void MirSurfaceItem::setLive(bool live)
 {
     if (m_live != live) {
         m_live = live;

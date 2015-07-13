@@ -1,3 +1,10 @@
+qtmir (0.4.6) UNRELEASED; urgency=medium
+
+  * Implement a callback mechanism to allow shell override the initial 
+    surface geometry requested by clients
+
+ -- Gerry Boland <gerry.boland@canonical.com>  Mon, 12 Jul 2015 14:47:07 +0100
+
 qtmir (0.4.5+15.10.20150617-0ubuntu1) wily; urgency=medium
 
   [ Gerry Boland ]
@@ -21,13 +28,6 @@ qtmir (0.4.5+15.10.20150611-0ubuntu1) wily; urgency=medium
   * Add X-Ubuntu-Supported-Orientations desktop file entry
 
  -- CI Train Bot <ci-train-bot@canonical.com>  Thu, 11 Jun 2015 09:10:38 +0000
-
-qtmir (0.4.5) UNRELEASED; urgency=medium
-
-  * Implement a callback mechanism to allow shell override the initial 
-    surface geometry requested by clients
-
- -- Gerry Boland <gerry.boland@canonical.com>  Mon, 05 Jan 2015 11:47:07 +0100
 
 qtmir (0.4.4+15.04.20150513-0ubuntu1) vivid; urgency=medium
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2013-2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -135,6 +135,7 @@ public Q_SLOTS:
 
     void onProcessStarting(const QString& appId);
     void onProcessStopped(const QString& appId);
+    void onProcessSuspended(const QString& appId);
     void onProcessFailed(const QString& appId, const bool duringStartup);
     void onFocusRequested(const QString& appId);
     void onResumeRequested(const QString& appId);
@@ -153,9 +154,7 @@ private:
     void remove(Application* application);
     Application* findApplicationWithSession(const std::shared_ptr<mir::scene::Session> &session);
     Application* findApplicationWithSession(const mir::scene::Session *session);
-    Application* applicationForStage(Application::Stage stage);
     QModelIndex findIndex(Application* application);
-    bool suspendApplication(Application *application);
     void resumeApplication(Application *application);
     QString toString() const;
 
@@ -165,9 +164,6 @@ private:
 
     QList<Application*> m_applications;
     Application* m_focusedApplication;
-    Application* m_mainStageApplication;
-    Application* m_sideStageApplication;
-    QStringList m_lifecycleExceptions;
     DBusWindowStack* m_dbusWindowStack;
     QSharedPointer<TaskController> m_taskController;
     QSharedPointer<DesktopFileReader::Factory> m_desktopFileReaderFactory;
@@ -177,9 +173,6 @@ private:
     QJSValue m_surfaceAboutToBeCreatedCallback;
     QJSEngine *m_jsEngine;
     static ApplicationManager* the_application_manager;
-    QList<pid_t> m_hiddenPIDs;
-    bool m_suspended;
-    bool m_forceDashActive;
 
     friend class Application;
     friend class DBusWindowStack;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013,2014 Canonical, Ltd.
+ * Copyright (C) 2013-2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -105,11 +105,13 @@ void connectToTaskController(ApplicationManager *manager, TaskController *contro
                      manager, &ApplicationManager::onProcessStarting);
     QObject::connect(controller, &TaskController::processStopped,
                      manager, &ApplicationManager::onProcessStopped);
+    QObject::connect(controller, &TaskController::processSuspended,
+                     manager, &ApplicationManager::onProcessSuspended);
     QObject::connect(controller, &TaskController::processFailed,
                      manager, &ApplicationManager::onProcessFailed);
-    QObject::connect(controller, &TaskController::requestFocus,
+    QObject::connect(controller, &TaskController::focusRequested,
                      manager, &ApplicationManager::onFocusRequested);
-    QObject::connect(controller, &TaskController::requestResume,
+    QObject::connect(controller, &TaskController::resumeRequested,
                      manager, &ApplicationManager::onResumeRequested);
 }
 
@@ -192,8 +194,6 @@ ApplicationManager::ApplicationManager(
     : ApplicationManagerInterface(parent)
     , m_mirServer(mirServer)
     , m_focusedApplication(nullptr)
-    , m_mainStageApplication(nullptr)
-    , m_sideStageApplication(nullptr)
     , m_dbusWindowStack(new DBusWindowStack(this))
     , m_taskController(taskController)
     , m_desktopFileReaderFactory(desktopFileReaderFactory)
@@ -202,8 +202,6 @@ ApplicationManager::ApplicationManager(
     , m_settings(settings)
     , m_surfaceAboutToBeCreatedCallback(QJSValue::UndefinedValue)
     , m_jsEngine(jsEngine)
-    , m_suspended(false)
-    , m_forceDashActive(false)
 {
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::ApplicationManager (this=%p)" << this;
     setObjectName("qtmir::ApplicationManager");
@@ -212,7 +210,7 @@ ApplicationManager::ApplicationManager(
     m_roleNames.insert(RoleFullscreen, "fullscreen");
 
     if (settings.data()) {
-        m_lifecycleExceptions = m_settings->get("lifecycleExemptAppids").toStringList();
+        Application::lifecycleExceptions = m_settings->get("lifecycleExemptAppids").toStringList();
         connect(m_settings.data(), &Settings::changed, this, &ApplicationManager::onSettingsChanged);
     }
 }
@@ -323,39 +321,6 @@ void ApplicationManager::setSurfaceAboutToBeCreatedCallback(const QJSValue &call
     Q_EMIT surfaceAboutToBeCreatedCallbackChanged();
 }
 
-bool ApplicationManager::suspendApplication(Application *application)
-{
-    if (application == nullptr)
-        return false;
-    qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::suspendApplication - appId=" << application->appId();
-
-    // Present in exceptions list, explicitly release wakelock and return. There's no need to keep the wakelock
-    // as the process is never suspended and thus has no cleanup to perform when (for example) the display is blanked
-    if (!m_lifecycleExceptions.filter(application->appId().section('_',0,0)).empty()) {
-        m_sharedWakelock->release(application);
-        return false;
-    }
-
-    if (m_forceDashActive && application->appId() == "unity8-dash") {
-        return false;
-    }
-
-    if (application->state() == Application::Running)
-        application->setState(Application::Suspended);
-
-    return true;
-}
-
-void ApplicationManager::resumeApplication(Application *application)
-{
-    if (application == nullptr)
-        return;
-    qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::resumeApplication - appId=" << application->appId();
-
-    if (application->state() == Application::Suspended || application->state() == Application::Stopped)
-        application->setState(Application::Running);
-}
-
 bool ApplicationManager::focusApplication(const QString &inputAppId)
 {
     const QString appId = toShortAppIdIfPossible(inputAppId);
@@ -367,27 +332,8 @@ bool ApplicationManager::focusApplication(const QString &inputAppId)
         return false;
     }
 
-    resumeApplication(application);
-
-    // set state of previously focused app to suspended
     if (m_focusedApplication) {
         m_focusedApplication->setFocused(false);
-        Application *lastApplication = applicationForStage(application->stage());
-        if (lastApplication != application) {
-            suspendApplication(lastApplication);
-        }
-    }
-
-    if (application->stage() == Application::MainStage) {
-        m_mainStageApplication = application;
-    } else {
-        m_sideStageApplication = application;
-    }
-
-    if (!m_suspended) {
-        resumeApplication(application); // in case unfocusCurrentApplication() was last called
-    } else {
-        suspendApplication(application); // Make sure we also have this one suspended if everything is suspended
     }
 
     m_focusedApplication = application;
@@ -397,18 +343,12 @@ bool ApplicationManager::focusApplication(const QString &inputAppId)
     Q_EMIT focusedApplicationIdChanged();
     m_dbusWindowStack->FocusedWindowChanged(0, application->appId(), application->stage());
 
-    // FIXME(dandrader): lying here. The operation is async. So we will only know whether
-    // the focusing was successful once the server replies. Maybe the API in unity-api should
-    // reflect that?
     return true;
 }
 
 void ApplicationManager::unfocusCurrentApplication()
 {
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::unfocusCurrentApplication";
-
-    suspendApplication(m_sideStageApplication);
-    suspendApplication(m_mainStageApplication);
 
     m_focusedApplication = nullptr;
     Q_EMIT focusedApplicationIdChanged();
@@ -459,12 +399,9 @@ Application *ApplicationManager::startApplication(const QString &inputAppId, Exe
         application->setArguments(arguments);
     } else {
         application = new Application(
-                    m_taskController,
                     m_sharedWakelock,
                     m_desktopFileReaderFactory->createInstance(appId, m_taskController->findDesktopFileForAppId(appId)),
-                    Application::Starting,
                     arguments,
-                    m_jsEngine,
                     this);
 
         if (!application->isValid()) {
@@ -490,10 +427,8 @@ void ApplicationManager::onProcessStarting(const QString &appId)
     Application *application = findApplication(appId);
     if (!application) { // then shell did not start this application, so ubuntu-app-launch must have - add to list
         application = new Application(
-                    m_taskController,
                     m_sharedWakelock,
                     m_desktopFileReaderFactory->createInstance(appId, m_taskController->findDesktopFileForAppId(appId)),
-                    Application::Starting,
                     QStringList(),
                     this);
 
@@ -506,17 +441,17 @@ void ApplicationManager::onProcessStarting(const QString &appId)
         Q_EMIT focusRequested(appId);
     }
     else {
-        // url-dispatcher can relaunch apps which have been OOM-killed - AppMan must accept the newly spawned
-        // application and focus it immediately (as user expects app to still be running).
         if (application->state() == Application::Stopped) {
+            // url-dispatcher can relaunch apps which have been OOM-killed - AppMan must accept the newly spawned
+            // application and focus it immediately (as user expects app to still be running).
             qCDebug(QTMIR_APPLICATIONS) << "Stopped application appId=" << appId << "is being resumed externally";
-            application->setState(Application::Starting);
             Q_EMIT focusRequested(appId);
         } else {
             qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessStarting application already found with appId"
                                         << appId;
         }
     }
+    application->setProcessState(Application::ProcessRunning);
 }
 
 /**
@@ -535,14 +470,7 @@ bool ApplicationManager::stopApplication(const QString &inputAppId)
         return false;
     }
 
-    if (application == m_focusedApplication) {
-        // unfocus, and let shell decide what next to focus
-        m_focusedApplication = nullptr;
-        Q_EMIT focusedApplicationIdChanged();
-    }
-
     remove(application);
-    m_dbusWindowStack->WindowDestroyed(0, appId);
 
     bool result = m_taskController->stop(application->longAppId());
 
@@ -559,10 +487,7 @@ bool ApplicationManager::stopApplication(const QString &inputAppId)
 
 void ApplicationManager::onProcessFailed(const QString &appId, const bool duringStartup)
 {
-    /* Applications fail if they fail to launch, crash or are killed. If failed to start, must
-     * immediately remove from list of applications. If crash or kill, instead we set flag on the
-     * Application to indicate it can be resumed.
-     */
+    // Applications fail if they fail to launch, crash or are killed.
 
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessFailed - appId=" << appId << "duringStartup=" << duringStartup;
 
@@ -574,20 +499,8 @@ void ApplicationManager::onProcessFailed(const QString &appId, const bool during
     }
 
     Q_UNUSED(duringStartup); // FIXME(greyback) upstart reports app that fully started up & crashes as failing during startup??
-    if (application->state() == Application::Starting) {
-        if (application == m_focusedApplication) {
-            m_focusedApplication = nullptr;
-            Q_EMIT focusedApplicationIdChanged();
-        }
-        remove(application);
-        m_dbusWindowStack->WindowDestroyed(0, application->appId());
-        delete application;
-    } else {
-        // We need to set flags on the Application to say the app can be resumed, and thus should not be removed
-        // from the list by onProcessStopped.
-        application->setCanBeResumed(true);
-        application->setPid(0);
-    }
+    application->setProcessState(Application::ProcessStopped);
+    application->setPid(0);
 }
 
 void ApplicationManager::onProcessStopped(const QString &appId)
@@ -602,29 +515,15 @@ void ApplicationManager::onProcessStopped(const QString &appId)
         return;
     }
 
-    // if shell did not stop the application, but ubuntu-app-launch says it died, we assume the process has been
-    // killed, so it can be respawned later. Only exception is if that application is focused or running
-    // as then it most likely crashed. Update this logic when ubuntu-app-launch gives some failure info.
-    bool removeApplication = true;
+    application->setProcessState(Application::ProcessStopped);
+    application->setPid(0);
+}
 
-    if (application == m_focusedApplication) {
-        // Very bad case where focused application dies. Remove from list. Should give error message
-        m_focusedApplication = nullptr;
-        Q_EMIT focusedApplicationIdChanged();
-    }
-
-    // The following scenario is the only time that we do NOT remove the application from the app list:
-    if ((application->state() == Application::Suspended || application->state() == Application::Stopped)
-            && application->pid() == 0 // i.e. onProcessFailed was called, which resets the PID of this application
-            && application->canBeResumed()) {
-        removeApplication = false;
-    }
-
-    if (removeApplication) {
-        qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessStopped - removing appId=" << appId;
-        remove(application);
-        m_dbusWindowStack->WindowDestroyed(0, application->appId());
-        delete application;
+void ApplicationManager::onProcessSuspended(const QString &appId)
+{
+    Application *application = findApplication(appId);
+    if (application) {
+        application->setProcessState(Application::ProcessSuspended);
     }
 }
 
@@ -646,10 +545,10 @@ void ApplicationManager::onResumeRequested(const QString& appId)
         return;
     }
 
-    // If app Stopped, trust that ubuntu-app-launch respawns it itself, and AppManager will
-    // be notified of that through the onProcessStartReportReceived slot. Else resume.
+    // We interpret this as a focus request for a suspended app.
+    // Shell will have this app resumed if it complies with the focus request
     if (application->state() == Application::Suspended) {
-        application->setState(Application::Running);
+        Q_EMIT focusRequested(appId);
     }
 }
 
@@ -669,7 +568,7 @@ void ApplicationManager::onAppDataChanged(const int role)
 void ApplicationManager::onSettingsChanged(const QString &key)
 {
     if (key == "lifecycleExemptAppids") {
-        m_lifecycleExceptions = m_settings->get("lifecycleExemptAppids").toStringList();
+        Application::lifecycleExceptions = m_settings->get("lifecycleExemptAppids").toStringList();
     }
 }
 
@@ -708,7 +607,6 @@ void ApplicationManager::authorizeSession(const quint64 pid, bool &authorized)
 
     if (info->startsWith("maliit-server") || info->contains("qt5/libexec/QtWebProcess")) {
         authorized = true;
-        m_hiddenPIDs << pid;
         return;
     }
 
@@ -768,15 +666,12 @@ void ApplicationManager::authorizeSession(const quint64 pid, bool &authorized)
 
     QStringList arguments(info->asStringList());
     application = new Application(
-        m_taskController,
         m_sharedWakelock,
         desktopData,
-        Application::Starting,
         arguments,
         this);
     application->setPid(pid);
     application->setStage(stage);
-    application->setCanBeResumed(false);
     add(application);
     authorized = true;
 }
@@ -788,51 +683,10 @@ void ApplicationManager::onSessionStarting(std::shared_ptr<ms::Session> const& s
 
 void ApplicationManager::onSessionStopping(std::shared_ptr<ms::Session> const& session)
 {
-    qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onSessionStopping - sessionName=" << session->name().c_str();
-
-    // in case application closed not by hand of shell, check again here:
     Application* application = findApplicationWithSession(session);
     if (application) {
-        /* Can remove the application from the running apps list immediately in these curcumstances:
-         *  1. application is not managed by upstart (this message from Mir is only notice the app has stopped, must do
-         *     it here)
-         *  2. application is managed by upstart, but has stopped before it managed to create a surface, we can assume
-         *     it crashed on startup, and thus cannot be resumed - so remove it.
-         *  3. application is managed by upstart and is in foreground (i.e. has Running state), if Mir reports the
-         *     application disconnects, it either crashed or stopped itself. Either case, remove it.
-         */
-        if (!application->canBeResumed()
-                || application->state() == Application::Starting
-                || application->state() == Application::Running) {
-            m_dbusWindowStack->WindowDestroyed(0, application->appId());
-            remove(application);
-           
-            // (ricmm) -- To be on the safe side, better wipe the application QML compile cache if it crashes on startup
-            QString path(QDir::homePath() + QStringLiteral("/.cache/QML/Apps/"));
-            QDir dir(path);
-            QStringList apps = dir.entryList();
-            for (int i = 0; i < apps.size(); i++) {
-                if (apps.at(i).contains(application->appId())) {
-                    qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onSessionStopping appId=" << apps.at(i) << " Wiping QML Cache";
-                    dir.cd(apps.at(i));
-                    dir.removeRecursively();
-                    break;
-                }
-            }
-
-            delete application;
-
-            if (application == m_focusedApplication) {
-                m_focusedApplication = nullptr;
-                Q_EMIT focusedApplicationIdChanged();
-            }
-        } else {
-            // otherwise, we do not have enough information to make any changes to the model, so await events from
-            // upstart to go further, but set the app state
-            application->setState(Application::Stopped);
-        }
+        m_dbusWindowStack->WindowDestroyed(0, application->appId());
     }
-    m_hiddenPIDs.removeOne(session->process_id());
 }
 
 void ApplicationManager::onSessionAboutToCreateSurface(const std::shared_ptr<mir::scene::Session> &session,
@@ -877,12 +731,8 @@ void ApplicationManager::onSessionCreatedSurface(const ms::Session *session,
     Q_UNUSED(surface);
 
     Application* application = findApplicationWithSession(session);
-    if (application && application->state() == Application::Starting) {
+    if (application) {
         m_dbusWindowStack->WindowCreated(0, application->appId());
-        application->setState(Application::Running);
-        if ((application != m_mainStageApplication && application != m_sideStageApplication) || m_suspended) {
-            suspendApplication(application);
-        }
     }
 }
 
@@ -911,16 +761,6 @@ Application* ApplicationManager::findApplicationWithPid(const qint64 pid)
     return nullptr;
 }
 
-Application* ApplicationManager::applicationForStage(Application::Stage stage)
-{
-    qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::focusedApplicationForStage" << stage;
-
-    if (stage == Application::MainStage)
-        return m_mainStageApplication;
-    else
-        return m_sideStageApplication;
-}
-
 void ApplicationManager::add(Application* application)
 {
     Q_ASSERT(application != nullptr);
@@ -930,6 +770,28 @@ void ApplicationManager::add(Application* application)
     connect(application, &Application::focusedChanged, this, [this](bool) { onAppDataChanged(RoleFocused); });
     connect(application, &Application::stateChanged, this, [this](Application::State) { onAppDataChanged(RoleState); });
     connect(application, &Application::stageChanged, this, [this](Application::Stage) { onAppDataChanged(RoleStage); });
+
+    QString appId = application->appId();
+    QString longAppId = application->longAppId();
+    QStringList arguments = application->arguments();
+
+    // The connection is queued as a workaround an issue in the PhoneStage animation that
+    // happens when you tap on a killed app in the spread to bring it to foreground, causing
+    // a Application::respawn() to take place.
+    // In any case, it seems like in general QML works better when don't do too many things
+    // in the same event loop iteration.
+    connect(application, &Application::startProcessRequested,
+            this, [=]() { m_taskController->start(appId, arguments); },
+            Qt::QueuedConnection);
+
+    connect(application, &Application::suspendProcessRequested, this, [=]() { m_taskController->suspend(longAppId); } );
+    connect(application, &Application::resumeProcessRequested, this, [=]() { m_taskController->resume(longAppId); } );
+
+    connect(application, &Application::stopped, this, [=]() {
+        remove(application);
+        application->deleteLater();
+    });
+
 
     beginInsertRows(QModelIndex(), m_applications.count(), m_applications.count());
     m_applications.append(application);
@@ -946,11 +808,6 @@ void ApplicationManager::remove(Application *application)
     Q_ASSERT(application != nullptr);
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::remove - appId=" << application->appId();
 
-    if (application == m_sideStageApplication)
-        m_sideStageApplication = nullptr;
-    if (application == m_mainStageApplication)
-        m_mainStageApplication = nullptr;
-
     application->disconnect(this);
 
     int i = m_applications.indexOf(application);
@@ -963,6 +820,11 @@ void ApplicationManager::remove(Application *application)
         if (i == 0) {
             Q_EMIT emptyChanged();
         }
+    }
+
+    if (application == m_focusedApplication) {
+        m_focusedApplication = nullptr;
+        Q_EMIT focusedApplicationIdChanged();
     }
 }
 

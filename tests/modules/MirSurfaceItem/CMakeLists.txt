@@ -6,7 +6,8 @@ set(
 
 include_directories(
   ${CMAKE_SOURCE_DIR}/src/common
-  ${CMAKE_SOURCE_DIR}/src/modules/Unity/Application
+#  ${CMAKE_SOURCE_DIR}/src/modules/Unity/Application
+  ${CMAKE_SOURCE_DIR}/src/modules
   ${CMAKE_SOURCE_DIR}/tests/modules/common
   ${MIRSERVER_INCLUDE_DIRS}
 )

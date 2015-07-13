@@ -71,7 +71,7 @@ class UnityApplicationPlugin : public QQmlExtensionPlugin
 
         qRegisterMetaType<qtmir::ApplicationManager*>("ApplicationManager*"); //need for queueing signals
         qRegisterMetaType<qtmir::Application*>("Application*");
-        qRegisterMetaType<qtmir::MirSurfaceItem*>("MirSurfaceItem*");
+        qRegisterMetaType<qtmir::MirSurfaceItemInterface*>("MirSurfaceItemInterface*");
         qRegisterMetaType<qtmir::MirSurfaceItemModel*>("MirSurfaceItemModel*");
         qRegisterMetaType<qtmir::Session*>("Session*");
         qRegisterMetaType<qtmir::SessionInterface*>("SessionInterface*");
@@ -90,7 +90,7 @@ class UnityApplicationPlugin : public QQmlExtensionPlugin
                     uri, 0, 1, "SurfaceManager", surfaceManagerSingleton);
         qmlRegisterSingletonType<qtmir::SessionManager>(
                     uri, 0, 1, "SessionManager", sessionManagerSingleton);
-        qmlRegisterUncreatableType<qtmir::MirSurfaceItem>(
+        qmlRegisterUncreatableType<qtmir::MirSurfaceItemInterface>(
                     uri, 0, 1, "MirSurfaceItem", "MirSurfaceItem can't be instantiated from QML");
         qmlRegisterUncreatableType<qtmir::Session>(
                     uri, 0, 1, "Session", "Session can't be instantiated from QML");
