@@ -65,7 +65,6 @@ namespace mg = mir::graphics;
 ScreenController::ScreenController(QObject *parent)
     : QObject(parent)
     , m_server(nullptr)
-    , m_watchForUpdates(false)
 {
     qCDebug(QTMIR_SCREENS) << "ScreenController::ScreenController";
 }
@@ -75,7 +74,8 @@ void ScreenController::init(MirServer *server)
 {
     m_server = server;
 
-    // Using Blocking Queued Connection to enforce synchronization of Qt GUI thread with Mir thread(s)
+    // Use a Blocking Queued Connection to enforce synchronization of Qt GUI thread with Mir thread(s)
+    // on compositor shutdown. Compositor startup can be lazy.
     // Queued connections work because the thread affinity of this class is with the Qt GUI thread.
     auto compositor = static_cast<QtCompositor *>(m_server->the_compositor().get());
     connect(compositor, &QtCompositor::starting,
@@ -86,14 +86,12 @@ void ScreenController::init(MirServer *server)
     auto display = m_server->the_display();
     display->register_configuration_change_handler(*m_server->the_main_loop(), [this]() {
         // display hardware configuration changed, update! - not called when we set new configuration
-        QMutexLocker lock(&m_mutex);
-        if (m_watchForUpdates) {
-            QMetaObject::invokeMethod(this, "update", Qt::QueuedConnection);
-        }
+        QMetaObject::invokeMethod(this, "update", Qt::QueuedConnection);
     });
 }
 
 // terminate before shutting down the Mir server, or else liable to deadlock with the blocking connection above
+// Runs on MirServerThread!!!
 void ScreenController::terminate()
 {
     auto compositor = static_cast<QtCompositor *>(m_server->the_compositor().get());
@@ -105,11 +103,6 @@ void ScreenController::onCompositorStarting()
 {
     qCDebug(QTMIR_SCREENS) << "ScreenController::onCompositorStarting";
 
-    {
-        QMutexLocker lock(&m_mutex);
-        m_watchForUpdates = false;
-    }
-
     update();
 
     // (Re)Start Qt's render thread by setting all windows with a corresponding screen to exposed.
@@ -120,21 +113,11 @@ void ScreenController::onCompositorStarting()
             window->window()->show();
         }
     }
-
-    {
-        QMutexLocker lock(&m_mutex);
-        m_watchForUpdates = true;
-    }
 }
 
 void ScreenController::onCompositorStopping()
 {
     qCDebug(QTMIR_SCREENS) << "ScreenController::onCompositorStopping";
-
-    {
-        QMutexLocker lock(&m_mutex);
-        m_watchForUpdates = false;
-    }
 
     // Stop Qt's render threads by setting all its windows it obscured. Must
     // block until all windows have their GL contexts released.
@@ -147,11 +130,6 @@ void ScreenController::onCompositorStopping()
     }
 
     update();
-
-    {
-        QMutexLocker lock(&m_mutex);
-        m_watchForUpdates = true;
-    }
 }
 
 void ScreenController::update()
@@ -161,8 +139,6 @@ void ScreenController::update()
         return;
     auto display = m_server->the_display();
     auto displayConfig = display->configuration();
-
-    QMutexLocker lock(&m_mutex);
 
     QList<Screen*> newScreenList;
     QList<Screen*> oldScreenList = m_screenList;
@@ -269,7 +245,6 @@ void ScreenController::update()
 Screen* ScreenController::getUnusedScreen()
 {
     qCDebug(QTMIR_SCREENS) << "ScreenController::getUnusedScreen";
-    QMutexLocker lock(&m_mutex);
 
     // have all existing screens got an associated ScreenWindow?
     for (auto screen : m_screenList) {
@@ -293,7 +268,6 @@ Screen* ScreenController::findScreenWithId(const QList<Screen *> &list, const mg
 
 QWindow* ScreenController::getWindowForPoint(const QPoint &point) //HORRIBLE!!!
 {
-    QMutexLocker lock(&m_mutex);
     for (Screen *screen : m_screenList) {
         if (screen->window() && screen->geometry().contains(point)) {
             return screen->window()->window();

@@ -20,7 +20,6 @@
 #define SCREENCONTROLLER_H
 
 #include <QObject>
-#include <QMutex>
 #include <QRect>
 
 // Mir
@@ -48,7 +47,6 @@ public:
     QWindow* getWindowForPoint(const QPoint &point);
 
     QRect getSurfaceSize() const { return m_surfaceSize; }
-    void init(MirServer *server);
 
 Q_SIGNALS:
     void screenAdded(Screen *screen);
@@ -62,12 +60,11 @@ private Q_SLOTS:
 
 private:
     Screen* findScreenWithId(const QList<Screen*> &list, const mir::graphics::DisplayConfigurationOutputId id);
+    void init(MirServer *server);
     void terminate();
 
     MirServer *m_server;
     QList<Screen*> m_screenList;
-    bool m_watchForUpdates;
-    QMutex m_mutex;
     QRect m_surfaceSize;
 
     friend class MirServer;
