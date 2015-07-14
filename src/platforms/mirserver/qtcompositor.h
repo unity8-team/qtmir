@@ -30,7 +30,7 @@ class QtCompositor : public QObject, public mir::compositor::Compositor
 {
     Q_OBJECT
 public:
-    QtCompositor() { qDebug() << "QtComp"; } //= default;
+    QtCompositor() = default;
     virtual ~QtCompositor() noexcept = default;
 
     void start();

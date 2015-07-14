@@ -31,8 +31,6 @@
 // Qt
 #include <QCoreApplication>
 #include <qpa/qwindowsysteminterface.h>
-#include <QtSensors/QOrientationSensor>
-#include <QtSensors/QOrientationReading>
 #include <QThread>
 
 // Qt sensors

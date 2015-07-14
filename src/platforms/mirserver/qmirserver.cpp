@@ -66,6 +66,7 @@ bool QMirServer::start()
         qCritical() << "ERROR: QMirServer - Mir failed to start";
         return false;
     }
+    d->screenController->update();
 
     Q_EMIT started();
     return true;

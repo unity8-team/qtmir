@@ -43,24 +43,43 @@ Q_LOGGING_CATEGORY(QTMIR_SCREENS, "qtmir.screens")
 
 namespace mg = mir::graphics;
 
+/*
+ * ScreenController monitors the Mir display configuration and compositor status, and updates
+ * the relevant QScreen and QWindow states accordingly.
+ *
+ * Primary purposes are:
+ * 1. to update QScreen state on Mir display configuration changes
+ * 2. to stop the Qt renderer by hiding its QWindow when Mir wants to stop all compositing,
+ *    and resume Qt's renderer by showing its QWindow when Mir wants to resume compositing.
+ *
+ *
+ * Threading Note:
+ * This object has affinity to the main Qt GUI thread. However the init() & terminate() methods
+ * are called on the MirServerThread thread, as we need to determine the screen state *after*
+ * Mir has initialized, and tear down before Mir terminates. Also note the MirServerThread
+ * does not have an QEventLoop.
+ *
+ * All other methods must be called on the Qt GUI thread.
+ */
 
 ScreenController::ScreenController(QObject *parent)
     : QObject(parent)
     , m_server(nullptr)
-    , m_watchForUpdates(true)
+    , m_watchForUpdates(false)
 {
     qCDebug(QTMIR_SCREENS) << "ScreenController::ScreenController";
 }
 
-// init only after MirServer has initialized
+// init only after MirServer has initialized - runs on MirServerThread!!!
 void ScreenController::init(MirServer *server)
 {
     m_server = server;
 
     // Using Blocking Queued Connection to enforce synchronization of Qt GUI thread with Mir thread(s)
+    // Queued connections work because the thread affinity of this class is with the Qt GUI thread.
     auto compositor = static_cast<QtCompositor *>(m_server->the_compositor().get());
     connect(compositor, &QtCompositor::starting,
-            this, &ScreenController::onCompositorStarting/*, Qt::BlockingQueuedConnection*/);
+            this, &ScreenController::onCompositorStarting);
     connect(compositor, &QtCompositor::stopping,
             this, &ScreenController::onCompositorStopping, Qt::BlockingQueuedConnection);
 
@@ -72,8 +91,6 @@ void ScreenController::init(MirServer *server)
             QMetaObject::invokeMethod(this, "update", Qt::QueuedConnection);
         }
     });
-
-    update();
 }
 
 // terminate before shutting down the Mir server, or else liable to deadlock with the blocking connection above

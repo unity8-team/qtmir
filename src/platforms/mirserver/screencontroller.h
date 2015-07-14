@@ -48,18 +48,20 @@ public:
     QWindow* getWindowForPoint(const QPoint &point);
 
     QRect getSurfaceSize() const { return m_surfaceSize; }
+    void init(MirServer *server);
 
 Q_SIGNALS:
     void screenAdded(Screen *screen);
 
+public Q_SLOTS:
+    void update();
+
 private Q_SLOTS:
     void onCompositorStarting();
     void onCompositorStopping();
-    void update();
 
 private:
     Screen* findScreenWithId(const QList<Screen*> &list, const mir::graphics::DisplayConfigurationOutputId id);
-    void init(MirServer *server);
     void terminate();
 
     MirServer *m_server;
