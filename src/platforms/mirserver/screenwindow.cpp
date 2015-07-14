@@ -67,22 +67,6 @@ ScreenWindow::~ScreenWindow()
     qDebug() << "ScreenWindow::~ScreenWindow" << this;
 }
 
-QRect ScreenWindow::geometry() const
-{
-    // For yet-to-become-fullscreen windows report the geometry covering the entire
-    // screen. This is particularly important for Quick where the root object may get
-    // sized to some geometry queried before calling create().
-    return screen()->availableGeometry();
-}
-
-void ScreenWindow::setGeometry(const QRect &)
-{
-    // We only support full-screen windows
-    QRect rect(screen()->availableGeometry());
-    QWindowSystemInterface::handleGeometryChange(window(), rect);
-    QPlatformWindow::setGeometry(rect);
-}
-
 //bool ScreenWindow::isExposed() const
 //{
 //    return m_isExposed;

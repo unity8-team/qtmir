@@ -31,9 +31,9 @@
 #include <mir/main_loop.h>
 
 // Qt
-#include <QMutexLocker>
 #include <QScreen>
 #include <QQuickWindow>
+#include <qpa/qwindowsysteminterface.h>
 
 // std
 #include <memory>
@@ -42,40 +42,55 @@ Q_LOGGING_CATEGORY(QTMIR_SCREENS, "qtmir.screens")
 
 namespace mg = mir::graphics;
 
+/*
+ * ScreenController monitors the Mir display configuration and compositor status, and updates
+ * the relevant QScreen and QWindow states accordingly.
+ *
+ * Primary purposes are:
+ * 1. to update QScreen state on Mir display configuration changes
+ * 2. to stop the Qt renderer by hiding its QWindow when Mir wants to stop all compositing,
+ *    and resume Qt's renderer by showing its QWindow when Mir wants to resume compositing.
+ *
+ *
+ * Threading Note:
+ * This object has affinity to the main Qt GUI thread. However the init() & terminate() methods
+ * are called on the MirServerThread thread, as we need to determine the screen state *after*
+ * Mir has initialized, and tear down before Mir terminates. Also note the MirServerThread
+ * does not have an QEventLoop.
+ *
+ * All other methods must be called on the Qt GUI thread.
+ */
 
 ScreenController::ScreenController(QObject *parent)
     : QObject(parent)
     , m_server(nullptr)
-    , m_watchForUpdates(true)
 {
     qCDebug(QTMIR_SCREENS) << "ScreenController::ScreenController";
 }
 
-// init only after MirServer has initialized
+// init only after MirServer has initialized - runs on MirServerThread!!!
 void ScreenController::init(MirServer *server)
 {
     m_server = server;
 
-    // Using Blocking Queued Connection to enforce synchronization of Qt GUI thread with Mir thread(s)
+    // Use a Blocking Queued Connection to enforce synchronization of Qt GUI thread with Mir thread(s)
+    // on compositor shutdown. Compositor startup can be lazy.
+    // Queued connections work because the thread affinity of this class is with the Qt GUI thread.
     auto compositor = static_cast<QtCompositor *>(m_server->the_compositor().get());
     connect(compositor, &QtCompositor::starting,
-            this, &ScreenController::onCompositorStarting/*, Qt::BlockingQueuedConnection*/);
+            this, &ScreenController::onCompositorStarting);
     connect(compositor, &QtCompositor::stopping,
             this, &ScreenController::onCompositorStopping, Qt::BlockingQueuedConnection);
 
     auto display = m_server->the_display();
     display->register_configuration_change_handler(*m_server->the_main_loop(), [this]() {
         // display hardware configuration changed, update! - not called when we set new configuration
-        QMutexLocker lock(&m_mutex);
-        if (m_watchForUpdates) {
-            QMetaObject::invokeMethod(this, "update", Qt::QueuedConnection);
-        }
+        QMetaObject::invokeMethod(this, "update", Qt::QueuedConnection);
     });
-
-    update();
 }
 
 // terminate before shutting down the Mir server, or else liable to deadlock with the blocking connection above
+// Runs on MirServerThread!!!
 void ScreenController::terminate()
 {
     auto compositor = static_cast<QtCompositor *>(m_server->the_compositor().get());
@@ -86,11 +101,6 @@ void ScreenController::terminate()
 void ScreenController::onCompositorStarting()
 {
     qCDebug(QTMIR_SCREENS) << "ScreenController::onCompositorStarting";
-
-    {
-        QMutexLocker lock(&m_mutex);
-        m_watchForUpdates = false;
-    }
 
     update();
 
@@ -107,11 +117,6 @@ void ScreenController::onCompositorStarting()
 void ScreenController::onCompositorStopping()
 {
     qCDebug(QTMIR_SCREENS) << "ScreenController::onCompositorStopping";
-
-    {
-        QMutexLocker lock(&m_mutex);
-        m_watchForUpdates = true;
-    }
 
     // Stop Qt's render threads by setting all its windows it obscured. Must
     // block until all windows have their GL contexts released.
@@ -133,8 +138,6 @@ void ScreenController::update()
         return;
     auto display = m_server->the_display();
     auto displayConfig = display->configuration();
-
-    QMutexLocker lock(&m_mutex);
 
     // Mir only tells us something changed, it is up to us to figure out what.
     QList<Screen*> newScreenList;
@@ -206,7 +209,6 @@ void ScreenController::update()
 Screen* ScreenController::getUnusedScreen()
 {
     qCDebug(QTMIR_SCREENS) << "ScreenController::getUnusedScreen";
-    QMutexLocker lock(&m_mutex);
 
     // have all existing screens got an associated ScreenWindow?
     for (auto screen : m_screenList) {
@@ -230,7 +232,6 @@ Screen* ScreenController::findScreenWithId(const QList<Screen *> &list, const mg
 
 QWindow* ScreenController::getWindowForPoint(const QPoint &point) //HORRIBLE!!!
 {
-    QMutexLocker lock(&m_mutex);
     for (Screen *screen : m_screenList) {
         if (screen->window() && screen->geometry().contains(point)) {
             return screen->window()->window();

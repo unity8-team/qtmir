@@ -20,7 +20,7 @@
 #define SCREENCONTROLLER_H
 
 #include <QObject>
-#include <QMutex>
+#include <QPoint>
 
 // Mir
 #include <mir/graphics/display_configuration.h>
@@ -49,10 +49,12 @@ public:
 Q_SIGNALS:
     void screenAdded(Screen *screen);
 
+public Q_SLOTS:
+    void update();
+
 private Q_SLOTS:
     void onCompositorStarting();
     void onCompositorStopping();
-    void update();
 
 private:
     Screen* findScreenWithId(const QList<Screen*> &list, const mir::graphics::DisplayConfigurationOutputId id);
@@ -61,8 +63,6 @@ private:
 
     MirServer *m_server;
     QList<Screen*> m_screenList;
-    bool m_watchForUpdates;
-    QMutex m_mutex;
 
     friend class MirServer;
 };
