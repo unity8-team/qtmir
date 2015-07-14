@@ -41,7 +41,7 @@
 
 namespace mg = mir::geometry;
 
-Q_LOGGING_CATEGORY(QTMIR_SENSOR_MESSAGES, "qtmir.sensor")
+Q_LOGGING_CATEGORY(QTMIR_SENSOR_MESSAGES, "qtmir.sensor") //, QtWarningMsg)
 
 namespace {
 bool isLittleEndian() {
@@ -199,8 +199,9 @@ void Screen::setMirDisplayConfiguration(const mir::graphics::DisplayConfiguratio
     m_geometry.setWidth(mode.size.width.as_int());
     m_geometry.setHeight(mode.size.height.as_int());
 
-    // DPI - TODO
+    // DPI - unnecessary to calculate, default implementation in QPlatformScreen is sufficient
 
+    // Check for Screen geometry change
     if (m_geometry != oldGeometry) {
         QWindowSystemInterface::handleScreenGeometryChange(this->screen(), m_geometry, m_geometry);
         if (!m_screenWindow.isNull()) { // resize corresponding window immediately

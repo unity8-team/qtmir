@@ -136,6 +136,7 @@ void ScreenController::update()
 
     QMutexLocker lock(&m_mutex);
 
+    // Mir only tells us something changed, it is up to us to figure out what.
     QList<Screen*> newScreenList;
     QList<Screen*> oldScreenList = m_screenList;
     m_screenList.clear();
