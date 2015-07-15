@@ -136,8 +136,6 @@ QPlatformWindow *MirServerIntegration::createPlatformWindow(QWindow *window) con
     window->setScreen(qscreen);
 
     auto platformWindow = new ScreenWindow(window);
-    window->setGeometry(screens->getSurfaceSize()); // Just for demo
-    platformWindow->setGeometry(screens->getSurfaceSize());
 
     qDebug() << "New" << window << "with geom" << window->geometry()
              << "is backed by a" << screen << "with geometry" << screen->geometry();
