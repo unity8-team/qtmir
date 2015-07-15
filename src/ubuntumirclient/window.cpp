@@ -325,6 +325,7 @@ void UbuntuWindow::handleSurfaceResize(int width, int height)
     // consumption of buffers.
     if (d->bufferSize.width() != width || d->bufferSize.height() != height) {
         QWindowSystemInterface::handleExposeEvent(window(), geometry());
+        QWindowSystemInterface::flushWindowSystemEvents();
     }
 }
 
