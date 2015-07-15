@@ -53,6 +53,7 @@ public:
     Qt::ScreenOrientation orientation() const override { return m_currentOrientation; }
 
     void toggleSensors(const bool enable) const;
+    mir::graphics::DisplayConfigurationOutputType outputType() const { return m_type; }
 
     ScreenWindow* window() const;
 
