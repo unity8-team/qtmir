@@ -198,7 +198,8 @@ void ScreenController::update()
     for (auto screen: m_screenList) {
         qCDebug(QTMIR_SCREENS) << "Screen - id:" << screen->m_outputId.as_value()
                                << "geometry:" << screen->geometry()
-                               << "window:" << screen->window();
+                               << "window:" << screen->window()
+                               << "type" << static_cast<int>(screen->outputType());
     }
     qCDebug(QTMIR_SCREENS) << "=======================================";
 
@@ -211,14 +212,53 @@ Screen* ScreenController::getUnusedScreen()
 {
     qCDebug(QTMIR_SCREENS) << "ScreenController::getUnusedScreen";
 
-    // have all existing screens got an associated ScreenWindow?
+    if (m_screenList.empty()) {
+        return nullptr;
+    } else if (m_screenList.size() == 1) {
+        return m_screenList.at(0);
+    }
+
+    // FIXME: Until we have better way of identifying screens, prioritize outputs based on their output type.
+    // Note the priorities defined here are nothing more than guesses. It tries to select internal displays first,
+    // then digital outputs, and finally analogue.
+    QMap <int, Screen*> priorityList;
+    auto prioritize = [](const mg::DisplayConfigurationOutputType &type) {
+        using out = mg::DisplayConfigurationOutputType;
+        switch(type) {
+        case out::lvds:
+        case out::edp:
+            return 0;
+        case out::displayport:
+        case out::hdmia:
+        case out::hdmib:
+            return 1;
+        case out::dvii:
+        case out::dvid:
+        case out::dvia:
+            return 2;
+        case out::vga:
+            return 3;
+        case out::ninepindin:
+            return 4;
+        case out::component:
+        case out::composite:
+        case out::svideo:
+            return 5;
+        case out::tv:
+            return 6;
+        case out::unknown:
+        default:
+            return 9;
+        }
+    };
+
     for (auto screen : m_screenList) {
         if (!screen->window()) {
-            return screen;
+            priorityList.insert(prioritize(screen->outputType()), screen);
         }
     }
 
-    return nullptr;
+    return priorityList.first(); // Map sorted by key, so first is the key with highest priority.
 }
 
 Screen* ScreenController::findScreenWithId(const QList<Screen *> &list, const mg::DisplayConfigurationOutputId id)
