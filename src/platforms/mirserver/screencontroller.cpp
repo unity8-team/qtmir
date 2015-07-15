@@ -53,10 +53,11 @@ namespace mg = mir::graphics;
  *
  *
  * Threading Note:
- * This object has affinity to the main Qt GUI thread. However the init() & terminate() methods
- * are called on the MirServerThread thread, as we need to determine the screen state *after*
- * Mir has initialized, and tear down before Mir terminates. Also note the MirServerThread
- * does not have an QEventLoop.
+ * This object must have affinity to the main Qt GUI thread, as it creates & destroys Platform
+ * objects which Qt uses internally. However beware as the init() & terminate() methods need to
+ * be called on the MirServerThread thread, as we need to monitor the screen state *after*
+ * Mir has initialized but before Qt's event loop has started, and tear down before Mir terminates.
+ * Also note the MirServerThread does not have an QEventLoop.
  *
  * All other methods must be called on the Qt GUI thread.
  */
