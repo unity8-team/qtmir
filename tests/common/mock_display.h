@@ -23,10 +23,17 @@
 #include <gmock/gmock.h>
 #include "gmock_fixes.h"
 
+class MockDisplaySyncGroup : public mir::graphics::DisplaySyncGroup
+{
+public:
+    MOCK_METHOD1(for_each_display_buffer, void(std::function<void(mir::graphics::DisplayBuffer&)> const& f));
+    MOCK_METHOD0(post, void());
+};
+
 struct MockDisplay : public mir::graphics::Display
 {
 public:
-    MOCK_METHOD1(for_each_display_sync_group, void (std::function<void(mir::graphics::DisplaySyncGroup&)> const&));
+    MOCK_METHOD1(for_each_display_sync_group, void(std::function<void(mir::graphics::DisplaySyncGroup&)> const&));
     MOCK_CONST_METHOD0(configuration, std::unique_ptr<mir::graphics::DisplayConfiguration>());
     MOCK_METHOD1(configure, void(mir::graphics::DisplayConfiguration const&));
     MOCK_METHOD2(register_configuration_change_handler,
@@ -40,5 +47,7 @@ public:
     MOCK_METHOD1(create_hardware_cursor, std::shared_ptr<mir::graphics::Cursor>(std::shared_ptr<mir::graphics::CursorImage> const&));
     MOCK_METHOD0(create_gl_context, std::unique_ptr<mir::graphics::GLContext>());
 };
+
+
 
 #endif // MOCKDISPLAY_H
