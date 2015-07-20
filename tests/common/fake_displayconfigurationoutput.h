@@ -36,7 +36,7 @@ const mg::DisplayConfigurationOutput fake_output1
         {geom::Size{150, 200}, 59.0}
     },
     0,
-    geom::Size{100, 200},
+    geom::Size{1111, 2222},
     true,
     true,
     geom::Point(),
