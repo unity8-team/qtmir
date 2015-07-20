@@ -52,16 +52,20 @@ Q_SIGNALS:
 public Q_SLOTS:
     void update();
 
+protected: // Protected for Testing Purposes
+    Screen* findScreenWithId(const QList<Screen*> &list, const mir::graphics::DisplayConfigurationOutputId id);
+    void init(const std::shared_ptr<mir::graphics::Display> &display,
+              const std::shared_ptr<mir::compositor::Compositor> &compositor,
+              const std::shared_ptr<mir::MainLoop> &mainLoop);
+    void terminate();
+
 private Q_SLOTS:
     void onCompositorStarting();
     void onCompositorStopping();
 
 private:
-    Screen* findScreenWithId(const QList<Screen*> &list, const mir::graphics::DisplayConfigurationOutputId id);
-    void init(MirServer *server);
-    void terminate();
-
-    MirServer *m_server;
+    std::weak_ptr<mir::graphics::Display> m_display;
+    std::shared_ptr<mir::compositor::Compositor> m_compositor;
     QList<Screen*> m_screenList;
 
     friend class MirServer;

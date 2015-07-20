@@ -64,27 +64,29 @@ namespace mg = mir::graphics;
 
 ScreenController::ScreenController(QObject *parent)
     : QObject(parent)
-    , m_server(nullptr)
 {
     qCDebug(QTMIR_SCREENS) << "ScreenController::ScreenController";
 }
 
 // init only after MirServer has initialized - runs on MirServerThread!!!
-void ScreenController::init(MirServer *server)
+void ScreenController::init(const std::shared_ptr<mir::graphics::Display> &display,
+                            const std::shared_ptr<mir::compositor::Compositor> &compositor,
+                            const std::shared_ptr<mir::MainLoop> &mainLoop)
 {
-    m_server = server;
+    m_display = display;
+    m_compositor = compositor;
 
     // Use a Blocking Queued Connection to enforce synchronization of Qt GUI thread with Mir thread(s)
     // on compositor shutdown. Compositor startup can be lazy.
     // Queued connections work because the thread affinity of this class is with the Qt GUI thread.
-    auto compositor = static_cast<QtCompositor *>(m_server->the_compositor().get());
-    connect(compositor, &QtCompositor::starting,
+    auto qtCompositor = static_cast<QtCompositor *>(compositor.get());
+    connect(qtCompositor, &QtCompositor::starting,
             this, &ScreenController::onCompositorStarting);
-    connect(compositor, &QtCompositor::stopping,
+    connect(qtCompositor, &QtCompositor::stopping,
             this, &ScreenController::onCompositorStopping, Qt::BlockingQueuedConnection);
 
-    auto display = m_server->the_display();
-    display->register_configuration_change_handler(*m_server->the_main_loop(), [this]() {
+
+    display->register_configuration_change_handler(*mainLoop, [this]() {
         // display hardware configuration changed, update! - not called when we set new configuration
         QMetaObject::invokeMethod(this, "update", Qt::QueuedConnection);
     });
@@ -94,9 +96,8 @@ void ScreenController::init(MirServer *server)
 // Runs on MirServerThread!!!
 void ScreenController::terminate()
 {
-    auto compositor = static_cast<QtCompositor *>(m_server->the_compositor().get());
-    disconnect(compositor, 0, 0, 0);
-    m_server = nullptr;
+    auto qtCompositor = static_cast<QtCompositor *>(m_compositor.get());
+    qtCompositor->disconnect();
 }
 
 void ScreenController::onCompositorStarting()
@@ -135,9 +136,9 @@ void ScreenController::onCompositorStopping()
 void ScreenController::update()
 {
     qCDebug(QTMIR_SCREENS) << "ScreenController::update";
-    if (!m_server)
+    auto display = m_display.lock();
+    if (!display)
         return;
-    auto display = m_server->the_display();
     auto displayConfig = display->configuration();
 
     // Mir only tells us something changed, it is up to us to figure out what.
@@ -272,7 +273,7 @@ Screen* ScreenController::findScreenWithId(const QList<Screen *> &list, const mg
 }
 
 QWindow* ScreenController::getWindowForPoint(const QPoint &point) //HORRIBLE!!!
-{
+{ qDebug() << point;
     for (Screen *screen : m_screenList) {
         if (screen->window() && screen->geometry().contains(point)) {
             return screen->window()->window();
