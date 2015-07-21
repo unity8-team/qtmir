@@ -306,6 +306,11 @@ MirSurfaceItem::State MirSurfaceItem::state() const
     return static_cast<MirSurfaceItem::State>(m_surface->state());
 }
 
+MirSurfaceItem::Visibility MirSurfaceItem::visibility() const
+{
+    return static_cast<MirSurfaceItem::Visibility>(m_surface->visible());
+}
+
 MirSurfaceItem::OrientationAngle MirSurfaceItem::orientationAngle() const
 {
     return m_orientationAngle;
@@ -689,6 +694,9 @@ void MirSurfaceItem::onAttributeChanged(const MirSurfaceAttrib attribute, const 
         break;
     case mir_surface_attrib_state:
         Q_EMIT stateChanged();
+        break;
+    case mir_surface_attrib_visibility:
+        Q_EMIT visibilityChanged();
         break;
     default:
         break;
