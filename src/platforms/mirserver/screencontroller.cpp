@@ -277,8 +277,8 @@ Screen* ScreenController::findScreenWithId(const QList<Screen *> &list, const mg
     return nullptr;
 }
 
-QWindow* ScreenController::getWindowForPoint(const QPoint &point) //HORRIBLE!!!
-{ qDebug() << point;
+QWindow* ScreenController::getWindowForPoint(const QPoint &point) //FIXME - not thread safe & not efficient
+{
     for (Screen *screen : m_screenList) {
         if (screen->window() && screen->geometry().contains(point)) {
             return screen->window()->window();
