@@ -39,7 +39,7 @@
 
 namespace mg = mir::geometry;
 
-Q_LOGGING_CATEGORY(QTMIR_SENSOR_MESSAGES, "qtmir.sensor") //, QtWarningMsg)
+Q_LOGGING_CATEGORY(QTMIR_SENSOR_MESSAGES, "qtmir.sensor")
 
 namespace {
 bool isLittleEndian() {
