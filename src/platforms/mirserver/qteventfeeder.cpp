@@ -153,7 +153,7 @@ class QtWindowSystem : public QtEventFeeder::QtWindowSystemInterface
         return QGuiApplication::focusWindow();
     }
 
-    QWindow* getWindowForTouchPoint(const QPoint &point) override
+    QWindow* getWindowForTouchPoint(const QPoint &point) override //FIXME: not efficient, not updating focused window
     {
         return m_screenController->getWindowForPoint(point);
     }
@@ -286,7 +286,9 @@ void QtEventFeeder::dispatchPointer(MirInputEvent const* ev)
     auto local_point = QPointF(mir_pointer_event_axis_value(pev, mir_pointer_axis_x),
                                mir_pointer_event_axis_value(pev, mir_pointer_axis_y));
 
-    mQtWindowSystem->handleMouseEvent(mQtWindowSystem->focusedWindow(), timestamp, local_point,
+    auto window = mQtWindowSystem->getWindowForTouchPoint(local_point.toPoint());
+
+    mQtWindowSystem->handleMouseEvent(window, timestamp, local_point,
                                       buttons, modifiers);
 }
 
