@@ -24,6 +24,9 @@
 
 #include "testable_screencontroller.h"
 #include "screen.h"
+#include "screenwindow.h"
+
+#include <QGuiApplication>
 
 using namespace ::testing;
 
@@ -38,6 +41,7 @@ protected:
     ScreenController *sc;
     std::shared_ptr<StubDisplay> display;
     std::shared_ptr<QtCompositor> compositor;
+    QGuiApplication *app;
 };
 
 void ScreenControllerTest::SetUp()
@@ -54,6 +58,11 @@ void ScreenControllerTest::SetUp()
         .Times(1);
 
     static_cast<TestableScreenController*>(sc)->do_init(display, compositor, mainLoop);
+
+    int argc = 0;
+    char **argv = nullptr;
+    setenv("QT_QPA_PLATFORM", "minimal", 1);
+    app = new QGuiApplication(argc, argv);
 }
 
 void ScreenControllerTest::TearDown()
@@ -63,10 +72,11 @@ void ScreenControllerTest::TearDown()
 
 TEST_F(ScreenControllerTest, SingleScreenFound)
 {
+    // Set up display state
     std::vector<mg::DisplayConfigurationOutput> config{fake_output1};
-    std::vector<geom::Rectangle> bufferConfig{{ {0, 0}, fake_output1.modes[0].size} };
-
+    std::vector<MockDisplayBuffer*> bufferConfig; // only used to match buffer with display, unecessary here
     display->setFakeConfiguration(config, bufferConfig);
+
     sc->update();
 
     ASSERT_EQ(sc->screens().count(), 1);
@@ -77,12 +87,9 @@ TEST_F(ScreenControllerTest, SingleScreenFound)
 TEST_F(ScreenControllerTest, MultipleScreenFound)
 {
     std::vector<mg::DisplayConfigurationOutput> config{fake_output1, fake_output2};
-    std::vector<geom::Rectangle> bufferConfig{
-        { {0, 0}, fake_output1.modes[0].size},
-        { {0, 0}, fake_output2.modes[1].size}
-    };
-
+    std::vector<MockDisplayBuffer*> bufferConfig; // only used to match buffer with display, unecessary here
     display->setFakeConfiguration(config, bufferConfig);
+
     sc->update();
 
     ASSERT_EQ(sc->screens().count(), 2);
@@ -93,18 +100,17 @@ TEST_F(ScreenControllerTest, MultipleScreenFound)
 TEST_F(ScreenControllerTest, ScreenAdded)
 {
     std::vector<mg::DisplayConfigurationOutput> config{fake_output1};
-    std::vector<geom::Rectangle> bufferConfig{{ {0, 0}, fake_output1.modes[0].size} };
-
+    std::vector<MockDisplayBuffer*> bufferConfig; // only used to match buffer with display, unecessary here
     display->setFakeConfiguration(config, bufferConfig);
+
     sc->update();
 
     config.push_back(fake_output2);
-    bufferConfig.push_back({ {0, 0}, fake_output2.modes[1].size});
+    display->setFakeConfiguration(config, bufferConfig);
 
     ASSERT_EQ(sc->screens().count(), 1);
     EXPECT_EQ(sc->screens().at(0)->geometry(), QRect(0, 0, 150, 200));
 
-    display->setFakeConfiguration(config, bufferConfig);
     sc->update();
 
     ASSERT_EQ(sc->screens().count(), 2);
@@ -115,33 +121,110 @@ TEST_F(ScreenControllerTest, ScreenAdded)
 TEST_F(ScreenControllerTest, ScreenRemoved)
 {
     std::vector<mg::DisplayConfigurationOutput> config{fake_output2, fake_output1};
-    std::vector<geom::Rectangle> bufferConfig{
-        { {0, 0}, fake_output2.modes[1].size},
-        { {0, 0}, fake_output1.modes[0].size}
-    };
-
+    std::vector<MockDisplayBuffer*> bufferConfig; // only used to match buffer with display, unecessary here
     display->setFakeConfiguration(config, bufferConfig);
+
     sc->update();
 
     config.pop_back();
-    bufferConfig.pop_back();
+    display->setFakeConfiguration(config, bufferConfig);
 
     ASSERT_EQ(sc->screens().count(), 2);
     EXPECT_EQ(sc->screens().at(0)->geometry(), QRect(500, 600, 1500, 2000));
     EXPECT_EQ(sc->screens().at(1)->geometry(), QRect(0, 0, 150, 200));
 
-    display->setFakeConfiguration(config, bufferConfig);
     sc->update();
 
     ASSERT_EQ(sc->screens().count(), 1);
     EXPECT_EQ(sc->screens().at(0)->geometry(), QRect(500, 600, 1500, 2000));
 }
 
-TEST_F(ScreenControllerTest, CompositorStopHidesAllWindows)
+TEST_F(ScreenControllerTest, CheckPrioritizedGetUnusedScreen)
 {
+    std::vector<mg::DisplayConfigurationOutput> config{fake_output2, fake_output1};
+    std::vector<MockDisplayBuffer*> bufferConfig; // only used to match buffer with display, unecessary here
+    display->setFakeConfiguration(config, bufferConfig);
 
+    sc->update();
+
+    auto screen = sc->getUnusedScreen();
+    EXPECT_EQ(screen->outputType(), mg::DisplayConfigurationOutputType::lvds);
 }
 
-TEST_F(ScreenControllerTest, CompositorStartShowsAllWindows)
+TEST_F(ScreenControllerTest, MatchBufferWithDisplay)
 {
+    std::vector<mg::DisplayConfigurationOutput> config{fake_output1};
+    MockDisplayBuffer buffer1;
+    std::vector<MockDisplayBuffer*> buffers {&buffer1};
+
+    geom::Rectangle buffer1Geom{{0, 0}, {150, 200}};
+    EXPECT_CALL(buffer1, view_area())
+            .WillRepeatedly(Return(buffer1Geom));
+
+    display->setFakeConfiguration(config, buffers);
+    sc->update();
+
+    ASSERT_EQ(sc->screens().count(), 1);
+    EXPECT_CALL(buffer1, make_current());
+    static_cast<StubScreen*>(sc->screens().at(0))->makeCurrent();
 }
+
+TEST_F(ScreenControllerTest, MultipleMatchBuffersWithDisplays)
+{
+    std::vector<mg::DisplayConfigurationOutput> config{fake_output1, fake_output2};
+    MockDisplayBuffer buffer1, buffer2;
+    std::vector<MockDisplayBuffer*> buffers {&buffer1, &buffer2};
+
+    geom::Rectangle buffer1Geom{{500, 600}, {1500, 2000}};
+    geom::Rectangle buffer2Geom{{0, 0}, {150, 200}};
+    EXPECT_CALL(buffer1, view_area())
+            .WillRepeatedly(Return(buffer1Geom));
+    EXPECT_CALL(buffer2, view_area())
+            .WillRepeatedly(Return(buffer2Geom));
+
+    display->setFakeConfiguration(config, buffers);
+    sc->update();
+
+    ASSERT_EQ(sc->screens().count(), 2);
+    EXPECT_CALL(buffer1, make_current());
+    EXPECT_CALL(buffer2, make_current());
+    static_cast<StubScreen*>(sc->screens().at(0))->makeCurrent();
+    static_cast<StubScreen*>(sc->screens().at(1))->makeCurrent();
+}
+
+//TEST_F(ScreenControllerTest, CompositorStopHidesAllWindows)
+//{
+//    std::vector<mg::DisplayConfigurationOutput> config{fake_output2, fake_output1};
+//    std::vector<MockDisplayBuffer*> bufferConfig; // only used to match buffer with display, unecessary here
+//    display->setFakeConfiguration(config, bufferConfig);
+//    sc->update();
+
+//    ScreenWindow window1; window1.setVisible(true);
+//    ScreenWindow window2; window2.setVisible(true);
+//    EXPECT_TRUE(window1.isVisible());
+//    EXPECT_TRUE(window2.isVisible());
+
+//    static_cast<TestableScreenController*>(sc)->do_compositorStop();
+
+//    EXPECT_FALSE(window1.isVisible());
+//    EXPECT_FALSE(window2.isVisible());
+//}
+
+//TEST_F(ScreenControllerTest, CompositorStartShowsAllWindows)
+//{
+//    std::vector<mg::DisplayConfigurationOutput> config{fake_output2, fake_output1};
+//    std::vector<MockDisplayBuffer*> bufferConfig; // only used to match buffer with display, unecessary here
+//    display->setFakeConfiguration(config, bufferConfig);
+//    sc->update();
+
+//    ScreenWindow window1; window1.setVisible(true);
+//    ScreenWindow window2; window2.setVisible(true);
+
+//    static_cast<TestableScreenController*>(sc)->do_compositorStop();
+//    EXPECT_FALSE(window1.isVisible());
+//    EXPECT_FALSE(window2.isVisible());
+
+//    static_cast<TestableScreenController*>(sc)->do_compositorStart();
+//    EXPECT_TRUE(window1.isVisible());
+//    EXPECT_TRUE(window2.isVisible());
+//}

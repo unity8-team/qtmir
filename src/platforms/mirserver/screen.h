@@ -68,7 +68,7 @@ public Q_SLOTS:
    void onDisplayPowerStateChanged(int, int);
    void onOrientationReadingChanged();
 
-private:
+protected:
     void setWindow(ScreenWindow *window);
 
     void setMirDisplayConfiguration(const mir::graphics::DisplayConfigurationOutput &);
@@ -77,6 +77,7 @@ private:
     void makeCurrent();
     void doneCurrent();
 
+private:
     QRect m_geometry;
     int m_depth;
     QImage::Format m_format;

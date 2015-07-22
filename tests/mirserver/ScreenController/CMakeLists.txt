@@ -3,6 +3,7 @@ set(
   screencontroller_test.cpp
   ${CMAKE_SOURCE_DIR}/src/common/debughelpers.cpp
   # to be moc-ed
+  stub_screen.h
   testable_screencontroller.h
 )
 

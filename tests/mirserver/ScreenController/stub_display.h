@@ -17,15 +17,12 @@
 #ifndef STUB_DISPLAY_H
 #define STUB_DISPLAY_H
 
-#include <gmock/gmock.h>
-
 #include "mock_display.h"
 #include "mock_display_buffer.h"
 #include "mock_display_configuration.h"
 
 namespace mg = mir::graphics;
 namespace geom = mir::geometry;
-using namespace ::testing;
 
 class StubDisplayConfiguration : public MockDisplayConfiguration
 {
@@ -49,17 +46,14 @@ private:
 class StubDisplaySyncGroup : public MockDisplaySyncGroup
 {
 public:
-    StubDisplaySyncGroup(const geom::Rectangle &buffer) : buffer(buffer) {}
+    StubDisplaySyncGroup(MockDisplayBuffer *buffer) : buffer(buffer) {}
 
     void for_each_display_buffer(std::function<void(mg::DisplayBuffer&)> const& f) override
     {
-        MockDisplayBuffer b;
-        EXPECT_CALL(b, view_area())
-                .WillRepeatedly(Return(buffer));
-        f(b);
+        f(*buffer);
     }
 private:
-    const geom::Rectangle buffer;
+    MockDisplayBuffer *buffer;
 };
 
 
@@ -76,22 +70,22 @@ public:
 
     void for_each_display_sync_group(std::function<void(mg::DisplaySyncGroup&)> const& f) override
     {
-        for (auto bufferConfig : m_bufferConfigs) {
-            StubDisplaySyncGroup b(bufferConfig);
+        for (auto displayBuffer : m_displayBuffers) {
+            StubDisplaySyncGroup b(displayBuffer);
             f(b);
         }
     }
 
     void setFakeConfiguration(std::vector<mg::DisplayConfigurationOutput> &config,
-                              std::vector<geom::Rectangle> &bufferConfigs)
+                              std::vector<MockDisplayBuffer*> &displayBuffers)
     {
         m_config = config;
-        m_bufferConfigs = bufferConfigs;
+        m_displayBuffers = displayBuffers;
     }
 
 private:
     std::vector<mg::DisplayConfigurationOutput> m_config;
-    std::vector<geom::Rectangle> m_bufferConfigs;
+    std::vector<MockDisplayBuffer*> m_displayBuffers;
 };
 
 #endif // STUB_DISPLAY_H

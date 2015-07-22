@@ -14,25 +14,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "screencontroller.h"
-#include "stub_screen.h"
+#ifndef STUBSCREEN_H
+#define STUBSCREEN_H
 
-struct TestableScreenController : public ScreenController
+#include "screen.h"
+
+class StubScreen : public Screen
 {
     Q_OBJECT
-
 public:
-    Screen *screenFactory(const mir::graphics::DisplayConfigurationOutput &output) const override
-    {
-        return new StubScreen(output);
-    }
+    StubScreen(const mir::graphics::DisplayConfigurationOutput &output) : Screen(output) {}
 
-    void do_init(const std::shared_ptr<mir::graphics::Display> &display,
-              const std::shared_ptr<mir::compositor::Compositor> &compositor,
-              const std::shared_ptr<mir::MainLoop> &mainLoop)
-    {
-        init(display, compositor, mainLoop);
-    }
-
-    void do_terminate() { terminate(); }
+    void makeCurrent() { Screen::makeCurrent(); }
 };
+
+#endif // STUBSCREEN_H
