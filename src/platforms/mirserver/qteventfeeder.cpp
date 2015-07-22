@@ -365,7 +365,7 @@ void QtEventFeeder::dispatchTouch(MirInputEvent const* event)
                            mir_touch_event_axis_value(tev, 0, mir_touch_axis_y)));
 
         if (!window) {
-            qDebug() << "REJECTING INPUT EVENT, no matching window";
+            qCDebug(QTMIR_MIR_INPUT) << "REJECTING INPUT EVENT, no matching window";
             return;
         }
 
