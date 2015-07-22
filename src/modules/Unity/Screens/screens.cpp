@@ -31,10 +31,7 @@ Screens::Screens(QObject *parent) :
         return;
     }
     connect(app, &QGuiApplication::screenAdded, this, &Screens::onScreenAdded);
-
-#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
     connect(app, &QGuiApplication::screenRemoved, this, &Screens::onScreenRemoved);
-#endif
 }
 
 QVariant Screens::data(const QModelIndex &index, int) const
@@ -60,14 +57,6 @@ int Screens::count() const
 
 void Screens::onScreenAdded(QScreen *screen)
 {
-#if QT_VERSION < QT_VERSION_CHECK(5, 4, 0)
-    // Qt5.3 and lower do not have screenRemoved signal, have to listen for individual QScreen destruction
-    connect(screen, &QScreen::destroyed, [this](QObject *destroyed) {
-        auto screen = static_cast<QScreen *>(destroyed);
-        Q_EMIT onScreenRemoved(screen);
-    });
-#endif
-
     Q_EMIT screenAdded(screen);
     Q_EMIT countChanged();
 }
