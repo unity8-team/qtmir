@@ -59,8 +59,7 @@ namespace mg = mir::graphics;
 using qtmir::Clipboard;
 
 MirServerIntegration::MirServerIntegration()
-    : QObject()
-    , m_accessibility(new QPlatformAccessibility())
+    : m_accessibility(new QPlatformAccessibility())
     , m_fontDb(new QGenericUnixFontDatabase())
     , m_services(new Services)
 #if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
@@ -173,7 +172,7 @@ void MirServerIntegration::initialize()
         qDebug() << "ScreenController not initialized";
         return;
     }
-    connect(screens.data(), &ScreenController::screenAdded,
+    QObject::connect(screens.data(), &ScreenController::screenAdded,
             [this](Screen *screen) { this->screenAdded(screen); });
     Q_FOREACH(auto screen, screens->screens()) {
         screenAdded(screen);
@@ -225,4 +224,3 @@ QPlatformOffscreenSurface *MirServerIntegration::createPlatformOffscreenSurface(
 {
     return new OffscreenSurface(surface);
 }
-

@@ -22,7 +22,7 @@
 
 // qt
 #include <qpa/qplatformintegration.h>
-#include <QObject>
+#include <QScopedPointer>
 
 class NativeInterface;
 class QMirServer;
@@ -31,9 +31,8 @@ namespace qtmir {
     class Clipboard;
 }
 
-class MirServerIntegration : public QObject, public QPlatformIntegration
+class MirServerIntegration : public QPlatformIntegration
 {
-    Q_OBJECT
 public:
     MirServerIntegration();
     ~MirServerIntegration();

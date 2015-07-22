@@ -18,7 +18,7 @@
 #define MIRSERVER_H
 
 #include <QObject>
-#include <QPointer>
+#include <QSharedPointer>
 #include <mir/server.h>
 
 class QtEventFeeder;

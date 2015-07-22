@@ -20,10 +20,6 @@
 #include "qtcompositor.h"
 #include "logging.h"
 
-// Mir
-#include <mir/graphics/display.h>
-
-
 // Lives in a Mir thread
 void QtCompositor::start()
 {
