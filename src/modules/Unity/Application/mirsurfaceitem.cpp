@@ -754,10 +754,10 @@ void MirSurfaceItem::dropPendingBuffer()
             item->buffer();
     
         qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::dropPendingBuffer()"
-                << "surface =" << this
-                << "buffer dropped."
-                << framesPending-1
-                << "left.";
+            << "surface =" << this
+            << "buffer dropped."
+            << framesPending-1
+            << "left.";
     }
 }
 
