@@ -60,8 +60,8 @@ namespace {
 // frame dropper never steals frames from the compositor (even if left active)
 // providing that the compositor is consuming frames faster than the dropper.
 //
-const void* const compositorUserId = (void*)123;  // TODO: multi-monitor support
-const void* const dropperUserId = (void*)456;
+const void* const onscreenUserId = "onscreen";
+const void* const offscreenUserId = "offscreen";
 
 // Would be better if QMouseEvent had nativeModifiers
 MirInputEventModifiers
@@ -396,10 +396,10 @@ bool MirSurfaceItem::updateTexture()    // called by rendering thread (scene gra
     ensureProvider();
     bool textureUpdated = false;
 
-    int framesPending = m_surface->buffers_ready_for_compositor(compositorUserId);
+    int framesPending = m_surface->buffers_ready_for_compositor(onscreenUserId);
 
     if (framesPending > 0) {
-        auto renderables = m_surface->generate_renderables(compositorUserId);
+        auto renderables = m_surface->generate_renderables(onscreenUserId);
         if (renderables.size() > 0) {
             if (!m_textureProvider->t) {
                 m_textureProvider->t = new MirBufferSGTexture(renderables[0]->buffer());
@@ -756,13 +756,13 @@ void MirSurfaceItem::dropPendingBuffer()
     // The line below looks like an innocent, effect-less, getter. But as this
     // method returns a unique_pointer, not holding its reference causes the
     // buffer to be destroyed/released straight away.
-    for (auto const & item : m_surface->generate_renderables(dropperUserId))
+    for (auto const & item : m_surface->generate_renderables(offscreenUserId))
         item->buffer();
 
     qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::dropPendingBuffer()"
             << "surface =" << this
             << "buffer dropped."
-            << m_surface->buffers_ready_for_compositor(dropperUserId)
+            << m_surface->buffers_ready_for_compositor(offscreenUserId)
             << "left.";
 }
 
