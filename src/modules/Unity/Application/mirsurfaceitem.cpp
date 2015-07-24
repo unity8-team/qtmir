@@ -54,6 +54,15 @@ namespace qtmir {
 
 namespace {
 
+//
+// The compositor and frame dropper get separate user IDs, so as to take
+// advantage of Mir's multi-monitor-frame-sync logic. This ensures the
+// frame dropper never steals frames from the compositor (even if left active)
+// providing that the compositor is consuming frames faster than the dropper.
+//
+const void* const compositorUserId = (void*)123;  // TODO: multi-monitor support
+const void* const dropperUserId = (void*)456;
+
 // Would be better if QMouseEvent had nativeModifiers
 MirInputEventModifiers
 getMirModifiersFromQt(Qt::KeyboardModifiers mods)
@@ -233,7 +242,7 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
 
     connect(&m_frameDropperTimer, &QTimer::timeout,
-            this, &MirSurfaceItem::dropPendingBuffers);
+            this, &MirSurfaceItem::dropPendingBuffer);
     // Rationale behind the frame dropper and its interval value:
     //
     // We want to give ample room for Qt scene graph to have a chance to fetch and render
@@ -387,26 +396,31 @@ bool MirSurfaceItem::updateTexture()    // called by rendering thread (scene gra
     ensureProvider();
     bool textureUpdated = false;
 
-    const void* const userId = (void*)123;
-    auto renderables = m_surface->generate_renderables(userId);
+    int framesPending = m_surface->buffers_ready_for_compositor(compositorUserId);
 
-    if (m_surface->buffers_ready_for_compositor(userId) > 0 && renderables.size() > 0) {
-        if (!m_textureProvider->t) {
-            m_textureProvider->t = new MirBufferSGTexture(renderables[0]->buffer());
-        } else {
-            // Avoid holding two buffers for the compositor at the same time. Thus free the current
-            // before acquiring the next
-            m_textureProvider->t->freeBuffer();
-            m_textureProvider->t->setBuffer(renderables[0]->buffer());
+    if (framesPending > 0) {
+        auto renderables = m_surface->generate_renderables(compositorUserId);
+        if (renderables.size() > 0) {
+            if (!m_textureProvider->t) {
+                m_textureProvider->t = new MirBufferSGTexture(renderables[0]->buffer());
+            } else {
+                // Avoid holding two buffers for the compositor at the same time. Thus free the current
+                // before acquiring the next
+                m_textureProvider->t->freeBuffer();
+                m_textureProvider->t->setBuffer(renderables[0]->buffer());
+            }
+            textureUpdated = true;
+
+            // This is not strictly required any more as we're using
+            // independent UserIds (meaning the frame dropper can't steal
+            // frames from the display), but better to overengineer...
+            m_frameDropperTimer.start();
         }
-        textureUpdated = true;
-    }
 
-    if (m_surface->buffers_ready_for_compositor(userId) > 0) {
-        QTimer::singleShot(0, this, SLOT(update()));
-        // restart the frame dropper so that we have enough time to render the next frame.
-        // queued since the timer lives in a different thread
-        QMetaObject::invokeMethod(&m_frameDropperTimer, "start", Qt::QueuedConnection);
+        if (framesPending > 1)
+            // We haven't caught up to the latest frame yet. More required...
+            QTimer::singleShot(0, this, SLOT(update()));
+        }
     }
 
     m_textureProvider->smooth = smooth();
@@ -735,24 +749,21 @@ void MirSurfaceItem::updateMirSurfaceFocus(bool focused)
     }
 }
 
-void MirSurfaceItem::dropPendingBuffers()
+void MirSurfaceItem::dropPendingBuffer()
 {
     QMutexLocker locker(&m_mutex);
 
-    const void* const userId = (void*)123;  // TODO: Multimonitor support
+    // The line below looks like an innocent, effect-less, getter. But as this
+    // method returns a unique_pointer, not holding its reference causes the
+    // buffer to be destroyed/released straight away.
+    for (auto const & item : m_surface->generate_renderables(dropperUserId))
+        item->buffer();
 
-    while (m_surface->buffers_ready_for_compositor(userId) > 0) {
-        // The line below looks like an innocent, effect-less, getter. But as this
-        // method returns a unique_pointer, not holding its reference causes the
-        // buffer to be destroyed/released straight away.
-        for (auto const & item : m_surface->generate_renderables(userId))
-            item->buffer();
-        qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::dropPendingBuffers()"
+    qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::dropPendingBuffer()"
             << "surface =" << this
             << "buffer dropped."
-            << m_surface->buffers_ready_for_compositor(userId)
+            << m_surface->buffers_ready_for_compositor(dropperUserId)
             << "left.";
-    }
 }
 
 void MirSurfaceItem::stopFrameDropper()
