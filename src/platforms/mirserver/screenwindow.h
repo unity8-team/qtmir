@@ -30,7 +30,7 @@ class ScreenWindow : public QObject, public QPlatformWindow
     Q_OBJECT
 public:
     explicit ScreenWindow(QWindow *window);
-    virtual ~ScreenWindow();
+    virtual ~ScreenWindow() = default;
 
     WId winId() const override { return m_winId; }
 

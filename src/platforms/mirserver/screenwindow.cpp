@@ -23,7 +23,8 @@
 #include <qpa/qwindowsysteminterface.h>
 #include <qpa/qplatformscreen.h>
 
-#include <QDebug>
+#include "logging.h"
+Q_LOGGING_CATEGORY(QTMIR_SCREENS, "qtmir.screens")
 
 static WId newWId()
 {
@@ -40,7 +41,6 @@ ScreenWindow::ScreenWindow(QWindow *window)
     , m_isExposed(false)
     , m_winId(newWId())
 {
-    qDebug() << "ScreenWindow::ScreenWindow" << this;
     qWarning("Window %p: %p 0x%x\n", this, window, uint(m_winId));
 
     // Register with the Screen it is associated with
@@ -59,11 +59,6 @@ ScreenWindow::ScreenWindow(QWindow *window)
     requestActivateWindow();
 }
 
-ScreenWindow::~ScreenWindow()
-{
-    qDebug() << "ScreenWindow::~ScreenWindow" << this;
-}
-
 //bool ScreenWindow::isExposed() const
 //{
 //    return m_isExposed;
@@ -74,13 +69,13 @@ bool ScreenWindow::event(QEvent *event)
     // Intercept Hide event and convert to Expose event, as Hide causes Qt to release GL
     // resources, which we don't want. Must intercept Show to un-do hide.
     if (event->type() == QEvent::Hide) {
-        qDebug() << "ScreenWindow::event got QEvent::Hide";
+        qCDebug(QTMIR_SCREENS) << "ScreenWindow::event got QEvent::Hide";
         m_isExposed = false;
         //QWindowSystemInterface::handleExposeEvent(window(), QRect());
         //QWindowSystemInterface::flushWindowSystemEvents();
         //return true;
     } else if (event->type() == QEvent::Show) {
-        qDebug() << "ScreenWindow::event got QEvent::Show";
+        qCDebug(QTMIR_SCREENS) << "ScreenWindow::event got QEvent::Show";
         m_isExposed = true;
         //QRect rect(QPoint(), geometry().size());
         //QWindowSystemInterface::handleExposeEvent(window(), rect);
@@ -102,7 +97,6 @@ void ScreenWindow::makeCurrent()
 
 void ScreenWindow::doneCurrent()
 {
-    qDebug() << "ScreenWindow::doneCurrent";
     static_cast<Screen *>(screen())->doneCurrent();
 }
 
