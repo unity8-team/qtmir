@@ -121,7 +121,8 @@ QPlatformWindow *MirServerIntegration::createPlatformWindow(QWindow *window) con
 {
     QWindowSystemInterface::flushWindowSystemEvents();
 
-    // If Screen was not specified, just grab an unused one, if available
+    // FIXME: QWindow can be created specifying a destination QScreen. For now we
+    // will ignore it and just associate any unused Screen, if available.
     auto screens = m_mirServer->screenController().lock();
     if (!screens) {
         qCritical("Screens are not initialized, unable to create a new QWindow/ScreenWindow");
