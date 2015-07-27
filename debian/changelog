@@ -4,6 +4,16 @@ qtmir (0.4.6) vivid; urgency=medium
 
  -- Gerry Boland <gerry.boland@canonical.com>  Thu, 02 Jul 2015 00:31:23 +0100
 
+qtmir (0.4.5+15.10.20150722-0ubuntu1) wily; urgency=medium
+
+  [ Andreas Pokorny ]
+  * Release in step with Mir 0.14.0
+
+  [ CI Train Bot ]
+  * New rebuild forced.
+
+ -- CI Train Bot <ci-train-bot@canonical.com>  Wed, 22 Jul 2015 13:01:05 +0000
+
 qtmir (0.4.5+15.10.20150617-0ubuntu1) wily; urgency=medium
 
   [ Gerry Boland ]

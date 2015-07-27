@@ -220,8 +220,12 @@ QtEventFeeder::~QtEventFeeder()
     delete mQtWindowSystem;
 }
 
-void QtEventFeeder::dispatch(MirEvent const& event)
+bool QtEventFeeder::dispatch(MirEvent const& event)
 {
+    auto type = mir_event_get_type(&event);
+    if (type != mir_event_type_input)
+        return false;
+
     auto iev = mir_event_get_input_event(&event);
 
     switch (mir_input_event_get_type(iev)) {
@@ -236,6 +240,8 @@ void QtEventFeeder::dispatch(MirEvent const& event)
     default:
         break;
     }
+
+    return true;
 }
 
 namespace
@@ -426,17 +432,6 @@ void QtEventFeeder::start()
 void QtEventFeeder::stop()
 {
     // not used
-}
-
-void QtEventFeeder::configuration_changed(std::chrono::nanoseconds when)
-{
-    Q_UNUSED(when);
-}
-
-void QtEventFeeder::device_reset(int32_t device_id, std::chrono::nanoseconds when)
-{
-    Q_UNUSED(device_id);
-    Q_UNUSED(when);
 }
 
 void QtEventFeeder::validateTouches(ulong timestamp,
