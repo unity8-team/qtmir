@@ -24,7 +24,6 @@
 #include <qpa/qplatformscreen.h>
 
 #include "logging.h"
-Q_LOGGING_CATEGORY(QTMIR_SCREENS, "qtmir.screens")
 
 static WId newWId()
 {

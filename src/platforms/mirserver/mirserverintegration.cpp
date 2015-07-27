@@ -56,8 +56,6 @@
 #include "ubuntutheme.h"
 #include "logging.h"
 
-Q_LOGGING_CATEGORY(QTMIR_SCREENS, "qtmir.screens")
-
 namespace mg = mir::graphics;
 using qtmir::Clipboard;
 
@@ -143,7 +141,7 @@ QPlatformWindow *MirServerIntegration::createPlatformWindow(QWindow *window) con
     return platformWindow;
 }
 
-QPlatformBackingStore *MirServerIntegration::createPlatformBackingStore(QWindow *window) const
+QPlatformBackingStore *MirServerIntegration::createPlatformBackingStore(QWindow */*window*/) const
 {
     return nullptr;
 }
