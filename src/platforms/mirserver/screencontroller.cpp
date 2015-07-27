@@ -165,7 +165,7 @@ void ScreenController::update()
     for (auto screen: oldScreenList) {
         qCDebug(QTMIR_SCREENS) << "Removed Screen with id" << screen->m_outputId.as_value()
                                << "and geometry" << screen->geometry();
-        // The screen is automatically removed from Qt's internal list by the QPlatformScreen deconstructor.
+        // The screen is automatically removed from Qt's internal list by the QPlatformScreen destructor.
         auto window = static_cast<ScreenWindow *>(screen->window());
         if (window && window->window() && window->isExposed()) { qDebug() << "HIDE!" << window;
             //window->setVisible(false);
