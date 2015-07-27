@@ -212,8 +212,6 @@ Screen* ScreenController::screenFactory(const mir::graphics::DisplayConfiguratio
 
 Screen* ScreenController::getUnusedScreen()
 {
-    qCDebug(QTMIR_SCREENS) << "ScreenController::getUnusedScreen";
-
     if (m_screenList.empty()) {
         return nullptr;
     } else if (m_screenList.size() == 1) {
