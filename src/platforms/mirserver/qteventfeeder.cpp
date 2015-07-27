@@ -289,12 +289,13 @@ void QtEventFeeder::dispatchPointer(MirInputEvent const* ev)
     auto modifiers = getQtModifiersFromMir(mir_pointer_event_modifiers(pev));
     auto buttons = getQtMouseButtonsfromMirPointerEvent(pev);
 
-    auto local_point = QPointF(mir_pointer_event_axis_value(pev, mir_pointer_axis_x),
+    auto localPoint = QPointF(mir_pointer_event_axis_value(pev, mir_pointer_axis_x),
                                mir_pointer_event_axis_value(pev, mir_pointer_axis_y));
 
-    auto window = mQtWindowSystem->getWindowForTouchPoint(local_point.toPoint());
+    auto window = mQtWindowSystem->getWindowForTouchPoint(localPoint.toPoint());
+    localPoint -= window->geometry().topLeft(); // make position relative to window
 
-    mQtWindowSystem->handleMouseEvent(window, timestamp, local_point,
+    mQtWindowSystem->handleMouseEvent(window, timestamp, localPoint,
                                       buttons, modifiers);
 }
 
