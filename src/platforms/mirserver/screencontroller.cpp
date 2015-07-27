@@ -19,7 +19,6 @@
 #include "screenwindow.h"
 #include "qtcompositor.h"
 #include "logging.h"
-#include "mirserver.h"
 #include "mirserverintegration.h"
 #include "screen.h"
 
