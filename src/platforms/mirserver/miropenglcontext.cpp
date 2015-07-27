@@ -48,17 +48,17 @@ MirOpenGLContext::MirOpenGLContext(const QSharedPointer<MirServer> &server, cons
     std::unique_ptr<mir::graphics::GLContext> mirContext = display->create_gl_context();
     mirContext->make_current();
 
-    m_eglDisplay = eglGetCurrentDisplay();
-    if (m_eglDisplay == EGL_NO_DISPLAY) {
+    EGLDisplay eglDisplay = eglGetCurrentDisplay();
+    if (eglDisplay == EGL_NO_DISPLAY) {
         qFatal("Unable to determine current EGL Display");
     }
-    m_eglContext = eglGetCurrentContext();
-    if (m_eglContext == EGL_NO_CONTEXT) {
+    EGLContext eglContext = eglGetCurrentContext();
+    if (eglContext == EGL_NO_CONTEXT) {
         qFatal("Unable to determine current EGL Context");
     }
     EGLint eglConfigId = -1;
     EGLBoolean result;
-    result = eglQueryContext(m_eglDisplay, m_eglContext, EGL_CONFIG_ID, &eglConfigId);
+    result = eglQueryContext(eglDisplay, eglContext, EGL_CONFIG_ID, &eglConfigId);
     if (result != EGL_TRUE || eglConfigId < 0) {
         qFatal("Unable to determine current EGL Config ID");
     }
@@ -69,7 +69,7 @@ MirOpenGLContext::MirOpenGLContext(const QSharedPointer<MirServer> &server, cons
         EGL_CONFIG_ID, eglConfigId,
         EGL_NONE
     };
-    result = eglChooseConfig(m_eglDisplay, attribList, &eglConfig, 1, &matchingEglConfigCount);
+    result = eglChooseConfig(eglDisplay, attribList, &eglConfig, 1, &matchingEglConfigCount);
     if (result != EGL_TRUE || eglConfig == nullptr || matchingEglConfigCount < 1) {
         qFatal("Unable to select EGL Config with the supposed current config ID");
     }
@@ -77,7 +77,7 @@ MirOpenGLContext::MirOpenGLContext(const QSharedPointer<MirServer> &server, cons
     QSurfaceFormat formatCopy = format;
     formatCopy.setRenderableType(QSurfaceFormat::OpenGLES);
 
-    m_format = q_glFormatFromConfig(m_eglDisplay, eglConfig, formatCopy);
+    m_format = q_glFormatFromConfig(eglDisplay, eglConfig, formatCopy);
 
     // FIXME: the temporary gl context created by Mir does not have the attributes we specified
     // in the GLConfig, so need to set explicitly for now
@@ -96,7 +96,7 @@ MirOpenGLContext::MirOpenGLContext(const QSharedPointer<MirServer> &server, cons
     qDebug() << "OpenGL ES Shading Language version:" << qPrintable(string);
     string = (const char*) glGetString(GL_EXTENSIONS);
     qDebug() << "OpenGL ES extensions:" << qPrintable(string);
-    q_printEglConfig(m_eglDisplay, eglConfig);
+    q_printEglConfig(eglDisplay, eglConfig);
 
 #if GL_DEBUG
     QObject::connect(m_logger, &QOpenGLDebugLogger::messageLogged,
