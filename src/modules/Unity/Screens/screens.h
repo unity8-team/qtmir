@@ -44,7 +44,7 @@ Q_SIGNALS:
     void screenAdded(QScreen *screen);
     void screenRemoved(QScreen *screen);
 
-public Q_SLOTS:
+private Q_SLOTS:
     void onScreenAdded(QScreen *screen);
     void onScreenRemoved(QScreen *screen);
 };
