@@ -54,6 +54,9 @@
 #include "screenwindow.h"
 #include "services.h"
 #include "ubuntutheme.h"
+#include "logging.h"
+
+Q_LOGGING_CATEGORY(QTMIR_SCREENS, "qtmir.screens")
 
 namespace mg = mir::graphics;
 using qtmir::Clipboard;
@@ -116,19 +119,17 @@ bool MirServerIntegration::hasCapability(QPlatformIntegration::Capability cap) c
 
 QPlatformWindow *MirServerIntegration::createPlatformWindow(QWindow *window) const
 {
-    qDebug() << "createPlatformWindow" << window;
-
     QWindowSystemInterface::flushWindowSystemEvents();
 
     // If Screen was not specified, just grab an unused one, if available
     auto screens = m_mirServer->screenController().lock();
     if (!screens) {
-        qDebug() << "Screens are not initialized, unable to create a new QWindow/ScreenWindow";
+        qCritical("Screens are not initialized, unable to create a new QWindow/ScreenWindow");
         return nullptr;
     }
     Screen *screen = screens->getUnusedScreen();
     if (!screen) {
-        qDebug() << "No available Screens to create a new QWindow/ScreenWindow for";
+        qCritical("No available Screens to create a new QWindow/ScreenWindow for");
         return nullptr;
     }
     QScreen *qscreen = screen->screen();
@@ -136,20 +137,18 @@ QPlatformWindow *MirServerIntegration::createPlatformWindow(QWindow *window) con
 
     auto platformWindow = new ScreenWindow(window);
 
-    qDebug() << "New" << window << "with geom" << window->geometry()
-             << "is backed by a" << screen << "with geometry" << screen->geometry();
+    qCDebug(QTMIR_SCREENS) << "New" << window << "with geom" << window->geometry()
+                           << "is backed by a" << screen << "with geometry" << screen->geometry();
     return platformWindow;
 }
 
 QPlatformBackingStore *MirServerIntegration::createPlatformBackingStore(QWindow *window) const
 {
-    qDebug() << "createPlatformBackingStore" << window;
     return nullptr;
 }
 
 QPlatformOpenGLContext *MirServerIntegration::createPlatformOpenGLContext(QOpenGLContext *context) const
 {
-    qDebug() << "createPlatformOpenGLContext" << context;
     return new MirOpenGLContext(m_mirServer->mirServer(), context->format());
 }
 
@@ -169,8 +168,7 @@ void MirServerIntegration::initialize()
 
     auto screens = m_mirServer->screenController().lock();
     if (!screens) {
-        qDebug() << "ScreenController not initialized";
-        return;
+        qFatal("ScreenController not initialized");
     }
     QObject::connect(screens.data(), &ScreenController::screenAdded,
             [this](Screen *screen) { this->screenAdded(screen); });
