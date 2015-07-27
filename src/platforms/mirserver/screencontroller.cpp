@@ -109,8 +109,7 @@ void ScreenController::onCompositorStarting()
     // (Re)Start Qt's render thread by setting all windows with a corresponding screen to exposed.
     for (auto screen : m_screenList) {
         auto window = static_cast<ScreenWindow *>(screen->window());
-        if (window && window->window()) { qDebug() << "SHOW" << window;
-            //window->setVisible(true);
+        if (window && window->window()) {
             window->window()->show();
         }
     }
@@ -124,8 +123,7 @@ void ScreenController::onCompositorStopping()
     // block until all windows have their GL contexts released.
     for (auto screen : m_screenList) {
         auto window = static_cast<ScreenWindow *>(screen->window());
-        if (window && window->window()) { qDebug() << "HIDE" << window;
-            //window->setVisible(false);
+        if (window && window->window()) {
             window->window()->hide();
         }
     }
