@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2013,2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -31,7 +31,7 @@ class MirBufferSGTexture : public QSGTexture
 {
     Q_OBJECT
 public:
-    MirBufferSGTexture(std::shared_ptr<mir::graphics::Buffer>);
+    MirBufferSGTexture();
     virtual ~MirBufferSGTexture();
 
     void setBuffer(std::shared_ptr<mir::graphics::Buffer> buffer);
@@ -46,8 +46,8 @@ public:
 
 private:
     std::shared_ptr<mir::graphics::Buffer> m_mirBuffer;
-    int m_height;
     int m_width;
+    int m_height;
     GLuint m_textureId;
 };
 
