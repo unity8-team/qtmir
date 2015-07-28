@@ -564,7 +564,7 @@ void MirSurfaceItem::setSurface(unity::shell::application::MirSurfaceInterface *
     if (m_surface) {
         disconnect(m_surface, nullptr, this, nullptr);
         m_surface->decrementViewCount();
-        if (!m_surface->isBeingDisplayed()) {
+        if (!m_surface->isBeingDisplayed() && window()) {
             disconnect(window(), nullptr, m_surface, nullptr);
         }
     }
