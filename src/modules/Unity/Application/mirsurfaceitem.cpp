@@ -260,6 +260,8 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     //m_surface->configure(mir_surface_attrib_focus, mir_surface_unfocused);
     connect(this, &QQuickItem::activeFocusChanged, this, &MirSurfaceItem::updateMirSurfaceFocus);
 
+    connect(this, &QQuickItem::visibleChanged, this, &MirSurfaceItem::updateMirSurfaceVisibility);
+
     if (m_session) {
         connect(m_session.data(), &Session::stateChanged, this, &MirSurfaceItem::onSessionStateChanged);
     }
@@ -677,6 +679,14 @@ void MirSurfaceItem::setState(const State &state)
     }
 }
 
+void MirSurfaceItem::setVisibility(const Visibility &visibility)
+{
+    qDebug() << "MirSurfaceItem::setVisibility(" << (visibility == Occluded ? "Occluded" : "Exposed") << ")";
+    if (this->visibility() != visibility) {
+        m_shell->set_surface_attribute(m_session->session(), m_surface, mir_surface_attrib_visibility, static_cast<int>(visibility));
+    }
+}
+
 void MirSurfaceItem::setLive(const bool live)
 {
     if (m_live != live) {
@@ -740,6 +750,16 @@ void MirSurfaceItem::updateMirSurfaceFocus(bool focused)
         m_shell->set_surface_attribute(m_session->session(), m_surface, mir_surface_attrib_focus, mir_surface_focused);
     } else {
         m_shell->set_surface_attribute(m_session->session(), m_surface, mir_surface_attrib_focus, mir_surface_unfocused);
+    }
+}
+
+void MirSurfaceItem::updateMirSurfaceVisibility()
+{
+    qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::updateMirSurfaceVisibility";
+    if (visibility() == Exposed) {
+        m_shell->set_surface_attribute(m_session->session(), m_surface, mir_surface_attrib_visibility, mir_surface_visibility_exposed);
+    } else {
+        m_shell->set_surface_attribute(m_session->session(), m_surface, mir_surface_attrib_visibility, mir_surface_visibility_occluded);
     }
 }
 

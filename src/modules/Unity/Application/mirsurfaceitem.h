@@ -170,6 +170,7 @@ private Q_SLOTS:
     void updateMirSurfaceSize();
 
     void updateMirSurfaceFocus(bool focused);
+    void updateMirSurfaceVisibility();
     void onAttributeChanged(const MirSurfaceAttrib, const int);
 
 private:
@@ -178,6 +179,7 @@ private:
 
     void setType(const Type&);
     void setState(const State&);
+    void setVisibility(const Visibility&);
     void setLive(const bool);
 
     // called by MirSurfaceManager

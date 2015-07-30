@@ -17,6 +17,7 @@
 // Qt
 #include <QGuiApplication>
 #include <QMutexLocker>
+#include <QDebug>
 
 // local
 #include "mirsurfacemanager.h"
@@ -92,6 +93,34 @@ MirSurfaceManager::~MirSurfaceManager()
     qCDebug(QTMIR_SURFACES) << "MirSurfaceManager::~MirSurfaceManager - this=" << this;
 
     m_mirSurfaceToItemHash.clear();
+}
+
+void MirSurfaceManager::displayOff()
+{
+    qDebug() << "MirSurfaceManager::displayOff() - surfaces: " << m_mirSurfaceToItemHash.size();
+
+    MirSurfaceItem* item = nullptr;
+    QMutexLocker lock(&m_mutex);
+    auto it = m_mirSurfaceToItemHash.begin();
+    while (it != m_mirSurfaceToItemHash.end()) {
+        item = it.value();
+        item->setVisibility(MirSurfaceItem::Visibility::Occluded);
+        it++;
+    }
+}
+
+void MirSurfaceManager::displayOn()
+{
+    qDebug() << "MirSurfaceManager::displayOn() - surfaces: " << m_mirSurfaceToItemHash.size();
+
+    MirSurfaceItem* item = nullptr;
+    QMutexLocker lock(&m_mutex);
+    auto it = m_mirSurfaceToItemHash.begin();
+    while (it != m_mirSurfaceToItemHash.end()) {
+        item = it.value();
+        item->setVisibility(MirSurfaceItem::Visibility::Exposed);
+        it++;
+    }
 }
 
 void MirSurfaceManager::onSessionCreatedSurface(const mir::scene::Session *mirSession,

@@ -63,6 +63,9 @@ public:
 
     static MirSurfaceManager* singleton();
 
+    Q_INVOKABLE void displayOff();
+    Q_INVOKABLE void displayOn();
+
 Q_SIGNALS:
     void surfaceCreated(MirSurfaceItem* surface);
     void surfaceDestroyed(MirSurfaceItem* surface);
