@@ -282,7 +282,7 @@ Qt::MouseButton getQtMouseButtonsfromMirPointerEvent(MirPointerEvent const* pev)
 }
 }
 
-void QtEventFeeder::dispatchPointer(MirPointerEvent const* pev, int64_t timestamp)
+void QtEventFeeder::dispatchPointer(MirPointerEvent const* pev, ulong timestamp)
 {
     if (!mQtWindowSystem->hasTargetWindow())
         return;
@@ -297,7 +297,7 @@ void QtEventFeeder::dispatchPointer(MirPointerEvent const* pev, int64_t timestam
                                       buttons, modifiers);
 }
 
-void QtEventFeeder::dispatchKey(MirKeyboardEvent const* kev, int64_t timestamp)
+void QtEventFeeder::dispatchKey(MirKeyboardEvent const* kev, ulong timestamp)
 {
     if (!mQtWindowSystem->hasTargetWindow())
         return;
@@ -351,7 +351,7 @@ void QtEventFeeder::dispatchKey(MirKeyboardEvent const* kev, int64_t timestamp)
         mir_keyboard_event_modifiers(kev), text, is_auto_rep);
 }
 
-void QtEventFeeder::dispatchTouch(MirTouchEvent const* tev, int64_t timestamp)
+void QtEventFeeder::dispatchTouch(MirTouchEvent const* tev, ulong timestamp)
 {
     if (!mQtWindowSystem->hasTargetWindow())
         return;
