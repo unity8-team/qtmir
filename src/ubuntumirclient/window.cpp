@@ -67,37 +67,37 @@ class Surface
 {
 public:
     Surface(MirSurface *surface, UbuntuScreen *screen)
-    :  mirSurface_{surface},
-       eglDisplay{screen->eglDisplay()},
-       eglConfig{screen->eglConfig()},
-       eglSurface_{EGL_NO_SURFACE}
+    :  mMirSurface{surface},
+       mEglDisplay{screen->eglDisplay()},
+       mEglConfig{screen->eglConfig()},
+       mEglSurface{EGL_NO_SURFACE}
     {
     }
 
     ~Surface()
     {
-        if (eglSurface_ != EGL_NO_SURFACE)
-            eglDestroySurface(eglDisplay, eglSurface_);
-        if (mirSurface_)
+        if (mEglSurface != EGL_NO_SURFACE)
+            eglDestroySurface(mEglDisplay, mEglSurface);
+        if (mMirSurface)
             mir_surface_release_sync(mirSurface_);
     }
 
     EGLSurface eglSurface()
     {
-        if (eglSurface_ == EGL_NO_SURFACE)
+        if (mEglSurface == EGL_NO_SURFACE)
         {
-            eglSurface_ = eglCreateWindowSurface(eglDisplay, eglConfig, nativeWindowFor(mirSurface_), nullptr);
+            mEglSurface = eglCreateWindowSurface(mEglDisplay, mEglConfig, nativeWindowFor(mMirSurface), nullptr);
         }
-        return eglSurface_;
+        return mMirSurface;
     }
 
-    MirSurface *mirSurface() const { return mirSurface_; }
+    MirSurface *mirSurface() const { return mMirSurface; }
 
 private:
-    MirSurface * const mirSurface_;
-    const EGLDisplay eglDisplay;
-    const EGLConfig eglConfig;
-    EGLSurface eglSurface_;
+    MirSurface * const mMirSurface;
+    const EGLDisplay mEglDisplay;
+    const EGLConfig mEglConfig;
+    EGLSurface mEglSurface;
 };
 
 MirSurfaceState qtWindowStateToMirSurfaceState(Qt::WindowState state)
@@ -156,7 +156,7 @@ MirPixelFormat defaultPixelFormat(MirConnection *connection)
     mir_connection_get_available_surface_formats(connection, &format, 1, &nformats);
     return format;
 }
-}
+} // namespace
 
 struct UbuntuWindowPrivate
 {
@@ -320,6 +320,7 @@ void UbuntuWindowPrivate::createSurface(QRect& geom, const char *name)
     mir_surface_spec_set_name(spec.get(), name);
 
     if (state == Qt::WindowFullScreen) {
+        //FIXME: How to handle multiple screens? For now just use the first display id
         auto displayConfig = mir_connection_create_display_config(connection);
         if (displayConfig->num_outputs > 0) {
             auto outputId = displayConfig->outputs[0].output_id;
@@ -350,11 +351,9 @@ void UbuntuWindowPrivate::createWindow()
     const QByteArray title = qWindow->title().isNull() ? "Window 1" : qWindow->title().toUtf8(); // legacy title
     const int panelHeight = ::panelHeight();
 
-#if !defined(QT_NO_DEBUG)
     DLOG("[ubuntumirclient QPA] panelHeight: '%d'", panelHeight);
     DLOG("[ubuntumirclient QPA] role: '%d'", role());
     DLOG("[ubuntumirclient QPA] title: '%s'", title.constData());
-#endif
 
     // Get surface geometry.
     QRect geom;
