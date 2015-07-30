@@ -221,8 +221,7 @@ QtEventFeeder::~QtEventFeeder()
 
 bool QtEventFeeder::dispatch(MirEvent const& event)
 {
-    auto type = mir_event_get_type(&event);
-    if (type != mir_event_type_input)
+    if (mir_event_get_type(&event) != mir_event_type_input)
         return false;
     auto const iev = mir_event_get_input_event(&event);
 
