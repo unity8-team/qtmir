@@ -411,17 +411,17 @@ void MirSurfaceItem::onBeforeRendering()
     // else those frames where our updatePaintNode is not called (but we're
     // still in the scene) we would appear black.
 
-    // TODO: avoid over-consuming (different user ID?)
-    updateTexture();
+    static const void * const passiveUserId = "passive";
+    updateTexture(passiveUserId);
 }
 
-bool MirSurfaceItem::updateTexture()    // called by rendering thread (scene graph)
+// called by rendering thread (scene graph)
+bool MirSurfaceItem::updateTexture(const void *userId)
 {
     QMutexLocker locker(&m_mutex);
     ensureProvider();
     bool textureUpdated = false;
 
-    const void* const userId = (void*)123;
     int framesPending = m_surface->buffers_ready_for_compositor(userId);
 
     if (framesPending > 0 || !m_textureProvider->t
@@ -432,19 +432,19 @@ bool MirSurfaceItem::updateTexture()    // called by rendering thread (scene gra
         } else if (!m_textureProvider->t) {
             m_textureProvider->t = new MirBufferSGTexture(renderables[0]->buffer());
         } else {
-            // We need to freeBuffer() before renderables[0]->buffer() is
-            // called so as to avoid the compositor trying to hold two
-            // buffers simultaneously (briefly).
+            // Avoid holding two buffers for the compositor at the same time. Thus free the current
+            // before acquiring the next
             m_textureProvider->t->freeBuffer();
             m_textureProvider->t->setBuffer(renderables[0]->buffer());
         }
         textureUpdated = true;
-        QMetaObject::invokeMethod(&m_frameDropperTimer, "start",
-                                  Qt::QueuedConnection);
+    }
 
-        if (framesPending > 1) {
-            QTimer::singleShot(0, this, SLOT(update()));
-        }
+    if (framesPending > 1) {
+        QTimer::singleShot(0, this, SLOT(update()));
+        // restart the frame dropper so that we have enough time to render the next frame.
+        // queued since the timer lives in a different thread
+        QMetaObject::invokeMethod(&m_frameDropperTimer, "start", Qt::QueuedConnection);
     }
 
     m_textureProvider->smooth = smooth();
@@ -459,7 +459,8 @@ QSGNode *MirSurfaceItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
         return 0;
     }
 
-    bool textureUpdated = updateTexture();
+    static const void * const activeUserId = "active";
+    bool textureUpdated = updateTexture(activeUserId);
     if (!m_textureProvider->t) {
         delete oldNode;
         return 0;

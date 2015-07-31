@@ -167,7 +167,7 @@ private Q_SLOTS:
     void onBeforeRendering();
 
 private:
-    bool updateTexture();
+    bool updateTexture(const void *userId);
     void ensureProvider();
 
     void setType(const Type&);

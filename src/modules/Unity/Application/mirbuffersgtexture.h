@@ -50,7 +50,6 @@ private:
     int m_height;
     int m_width;
     GLuint m_textureId;
-    bool m_hasAlpha;
 };
 
 #endif // MIRBUFFERSGTEXTURE_H
