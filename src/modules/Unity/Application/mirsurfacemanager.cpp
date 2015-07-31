@@ -104,7 +104,7 @@ void MirSurfaceManager::displayOff()
     auto it = m_mirSurfaceToItemHash.begin();
     while (it != m_mirSurfaceToItemHash.end()) {
         item = it.value();
-        item->setVisibility(MirSurfaceItem::Visibility::Occluded);
+        item->setVisible(false);
         it++;
     }
 }
@@ -118,7 +118,7 @@ void MirSurfaceManager::displayOn()
     auto it = m_mirSurfaceToItemHash.begin();
     while (it != m_mirSurfaceToItemHash.end()) {
         item = it.value();
-        item->setVisibility(MirSurfaceItem::Visibility::Exposed);
+        item->setVisible(true);
         it++;
     }
 }

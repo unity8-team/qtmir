@@ -308,9 +308,9 @@ MirSurfaceItem::State MirSurfaceItem::state() const
     return static_cast<MirSurfaceItem::State>(m_surface->state());
 }
 
-MirSurfaceItem::Visibility MirSurfaceItem::visibility() const
+bool MirSurfaceItem::visible() const
 {
-    return static_cast<MirSurfaceItem::Visibility>(m_surface->visible());
+    return m_surface->query(mir_surface_attrib_visibility) == mir_surface_visibility_exposed;
 }
 
 MirSurfaceItem::OrientationAngle MirSurfaceItem::orientationAngle() const
@@ -679,11 +679,12 @@ void MirSurfaceItem::setState(const State &state)
     }
 }
 
-void MirSurfaceItem::setVisibility(const Visibility &visibility)
+void MirSurfaceItem::setVisible(const bool visible)
 {
-    qDebug() << "MirSurfaceItem::setVisibility(" << (visibility == Occluded ? "Occluded" : "Exposed") << ")";
-    if (this->visibility() != visibility) {
-        m_shell->set_surface_attribute(m_session->session(), m_surface, mir_surface_attrib_visibility, static_cast<int>(visibility));
+    qDebug() << "MirSurfaceItem::setVisible(" << (visible ? "true" : "false") << ")";
+    if (this->visible() != visible) {
+        m_shell->set_surface_attribute(m_session->session(), m_surface, mir_surface_attrib_visibility, static_cast<int>(visible));
+        Q_EMIT visibleChanged();
     }
 }
 
@@ -705,7 +706,7 @@ void MirSurfaceItem::onAttributeChanged(const MirSurfaceAttrib attribute, const 
         Q_EMIT stateChanged();
         break;
     case mir_surface_attrib_visibility:
-        Q_EMIT visibilityChanged();
+        Q_EMIT visibleChanged();
         break;
     default:
         break;
@@ -756,7 +757,7 @@ void MirSurfaceItem::updateMirSurfaceFocus(bool focused)
 void MirSurfaceItem::updateMirSurfaceVisibility()
 {
     qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::updateMirSurfaceVisibility";
-    if (visibility() == Exposed) {
+    if (visible()) {
         m_shell->set_surface_attribute(m_session->session(), m_surface, mir_surface_attrib_visibility, mir_surface_visibility_exposed);
     } else {
         m_shell->set_surface_attribute(m_session->session(), m_surface, mir_surface_attrib_visibility, mir_surface_visibility_occluded);

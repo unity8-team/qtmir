@@ -48,12 +48,11 @@ class MirSurfaceItem : public QQuickItem
     Q_OBJECT
     Q_ENUMS(Type)
     Q_ENUMS(State)
-    Q_ENUMS(Visibility)
     Q_ENUMS(OrientationAngle)
 
     Q_PROPERTY(Type type READ type NOTIFY typeChanged)
     Q_PROPERTY(State state READ state NOTIFY stateChanged)
-    Q_PROPERTY(Visibility visibility READ visibility NOTIFY visibilityChanged)
+    Q_PROPERTY(bool visible READ visible NOTIFY visibleChanged)
     Q_PROPERTY(QString name READ name NOTIFY nameChanged)
     Q_PROPERTY(bool live READ live NOTIFY liveChanged)
 
@@ -90,11 +89,6 @@ public:
         Fullscreen = mir_surface_state_fullscreen,
     };
 
-    enum Visibility {
-        Occluded = mir_surface_visibility_occluded,
-        Exposed = mir_surface_visibility_exposed,
-    };
-
     enum OrientationAngle {
         Angle0 = 0,
         Angle90 = 90,
@@ -105,7 +99,7 @@ public:
     //getters
     Type type() const;
     State state() const;
-    Visibility visibility() const;
+    bool visible() const;
     QString name() const;
     bool live() const;
     SessionInterface *session() const;
@@ -136,7 +130,7 @@ public:
 Q_SIGNALS:
     void typeChanged();
     void stateChanged();
-    void visibilityChanged();
+    void visibleChanged();
     void nameChanged();
     void orientationAngleChanged(OrientationAngle angle);
     void liveChanged(bool live);
@@ -179,7 +173,7 @@ private:
 
     void setType(const Type&);
     void setState(const State&);
-    void setVisibility(const Visibility&);
+    void setVisible(const bool);
     void setLive(const bool);
 
     // called by MirSurfaceManager
