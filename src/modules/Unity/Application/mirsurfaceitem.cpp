@@ -26,6 +26,7 @@
 #include "mirshell.h"
 #include "logging.h"
 #include "ubuntukeyboardinfo.h"
+#include "displaywindow.h"
 
 // mirserver
 #include "surfaceobserver.h"
@@ -183,6 +184,11 @@ public Q_SLOTS:
         delete t;
         t = 0;
     }
+    void releaseBuffers()
+    {
+        if (t)
+            t->freeBuffer();
+    }
 };
 
 MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
@@ -254,6 +260,7 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     connect(&m_updateMirSurfaceSizeTimer, &QTimer::timeout, this, &MirSurfaceItem::updateMirSurfaceSize);
     connect(this, &QQuickItem::widthChanged, this, &MirSurfaceItem::scheduleMirSurfaceSizeUpdate);
     connect(this, &QQuickItem::heightChanged, this, &MirSurfaceItem::scheduleMirSurfaceSizeUpdate);
+    connect(this, &QQuickItem::windowChanged, this, &MirSurfaceItem::onWindowChanged);
 
     // FIXME - setting surface unfocused immediately breaks camera & video apps, but is
     // technically the correct thing to do (surface should be unfocused until shell focuses it)
@@ -368,6 +375,10 @@ void MirSurfaceItem::ensureProvider()
         m_textureProvider = new QMirSurfaceTextureProvider();
         connect(window(), SIGNAL(sceneGraphInvalidated()),
                 m_textureProvider, SLOT(invalidate()), Qt::DirectConnection);
+
+        auto displayWindow = static_cast<DisplayWindow*>(window()->handle());
+        connect(displayWindow, &DisplayWindow::mirSwappedBuffers,
+                m_textureProvider, &QMirSurfaceTextureProvider::releaseBuffers);
     }
 }
 
@@ -381,6 +392,29 @@ void MirSurfaceItem::surfaceDamaged()
     scheduleTextureUpdate();
 }
 
+void MirSurfaceItem::onWindowChanged(QQuickWindow * window)
+{
+    qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::onWindowChanged";
+    connect(window, &QQuickWindow::beforeRendering,
+            this, &MirSurfaceItem::onBeforeRendering,
+            Qt::DirectConnection);
+}
+
+void MirSurfaceItem::onBeforeRendering()
+{
+    //qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::onBeforeRendering";
+
+    // Since we like to freeBuffer() at the end of each frame, we will spend
+    // most of our time with no buffer backing our texture. This is great
+    // for client performance, but we need to make sure every time a frame
+    // gets rendered we've set a backing buffer for the texture again. Or
+    // else those frames where our updatePaintNode is not called (but we're
+    // still in the scene) we would appear black.
+
+    // TODO: avoid over-consuming (different user ID?)
+    updateTexture();
+}
+
 bool MirSurfaceItem::updateTexture()    // called by rendering thread (scene graph)
 {
     QMutexLocker locker(&m_mutex);
@@ -388,25 +422,29 @@ bool MirSurfaceItem::updateTexture()    // called by rendering thread (scene gra
     bool textureUpdated = false;
 
     const void* const userId = (void*)123;
-    auto renderables = m_surface->generate_renderables(userId);
+    int framesPending = m_surface->buffers_ready_for_compositor(userId);
 
-    if (m_surface->buffers_ready_for_compositor(userId) > 0 && renderables.size() > 0) {
-        if (!m_textureProvider->t) {
+    if (framesPending > 0 || !m_textureProvider->t
+                          || !m_textureProvider->t->hasBuffer()) {
+        auto renderables = m_surface->generate_renderables(userId);
+        if (renderables.size() < 1) {
+            // Not sure if it's an error or even possible. Ignore for now.
+        } else if (!m_textureProvider->t) {
             m_textureProvider->t = new MirBufferSGTexture(renderables[0]->buffer());
         } else {
-            // Avoid holding two buffers for the compositor at the same time. Thus free the current
-            // before acquiring the next
+            // We need to freeBuffer() before renderables[0]->buffer() is
+            // called so as to avoid the compositor trying to hold two
+            // buffers simultaneously (briefly).
             m_textureProvider->t->freeBuffer();
             m_textureProvider->t->setBuffer(renderables[0]->buffer());
         }
         textureUpdated = true;
-    }
+        QMetaObject::invokeMethod(&m_frameDropperTimer, "start",
+                                  Qt::QueuedConnection);
 
-    if (m_surface->buffers_ready_for_compositor(userId) > 0) {
-        QTimer::singleShot(0, this, SLOT(update()));
-        // restart the frame dropper so that we have enough time to render the next frame.
-        // queued since the timer lives in a different thread
-        QMetaObject::invokeMethod(&m_frameDropperTimer, "start", Qt::QueuedConnection);
+        if (framesPending > 1) {
+            QTimer::singleShot(0, this, SLOT(update()));
+        }
     }
 
     m_textureProvider->smooth = smooth();

@@ -106,6 +106,12 @@ void DisplayWindow::swapBuffers()
 {
     m_displayBuffer->gl_swap_buffers();
 
+    // This is a special signal similar to the built-in frameSwapped(), but
+    // emitted from the optimal location after gl_swap_buffers() and before
+    // post(). Hooking this signal provides the compositor with the optimal
+    // earliest safe opportunity to release buffers back to the client.
+    Q_EMIT mirSwappedBuffers();
+
     // FIXME this exposes a QtMir architecture problem now, as DisplayWindow
     // is supposed to wrap a mg::DisplayBuffer. We use Qt's multithreaded
     // renderer, where each DisplayWindow is rendered to relatively

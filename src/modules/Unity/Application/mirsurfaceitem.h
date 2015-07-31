@@ -163,6 +163,9 @@ private Q_SLOTS:
     void updateMirSurfaceFocus(bool focused);
     void onAttributeChanged(const MirSurfaceAttrib, const int);
 
+    void onWindowChanged(QQuickWindow *window);
+    void onBeforeRendering();
+
 private:
     bool updateTexture();
     void ensureProvider();

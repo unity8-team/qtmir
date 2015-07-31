@@ -48,6 +48,9 @@ public:
     void makeCurrent();
     void doneCurrent();
 
+Q_SIGNALS:
+    void mirSwappedBuffers();
+
 private:
     bool m_isExposed;
     WId m_winId;

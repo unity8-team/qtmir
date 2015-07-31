@@ -35,6 +35,7 @@ public:
     virtual ~MirBufferSGTexture();
 
     void setBuffer(std::shared_ptr<mir::graphics::Buffer> buffer);
+    bool hasBuffer() const;
     void freeBuffer();
 
     int textureId() const override;
@@ -49,6 +50,7 @@ private:
     int m_height;
     int m_width;
     GLuint m_textureId;
+    bool m_hasAlpha;
 };
 
 #endif // MIRBUFFERSGTEXTURE_H

@@ -24,8 +24,8 @@ namespace mg = mir::geometry;
 
 MirBufferSGTexture::MirBufferSGTexture(std::shared_ptr<mir::graphics::Buffer> buffer)
     : QSGTexture()
-    , m_mirBuffer(buffer)
     , m_textureId(0)
+    , m_hasAlpha(false)
 {
     glGenTextures(1, &m_textureId);
 
@@ -33,9 +33,7 @@ MirBufferSGTexture::MirBufferSGTexture(std::shared_ptr<mir::graphics::Buffer> bu
     setHorizontalWrapMode(QSGTexture::ClampToEdge);
     setVerticalWrapMode(QSGTexture::ClampToEdge);
 
-    mg::Size size = m_mirBuffer->size();
-    m_height = size.height.as_int();
-    m_width = size.width.as_int();
+    setBuffer(buffer);
 }
 
 MirBufferSGTexture::~MirBufferSGTexture()
@@ -50,12 +48,19 @@ void MirBufferSGTexture::freeBuffer()
     m_mirBuffer.reset();
 }
 
+bool MirBufferSGTexture::hasBuffer() const
+{
+    return !!m_mirBuffer;
+}
+
 void MirBufferSGTexture::setBuffer(std::shared_ptr<mir::graphics::Buffer> buffer)
 {
     m_mirBuffer = buffer;
     mg::Size size = buffer->size();
     m_height = size.height.as_int();
     m_width = size.width.as_int();
+    m_hasAlpha = m_mirBuffer->pixel_format() == mir_pixel_format_abgr_8888
+              || m_mirBuffer->pixel_format() == mir_pixel_format_argb_8888;
 }
 
 int MirBufferSGTexture::textureId() const
@@ -70,13 +75,19 @@ QSize MirBufferSGTexture::textureSize() const
 
 bool MirBufferSGTexture::hasAlphaChannel() const
 {
-    return m_mirBuffer->pixel_format() == mir_pixel_format_abgr_8888
-        || m_mirBuffer->pixel_format() == mir_pixel_format_argb_8888;
+    return m_hasAlpha;
 }
 
 void MirBufferSGTexture::bind()
 {
-    glBindTexture(GL_TEXTURE_2D, m_textureId);
-    updateBindOptions(true/* force */);
-    m_mirBuffer->gl_bind_to_texture();
+    if (m_mirBuffer)
+    {
+        glBindTexture(GL_TEXTURE_2D, m_textureId);
+        updateBindOptions(true/* force */);
+        m_mirBuffer->gl_bind_to_texture();
+    }
+    else
+    {
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
 }
