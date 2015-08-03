@@ -34,13 +34,13 @@ namespace mir
 namespace shell
 {
 template<typename Info>
-struct SurfaceTo
+struct QtmirSurfaceTo
 {
     using type = std::map<std::weak_ptr<scene::Surface>, Info, std::owner_less<std::weak_ptr<scene::Surface>>>;
 };
 
 template<typename Info>
-struct SessionTo
+struct QtmirSessionTo
 {
     using type = std::map<std::weak_ptr<scene::Session>, Info, std::owner_less<std::weak_ptr<scene::Session>>>;
 };
@@ -49,7 +49,7 @@ struct SessionTo
 /// These functions assume that the BasicWindowManager data structures can be accessed freely.
 /// I.e. should only be invoked by the policy handle_... methods (where any necessary locks are held).
 template<typename SessionInfo, typename SurfaceInfo>
-class BasicWindowManagerTools
+class QtmirBasicWindowManagerTools
 {
 public:
     virtual auto find_session(std::function<bool(SessionInfo const& info)> const& predicate)
@@ -75,10 +75,10 @@ public:
 
     virtual auto active_display() -> geometry::Rectangle const = 0;
 
-    virtual ~BasicWindowManagerTools() = default;
-    BasicWindowManagerTools() = default;
-    BasicWindowManagerTools(BasicWindowManagerTools const&) = delete;
-    BasicWindowManagerTools& operator=(BasicWindowManagerTools const&) = delete;
+    virtual ~QtmirBasicWindowManagerTools() = default;
+    QtmirBasicWindowManagerTools() = default;
+    QtmirBasicWindowManagerTools(QtmirBasicWindowManagerTools const&) = delete;
+    QtmirBasicWindowManagerTools& operator=(QtmirBasicWindowManagerTools const&) = delete;
 };
 
 /// A policy based window manager.
@@ -103,7 +103,7 @@ public:
 /// \tparam SurfaceInfo must be constructable from (std::shared_ptr<ms::Session>, std::shared_ptr<ms::Surface>, ms::SurfaceCreationParameters const& params)
 template<typename WindowManagementPolicy, typename SessionInfo, typename SurfaceInfo>
 class BasicWindowManager : public WindowManager,
-    private BasicWindowManagerTools<SessionInfo, SurfaceInfo>
+    private QtmirBasicWindowManagerTools<SessionInfo, SurfaceInfo>
 {
 public:
     template <typename... PolicyArgs>
@@ -326,8 +326,8 @@ protected:
     WindowManagementPolicy policy;
 
     std::mutex mutex;
-    typename SessionTo<SessionInfo>::type session_info;
-    typename SurfaceTo<SurfaceInfo>::type surface_info;
+    typename QtmirSessionTo<SessionInfo>::type session_info;
+    typename QtmirSurfaceTo<SurfaceInfo>::type surface_info;
     geometry::Rectangles displays;
     geometry::Point cursor;
 };
