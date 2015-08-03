@@ -15,6 +15,7 @@
  */
 
 #include "mirwindowmanager.h"
+#include "basic_window_manager.h"
 #include "logging.h"
 #include "tracepoints.h" // generated from tracepoints.tp
 
