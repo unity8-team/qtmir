@@ -163,4 +163,5 @@ endif()
 
 
 # add subdirectories to build
+add_subdirectory(xcursor)
 add_subdirectory(src)

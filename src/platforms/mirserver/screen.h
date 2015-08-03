@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013,2014 Canonical, Ltd.
+ * Copyright (C) 2013-2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -12,9 +12,6 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Authors: Gerry Boland <gerry.boland@canonical.com>
- *          Daniel d'Andrada <daniel.dandrada@canonical.com>
  */
 
 #ifndef SCREEN_H
@@ -25,9 +22,13 @@
 #include <QtDBus/QDBusInterface>
 #include <qpa/qplatformscreen.h>
 
-#include "mir/graphics/display_configuration.h"
+#include <mir/graphics/display_configuration.h>
+
+#include "cursor.h"
 
 class QOrientationSensor;
+
+namespace qtmir {
 
 class Screen : public QObject, public QPlatformScreen
 {
@@ -43,6 +44,7 @@ public:
     qreal refreshRate() const override { return m_refreshRate; }
     Qt::ScreenOrientation nativeOrientation() const override { return m_nativeOrientation; }
     Qt::ScreenOrientation orientation() const override { return m_currentOrientation; }
+    QPlatformCursor *cursor() const override;
 
     void toggleSensors(const bool enable) const;
 
@@ -71,6 +73,10 @@ private:
     QOrientationSensor *m_orientationSensor;
 
     QDBusInterface *m_unityScreen;
+
+    Cursor m_cursor;
 };
+
+} // namespace qtmir
 
 #endif // SCREEN_H

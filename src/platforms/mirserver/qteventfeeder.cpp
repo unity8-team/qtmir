@@ -18,6 +18,7 @@
  */
 
 #include "qteventfeeder.h"
+#include "cursor.h"
 #include "logging.h"
 
 #include <qpa/qplatforminputcontext.h>
@@ -142,6 +143,13 @@ namespace {
 
 class QtWindowSystem : public QtEventFeeder::QtWindowSystemInterface {
 
+public:
+    QtWindowSystem() {
+        // because we're using QMetaObject::invoke with arguments of those types
+        qRegisterMetaType<Qt::KeyboardModifiers>("Qt::KeyboardModifiers");
+        qRegisterMetaType<Qt::MouseButton>("Qt::MouseButton");
+    }
+
     bool hasTargetWindow() override
     {
         if (mTopLevelWindow.isNull() && !QGuiApplication::topLevelWindows().isEmpty()) {
@@ -179,13 +187,14 @@ class QtWindowSystem : public QtEventFeeder::QtWindowSystemInterface {
         QWindowSystemInterface::handleTouchEvent(mTopLevelWindow.data(), timestamp, device, points, mods);
     }
 
-    void handleMouseEvent(ulong timestamp, QPointF point, Qt::MouseButton buttons, Qt::KeyboardModifiers modifiers) override
+    void handleMouseEvent(ulong timestamp, QPointF movement, Qt::MouseButton buttons, Qt::KeyboardModifiers modifiers) override
     {
         Q_ASSERT(!mTopLevelWindow.isNull());
-        QWindowSystemInterface::handleMouseEvent(mTopLevelWindow.data(), timestamp, point, point, // local and global point are the same
-            buttons, modifiers);
-    }
 
+        QPlatformScreen *screen = mTopLevelWindow->screen()->handle();
+        qtmir::Cursor *platformCursor = static_cast<qtmir::Cursor*>(screen->cursor());
+        platformCursor->handleMouseEvent(timestamp, movement, buttons, modifiers);
+    }
 
 private:
     QPointer<QWindow> mTopLevelWindow;
@@ -290,11 +299,10 @@ void QtEventFeeder::dispatchPointer(MirInputEvent const* ev)
     auto modifiers = getQtModifiersFromMir(mir_pointer_event_modifiers(pev));
     auto buttons = getQtMouseButtonsfromMirPointerEvent(pev);
 
-    auto local_point = QPointF(mir_pointer_event_axis_value(pev, mir_pointer_axis_x),
-                               mir_pointer_event_axis_value(pev, mir_pointer_axis_y));
+    auto movement = QPointF(mir_pointer_event_axis_value(pev, mir_pointer_axis_relative_x),
+                            mir_pointer_event_axis_value(pev, mir_pointer_axis_relative_y));
 
-    mQtWindowSystem->handleMouseEvent(timestamp, local_point,
-                                      buttons, modifiers);
+    mQtWindowSystem->handleMouseEvent(timestamp, movement, buttons, modifiers);
 }
 
 void QtEventFeeder::dispatchKey(MirInputEvent const* event)
