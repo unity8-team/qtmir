@@ -1114,8 +1114,16 @@ void MirWindowManagerImpl::modify_surface(const std::shared_ptr<mir::scene::Sess
     // TODO support surface modifications
 }
 
-auto MirWindowManager::create(const std::shared_ptr<mir::shell::DisplayLayout> &displayLayout)
-        -> std::unique_ptr<MirWindowManager>
+auto MirWindowManager::create(
+    mir::shell::FocusController* focus_controller,
+    const std::shared_ptr<mir::shell::DisplayLayout> &displayLayout)
+-> std::unique_ptr<MirWindowManager>
 {
+#ifndef QTMIR_CANONICAL_WINDOW_MANAGEMENT
+    (void)focus_controller;
     return std::make_unique<MirWindowManagerImpl>(displayLayout);
+#else
+    using WindowManager = msh::QtmirBasicWindowManager<CanonicalWindowManagerPolicy, msh::QtmirSessionInfo, msh::QtmirSurfaceInfo>;
+    return std::make_unique<WindowManager>(focus_controller, displayLayout);
+#endif
 }

@@ -19,6 +19,8 @@
 #ifndef MIR_SHELL_BASIC_WINDOW_MANAGER_H_
 #define MIR_SHELL_BASIC_WINDOW_MANAGER_H_
 
+#include "mirwindowmanager.h"
+
 #include "mir/geometry/rectangles.h"
 #include "mir/scene/session.h"
 #include "mir/scene/surface.h"
@@ -102,12 +104,12 @@ public:
 ///
 /// \tparam SurfaceInfo must be constructable from (std::shared_ptr<ms::Session>, std::shared_ptr<ms::Surface>, ms::SurfaceCreationParameters const& params)
 template<typename WindowManagementPolicy, typename SessionInfo, typename SurfaceInfo>
-class BasicWindowManager : public WindowManager,
+class QtmirBasicWindowManager : public MirWindowManager,
     private QtmirBasicWindowManagerTools<SessionInfo, SurfaceInfo>
 {
 public:
     template <typename... PolicyArgs>
-    BasicWindowManager(
+    QtmirBasicWindowManager(
         FocusController* focus_controller,
         PolicyArgs&&... policy_args) :
         focus_controller(focus_controller),
