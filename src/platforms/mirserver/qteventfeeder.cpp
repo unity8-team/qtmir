@@ -189,14 +189,15 @@ public:
 
     void handleMouseEvent(ulong timestamp, QPointF movement, Qt::MouseButton buttons, Qt::KeyboardModifiers modifiers) override
     {
-        Q_ASSERT(!mTopLevelWindow.isNull());
-
-        QPlatformScreen *screen = mTopLevelWindow->screen()->handle();
-        qtmir::Cursor *platformCursor = static_cast<qtmir::Cursor*>(screen->cursor());
-        platformCursor->handleMouseEvent(timestamp, movement, buttons, modifiers);
+        platformCursor()->handleMouseEvent(timestamp, movement, buttons, modifiers);
     }
 
 private:
+    qtmir::Cursor *platformCursor() {
+        Q_ASSERT(!mTopLevelWindow.isNull());
+        QPlatformScreen *screen = mTopLevelWindow->screen()->handle();
+        return static_cast<qtmir::Cursor*>(screen->cursor());
+    }
     QPointer<QWindow> mTopLevelWindow;
 };
 
