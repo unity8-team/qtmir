@@ -34,8 +34,6 @@ public:
 
     WId winId() const override { return m_winId; }
 
-    //bool isExposed() const override;
-
     bool event(QEvent *event) override;
 
     void swapBuffers();

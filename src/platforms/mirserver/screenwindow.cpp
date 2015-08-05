@@ -58,11 +58,6 @@ ScreenWindow::ScreenWindow(QWindow *window)
     requestActivateWindow();
 }
 
-//bool ScreenWindow::isExposed() const
-//{
-//    return m_isExposed;
-//}
-
 bool ScreenWindow::event(QEvent *event)
 {
     // Intercept Hide event and convert to Expose event, as Hide causes Qt to release GL
