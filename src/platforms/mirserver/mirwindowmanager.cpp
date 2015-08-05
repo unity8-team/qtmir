@@ -481,10 +481,8 @@ void CanonicalWindowManagerPolicy::handle_delete_surface(std::shared_ptr<ms::Ses
 
 int CanonicalWindowManagerPolicy::handle_set_state(std::shared_ptr<ms::Surface> const& surface, MirSurfaceState value)
 {
-    return surface->configure(mir_surface_attrib_state, value);
+    auto& info = tools->info_for(surface);
 
-//    auto& info = tools->info_for(surface);
-//
 //    switch (value)
 //    {
 //    case mir_surface_state_restored:
@@ -557,8 +555,8 @@ int CanonicalWindowManagerPolicy::handle_set_state(std::shared_ptr<ms::Surface> 
 //    // TODO when resizing. But for more sophistication we would need to encode
 //    // TODO some sensible layout rules.
 //    move_tree(surface, movement);
-//
-//    return info.state = value;
+
+    return info.state = value;
 }
 
 //void CanonicalWindowManagerPolicy::drag(Point cursor)
@@ -1119,11 +1117,6 @@ auto MirWindowManager::create(
     const std::shared_ptr<mir::shell::DisplayLayout> &displayLayout)
 -> std::unique_ptr<MirWindowManager>
 {
-#ifndef QTMIR_CANONICAL_WINDOW_MANAGEMENT
-    (void)focus_controller;
-    return std::make_unique<MirWindowManagerImpl>(displayLayout);
-#else
     using WindowManager = msh::QtmirBasicWindowManager<CanonicalWindowManagerPolicy, msh::QtmirSessionInfo, msh::QtmirSurfaceInfo>;
     return std::make_unique<WindowManager>(focus_controller, displayLayout);
-#endif
 }
