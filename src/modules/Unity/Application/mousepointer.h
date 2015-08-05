@@ -35,6 +35,9 @@ public:
 
     QString cursorName() const override { return m_cursorName; }
 
+    void setThemeName(const QString &themeName) override;
+    QString themeName() const override { return m_themeName; }
+
     qreal hotspotX() const override {return m_hotspotX;}
     qreal hotspotY() const override {return m_hotspotY;}
 
@@ -56,6 +59,7 @@ private:
     QPointer<QWindow> m_registeredWindow;
     QString m_cursorName;
     QString m_qtCursorName;
+    QString m_themeName;
     int m_hotspotX;
     int m_hotspotY;
 };

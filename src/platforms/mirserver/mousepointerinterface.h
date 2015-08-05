@@ -24,6 +24,7 @@ namespace qtmir {
 class MousePointerInterface : public QQuickItem {
     Q_OBJECT
     Q_PROPERTY(QString cursorName READ cursorName NOTIFY cursorNameChanged)
+    Q_PROPERTY(QString themeName READ themeName NOTIFY themeNameChanged)
     Q_PROPERTY(qreal hotspotX READ hotspotX NOTIFY hotspotXChanged)
     Q_PROPERTY(qreal hotspotY READ hotspotY NOTIFY hotspotYChanged)
 public:
@@ -33,11 +34,15 @@ public:
 
     virtual QString cursorName() const = 0;
 
+    virtual void setThemeName(const QString &themeName) = 0;
+    virtual QString themeName() const = 0;
+
     virtual qreal hotspotX() const = 0;
     virtual qreal hotspotY() const = 0;
 
 Q_SIGNALS:
     void cursorNameChanged(QString name);
+    void themeNameChanged(QString name);
     void hotspotXChanged(qreal value);
     void hotspotYChanged(qreal value);
 

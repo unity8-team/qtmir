@@ -30,6 +30,7 @@ using namespace qtmir;
 
 MousePointer::MousePointer(QQuickItem *parent)
     : MousePointerInterface(parent)
+    , m_themeName("default")
     , m_hotspotX(0)
     , m_hotspotY(0)
 {
@@ -123,7 +124,7 @@ void MousePointer::setCursorName(const QString &cursorName)
 
 void MousePointer::updateHotspot()
 {
-    QPoint newHotspot = CursorImageProvider::instance()->hotspot(m_cursorName);
+    QPoint newHotspot = CursorImageProvider::instance()->hotspot(m_themeName, m_cursorName);
 
     if (m_hotspotX != newHotspot.x()) {
         m_hotspotX = newHotspot.x();
@@ -133,5 +134,13 @@ void MousePointer::updateHotspot()
     if (m_hotspotY != newHotspot.y()) {
         m_hotspotY = newHotspot.y();
         Q_EMIT hotspotYChanged(m_hotspotY);
+    }
+}
+
+void MousePointer::setThemeName(const QString &themeName)
+{
+    if (m_themeName != themeName) {
+        m_themeName = themeName;
+        Q_EMIT themeNameChanged(m_themeName);
     }
 }

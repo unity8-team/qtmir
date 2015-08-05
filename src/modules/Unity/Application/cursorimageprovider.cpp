@@ -16,22 +16,19 @@
 
 #include "cursorimageprovider.h"
 
-namespace {
-QMap<QString,int> xcursorNameToQtShape;
-
-void loadXCursorImages(XcursorImages *images, qtmir::CursorImageProvider *cursorImageProvider)
-{
-    cursorImageProvider->loadXCursor(images);
-}
-} // anonymous namespace
-
 using namespace qtmir;
 
 CursorImageProvider *CursorImageProvider::m_instance = nullptr;
 
-CursorImage::CursorImage(XcursorImages *xcursorImgs)
-    : xcursorImages(xcursorImgs)
+CursorImage::CursorImage(const QString &theme, const QString &file)
+    : xcursorImages(nullptr)
 {
+
+    xcursorImages = XcursorLibraryLoadImages (file.toLatin1(), theme.toLatin1(), 32);
+    if (!xcursorImages) {
+        return;
+    }
+
     bool loaded = false;
     for (int i = 0; i < xcursorImages->nimage && !loaded; ++i) {
         XcursorImage *xcursorImage = xcursorImages->images[i];
@@ -60,9 +57,6 @@ CursorImageProvider::CursorImageProvider()
         qFatal("QPA mirsever: cannot have multiple CursorImageProvider instances");
     }
     m_instance = this;
-
-    // TODO: do it in a worker thread and/or load it only when first needed
-    loadCursors();
 }
 
 CursorImageProvider::~CursorImageProvider()
@@ -77,48 +71,52 @@ CursorImageProvider::~CursorImageProvider()
     m_instance = nullptr;
 }
 
-QImage CursorImageProvider::requestImage(const QString &cursorName, QSize *size, const QSize & /*requestedSize*/)
+QImage CursorImageProvider::requestImage(const QString &cursorThemeAndName, QSize *size, const QSize & /*requestedSize*/)
 {
-    QString actualCursorName;
+    CursorImage *cursorImage = fetchCursor(cursorThemeAndName);
+    size->setWidth(cursorImage->qimage.width());
+    size->setHeight(cursorImage->qimage.height());
 
-    if (m_cursors.contains(cursorName)) {
-        actualCursorName = cursorName;
-    } else if (m_cursors.contains("left_ptr")) {
-        actualCursorName = "left_ptr";
-    } else {
-        return QImage();
-    }
-
-    QImage image = m_cursors[actualCursorName]->qimage;
-    size->setWidth(image.width());
-    size->setWidth(image.height());
-
-    return image;
+    return cursorImage->qimage;
 }
 
-void CursorImageProvider::loadCursors()
+QPoint CursorImageProvider::hotspot(const QString &themeName, const QString &cursorName)
 {
-    xcursor_load_theme("DMZ-White", 32,
-        [](XcursorImages* images, void *this_ptr) -> void
-        {
-            // Can't use lambda capture as this lambda is thunked to a C function ptr
-            auto cursor = static_cast<qtmir::CursorImageProvider*>(this_ptr);
-            loadXCursorImages(images, cursor);
-        }, this);
-}
-
-void CursorImageProvider::loadXCursor(XcursorImages *xcursorImages)
-{
-    m_cursors[xcursorImages->name] = new CursorImage(xcursorImages);
-}
-
-QPoint CursorImageProvider::hotspot(const QString &cursorName)
-{
-    if (m_cursors.contains(cursorName)) {
-        return m_cursors[cursorName]->hotspot;
-    } else if (m_cursors.contains("left_ptr")) {
-        return m_cursors["left_ptr"]->hotspot;
+    QString themeAndCursor = themeName + "/" + cursorName;
+    CursorImage *cursorImage = fetchCursor(themeAndCursor);
+    if (cursorImage) {
+        return cursorImage->hotspot;
     } else {
         return QPoint(0,0);
     }
+}
+
+CursorImage *CursorImageProvider::fetchCursor(const QString &cursorThemeAndName)
+{
+    QString themeName;
+    QString cursorName;
+    {
+        QStringList themeAndNameList = cursorThemeAndName.split("/");
+        if (themeAndNameList.size() != 2) {
+            return nullptr;
+        }
+        themeName = themeAndNameList[0];
+        cursorName = themeAndNameList[1];
+    }
+
+    CursorImage *cursorImage = nullptr;
+
+    if (!m_cursors.contains(cursorThemeAndName)) {
+        m_cursors[cursorThemeAndName] = new CursorImage(themeName, cursorName);
+    }
+    cursorImage = m_cursors[cursorThemeAndName];
+
+    if (cursorImage->qimage.isNull()) {
+        if (!m_cursors.contains("default/left_ptr")) {
+            m_cursors["default/left_ptr"] = new CursorImage("default", "left_ptr");
+        }
+        cursorImage = m_cursors["default/left_ptr"];
+    }
+
+    return cursorImage;
 }

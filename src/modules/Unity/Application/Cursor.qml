@@ -3,9 +3,10 @@ import Unity.Application 0.1
 
 MousePointer {
     id: mousePointer
+
     Image {
         x: -mousePointer.hotspotX
         y: -mousePointer.hotspotY
-        source: "image://cursor/" + mousePointer.cursorName
+        source: "image://cursor/" + mousePointer.themeName + "/" + mousePointer.cursorName
     }
 }

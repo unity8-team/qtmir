@@ -30,7 +30,7 @@ namespace qtmir
 
 class CursorImage {
 public:
-    CursorImage(XcursorImages *xcursorImages);
+    CursorImage(const QString &theme, const QString &file);
     ~CursorImage();
 
     QImage qimage;
@@ -49,12 +49,10 @@ public:
 
     QImage requestImage(const QString &cursorName, QSize *size, const QSize &requestedSize) override;
 
-    void loadXCursor(XcursorImages *xcursorImages);
-
-    QPoint hotspot(const QString &cursorName);
+    QPoint hotspot(const QString &themeName, const QString &cursorName);
 
 private:
-    void loadCursors();
+    CursorImage *fetchCursor(const QString &cursorThemeAndName);
     QMap<QString, CursorImage*> m_cursors;
     static CursorImageProvider *m_instance;
 };
