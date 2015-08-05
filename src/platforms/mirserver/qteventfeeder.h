@@ -56,8 +56,9 @@ public:
                 Qt::MouseButton buttons, Qt::KeyboardModifiers modifiers) = 0;
     };
 
+    QtEventFeeder(const QSharedPointer<ScreenController> &screenController);
     QtEventFeeder(const QSharedPointer<ScreenController> &screenController,
-                  QtWindowSystemInterface *windowSystem = nullptr);
+                  QtWindowSystemInterface *windowSystem);
     virtual ~QtEventFeeder();
 
     static const int MirEventActionMask;

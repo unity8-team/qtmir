@@ -192,16 +192,15 @@ private:
 
 } // anonymous namespace
 
+QtEventFeeder::QtEventFeeder(const QSharedPointer<ScreenController> &screenController)
+    : QtEventFeeder(screenController, new QtWindowSystem)
+{
+}
 
 QtEventFeeder::QtEventFeeder(const QSharedPointer<ScreenController> &screenController,
                              QtEventFeeder::QtWindowSystemInterface *windowSystem)
+    : mQtWindowSystem(windowSystem)
 {
-    if (windowSystem) {
-        mQtWindowSystem = windowSystem;
-    } else {
-        mQtWindowSystem = new QtWindowSystem;
-    }
-
     // Initialize touch device. Hardcoded just like in qtubuntu
     // TODO: Create them from info gathered from Mir and store things like device id and source
     //       in a QTouchDevice-derived class created by us. So that we can properly assemble back
