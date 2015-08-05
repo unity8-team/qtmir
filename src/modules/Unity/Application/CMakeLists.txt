@@ -8,7 +8,7 @@ include_directories(
     ${UBUNTU_APP_LAUNCH_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/src/platforms/mirserver
     ${CMAKE_SOURCE_DIR}/src/common
-    ${CMAKE_SOURCE_DIR}/xcursor
+    ${CMAKE_SOURCE_DIR}/3rd_party/xcursor
     ${GSETTINGS_QT_INCLUDE_DIRS}
 
     ${LTTNG_INCLUDE_DIRS}
