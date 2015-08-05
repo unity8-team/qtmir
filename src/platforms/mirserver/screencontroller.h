@@ -26,12 +26,13 @@
 // std
 #include <memory>
 
-// local
-#include "mirserver.h"
-
+namespace mir {
+    class MainLoop;
+    namespace graphics { class Display; }
+    namespace compositor { class Compositor; }
+}
 class Screen;
 class QWindow;
-
 
 /*
  * ScreenController monitors the Mir display configuration and compositor status, and updates
