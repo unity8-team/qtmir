@@ -413,7 +413,7 @@ void QtEventFeeder::dispatchTouch(MirInputEvent const* event)
 
     // Qt needs a happy, sane stream of touch events. So let's make sure we're not forwarding
     // any insanity.
-    validateTouches(mir_input_event_get_event_time(event) / 1000000, touchPoints);
+    validateTouches(window, mir_input_event_get_event_time(event) / 1000000, touchPoints);
 
     // Touch event propagation.
     qCDebug(QTMIR_MIR_INPUT) << "Sending to Qt" << qPrintable(touchesToString(touchPoints));
@@ -434,7 +434,7 @@ void QtEventFeeder::stop()
     // not used
 }
 
-void QtEventFeeder::validateTouches(ulong timestamp,
+void QtEventFeeder::validateTouches(QWindow *window, ulong timestamp,
         QList<QWindowSystemInterface::TouchPoint> &touchPoints)
 {
     QSet<int> updatedTouches;
@@ -458,7 +458,7 @@ void QtEventFeeder::validateTouches(ulong timestamp,
         if (!updatedTouches.contains(it.key())) {
             qCWarning(QTMIR_MIR_INPUT)
                 << "There's a touch (id =" << it.key() << ") missing. Releasing it.";
-            sendActiveTouchRelease(timestamp, it.key());
+            sendActiveTouchRelease(window, timestamp, it.key());
             it = mActiveTouches.erase(it);
         } else {
             ++it;
@@ -476,7 +476,7 @@ void QtEventFeeder::validateTouches(ulong timestamp,
     }
 }
 
-void QtEventFeeder::sendActiveTouchRelease(ulong timestamp, int id)
+void QtEventFeeder::sendActiveTouchRelease(QWindow *window, ulong timestamp, int id)
 {
     QList<QWindowSystemInterface::TouchPoint> touchPoints = mActiveTouches.values();
 
@@ -490,7 +490,7 @@ void QtEventFeeder::sendActiveTouchRelease(ulong timestamp, int id)
     }
 
     qCDebug(QTMIR_MIR_INPUT) << "Sending to Qt" << qPrintable(touchesToString(touchPoints));
-    mQtWindowSystem->handleTouchEvent(mQtWindowSystem->focusedWindow(), timestamp, mTouchDevice, touchPoints);
+    mQtWindowSystem->handleTouchEvent(window, timestamp, mTouchDevice, touchPoints);
 }
 
 bool QtEventFeeder::validateTouch(QWindowSystemInterface::TouchPoint &touchPoint)

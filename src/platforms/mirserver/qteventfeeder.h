@@ -73,9 +73,9 @@ private:
     void dispatchKey(MirInputEvent const* event);
     void dispatchTouch(MirInputEvent const* event);
     void dispatchPointer(MirInputEvent const* event);
-    void validateTouches(ulong timestamp, QList<QWindowSystemInterface::TouchPoint> &touchPoints);
+    void validateTouches(QWindow *window, ulong timestamp, QList<QWindowSystemInterface::TouchPoint> &touchPoints);
     bool validateTouch(QWindowSystemInterface::TouchPoint &touchPoint);
-    void sendActiveTouchRelease(ulong timestamp, int id);
+    void sendActiveTouchRelease(QWindow *window, ulong timestamp, int id);
 
     QString touchesToString(const QList<struct QWindowSystemInterface::TouchPoint> &points);
 
