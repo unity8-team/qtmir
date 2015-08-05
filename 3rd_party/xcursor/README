@@ -1,0 +1,1 @@
+TODO: This should go away once we start using the cursor feature from Mir instead of drawing the cursor ourselves as an item in the QML scene
