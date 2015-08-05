@@ -33,6 +33,26 @@ class Screen;
 class QWindow;
 
 
+/*
+ * ScreenController monitors the Mir display configuration and compositor status, and updates
+ * the relevant QScreen and QWindow states accordingly.
+ *
+ * Primary purposes are:
+ * 1. to update QScreen state on Mir display configuration changes
+ * 2. to stop the Qt renderer by hiding its QWindow when Mir wants to stop all compositing,
+ *    and resume Qt's renderer by showing its QWindow when Mir wants to resume compositing.
+ *
+ *
+ * Threading Note:
+ * This object must have affinity to the main Qt GUI thread, as it creates & destroys Platform
+ * objects which Qt uses internally. However beware as the init() & terminate() methods need to
+ * be called on the MirServerThread thread, as we need to monitor the screen state *after*
+ * Mir has initialized but before Qt's event loop has started, and tear down before Mir terminates.
+ * Also note the MirServerThread does not have an QEventLoop.
+ *
+ * All other methods must be called on the Qt GUI thread.
+ */
+
 class ScreenController : public QObject
 {
     Q_OBJECT
