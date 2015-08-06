@@ -23,7 +23,6 @@
 // Qt
 #include <QObject>
 #include <QTimer>
-#include <QPointer>
 #include <QtDBus/QDBusInterface>
 #include <qpa/qplatformscreen.h>
 
@@ -95,7 +94,7 @@ private:
     Qt::ScreenOrientation m_currentOrientation;
     QOrientationSensor *m_orientationSensor;
 
-    QPointer<ScreenWindow> m_screenWindow;
+    ScreenWindow *m_screenWindow;
     QDBusInterface *m_unityScreen;
 
     friend class ScreenController;

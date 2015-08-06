@@ -112,6 +112,7 @@ Screen::Screen(const mir::graphics::DisplayConfigurationOutput &screen)
     , m_displayBuffer(nullptr)
     , m_displayGroup(nullptr)
     , m_orientationSensor(new QOrientationSensor(this))
+    , m_screenWindow(nullptr)
     , m_unityScreen(nullptr)
 {
     setMirDisplayConfiguration(screen);
@@ -202,7 +203,7 @@ void Screen::setMirDisplayConfiguration(const mir::graphics::DisplayConfiguratio
     // Check for Screen geometry change
     if (m_geometry != oldGeometry) {
         QWindowSystemInterface::handleScreenGeometryChange(this->screen(), m_geometry, m_geometry);
-        if (!m_screenWindow.isNull()) { // resize corresponding window immediately
+        if (m_screenWindow) { // resize corresponding window immediately
             m_screenWindow->setGeometry(m_geometry);
         }
     }
@@ -273,14 +274,14 @@ void Screen::onOrientationReadingChanged()
 
 ScreenWindow* Screen::window() const
 {
-    if (m_screenWindow.isNull())
-        return nullptr;
-
     return m_screenWindow;
 }
 
 void Screen::setWindow(ScreenWindow *window)
 {
+    if (m_screenWindow) {
+        qCDebug(QTMIR_SENSOR_MESSAGES) << "Screen::setWindow - overwriting existing ScreenWindow";
+    }
     m_screenWindow = window;
 }
 

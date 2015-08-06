@@ -19,29 +19,23 @@
 
 #include <qpa/qplatformwindow.h>
 
-#include <QObject>
-
 // ScreenWindow implements the basics of a QPlatformWindow.
 // QtMir enforces one Window per Screen, so Window and Screen are tightly coupled.
 // All Mir specifics live in the associated Screen object.
 
-class ScreenWindow : public QObject, public QPlatformWindow
+class ScreenWindow : public QPlatformWindow
 {
-    Q_OBJECT
 public:
     explicit ScreenWindow(QWindow *window);
     virtual ~ScreenWindow() = default;
 
     WId winId() const override { return m_winId; }
 
-    bool event(QEvent *event) override;
-
     void swapBuffers();
     void makeCurrent();
     void doneCurrent();
 
 private:
-    bool m_isExposed;
     WId m_winId;
 };
 
