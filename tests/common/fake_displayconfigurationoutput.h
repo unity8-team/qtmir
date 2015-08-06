@@ -22,7 +22,7 @@
 namespace mg = mir::graphics;
 namespace geom = mir::geometry;
 
-const mg::DisplayConfigurationOutput fake_output1
+const mg::DisplayConfigurationOutput fakeOutput1
 {
     mg::DisplayConfigurationOutputId{3},
     mg::DisplayConfigurationCardId{2},
@@ -46,7 +46,7 @@ const mg::DisplayConfigurationOutput fake_output1
     mir_orientation_normal
 };
 
-const mg::DisplayConfigurationOutput fake_output2
+const mg::DisplayConfigurationOutput fakeOutput2
 {
     mg::DisplayConfigurationOutputId{2},
     mg::DisplayConfigurationCardId{4},

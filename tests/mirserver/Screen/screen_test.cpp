@@ -45,7 +45,7 @@ void ScreenTest::SetUp()
 
 TEST_F(ScreenTest, OrientationSensor)
 {
-    Screen *screen = new Screen(fake_output1);
+    Screen *screen = new Screen(fakeOutput1);
 
     // Default state should be active
     ASSERT_TRUE(screen->orientationSensorEnabled());
@@ -59,7 +59,7 @@ TEST_F(ScreenTest, OrientationSensor)
 
 TEST_F(ScreenTest, ReadConfigurationFromDisplayConfig)
 {
-    Screen *screen = new Screen(fake_output1);
+    Screen *screen = new Screen(fakeOutput1);
 
     EXPECT_EQ(screen->geometry(), QRect(0, 0, 150, 200));
     EXPECT_EQ(screen->availableGeometry(), QRect(0, 0, 150, 200));
@@ -72,7 +72,7 @@ TEST_F(ScreenTest, ReadConfigurationFromDisplayConfig)
 
 TEST_F(ScreenTest, ReadDifferentConfigurationFromDisplayConfig)
 {
-    Screen *screen = new Screen(fake_output2);
+    Screen *screen = new Screen(fakeOutput2);
 
     EXPECT_EQ(screen->geometry(), QRect(500, 600, 1500, 2000));
     EXPECT_EQ(screen->availableGeometry(), QRect(500, 600, 1500, 2000));

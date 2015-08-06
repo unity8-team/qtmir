@@ -73,7 +73,7 @@ void ScreenControllerTest::TearDown()
 TEST_F(ScreenControllerTest, SingleScreenFound)
 {
     // Set up display state
-    std::vector<mg::DisplayConfigurationOutput> config{fake_output1};
+    std::vector<mg::DisplayConfigurationOutput> config{fakeOutput1};
     std::vector<MockDisplayBuffer*> bufferConfig; // only used to match buffer with display, unecessary here
     display->setFakeConfiguration(config, bufferConfig);
 
@@ -86,7 +86,7 @@ TEST_F(ScreenControllerTest, SingleScreenFound)
 
 TEST_F(ScreenControllerTest, MultipleScreenFound)
 {
-    std::vector<mg::DisplayConfigurationOutput> config{fake_output1, fake_output2};
+    std::vector<mg::DisplayConfigurationOutput> config{fakeOutput1, fakeOutput2};
     std::vector<MockDisplayBuffer*> bufferConfig; // only used to match buffer with display, unecessary here
     display->setFakeConfiguration(config, bufferConfig);
 
@@ -99,13 +99,13 @@ TEST_F(ScreenControllerTest, MultipleScreenFound)
 
 TEST_F(ScreenControllerTest, ScreenAdded)
 {
-    std::vector<mg::DisplayConfigurationOutput> config{fake_output1};
+    std::vector<mg::DisplayConfigurationOutput> config{fakeOutput1};
     std::vector<MockDisplayBuffer*> bufferConfig; // only used to match buffer with display, unecessary here
     display->setFakeConfiguration(config, bufferConfig);
 
     sc->update();
 
-    config.push_back(fake_output2);
+    config.push_back(fakeOutput2);
     display->setFakeConfiguration(config, bufferConfig);
 
     ASSERT_EQ(sc->screens().count(), 1);
@@ -120,7 +120,7 @@ TEST_F(ScreenControllerTest, ScreenAdded)
 
 TEST_F(ScreenControllerTest, ScreenRemoved)
 {
-    std::vector<mg::DisplayConfigurationOutput> config{fake_output2, fake_output1};
+    std::vector<mg::DisplayConfigurationOutput> config{fakeOutput2, fakeOutput1};
     std::vector<MockDisplayBuffer*> bufferConfig; // only used to match buffer with display, unecessary here
     display->setFakeConfiguration(config, bufferConfig);
 
@@ -141,7 +141,7 @@ TEST_F(ScreenControllerTest, ScreenRemoved)
 
 TEST_F(ScreenControllerTest, CheckPrioritizedGetUnusedScreen)
 {
-    std::vector<mg::DisplayConfigurationOutput> config{fake_output2, fake_output1};
+    std::vector<mg::DisplayConfigurationOutput> config{fakeOutput2, fakeOutput1};
     std::vector<MockDisplayBuffer*> bufferConfig; // only used to match buffer with display, unecessary here
     display->setFakeConfiguration(config, bufferConfig);
 
@@ -153,7 +153,7 @@ TEST_F(ScreenControllerTest, CheckPrioritizedGetUnusedScreen)
 
 TEST_F(ScreenControllerTest, MatchBufferWithDisplay)
 {
-    std::vector<mg::DisplayConfigurationOutput> config{fake_output1};
+    std::vector<mg::DisplayConfigurationOutput> config{fakeOutput1};
     MockDisplayBuffer buffer1;
     std::vector<MockDisplayBuffer*> buffers {&buffer1};
 
@@ -171,7 +171,7 @@ TEST_F(ScreenControllerTest, MatchBufferWithDisplay)
 
 TEST_F(ScreenControllerTest, MultipleMatchBuffersWithDisplays)
 {
-    std::vector<mg::DisplayConfigurationOutput> config{fake_output1, fake_output2};
+    std::vector<mg::DisplayConfigurationOutput> config{fakeOutput1, fakeOutput2};
     MockDisplayBuffer buffer1, buffer2;
     std::vector<MockDisplayBuffer*> buffers {&buffer1, &buffer2};
 
