@@ -42,9 +42,9 @@ ScreenWindow::ScreenWindow(QWindow *window)
     qCDebug(QTMIR_SCREENS) << "Window" << this << "with window ID" << uint(m_winId);
 
     // Register with the Screen it is associated with
-    auto windowscreen = static_cast<Screen *>(screen());
-    Q_ASSERT(windowscreen);
-    windowscreen->setWindow(this);
+    auto myScreen = static_cast<Screen *>(screen());
+    Q_ASSERT(myScreen);
+    myScreen->setWindow(this);
 
     QRect screenGeometry(screen()->availableGeometry());
     if (window->geometry() != screenGeometry) {
