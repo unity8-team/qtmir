@@ -57,6 +57,11 @@ ScreenWindow::ScreenWindow(QWindow *window)
     requestActivateWindow();
 }
 
+ScreenWindow::~ScreenWindow()
+{
+    static_cast<Screen *>(screen())->setWindow(nullptr);
+}
+
 void ScreenWindow::swapBuffers()
 {
     static_cast<Screen *>(screen())->swapBuffers();
