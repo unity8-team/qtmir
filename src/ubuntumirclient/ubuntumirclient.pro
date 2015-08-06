@@ -2,7 +2,7 @@ TARGET = qpa-ubuntumirclient
 TEMPLATE = lib
 
 QT -= gui
-QT += core-private gui-private platformsupport-private dbus
+QT += core-private platformsupport-private dbus
 
 CONFIG += plugin no_keywords qpa/genericunixfontdatabase
 
