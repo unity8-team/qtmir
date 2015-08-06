@@ -66,9 +66,9 @@ public:
     void stop() override;
 
 private:
-    void dispatchKey(MirKeyboardEvent const* kev, int64_t timestamp);
-    void dispatchTouch(MirTouchEvent const* tev, int64_t timestamp);
-    void dispatchPointer(MirPointerEvent const* pev, int64_t timestamp);
+    void dispatchKey(MirKeyboardEvent const* kev, ulong timestamp);
+    void dispatchTouch(MirTouchEvent const* tev, ulong timestamp);
+    void dispatchPointer(MirPointerEvent const* pev, ulong timestamp);
     void validateTouches(ulong timestamp, QList<QWindowSystemInterface::TouchPoint> &touchPoints);
     bool validateTouch(QWindowSystemInterface::TouchPoint &touchPoint);
     void sendActiveTouchRelease(ulong timestamp, int id);
