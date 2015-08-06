@@ -22,7 +22,7 @@ struct TestableScreenController : public ScreenController
     Q_OBJECT
 
 public:
-    Screen *screenFactory(const mir::graphics::DisplayConfigurationOutput &output) const override
+    Screen *createScreen(const mir::graphics::DisplayConfigurationOutput &output) const override
     {
         return new StubScreen(output);
     }

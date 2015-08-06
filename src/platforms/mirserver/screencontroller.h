@@ -77,7 +77,7 @@ protected: // Protected for Testing Purposes
               const std::shared_ptr<mir::compositor::Compositor> &compositor,
               const std::shared_ptr<mir::MainLoop> &mainLoop);
     void terminate();
-    virtual Screen *screenFactory(const mir::graphics::DisplayConfigurationOutput &output) const;
+    virtual Screen *createScreen(const mir::graphics::DisplayConfigurationOutput &output) const;
 
 protected Q_SLOTS:
     void onCompositorStarting();

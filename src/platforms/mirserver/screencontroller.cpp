@@ -131,7 +131,7 @@ void ScreenController::update()
                     oldScreenList.removeAll(screen);
                 } else {
                     // new display, so create Screen for it
-                    screen = this->screenFactory(output);
+                    screen = this->createScreen(output);
                     newScreenList.append(screen);
                     qCDebug(QTMIR_SCREENS) << "Added Screen with id" << output.id.as_value()
                                            << "and geometry" << screen->geometry();
@@ -185,7 +185,7 @@ void ScreenController::update()
     }
 }
 
-Screen* ScreenController::screenFactory(const mir::graphics::DisplayConfigurationOutput &output) const
+Screen* ScreenController::createScreen(const mir::graphics::DisplayConfigurationOutput &output) const
 {
     return new Screen(output);
 }
