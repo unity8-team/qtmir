@@ -31,6 +31,7 @@
 // Qt
 #include <QDebug>
 #include <QGuiApplication>
+#include <QMutexLocker>
 #include <QQmlEngine>
 #include <QQuickWindow>
 #include <QScreen>
@@ -68,6 +69,16 @@ public:
     }
 
     bool smooth;
+
+    void releaseTexture() {
+        t.reset();
+    }
+
+    void setTexture(QSharedPointer<QSGTexture> newTexture) {
+        t = newTexture;
+    }
+
+private:
     QSharedPointer<QSGTexture> t;
 };
 
@@ -165,19 +176,28 @@ bool MirSurfaceItem::live() const
 // Called from the rendering (scene graph) thread
 QSGTextureProvider *MirSurfaceItem::textureProvider() const
 {
+    QMutexLocker mutexLocker(const_cast<QMutex*>(&m_mutex));
     const_cast<MirSurfaceItem *>(this)->ensureTextureProvider();
     return m_textureProvider;
 }
 
 void MirSurfaceItem::ensureTextureProvider()
 {
-    if (!m_textureProvider && m_surface) {
+    if (!m_surface) {
+        return;
+    }
+
+    if (!m_textureProvider) {
         m_textureProvider = new MirTextureProvider(m_surface->texture());
+    } else if (!m_textureProvider->texture()) {
+        m_textureProvider->setTexture(m_surface->texture());
     }
 }
 
 QSGNode *MirSurfaceItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)    // called by render thread
 {
+    QMutexLocker mutexLocker(&m_mutex);
+
     if (!m_surface) {
         delete oldNode;
         return 0;
@@ -191,7 +211,7 @@ QSGNode *MirSurfaceItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
         QTimer::singleShot(0, this, SLOT(update()));
     }
 
-    if (!m_textureProvider->t) {
+    if (!m_textureProvider->texture()) {
         delete oldNode;
         return 0;
     }
@@ -201,7 +221,7 @@ QSGNode *MirSurfaceItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
     QSGDefaultImageNode *node = static_cast<QSGDefaultImageNode*>(oldNode);
     if (!node) {
         node = new QSGDefaultImageNode;
-        node->setTexture(m_textureProvider->t.data());
+        node->setTexture(m_textureProvider->texture());
 
         node->setMipmapFiltering(QSGTexture::None);
         node->setHorizontalWrapMode(QSGTexture::ClampToEdge);
@@ -554,6 +574,8 @@ unity::shell::application::MirSurfaceInterface* MirSurfaceItem::surface() const
 
 void MirSurfaceItem::setSurface(unity::shell::application::MirSurfaceInterface *unitySurface)
 {
+    QMutexLocker mutexLocker(&m_mutex);
+
     qtmir::MirSurface *surface = static_cast<qtmir::MirSurface*>(unitySurface);
     qCDebug(QTMIR_SURFACES).nospace() << "MirSurfaceItem::setSurface surface=" << surface;
 
@@ -566,6 +588,9 @@ void MirSurfaceItem::setSurface(unity::shell::application::MirSurfaceInterface *
         m_surface->decrementViewCount();
         if (!m_surface->isBeingDisplayed() && window()) {
             disconnect(window(), nullptr, m_surface, nullptr);
+        }
+        if (m_textureProvider) {
+            m_textureProvider->releaseTexture();
         }
     }
 

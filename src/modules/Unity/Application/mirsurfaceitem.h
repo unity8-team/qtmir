@@ -20,6 +20,7 @@
 #include <memory>
 
 // Qt
+#include <QMutex>
 #include <QTimer>
 
 // Unity API
@@ -133,6 +134,7 @@ private:
 
     MirSurface* m_surface;
 
+    QMutex m_mutex;
     MirTextureProvider *m_textureProvider;
 
     QTimer m_updateMirSurfaceSizeTimer;
