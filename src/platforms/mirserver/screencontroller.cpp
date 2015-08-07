@@ -147,8 +147,7 @@ void ScreenController::update()
                                << "and geometry" << screen->geometry();
         // The screen is automatically removed from Qt's internal list by the QPlatformScreen destructor.
         auto window = static_cast<ScreenWindow *>(screen->window());
-        if (window && window->window() && window->isExposed()) { qDebug() << "HIDE!" << window;
-            //window->setVisible(false);
+        if (window && window->window() && window->isExposed()) {
             window->window()->hide();
         }
         delete screen;
