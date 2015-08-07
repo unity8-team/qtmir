@@ -79,9 +79,9 @@ TEST_F(ScreenControllerTest, SingleScreenFound)
 
     screenController->update();
 
-    ASSERT_EQ(screenController->screens().count(), 1);
+    ASSERT_EQ(1, screenController->screens().count());
     Screen* screen = screenController->screens().first();
-    EXPECT_EQ(screen->geometry(), QRect(0, 0, 150, 200));
+    EXPECT_EQ(QRect(0, 0, 150, 200), screen->geometry());
 }
 
 TEST_F(ScreenControllerTest, MultipleScreenFound)
@@ -92,9 +92,9 @@ TEST_F(ScreenControllerTest, MultipleScreenFound)
 
     screenController->update();
 
-    ASSERT_EQ(screenController->screens().count(), 2);
-    EXPECT_EQ(screenController->screens().at(0)->geometry(), QRect(0, 0, 150, 200));
-    EXPECT_EQ(screenController->screens().at(1)->geometry(), QRect(500, 600, 1500, 2000));
+    ASSERT_EQ(2, screenController->screens().count());
+    EXPECT_EQ(QRect(0, 0, 150, 200), screenController->screens().at(0)->geometry());
+    EXPECT_EQ(QRect(500, 600, 1500, 2000), screenController->screens().at(1)->geometry());
 }
 
 TEST_F(ScreenControllerTest, ScreenAdded)
@@ -108,14 +108,14 @@ TEST_F(ScreenControllerTest, ScreenAdded)
     config.push_back(fakeOutput2);
     display->setFakeConfiguration(config, bufferConfig);
 
-    ASSERT_EQ(screenController->screens().count(), 1);
-    EXPECT_EQ(screenController->screens().at(0)->geometry(), QRect(0, 0, 150, 200));
+    ASSERT_EQ(1, screenController->screens().count());
+    EXPECT_EQ(QRect(0, 0, 150, 200), screenController->screens().at(0)->geometry());
 
     screenController->update();
 
-    ASSERT_EQ(screenController->screens().count(), 2);
-    EXPECT_EQ(screenController->screens().at(0)->geometry(), QRect(0, 0, 150, 200));
-    EXPECT_EQ(screenController->screens().at(1)->geometry(), QRect(500, 600, 1500, 2000));
+    ASSERT_EQ(2, screenController->screens().count());
+    EXPECT_EQ(QRect(0, 0, 150, 200), screenController->screens().at(0)->geometry());
+    EXPECT_EQ(QRect(500, 600, 1500, 2000), screenController->screens().at(1)->geometry());
 }
 
 TEST_F(ScreenControllerTest, ScreenRemoved)
@@ -129,14 +129,14 @@ TEST_F(ScreenControllerTest, ScreenRemoved)
     config.pop_back();
     display->setFakeConfiguration(config, bufferConfig);
 
-    ASSERT_EQ(screenController->screens().count(), 2);
-    EXPECT_EQ(screenController->screens().at(0)->geometry(), QRect(500, 600, 1500, 2000));
-    EXPECT_EQ(screenController->screens().at(1)->geometry(), QRect(0, 0, 150, 200));
+    ASSERT_EQ(2, screenController->screens().count());
+    EXPECT_EQ(QRect(500, 600, 1500, 2000), screenController->screens().at(0)->geometry());
+    EXPECT_EQ(QRect(0, 0, 150, 200), screenController->screens().at(1)->geometry());
 
     screenController->update();
 
-    ASSERT_EQ(screenController->screens().count(), 1);
-    EXPECT_EQ(screenController->screens().at(0)->geometry(), QRect(500, 600, 1500, 2000));
+    ASSERT_EQ(1, screenController->screens().count());
+    EXPECT_EQ(QRect(500, 600, 1500, 2000), screenController->screens().at(0)->geometry());
 }
 
 TEST_F(ScreenControllerTest, CheckPrioritizedGetUnusedScreen)
@@ -148,7 +148,7 @@ TEST_F(ScreenControllerTest, CheckPrioritizedGetUnusedScreen)
     screenController->update();
 
     auto screen = screenController->getUnusedScreen();
-    EXPECT_EQ(screen->outputType(), mg::DisplayConfigurationOutputType::lvds);
+    EXPECT_EQ(mg::DisplayConfigurationOutputType::lvds, screen->outputType());
 }
 
 TEST_F(ScreenControllerTest, MatchBufferWithDisplay)
@@ -164,7 +164,7 @@ TEST_F(ScreenControllerTest, MatchBufferWithDisplay)
     display->setFakeConfiguration(config, buffers);
     screenController->update();
 
-    ASSERT_EQ(screenController->screens().count(), 1);
+    ASSERT_EQ(1, screenController->screens().count());
     EXPECT_CALL(buffer1, make_current());
     static_cast<StubScreen*>(screenController->screens().at(0))->makeCurrent();
 }
@@ -185,7 +185,7 @@ TEST_F(ScreenControllerTest, MultipleMatchBuffersWithDisplays)
     display->setFakeConfiguration(config, buffers);
     screenController->update();
 
-    ASSERT_EQ(screenController->screens().count(), 2);
+    ASSERT_EQ(2, screenController->screens().count());
     EXPECT_CALL(buffer1, make_current());
     EXPECT_CALL(buffer2, make_current());
     static_cast<StubScreen*>(screenController->screens().at(0))->makeCurrent();
