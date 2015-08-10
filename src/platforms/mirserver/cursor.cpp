@@ -27,7 +27,7 @@ Cursor::Cursor()
     m_shapeToCursorName[Qt::UpArrowCursor] = "up_arrow";
     m_shapeToCursorName[Qt::CrossCursor] = "cross";
     m_shapeToCursorName[Qt::WaitCursor] = "watch";
-    m_shapeToCursorName[Qt::IBeamCursor] = "ibeam";
+    m_shapeToCursorName[Qt::IBeamCursor] = "xterm";
     m_shapeToCursorName[Qt::SizeVerCursor] = "size_ver";
     m_shapeToCursorName[Qt::SizeHorCursor] = "size_hor";
     m_shapeToCursorName[Qt::SizeBDiagCursor] = "size_bdiag";
