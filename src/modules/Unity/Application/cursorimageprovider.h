@@ -53,7 +53,12 @@ public:
 
 private:
     CursorImage *fetchCursor(const QString &cursorThemeAndName);
-    QMap<QString, CursorImage*> m_cursors;
+    CursorImage *fetchCursor(const QString &themeName, const QString &cursorName);
+    CursorImage *fetchCursorHelper(const QString &themeName, const QString &cursorName);
+
+    // themeName -> (cursorName -> cursorImage)
+    QMap<QString, QMap<QString, CursorImage*> > m_cursors;
+
     static CursorImageProvider *m_instance;
 };
 

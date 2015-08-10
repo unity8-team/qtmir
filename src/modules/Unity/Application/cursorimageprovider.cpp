@@ -64,11 +64,16 @@ CursorImageProvider::CursorImageProvider()
 CursorImageProvider::~CursorImageProvider()
 {
     {
-        QList<CursorImage*> cursorImageList = m_cursors.values();
-        for (int i = 0; i < cursorImageList.count(); ++i) {
-            delete cursorImageList[i];
+        QList< QMap<QString, CursorImage*> > cursorList = m_cursors.values();
+
+        for (int i = 0; i < cursorList.count(); ++i) {
+            QList<CursorImage*> cursorImageList = cursorList[i].values();
+            for (int j = 0; j < cursorImageList.count(); ++j) {
+                delete cursorImageList[j];
+            }
         }
     }
+
     m_cursors.clear();
     m_instance = nullptr;
 }
@@ -84,8 +89,7 @@ QImage CursorImageProvider::requestImage(const QString &cursorThemeAndName, QSiz
 
 QPoint CursorImageProvider::hotspot(const QString &themeName, const QString &cursorName)
 {
-    QString themeAndCursor = themeName + "/" + cursorName;
-    CursorImage *cursorImage = fetchCursor(themeAndCursor);
+    CursorImage *cursorImage = fetchCursor(themeName, cursorName);
     if (cursorImage) {
         return cursorImage->hotspot;
     } else {
@@ -106,19 +110,37 @@ CursorImage *CursorImageProvider::fetchCursor(const QString &cursorThemeAndName)
         cursorName = themeAndNameList[1];
     }
 
-    CursorImage *cursorImage = nullptr;
+    return fetchCursor(themeName, cursorName);
+}
 
-    if (!m_cursors.contains(cursorThemeAndName)) {
-        m_cursors[cursorThemeAndName] = new CursorImage(themeName, cursorName);
-    }
-    cursorImage = m_cursors[cursorThemeAndName];
+CursorImage *CursorImageProvider::fetchCursor(const QString &themeName, const QString &cursorName)
+{
+    CursorImage *cursorImage = fetchCursorHelper(themeName, cursorName);
 
+    // Try some fallbacks
     if (cursorImage->qimage.isNull()) {
-        if (!m_cursors.contains("default/left_ptr")) {
-            m_cursors["default/left_ptr"] = new CursorImage("default", "left_ptr");
+        if (cursorName == "ibeam") {
+            cursorImage = fetchCursorHelper(themeName, "xterm");
+        } else if (cursorName == "xterm") {
+            cursorImage = fetchCursorHelper(themeName, "ibeam");
         }
-        cursorImage = m_cursors["default/left_ptr"];
+    }
+
+    // if it all fails, there must be at least a left_ptr
+    if (cursorImage->qimage.isNull()) {
+        cursorImage = fetchCursorHelper(themeName, "left_ptr");
     }
 
     return cursorImage;
+}
+
+CursorImage *CursorImageProvider::fetchCursorHelper(const QString &themeName, const QString &cursorName)
+{
+    QMap<QString, CursorImage*> &themeCursors = m_cursors[themeName];
+
+    if (!themeCursors.contains(cursorName)) {
+        themeCursors[cursorName] = new CursorImage(themeName, cursorName);
+    }
+
+    return themeCursors[cursorName];
 }
