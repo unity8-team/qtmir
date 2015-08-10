@@ -16,6 +16,8 @@
 
 #include "cursorimageprovider.h"
 
+#include <QFile>
+
 using namespace qtmir;
 
 CursorImageProvider *CursorImageProvider::m_instance = nullptr;
@@ -24,7 +26,7 @@ CursorImage::CursorImage(const QString &theme, const QString &file)
     : xcursorImages(nullptr)
 {
 
-    xcursorImages = XcursorLibraryLoadImages (file.toLatin1(), theme.toLatin1(), 32);
+    xcursorImages = XcursorLibraryLoadImages(QFile::encodeName(file), QFile::encodeName(theme), 32);
     if (!xcursorImages) {
         return;
     }
