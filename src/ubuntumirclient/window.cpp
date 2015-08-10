@@ -88,7 +88,7 @@ public:
         {
             mEglSurface = eglCreateWindowSurface(mEglDisplay, mEglConfig, nativeWindowFor(mMirSurface), nullptr);
         }
-        return mMirSurface;
+        return mEglSurface;
     }
 
     MirSurface *mirSurface() const { return mMirSurface; }
