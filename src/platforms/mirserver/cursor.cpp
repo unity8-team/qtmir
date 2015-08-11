@@ -94,3 +94,27 @@ void Cursor::handleMouseEvent(ulong timestamp, QPointF movement, Qt::MouseButton
     }
 }
 
+void Cursor::setPos(const QPoint &pos)
+{
+    if (!m_mousePointer) {
+        QPlatformCursor::setPos(pos);
+        return;
+    }
+
+    QPointF movement;
+    QPointF mouseScenePos = m_mousePointer->mapToItem(nullptr, QPointF(0, 0));
+
+    movement.setX(pos.x() - mouseScenePos.x());
+    movement.setY(pos.y() - mouseScenePos.y());
+
+    m_mousePointer->handleMouseEvent(0 /*timestamp*/, movement, Qt::NoButton, Qt::NoModifier);
+}
+
+QPoint Cursor::pos() const
+{
+    if (m_mousePointer) {
+        return m_mousePointer->mapToItem(nullptr, QPointF(0, 0)).toPoint();
+    } else {
+        return QPlatformCursor::pos();
+    }
+}

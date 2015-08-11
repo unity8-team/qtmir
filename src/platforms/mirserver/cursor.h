@@ -40,6 +40,9 @@ public:
     void handleMouseEvent(ulong timestamp, QPointF movement, Qt::MouseButton buttons,
             Qt::KeyboardModifiers modifiers);
 
+    void setPos(const QPoint &pos) override;
+    QPoint pos() const override;
+
 private:
     void loadCursors();
 
