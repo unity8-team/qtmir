@@ -50,13 +50,13 @@ add_custom_target(cppcheck COMMAND cppcheck --enable=all -q --error-exitcode=2
                                        ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/tests)
 
 include(FindPkgConfig)
-find_package(Qt5Core 5.3 REQUIRED)
-find_package(Qt5DBus 5.3 REQUIRED)
-find_package(Qt5Gui 5.3 REQUIRED)
-find_package(Qt5Qml 5.3 REQUIRED)
-find_package(Qt5Quick 5.3 REQUIRED)
-find_package(Qt5Sensors 5.3 REQUIRED)
-find_package(Qt5Test 5.3 REQUIRED)
+find_package(Qt5Core 5.4 REQUIRED)
+find_package(Qt5DBus 5.4 REQUIRED)
+find_package(Qt5Gui 5.4 REQUIRED)
+find_package(Qt5Qml 5.4 REQUIRED)
+find_package(Qt5Quick 5.4 REQUIRED)
+find_package(Qt5Sensors 5.4 REQUIRED)
+find_package(Qt5Test 5.4 REQUIRED)
 
 find_package(Threads REQUIRED)
 
@@ -65,8 +65,8 @@ if(PROTOBUF_PROTOC_EXECUTABLE STREQUAL "PROTOBUF_PROTOC_EXECUTABLE-NOTFOUND")
     message(SEND_ERROR "protoc executable not found! Missing protobuf-compiler package?")
 endif()
 
-pkg_check_modules(MIRSERVER mirserver>=0.13 REQUIRED)
-pkg_check_modules(MIRCLIENT mirclient>=0.13 REQUIRED)
+pkg_check_modules(MIRSERVER mirserver>=0.14 REQUIRED)
+pkg_check_modules(MIRCLIENT mirclient>=0.14 REQUIRED)
 
 pkg_check_modules(GLIB glib-2.0 REQUIRED)
 pkg_check_modules(PROCESS_CPP process-cpp REQUIRED)
@@ -80,7 +80,9 @@ pkg_check_modules(LTTNG lttng-ust)
 pkg_check_modules(GSETTINGS_QT REQUIRED gsettings-qt)
 pkg_check_modules(QTDBUSTEST libqtdbustest-1 REQUIRED)
 pkg_check_modules(QTDBUSMOCK libqtdbusmock-1 REQUIRED)
-pkg_check_modules(APPLICATION_API REQUIRED unity-shell-application=6)
+pkg_check_modules(APPLICATION_API REQUIRED unity-shell-application=7)
+
+include_directories(${APPLICATION_API_INCLUDE_DIRS})
 
 add_definitions(-DMIR_REQUIRE_DEPRECATED_EVENT_OPT_IN=1)
 
