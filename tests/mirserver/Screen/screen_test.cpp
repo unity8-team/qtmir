@@ -25,6 +25,8 @@
 namespace mg = mir::graphics;
 namespace geom = mir::geometry;
 
+using namespace qtmir;
+
 mg::DisplayConfigurationOutput const fake_output
 {
     mg::DisplayConfigurationOutputId{3},

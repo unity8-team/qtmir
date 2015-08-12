@@ -36,6 +36,8 @@
 #include <QtSensors/QOrientationReading>
 #include <QtSensors/QOrientationSensor>
 
+using namespace qtmir;
+
 namespace mg = mir::geometry;
 
 Q_LOGGING_CATEGORY(QTMIR_SENSOR_MESSAGES, "qtmir.sensor")
@@ -229,4 +231,10 @@ void Screen::onOrientationReadingChanged()
     QCoreApplication::postEvent(this, new OrientationReadingEvent(
                                               OrientationReadingEvent::m_type,
                                               m_orientationSensor->reading()->orientation()));
+}
+
+QPlatformCursor *Screen::cursor() const
+{
+    const QPlatformCursor *platformCursor = &m_cursor;
+    return const_cast<QPlatformCursor *>(platformCursor);
 }

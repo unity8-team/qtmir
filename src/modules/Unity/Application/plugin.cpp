@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2013-2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -21,17 +21,17 @@
 #include "application.h"
 #include "application_manager.h"
 #include "applicationscreenshotprovider.h"
+#include "cursorimageprovider.h"
 #include "mirsurfacemanager.h"
 #include "mirsurfaceinterface.h"
 #include "mirsurfaceitem.h"
+#include "mousepointer.h"
 #include "sessionmanager.h"
 #include "ubuntukeyboardinfo.h"
+#include "mirsingleton.h"
 
 // qtmir
 #include "logging.h"
-
-// unity-api
-#include <unity/shell/application/Mir.h>
 
 using namespace qtmir;
 
@@ -63,6 +63,10 @@ QObject* ubuntuKeyboardInfoSingleton(QQmlEngine* /*engine*/, QJSEngine* /*script
         new UbuntuKeyboardInfo;
     }
     return UbuntuKeyboardInfo::instance();
+}
+
+QObject* mirSingleton(QQmlEngine* /*engine*/, QJSEngine* /*scriptEngine*/) {
+    return qtmir::Mir::instance();
 }
 } // anonymous namespace
 
@@ -102,7 +106,8 @@ class UnityApplicationPlugin : public QQmlExtensionPlugin {
                     uri, 0, 1, "Session", "Session can't be instantiated from QML");
         qmlRegisterSingletonType<qtmir::UbuntuKeyboardInfo>(
                 uri, 0, 1, "UbuntuKeyboardInfo", ubuntuKeyboardInfoSingleton);
-        qmlRegisterUncreatableType<Mir>(uri, 0, 1, "Mir", "Mir provides enum values, it can't be instantiated");
+        qmlRegisterSingletonType<qtmir::Mir>(uri, 0, 1, "Mir", mirSingleton);
+        qmlRegisterType<qtmir::MousePointer>(uri, 0, 1, "MousePointer");
     }
 
     virtual void initializeEngine(QQmlEngine *engine, const char *uri)
@@ -112,6 +117,7 @@ class UnityApplicationPlugin : public QQmlExtensionPlugin {
         qtmir::ApplicationManager* appManager
                 = static_cast<qtmir::ApplicationManager*>(applicationManagerSingleton(engine, nullptr));
         engine->addImageProvider(QLatin1String("application"), new qtmir::ApplicationScreenshotProvider(appManager));
+        engine->addImageProvider(QLatin1String("cursor"), new qtmir::CursorImageProvider());
     }
 };
 

@@ -8,6 +8,7 @@ include_directories(
     ${UBUNTU_APP_LAUNCH_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/src/platforms/mirserver
     ${CMAKE_SOURCE_DIR}/src/common
+    ${CMAKE_SOURCE_DIR}/3rd_party/xcursor
     ${GSETTINGS_QT_INCLUDE_DIRS}
 
     ${LTTNG_INCLUDE_DIRS}
@@ -26,6 +27,7 @@ set(QMLMIRPLUGIN_SRC
     application.cpp
     ../../../common/abstractdbusservicemonitor.cpp
     ../../../common/debughelpers.cpp
+    cursorimageprovider.cpp
     desktopfilereader.cpp
     plugin.cpp
     applicationscreenshotprovider.cpp
@@ -37,6 +39,8 @@ set(QMLMIRPLUGIN_SRC
     mirsurfaceinterface.h
     mirsurfaceitem.cpp
     mirbuffersgtexture.cpp
+    mirsingleton.cpp
+    mousepointer.cpp
     proc_info.cpp
     session.cpp
     sessionmanager.cpp
@@ -81,6 +85,7 @@ target_link_libraries(
     Qt5::Quick
 
     qpa-mirserver
+    xcursorloader-static
 )
 
 # Generate tracepoints.c and .h from tracepoints.tp
@@ -91,4 +96,3 @@ add_lttng_gen_tp(NAME tracepoints)
 # install
 add_qml_plugin(Unity.Application 0.1 Unity/Application TARGETS unityapplicationplugin)
 install(FILES com.canonical.qtmir.gschema.xml DESTINATION ${CMAKE_INSTALL_DATADIR}/glib-2.0/schemas)
-

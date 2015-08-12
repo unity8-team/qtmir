@@ -32,7 +32,7 @@ Display::Display(const std::shared_ptr<mir::graphics::DisplayConfiguration> &dis
 {
     displayConfig->for_each_output([this](mg::DisplayConfigurationOutput const& output) {
         if (output.used) {
-            auto screen = new Screen(output);
+            auto screen = new qtmir::Screen(output);
             m_screens.push_back(screen);
         }
     });
