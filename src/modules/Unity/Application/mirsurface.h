@@ -112,7 +112,7 @@ public Q_SLOTS:
     void onCompositorSwappedBuffers() override;
 
 private Q_SLOTS:
-    void dropPendingBuffers();
+    void dropPendingBuffer();
     void onAttributeChanged(const MirSurfaceAttrib, const int);
     void onFramesPostedObserved();
     void onSessionDestroyed();

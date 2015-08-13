@@ -12,10 +12,6 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Authors:
- *     Daniel d'Andrada <daniel.dandrada@canonical.com>
- *     Gerry Boland <gerry.boland@canonical.com>
  */
 
 // local
@@ -498,7 +494,6 @@ void MirSurfaceItem::scheduleMirSurfaceSizeUpdate()
 
 void MirSurfaceItem::updateMirSurfaceSize()
 {
-
     if (!m_surface || !m_surface->live() || (m_surfaceWidth <= 0 && m_surfaceHeight <= 0)) {
         return;
     }
