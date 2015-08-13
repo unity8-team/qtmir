@@ -73,7 +73,7 @@ void Cursor::setMousePointer(MousePointerInterface *mousePointer)
     m_mousePointer = mousePointer;
 }
 
-void Cursor::handleMouseEvent(ulong timestamp, QPointF movement, Qt::MouseButton buttons,
+void Cursor::handleMouseEvent(QWindow *window, ulong timestamp, QPointF movement, Qt::MouseButton buttons,
         Qt::KeyboardModifiers modifiers)
 {
     QMutexLocker locker(&m_mutex);
@@ -84,6 +84,7 @@ void Cursor::handleMouseEvent(ulong timestamp, QPointF movement, Qt::MouseButton
 
     // Must not be called directly as we're most likely not in Qt's GUI (main) thread.
     bool ok = QMetaObject::invokeMethod(m_mousePointer, "handleMouseEvent", Qt::AutoConnection,
+        Q_ARG(QWindow*, window),
         Q_ARG(ulong, timestamp),
         Q_ARG(QPointF, movement),
         Q_ARG(Qt::MouseButton, buttons),

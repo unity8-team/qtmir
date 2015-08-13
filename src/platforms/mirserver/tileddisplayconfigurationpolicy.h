@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2015 Canonical, Ltd.
+ * Copyright (C) 2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -14,29 +14,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef QTCOMPOSITOR_H
-#define QTCOMPOSITOR_H
+#ifndef TILEDDISPLAYCONFIGURATIONPOLICY_H
+#define TILEDDISPLAYCONFIGURATIONPOLICY_H
 
-#include <mir/compositor/compositor.h>
+#include <mir/graphics/display_configuration_policy.h>
 
-// Qt
-#include <QObject>
+#include <memory>
 
-class QtCompositor : public QObject, public mir::compositor::Compositor
+class TiledDisplayConfigurationPolicy : public mir::graphics::DisplayConfigurationPolicy
 {
-    Q_OBJECT
 public:
-    QtCompositor() = default;
-    virtual ~QtCompositor() noexcept = default;
+    TiledDisplayConfigurationPolicy(const std::shared_ptr<mir::graphics::DisplayConfigurationPolicy> &wrapped);
 
-    void start();
-    void stop();
-
-Q_SIGNALS:
-    void starting();
-    void stopping();
+    void apply_to(mir::graphics::DisplayConfiguration& conf) override;
 
 private:
+    const std::shared_ptr<mir::graphics::DisplayConfigurationPolicy> m_wrapped;
 };
 
-#endif // QTCOMPOSITOR_H
+#endif // TILEDDISPLAYCONFIGURATIONPOLICY_H

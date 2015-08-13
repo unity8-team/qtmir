@@ -37,7 +37,7 @@ public:
     void setMousePointer(MousePointerInterface *mousePointer);
 
     // Called form Mir input thread
-    void handleMouseEvent(ulong timestamp, QPointF movement, Qt::MouseButton buttons,
+    void handleMouseEvent(QWindow *window, ulong timestamp, QPointF movement, Qt::MouseButton buttons,
             Qt::KeyboardModifiers modifiers);
 
     void setPos(const QPoint &pos) override;

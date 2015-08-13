@@ -1,5 +1,7 @@
 import QtQuick 2.4
+import QtQuick.Window 2.2
 import Unity.Application 0.1
+import Unity.Screens 0.1
 
 Rectangle {
     id: root
@@ -181,4 +183,90 @@ Rectangle {
     }
 
     Cursor {}
+
+    SequentialAnimation {
+        id: closeAnimation
+        property variant surface: null
+        NumberAnimation {
+            target: (closeAnimation.surface && closeAnimation.surface.parent) ? closeAnimation.surface.parent.parent : null
+            property: "scale";
+            to: 0;
+            duration: 500; easing.type: Easing.InQuad
+        }
+        ScriptAction {
+            script: {
+                closeAnimation.surface.parent.destroy(); //parent.destroy();
+                closeAnimation.surface.release();
+                print("surface destroyed")
+            }
+        }
+    }
+
+
+    Component {
+        id: window1
+        Window {
+            color: "lightgreen"
+            visible: true // if not set visible, Window is not created!!
+
+            Image {
+                id: unityLogo1
+                source: "UnityLogo.png"
+                fillMode: Image.PreserveAspectFit
+                anchors.centerIn: parent
+                width: 600
+                height: 600
+
+                RotationAnimation {
+                    id: logoAnimation1
+                    target: unityLogo1
+                    from: 359
+                    to: 0
+                    duration: 7000
+                    easing.type: Easing.Linear
+                    loops: Animation.Infinite
+                }
+                Component.onCompleted: print("new window!!")
+                Component.onDestruction: print("window destroyed!!")
+            }
+
+            Rectangle {
+                width: 50; height: 50
+                color: "blue"
+                x: point1.x
+                y: point1.y
+            }
+
+            MultiPointTouchArea {
+                anchors.fill: parent
+                minimumTouchPoints: 1
+                maximumTouchPoints: 1
+                touchPoints: [
+                    TouchPoint { id: point1 }
+                ]
+                onPressed: {
+                    if (logoAnimation1.paused) {
+                        logoAnimation1.resume();
+                    } else if (logoAnimation1.running) {
+                        logoAnimation1.pause();
+                    } else {
+                        logoAnimation1.start();
+                    }
+                }
+            }
+        }
+    }
+
+    Screens {
+        id: screens
+        property variant secondWindow: null
+        onScreenAdded: {
+            print("Screen added!!")
+            secondWindow = window1.createObject(root)
+        }
+        onScreenRemoved: {
+            print("Screen removed!!!")
+            secondWindow.destroy();
+        }
+    }
 }

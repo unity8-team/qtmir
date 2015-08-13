@@ -17,16 +17,21 @@
 #ifndef SCREEN_H
 #define SCREEN_H
 
+// Qt
 #include <QObject>
 #include <QTimer>
 #include <QtDBus/QDBusInterface>
 #include <qpa/qplatformscreen.h>
 
+// Mir
 #include <mir/graphics/display_configuration.h>
 
+// local
 #include "cursor.h"
+#include "screenwindow.h"
 
 class QOrientationSensor;
+namespace mir { namespace graphics { class DisplayBuffer; class DisplaySyncGroup; }}
 
 namespace qtmir {
 
@@ -34,7 +39,8 @@ class Screen : public QObject, public QPlatformScreen
 {
     Q_OBJECT
 public:
-    Screen(mir::graphics::DisplayConfigurationOutput const&);
+    Screen(const mir::graphics::DisplayConfigurationOutput &);
+    ~Screen();
 
     // QPlatformScreen methods.
     QRect geometry() const override { return m_geometry; }
@@ -47,6 +53,9 @@ public:
     QPlatformCursor *cursor() const override;
 
     void toggleSensors(const bool enable) const;
+    mir::graphics::DisplayConfigurationOutputType outputType() const { return m_type; }
+
+    ScreenWindow* window() const;
 
     // QObject methods.
     void customEvent(QEvent* event) override;
@@ -59,22 +68,40 @@ public Q_SLOTS:
    void onDisplayPowerStateChanged(int, int);
    void onOrientationReadingChanged();
 
-private:
-    void readMirDisplayConfiguration(mir::graphics::DisplayConfigurationOutput const&);
+protected:
+    void setWindow(ScreenWindow *window);
 
+    void setMirDisplayConfiguration(const mir::graphics::DisplayConfigurationOutput &);
+    void setMirDisplayBuffer(mir::graphics::DisplayBuffer *, mir::graphics::DisplaySyncGroup *);
+    void swapBuffers();
+    void makeCurrent();
+    void doneCurrent();
+
+private:
     QRect m_geometry;
     int m_depth;
     QImage::Format m_format;
     QSizeF m_physicalSize;
     qreal m_refreshRate;
 
+    mir::graphics::DisplayBuffer *m_displayBuffer;
+    mir::graphics::DisplaySyncGroup *m_displayGroup;
+    mir::graphics::DisplayConfigurationOutputId m_outputId;
+    mir::graphics::DisplayConfigurationCardId m_cardId;
+    mir::graphics::DisplayConfigurationOutputType m_type;
+    MirPowerMode m_powerMode;
+
     Qt::ScreenOrientation m_nativeOrientation;
     Qt::ScreenOrientation m_currentOrientation;
     QOrientationSensor *m_orientationSensor;
 
+    ScreenWindow *m_screenWindow;
     QDBusInterface *m_unityScreen;
 
     Cursor m_cursor;
+
+    friend class ScreenController;
+    friend class ScreenWindow;
 };
 
 } // namespace qtmir
