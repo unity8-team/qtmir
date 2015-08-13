@@ -31,6 +31,8 @@ include_directories(
     ${QT5PLATFORM_SUPPORT_INCLUDE_DIRS}
     ${Qt5Gui_PRIVATE_INCLUDE_DIRS}
     ${QT5_PLATFORMSUPPORT_INCLUDE_DIRS}
+
+    ${APPLICATION_API_INCLUDE_DIRS}
 )
 
 # We have to remove -pedantic for tracepoints.c
@@ -40,7 +42,7 @@ add_definitions(-DBYTE_ORDER=__BYTE_ORDER)
 
 set(MIRSERVER_QPA_PLUGIN_SRC
     ${CMAKE_SOURCE_DIR}/src/common/debughelpers.cpp
-    mirshell.cpp
+    mirwindowmanager.cpp
     qteventfeeder.cpp
     plugin.cpp
     qmirserver.cpp
