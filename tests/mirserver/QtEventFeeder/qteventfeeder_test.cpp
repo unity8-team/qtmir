@@ -44,6 +44,8 @@ using ::testing::IsReleased;
 using ::testing::HasId;
 using ::testing::StateIsMoved;
 
+using namespace qtmir;
+
 namespace mev = mir::events;
 
 // used by google mock in error messages

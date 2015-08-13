@@ -65,10 +65,10 @@ public:
     bool orientationSensorEnabled();
 
 public Q_SLOTS:
-   void onDisplayPowerStateChanged(int, int);
-   void onOrientationReadingChanged();
+    void onDisplayPowerStateChanged(int, int);
+    void onOrientationReadingChanged();
 
-protected:
+public: // internal use only
     void setWindow(ScreenWindow *window);
 
     void setMirDisplayConfiguration(const mir::graphics::DisplayConfigurationOutput &);

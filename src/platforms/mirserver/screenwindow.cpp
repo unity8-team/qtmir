@@ -25,6 +25,8 @@
 
 #include "logging.h"
 
+using namespace qtmir;
+
 static WId newWId()
 {
     static WId id = 0;

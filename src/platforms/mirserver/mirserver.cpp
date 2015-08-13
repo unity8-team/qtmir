@@ -46,6 +46,8 @@ namespace mo  = mir::options;
 namespace msh = mir::shell;
 namespace ms = mir::scene;
 
+using namespace qtmir;
+
 namespace
 {
 void ignore_unparsed_arguments(int /*argc*/, char const* const/*argv*/[])

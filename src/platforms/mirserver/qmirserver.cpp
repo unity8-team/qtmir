@@ -26,6 +26,8 @@
 #include "screencontroller.h"
 #include "screen.h"
 
+using namespace qtmir;
+
 QMirServer::QMirServer(const QStringList &arguments, QObject *parent)
     : QObject(parent)
     , d_ptr(new QMirServerPrivate())

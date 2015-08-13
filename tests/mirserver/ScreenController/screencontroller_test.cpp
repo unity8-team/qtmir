@@ -29,6 +29,7 @@
 #include <QGuiApplication>
 
 using namespace ::testing;
+using namespace qtmir;
 
 namespace mg = mir::graphics;
 namespace geom = mir::geometry;

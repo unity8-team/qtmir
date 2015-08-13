@@ -365,6 +365,8 @@ static uint32_t translateKeysym(uint32_t sym, char *string, size_t size) {
     return toupper(sym);
 }
 
+using namespace qtmir;
+
 namespace {
 
 class QtWindowSystem : public QtEventFeeder::QtWindowSystemInterface

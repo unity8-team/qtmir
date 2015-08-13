@@ -35,7 +35,7 @@ class MirServerThread;
 struct QMirServerPrivate
 {
     QSharedPointer<MirServer> server;
-    QSharedPointer<ScreenController> screenController;
+    QSharedPointer<qtmir::ScreenController> screenController;
     MirServerThread *serverThread;
 };
 

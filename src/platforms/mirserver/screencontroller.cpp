@@ -38,6 +38,7 @@
 Q_LOGGING_CATEGORY(QTMIR_SCREENS, "qtmir.screens")
 
 namespace mg = mir::graphics;
+using namespace qtmir;
 
 ScreenController::ScreenController(QObject *parent)
     : QObject(parent)

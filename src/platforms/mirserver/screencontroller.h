@@ -31,8 +31,11 @@ namespace mir {
     namespace graphics { class Display; }
     namespace compositor { class Compositor; }
 }
-class Screen;
 class QWindow;
+
+namespace qtmir
+{
+class Screen;
 
 /*
  * ScreenController monitors the Mir display configuration and compositor status, and updates
@@ -92,5 +95,7 @@ private:
     std::shared_ptr<mir::compositor::Compositor> m_compositor;
     QList<Screen*> m_screenList;
 };
+
+} // namespace qtmir
 
 #endif // SCREENCONTROLLER_H

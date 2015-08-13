@@ -50,6 +50,8 @@
 
 namespace mg = mir::graphics;
 using qtmir::Clipboard;
+using qtmir::Screen;
+using qtmir::ScreenController;
 
 MirServerIntegration::MirServerIntegration()
     : m_accessibility(new QPlatformAccessibility())

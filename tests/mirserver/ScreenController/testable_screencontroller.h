@@ -17,12 +17,12 @@
 #include "screencontroller.h"
 #include "stub_screen.h"
 
-struct TestableScreenController : public ScreenController
+struct TestableScreenController : public qtmir::ScreenController
 {
     Q_OBJECT
 
 public:
-    Screen *createScreen(const mir::graphics::DisplayConfigurationOutput &output) const override
+    qtmir::Screen *createScreen(const mir::graphics::DisplayConfigurationOutput &output) const override
     {
         return new StubScreen(output);
     }

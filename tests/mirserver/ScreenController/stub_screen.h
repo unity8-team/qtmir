@@ -19,13 +19,13 @@
 
 #include "screen.h"
 
-class StubScreen : public Screen
+class StubScreen : public qtmir::Screen
 {
     Q_OBJECT
 public:
-    StubScreen(const mir::graphics::DisplayConfigurationOutput &output) : Screen(output) {}
+    StubScreen(const mir::graphics::DisplayConfigurationOutput &output) : qtmir::Screen(output) {}
 
-    void makeCurrent() { Screen::makeCurrent(); }
+    void makeCurrent() { qtmir::Screen::makeCurrent(); }
 };
 
 #endif // STUBSCREEN_H
