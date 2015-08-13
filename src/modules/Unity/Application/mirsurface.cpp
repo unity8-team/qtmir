@@ -269,7 +269,7 @@ void MirSurface::dropPendingBuffer()
     const void* const userId = (void*)123;
 
     const int framesPending = m_surface->buffers_ready_for_compositor(userId);
-    while (framesPending > 0) {
+    if (framesPending > 0) {
         for (auto const &renderable : m_surface->generate_renderables(userId)) {
             // The line below looks like an innocent, effect-less, getter. But as this
             // method returns a unique_pointer, not holding its reference causes the
