@@ -1,9 +1,9 @@
-qtubuntu (0.62) UNRELEASED; urgency=medium
+qtubuntu (0.62+15.04.20150814-0ubuntu1) vivid; urgency=medium
 
   [ Daniel D'Andrada ]
   * fix busy buffer swapping
 
- -- Michael Zanetti <michael.zanetti@canonical.com>  Fri, 14 Aug 2015 14:16:55 +0200
+ -- CI Train Bot <ci-train-bot@canonical.com>  Fri, 14 Aug 2015 12:18:27 +0000
 
 qtubuntu (0.61+15.10.20150722-0ubuntu3) wily; urgency=medium
 
