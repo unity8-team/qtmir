@@ -1,3 +1,10 @@
+qtubuntu (0.62) UNRELEASED; urgency=medium
+
+  [ Daniel D'Andrada ]
+  * fix busy buffer swapping
+
+ -- Michael Zanetti <michael.zanetti@canonical.com>  Fri, 14 Aug 2015 14:16:55 +0200
+
 qtubuntu (0.61+15.10.20150722-0ubuntu3) wily; urgency=medium
 
   * No-change rebuild to pick up qtbase change.
