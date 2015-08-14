@@ -38,7 +38,7 @@ MousePointer::MousePointer(QQuickItem *parent)
     updateCursorName();
 }
 
-void MousePointer::handleMouseEvent(ulong timestamp, QPointF movement, Qt::MouseButton buttons,
+void MousePointer::handleMouseEvent(QWindow *window, ulong timestamp, QPointF movement, Qt::MouseButton buttons,
         Qt::KeyboardModifiers modifiers)
 {
     Q_UNUSED(timestamp);
@@ -66,7 +66,7 @@ void MousePointer::handleMouseEvent(ulong timestamp, QPointF movement, Qt::Mouse
     setY(newY);
 
     QPointF scenePosition = mapToItem(nullptr, QPointF(0, 0));
-    QWindowSystemInterface::handleMouseEvent(window(), timestamp, scenePosition /*local*/, scenePosition /*global*/,
+    QWindowSystemInterface::handleMouseEvent(window, timestamp, scenePosition /*local*/, scenePosition /*global*/,
         buttons, modifiers);
 }
 

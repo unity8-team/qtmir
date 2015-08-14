@@ -47,7 +47,7 @@ Q_SIGNALS:
     void hotspotYChanged(qreal value);
 
 public Q_SLOTS:
-    virtual void handleMouseEvent(ulong timestamp, QPointF movement, Qt::MouseButton buttons,
+    virtual void handleMouseEvent(QWindow *window, ulong timestamp, QPointF movement, Qt::MouseButton buttons,
             Qt::KeyboardModifiers modifiers) = 0;
 
 };

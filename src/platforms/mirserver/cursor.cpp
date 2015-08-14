@@ -108,7 +108,7 @@ void Cursor::setPos(const QPoint &pos)
     movement.setX(pos.x() - mouseScenePos.x());
     movement.setY(pos.y() - mouseScenePos.y());
 
-    m_mousePointer->handleMouseEvent(0 /*timestamp*/, movement, Qt::NoButton, Qt::NoModifier);
+    m_mousePointer->handleMouseEvent(0, 0 /*timestamp*/, movement, Qt::NoButton, Qt::NoModifier);
 }
 
 QPoint Cursor::pos() const

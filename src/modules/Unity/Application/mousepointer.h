@@ -42,7 +42,7 @@ public:
     qreal hotspotY() const override {return m_hotspotY;}
 
 public Q_SLOTS:
-    void handleMouseEvent(ulong timestamp, QPointF movement, Qt::MouseButton buttons,
+    void handleMouseEvent(QWindow *window, ulong timestamp, QPointF movement, Qt::MouseButton buttons,
             Qt::KeyboardModifiers modifiers) override;
 
 protected:
