@@ -538,6 +538,7 @@ void QtEventFeeder::dispatchPointer(MirInputEvent const* ev)
                                mir_pointer_event_axis_value(pev, mir_pointer_axis_y));
 
     auto window = mQtWindowSystem->getWindowForTouchPoint(localPoint.toPoint());
+    if (!window) return;
     localPoint -= window->geometry().topLeft(); // make position relative to window
 
     mQtWindowSystem->handleMouseEvent(window, timestamp, movement,
