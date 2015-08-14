@@ -179,6 +179,44 @@ void ScreenController::update()
     }
     qCDebug(QTMIR_SCREENS) << "=======================================";
 
+    /* HACK FOR CLONE DEMO PURPOSES */
+    if (m_screenList.size() > 0)
+    {
+        QRect intersection;
+        qtmir::Screen *internalScreen = nullptr;
+
+        // Get the internal screen geometry, all others have to be rotated against it
+        for (auto screen: m_screenList) {
+            if (screen->outputType() == mg::DisplayConfigurationOutputType::lvds) {
+                internalScreen = screen;
+                intersection = internalScreen->geometry();
+                break;
+            }
+        }
+
+        // Find intersection of internal screen with rotated external displays
+        for (auto screen: m_screenList) {
+            if (screen == internalScreen) continue;
+            if (intersection.width() > screen->geometry().height()) {
+                 intersection.setWidth(screen->geometry().height());
+            }
+            if (intersection.height() > screen->geometry().width()) {
+                 intersection.setHeight(screen->geometry().width());
+            }
+        }
+
+        // Set the single output window to this size, so appears unoccluded on all displays
+        for (auto screen: m_screenList) {
+            auto window = static_cast<ScreenWindow *>(screen->window());
+            if (window && window->window()) {
+                qDebug() << "MainWindow setGeometry" << intersection;
+                window->setGeometry(intersection);
+                QWindowSystemInterface::handleGeometryChange(window->window(), intersection);
+                QWindowSystemInterface::flushWindowSystemEvents();
+            }
+        }
+    }
+
     for (auto screen : newScreenList) {
         Q_EMIT screenAdded(screen);
     }
