@@ -1853,3 +1853,107 @@ TEST_F(ApplicationManagerTests,lifecycleExemptAppsHaveWakelockReleasedOnAttempte
     ASSERT_EQ(Application::InternalState::RunningInBackground, application->internalState());
     EXPECT_EQ(Application::Running, application->state());
 }
+
+/*
+ * Test that if a Running foreground application is destroys its surface, and then
+ * is reported to be stopping by Mir, AppMan removes it from the model (related to bug 1483840)
+ */
+TEST_F(ApplicationManagerTests,AppDestroysSurfaceBeforeStopping_AppManRemovesAppFromList)
+{
+    using namespace ::testing;
+    const QString appId("testAppId");
+    quint64 procId = 5551;
+
+    // Set up Mocks & signal watcher
+    auto mockDesktopFileReader = new NiceMock<MockDesktopFileReader>(appId, QFileInfo());
+    ON_CALL(*mockDesktopFileReader, loaded()).WillByDefault(Return(true));
+    ON_CALL(*mockDesktopFileReader, appId()).WillByDefault(Return(appId));
+
+    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Return(mockDesktopFileReader));
+
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
+
+    applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    applicationManager.onProcessStarting(appId);
+    std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
+    bool authed = true;
+    applicationManager.authorizeSession(procId, authed);
+    onSessionStarting(session);
+
+    // Associate a surface so AppMan considers app Running, check focused
+    FakeMirSurfaceItem *surface = new FakeMirSurfaceItem;
+    onSessionCreatedSurface(session.get(), surface);
+    surface->drawFirstFrame();
+
+    QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
+    QSignalSpy removedSpy(&applicationManager, SIGNAL(applicationRemoved(const QString &)));
+
+    // App destroys its surface, so shell calls release on the Session (the fact that Session is being exposed
+    // to the shell at all is a giant REMOVEME)
+    Application *app = applicationManager.findApplication(appId);
+    app->session()->release();
+
+    // Mir notifies of stopping app
+    onSessionStopping(session);
+
+    EXPECT_EQ(countSpy.count(), 2); //FIXME(greyback)
+    EXPECT_EQ(applicationManager.count(), 0);
+}
+
+/*
+ * Test that if an application (one launched via desktop_file_hint) destroys its surface, and then
+ * is reported to be stopping by Mir, AppMan removes it from the model (bug 1483840)
+ */
+TEST_F(ApplicationManagerTests,AppLaunchedWithDesktopFileHint_DestroysSurfaceBeforeStopping_AppManRemovesAppFromList)
+{
+    using namespace ::testing;
+    const QString appId("testAppId");
+    const QString name("Test App");
+    quint64 procId = 5551;
+    QByteArray cmdLine("/usr/bin/testApp --desktop_file_hint=");
+    cmdLine = cmdLine.append(appId);
+
+    // Set up Mocks & signal watcher
+    EXPECT_CALL(procInfo,command_line(procId))
+        .Times(1)
+        .WillOnce(Return(cmdLine));
+
+    auto mockDesktopFileReader = new NiceMock<MockDesktopFileReader>(appId, QFileInfo());
+    ON_CALL(*mockDesktopFileReader, loaded()).WillByDefault(Return(true));
+    ON_CALL(*mockDesktopFileReader, appId()).WillByDefault(Return(appId));
+    ON_CALL(*mockDesktopFileReader, name()).WillByDefault(Return(name));
+
+    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Return(mockDesktopFileReader));
+
+    // Mir requests authentication for an application that was started
+    bool authed = true;
+    applicationManager.authorizeSession(procId, authed);
+    EXPECT_EQ(authed, true);
+    std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
+    onSessionStarting(session);
+
+    // Associate a surface so AppMan considers app Running, check focused
+    FakeMirSurfaceItem *surface = new FakeMirSurfaceItem;
+    onSessionCreatedSurface(session.get(), surface);
+    surface->drawFirstFrame();
+
+    QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
+    QSignalSpy removedSpy(&applicationManager, SIGNAL(applicationRemoved(const QString &)));
+
+    // App destroys its surface, so shell calls release on the Session (the fact that Session is being exposed
+    // to the shell at all is a giant REMOVEME)
+    Application *app = applicationManager.findApplication(appId);
+    app->session()->release();
+
+    // Mir notifies of stopping app
+    onSessionStopping(session);
+
+    EXPECT_EQ(countSpy.count(), 2); //FIXME(greyback)
+    EXPECT_EQ(applicationManager.count(), 0);
+    EXPECT_EQ(removedSpy.count(), 1);
+
+    app = applicationManager.findApplication(appId);
+    EXPECT_EQ(nullptr, app);
+}
