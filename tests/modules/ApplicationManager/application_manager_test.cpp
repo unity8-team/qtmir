@@ -1944,12 +1944,11 @@ TEST_F(ApplicationManagerTests,AppWaitingForSuspendStops_AppManRemovesAppFromLis
     surface->drawFirstFrame();
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
-    QSignalSpy removedSpy(&applicationManager, SIGNAL(applicationRemoved(const QString &)));
 
     // App destroys its surface, so shell calls release on the Session (the fact that Session is being exposed
     // to the shell at all is a giant REMOVEME)
     Application *app = applicationManager.findApplication(appId);
-    app->suspendProcessRequested();
+    app->setRequestedState(unity::shell::application::ApplicationInfoInterface::RequestedSuspended);
 
     // Mir notifies of stopping app
     onSessionStopping(session);
