@@ -76,11 +76,7 @@ Session::~Session()
         m_parentSession->removeChildSession(this);
     }
     if (m_application) {
-        if (m_application->canBeResumed()) {
-            m_application->setSession(nullptr);
-        } else {
-            m_application->deleteLater();
-        }
+        m_application->setSession(nullptr);
     }
     delete m_surface; m_surface = nullptr;
     delete m_children; m_children = nullptr;

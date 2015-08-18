@@ -635,7 +635,8 @@ void ApplicationManager::authorizeSession(const quint64 pid, bool &authorized)
         m_sharedWakelock,
         desktopData,
         arguments,
-        this);
+        this,
+        false);
     application->setPid(pid);
     application->setStage(stage);
     add(application);

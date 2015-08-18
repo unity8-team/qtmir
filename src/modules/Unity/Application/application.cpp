@@ -42,7 +42,8 @@ QStringList Application::lifecycleExceptions;
 Application::Application(const QSharedPointer<SharedWakelock>& sharedWakelock,
                          DesktopFileReader *desktopFileReader,
                          const QStringList &arguments,
-                         ApplicationManager *parent)
+                         ApplicationManager *parent,
+                         const bool canBeResumed)
     : ApplicationInfoInterface(desktopFileReader->appId(), parent)
     , m_sharedWakelock(sharedWakelock)
     , m_desktopData(desktopFileReader)
@@ -54,6 +55,7 @@ Application::Application(const QSharedPointer<SharedWakelock>& sharedWakelock,
     , m_session(nullptr)
     , m_requestedState(RequestedRunning)
     , m_processState(ProcessUnknown)
+    , m_canBeResumed(canBeResumed)
 {
     qCDebug(QTMIR_APPLICATIONS) << "Application::Application - appId=" << desktopFileReader->appId();
 
@@ -366,7 +368,7 @@ bool Application::fullscreen() const
 
 bool Application::canBeResumed() const
 {
-    return m_processState != ProcessUnknown;
+    return m_canBeResumed && m_processState != ProcessUnknown;
 }
 
 pid_t Application::pid() const
@@ -426,6 +428,10 @@ void Application::setSession(SessionInterface *newSession)
 
         if (oldFullscreen != fullscreen())
             Q_EMIT fullscreenChanged(fullscreen());
+    } else {
+        if (!canBeResumed()) {
+            Q_EMIT stopped();
+        }
     }
 
     Q_EMIT sessionChanged(m_session);
@@ -635,14 +641,16 @@ void Application::onSessionStateChanged(Session::State sessionState)
     case Session::Stopped:
         if (!canBeResumed()
                 || m_state == InternalState::Starting
-                || m_state == InternalState::Running) {
+                || m_state == InternalState::Running
+                || m_state == InternalState::SuspendingWaitSession
+                || m_state == InternalState::SuspendingWaitProcess) {
             /*  1. application is not managed by upstart
              *  2. application is managed by upstart, but has stopped before it managed
              *     to create a surface, we can assume it crashed on startup, and thus
              *     cannot be resumed
-             *  3. application is managed by upstart and is in foreground (i.e. has
-             *     Running state), if Mir reports the application disconnects, it
-             *     either crashed or stopped itself.
+             *  3. application is managed by upstart which is in neither a Suspended
+             *     or Stopped state), if Mir reports the application disconnects, that
+             *     means it either crashed or stopped itself.
              */
             setInternalState(InternalState::Stopped);
         } else {

@@ -79,7 +79,8 @@ public:
     Application(const QSharedPointer<SharedWakelock>& sharedWakelock,
                 DesktopFileReader *desktopFileReader,
                 const QStringList &arguments,
-                ApplicationManager *parent);
+                ApplicationManager *parent,
+                const bool canBeResumed = true);
     virtual ~Application();
 
     // ApplicationInfoInterface
@@ -174,6 +175,7 @@ private:
     SessionInterface *m_session;
     RequestedState m_requestedState;
     ProcessState m_processState;
+    const bool m_canBeResumed;
 
     friend class ApplicationManager;
     friend class SessionManager;
