@@ -641,9 +641,7 @@ void Application::onSessionStateChanged(Session::State sessionState)
     case Session::Stopped:
         if (!canBeResumed()
                 || m_state == InternalState::Starting
-                || m_state == InternalState::Running
-                || m_state == InternalState::SuspendingWaitSession
-                || m_state == InternalState::SuspendingWaitProcess) {
+                || m_state == InternalState::Running) {
             /*  1. application is not managed by upstart
              *  2. application is managed by upstart, but has stopped before it managed
              *     to create a surface, we can assume it crashed on startup, and thus
