@@ -349,7 +349,7 @@ QString MirSurfaceItem::name() const
 
 bool MirSurfaceItem::isInPromptSession() const
 {
-    return false;
+    return m_isInPromptSession;
 }
 
 bool MirSurfaceItem::live() const
