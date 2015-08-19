@@ -59,6 +59,7 @@ public:
     Type type() const override;
     State state() const override;
     QString name() const override;
+    bool isInPromptSession() const override;
     bool live() const override;
     SessionInterface *session() const override;
     OrientationAngle orientationAngle() const override;
@@ -74,6 +75,7 @@ public:
 
     bool isFirstFrameDrawn() const override { return m_firstFrameDrawn; }
 
+    void setIsInPromptSession(bool) override;
     void setOrientationAngle(OrientationAngle angle) override;
     void setSession(SessionInterface *app) override;
 
@@ -145,6 +147,7 @@ private:
     QPointer<SessionInterface> m_session;
     MirShell *const m_shell;
     bool m_firstFrameDrawn;
+    bool m_isInPromptSession;
     bool m_live;
 
     //FIXME -  have to save the state as Mir has no getter for it (bug:1357429)

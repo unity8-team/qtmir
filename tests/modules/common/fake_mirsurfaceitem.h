@@ -29,6 +29,7 @@ public:
     FakeMirSurfaceItem(QQuickItem *parent = nullptr)
         : MirSurfaceItemInterface(parent)
         , m_state(Restored)
+        , m_isInPromptSession(false)
         , m_live(true)
         , m_session(nullptr)
         , m_isFirstFrameDrawn(false)
@@ -38,6 +39,7 @@ public:
     Type type() const override { return Normal; }
     State state() const override { return m_state; }
     QString name() const override { return QString("fake app surface"); }
+    bool isInPromptSession() const override { return false; }
     bool live() const override { return m_live; }
     SessionInterface *session() const override { return m_session; }
     OrientationAngle orientationAngle() const override { return Angle0; }
@@ -53,6 +55,10 @@ public:
 
     bool isFirstFrameDrawn() const override {
         return m_isFirstFrameDrawn;
+    }
+
+    void setIsInPromptSession(bool value) override {
+        m_isInPromptSession = value;
     }
 
     void setOrientationAngle(OrientationAngle) override {
@@ -84,6 +90,7 @@ private:
     void setLive(bool value) override { m_live = value; }
 
     State m_state;
+    bool m_isInPromptSession;
     bool m_live;
     SessionInterface *m_session;
     bool m_isFirstFrameDrawn;

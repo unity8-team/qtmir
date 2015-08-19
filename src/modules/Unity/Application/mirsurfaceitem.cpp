@@ -191,6 +191,7 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     , m_session(session)
     , m_shell(shell)
     , m_firstFrameDrawn(false)
+    , m_isInPromptSession(false)
     , m_live(true)
     , m_orientationAngle(Angle0)
     , m_textureProvider(nullptr)
@@ -344,6 +345,11 @@ QString MirSurfaceItem::name() const
 {
     //FIXME - how to listen to change in this property?
     return QString::fromStdString(m_surface->name());
+}
+
+bool MirSurfaceItem::isInPromptSession() const
+{
+    return false;
 }
 
 bool MirSurfaceItem::live() const
@@ -666,6 +672,11 @@ void MirSurfaceItem::setState(const State &state)
     if (this->state() != state) {
         m_shell->set_surface_attribute(m_session->session(), m_surface, mir_surface_attrib_state, static_cast<int>(state));
     }
+}
+
+void MirSurfaceItem::setIsInPromptSession(bool promptSession)
+{
+    m_isInPromptSession = promptSession;
 }
 
 void MirSurfaceItem::setLive(bool live)

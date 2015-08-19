@@ -384,6 +384,8 @@ void Session::appendPromptSession(const std::shared_ptr<ms::PromptSession>& prom
             << "promptSession=" << (promptSession ? promptSession.get() : nullptr);
 
     m_promptSessions.append(promptSession);
+    m_surface->setIsInPromptSession(true);
+    //Q_EMIT isInPromptSessionChanged();
 }
 
 void Session::removePromptSession(const std::shared_ptr<ms::PromptSession>& promptSession)
@@ -391,6 +393,8 @@ void Session::removePromptSession(const std::shared_ptr<ms::PromptSession>& prom
     qCDebug(QTMIR_SESSIONS) << "Session::removePromptSession session=" << name()
             << "promptSession=" << (promptSession ? promptSession.get() : nullptr);
 
+    m_surface->setIsInPromptSession(false);
+    //Q_EMIT isInPromptSessionChanged();
     m_promptSessions.removeAll(promptSession);
 }
 

@@ -37,6 +37,7 @@ class MirSurfaceItemInterface : public QQuickItem
     Q_PROPERTY(Type type READ type NOTIFY typeChanged)
     Q_PROPERTY(State state READ state NOTIFY stateChanged)
     Q_PROPERTY(QString name READ name NOTIFY nameChanged)
+    Q_PROPERTY(bool isInPromptSession READ isInPromptSession NOTIFY isInPromptSessionChanged)
     Q_PROPERTY(bool live READ live NOTIFY liveChanged)
 
     // How many degrees, clockwise, the UI in the surface has to rotate to match with the
@@ -79,6 +80,7 @@ public:
     virtual Type type() const = 0;
     virtual State state() const = 0;
     virtual QString name() const = 0;
+    virtual bool isInPromptSession() const = 0;
     virtual bool live() const = 0;
     virtual SessionInterface *session() const = 0;
     virtual OrientationAngle orientationAngle() const = 0;
@@ -90,6 +92,7 @@ public:
 
     virtual bool isFirstFrameDrawn() const = 0;
 
+    virtual void setIsInPromptSession(bool) = 0;
     virtual void setOrientationAngle(OrientationAngle angle) = 0;
     virtual void setSession(SessionInterface *app) = 0;
 
@@ -98,6 +101,7 @@ Q_SIGNALS:
     void stateChanged();
     void nameChanged();
     void orientationAngleChanged(OrientationAngle angle);
+    void isInPromptSessionChanged(bool isInPromptSession);
     void liveChanged(bool live);
     void firstFrameDrawn();
 
