@@ -4,6 +4,13 @@ qtmir-gles (0.4.5+15.04.20150820.2-0ubuntu1) UNRELEASED; urgency=medium
 
  -- Michael Zanetti <michael.zanetti@canonical.com>  Thu, 20 Aug 2015 18:49:34 +0200
 
+qtmir-gles (0.4.5+15.04.20150820-0ubuntu1) vivid; urgency=medium
+
+  [ Michael Zanetti ]
+  * sync with upstream
+
+ -- CI Train Bot <ci-train-bot@canonical.com>  Thu, 20 Aug 2015 13:35:28 +0000
+
 qtmir-gles (0.4.5+15.04.20150812.1-0ubuntu1) vivid; urgency=medium
 
   [ Łukasz 'sil2100' Zemczak ]
