@@ -446,20 +446,22 @@ QtEventFeeder::~QtEventFeeder()
 
 bool QtEventFeeder::dispatch(MirEvent const& event)
 {
-    auto type = mir_event_get_type(&event);
-    if (type != mir_event_type_input)
+    if (mir_event_get_type(&event) != mir_event_type_input)
         return false;
-    auto iev = mir_event_get_input_event(&event);
+    auto const iev = mir_event_get_input_event(&event);
+
+    // Convert nanoseconds to milliseconds, precision lost but time difference suitable
+    auto const timestamp = mir_input_event_get_event_time(iev) / 1000000;
 
     switch (mir_input_event_get_type(iev)) {
     case mir_input_event_type_key:
-        dispatchKey(iev);
+        dispatchKey(mir_input_event_get_keyboard_event(iev), timestamp);
         break;
     case mir_input_event_type_touch:
-        dispatchTouch(iev);
+        dispatchTouch(mir_input_event_get_touch_event(iev), timestamp);
         break;
     case mir_input_event_type_pointer:
-        dispatchPointer(iev);
+        dispatchPointer(mir_input_event_get_pointer_event(iev), timestamp);
     default:
         break;
     }
@@ -506,14 +508,11 @@ Qt::MouseButton getQtMouseButtonsfromMirPointerEvent(MirPointerEvent const* pev)
 }
 }
 
-void QtEventFeeder::dispatchPointer(MirInputEvent const* ev)
+void QtEventFeeder::dispatchPointer(MirPointerEvent const* pev, ulong timestamp)
 {
     if (!mQtWindowSystem->hasTargetWindow())
         return;
 
-    auto timestamp = mir_input_event_get_event_time(ev) / 1000000;
-
-    auto pev = mir_input_event_get_pointer_event(ev);
     auto modifiers = getQtModifiersFromMir(mir_pointer_event_modifiers(pev));
     auto buttons = getQtMouseButtonsfromMirPointerEvent(pev);
 
@@ -524,14 +523,11 @@ void QtEventFeeder::dispatchPointer(MirInputEvent const* ev)
                                       buttons, modifiers);
 }
 
-void QtEventFeeder::dispatchKey(MirInputEvent const* event)
+void QtEventFeeder::dispatchKey(MirKeyboardEvent const* kev, ulong timestamp)
 {
     if (!mQtWindowSystem->hasTargetWindow())
         return;
 
-    ulong timestamp = mir_input_event_get_event_time(event) / 1000000;
-
-    auto kev = mir_input_event_get_keyboard_event(event);
     xkb_keysym_t xk_sym = mir_keyboard_event_key_code(kev);
 
     // Key modifier and unicode index mapping.
@@ -581,12 +577,11 @@ void QtEventFeeder::dispatchKey(MirInputEvent const* event)
         mir_keyboard_event_modifiers(kev), text, is_auto_rep);
 }
 
-void QtEventFeeder::dispatchTouch(MirInputEvent const* event)
+void QtEventFeeder::dispatchTouch(MirTouchEvent const* tev, ulong timestamp)
 {
     if (!mQtWindowSystem->hasTargetWindow())
         return;
 
-    auto tev = mir_input_event_get_touch_event(event);
     qCDebug(QTMIR_MIR_INPUT) << "Received" << qPrintable(mirTouchEventToString(tev));
 
     // FIXME(loicm) Max pressure is device specific. That one is for the Samsung Galaxy Nexus. That
@@ -631,13 +626,12 @@ void QtEventFeeder::dispatchTouch(MirInputEvent const* event)
 
     // Qt needs a happy, sane stream of touch events. So let's make sure we're not forwarding
     // any insanity.
-    validateTouches(mir_input_event_get_event_time(event) / 1000000, touchPoints);
+    validateTouches(timestamp, touchPoints);
 
     // Touch event propagation.
     qCDebug(QTMIR_MIR_INPUT) << "Sending to Qt" << qPrintable(touchesToString(touchPoints));
     mQtWindowSystem->handleTouchEvent(
-        //scales down the nsec_t (int64) to fit a ulong, precision lost but time difference suitable
-        mir_input_event_get_event_time(event) / 1000000,
+        timestamp,
         mTouchDevice,
         touchPoints);
 }

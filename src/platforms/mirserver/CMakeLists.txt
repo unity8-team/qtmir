@@ -42,6 +42,7 @@ add_definitions(-DBYTE_ORDER=__BYTE_ORDER)
 
 set(MIRSERVER_QPA_PLUGIN_SRC
     ${CMAKE_SOURCE_DIR}/src/common/debughelpers.cpp
+    canonical_window_manager_info.cpp
     mirwindowmanager.cpp
     qteventfeeder.cpp
     plugin.cpp
