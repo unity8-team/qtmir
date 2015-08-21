@@ -431,12 +431,27 @@ QSGNode *MirSurfaceItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
         node->setMipmapFiltering(QSGTexture::None);
         node->setHorizontalWrapMode(QSGTexture::ClampToEdge);
         node->setVerticalWrapMode(QSGTexture::ClampToEdge);
-        node->setSubSourceRect(QRectF(0, 0, 1, 1));
     } else {
         if (textureUpdated) {
             node->markDirty(QSGNode::DirtyMaterial);
         }
     }
+
+    /*
+     * Set texture coordinates correctly so we never see stretching.
+     * The client is a separate process so we must excuse it for lagging
+     * behind a little. The key is to choose texture coordinates in such
+     * a way that even when the texture dimensions differ from the window
+     * dimensions, a single texel still ends up fitting a screen pixel
+     * perfectly.
+     * This way any difference in dimensions is only visible at the right
+     * and bottom edges, either cut off or filled in using the edge colour
+     * (that's what QSGTexture::ClampToEdge above is for).
+     */
+    const QSize &textureSize = m_textureProvider->t->textureSize();
+    qreal u = static_cast<qreal>(width()) / textureSize.width();
+    qreal v = static_cast<qreal>(height()) / textureSize.height();
+    node->setSubSourceRect(QRectF(0, 0, u, v));
 
     node->setTargetRect(QRectF(0, 0, width(), height()));
     node->setInnerTargetRect(QRectF(0, 0, width(), height()));
