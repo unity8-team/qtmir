@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2014 Canonical, Ltd.
+ * Copyright (C) 2013-2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -63,8 +63,8 @@ public:
     static MirSurfaceManager* singleton();
 
 Q_SIGNALS:
-    void surfaceCreated(MirSurfaceItem* surface);
-    void surfaceDestroyed(MirSurfaceItem* surface);
+    void surfaceCreated(MirSurfaceItemInterface* surface);
+    void surfaceDestroyed(MirSurfaceItemInterface* surface);
 //    void surfaceResized(MirSurface*);
 //    void fullscreenSurfaceChanged();
 
@@ -73,7 +73,7 @@ public Q_SLOTS:
     void onSessionDestroyingSurface(const mir::scene::Session *, const std::shared_ptr<mir::scene::Surface> &);
 
 protected:
-    QHash<const mir::scene::Surface *, MirSurfaceItem *> m_mirSurfaceToItemHash;
+    QHash<const mir::scene::Surface *, MirSurfaceItemInterface *> m_mirSurfaceToItemHash;
     QMutex m_mutex;
 
 private:

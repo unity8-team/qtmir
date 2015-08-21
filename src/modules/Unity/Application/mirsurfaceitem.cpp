@@ -12,10 +12,6 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Authors:
- *     Daniel d'Andrada <daniel.dandrada@canonical.com>
- *     Gerry Boland <gerry.boland@canonical.com>
  */
 
 // local
@@ -190,7 +186,7 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
                                MirShell *shell,
                                std::shared_ptr<SurfaceObserver> observer,
                                QQuickItem *parent)
-    : QQuickItem(parent)
+    : MirSurfaceItemInterface(parent)
     , m_surface(surface)
     , m_session(session)
     , m_shell(shell)
@@ -233,7 +229,7 @@ MirSurfaceItem::MirSurfaceItem(std::shared_ptr<mir::scene::Surface> surface,
     QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
 
     connect(&m_frameDropperTimer, &QTimer::timeout,
-            this, &MirSurfaceItem::dropPendingBuffers);
+            this, &MirSurfaceItem::dropPendingBuffer);
     // Rationale behind the frame dropper and its interval value:
     //
     // We want to give ample room for Qt scene graph to have a chance to fetch and render
@@ -375,7 +371,7 @@ void MirSurfaceItem::surfaceDamaged()
 {
     if (!m_firstFrameDrawn) {
         m_firstFrameDrawn = true;
-        Q_EMIT firstFrameDrawn(this);
+        Q_EMIT firstFrameDrawn();
     }
 
     scheduleTextureUpdate();
@@ -561,7 +557,7 @@ void MirSurfaceItem::endCurrentTouchSequence(ulong timestamp)
 
         touchEvent.updateTouchPointStatesAndType();
 
-        auto ev = makeMirEvent(touchEvent.modifiers, touchEvent.touchPoints, 
+        auto ev = makeMirEvent(touchEvent.modifiers, touchEvent.touchPoints,
                                touchEvent.touchPointStates, touchEvent.timestamp);
         m_surface->consume(*ev);
 
@@ -672,7 +668,7 @@ void MirSurfaceItem::setState(const State &state)
     }
 }
 
-void MirSurfaceItem::setLive(const bool live)
+void MirSurfaceItem::setLive(bool live)
 {
     if (m_live != live) {
         m_live = live;
@@ -728,6 +724,13 @@ void MirSurfaceItem::updateMirSurfaceSize()
 void MirSurfaceItem::updateMirSurfaceFocus(bool focused)
 {
     qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::updateMirSurfaceFocus" << focused;
+
+    // Temporary hotfix for http://pad.lv/1483752
+    if (session() && session()->childSessions()->rowCount() > 0) {
+        // has child trusted session, ignore any focus change attempts
+        return;
+    }
+
     if (focused) {
         m_shell->set_surface_attribute(m_session->session(), m_surface, mir_surface_attrib_focus, mir_surface_focused);
     } else {
@@ -735,22 +738,23 @@ void MirSurfaceItem::updateMirSurfaceFocus(bool focused)
     }
 }
 
-void MirSurfaceItem::dropPendingBuffers()
+void MirSurfaceItem::dropPendingBuffer()
 {
     QMutexLocker locker(&m_mutex);
 
     const void* const userId = (void*)123;  // TODO: Multimonitor support
 
-    while (m_surface->buffers_ready_for_compositor(userId) > 0) {
+    int framesPending = m_surface->buffers_ready_for_compositor(userId);
+    if (framesPending > 0) {
         // The line below looks like an innocent, effect-less, getter. But as this
         // method returns a unique_pointer, not holding its reference causes the
         // buffer to be destroyed/released straight away.
         for (auto const & item : m_surface->generate_renderables(userId))
             item->buffer();
-        qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::dropPendingBuffers()"
+        qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::dropPendingBuffer()"
             << "surface =" << this
             << "buffer dropped."
-            << m_surface->buffers_ready_for_compositor(userId)
+            << framesPending-1
             << "left.";
     }
 }

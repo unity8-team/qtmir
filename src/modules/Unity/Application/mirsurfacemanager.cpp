@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2014 Canonical, Ltd.
+ * Copyright (C) 2013-2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -111,11 +111,11 @@ void MirSurfaceManager::onSessionCreatedSurface(const mir::scene::Session *mirSe
         session->setSurface(qmlSurface);
 
     // Only notify QML of surface creation once it has drawn its first frame.
-    connect(qmlSurface, &MirSurfaceItem::firstFrameDrawn, this, [&](MirSurfaceItem *item) {
+    connect(qmlSurface, &MirSurfaceItemInterface::firstFrameDrawn, this, [=]() {
         tracepoint(qtmir, firstFrameDrawn);
-        Q_EMIT surfaceCreated(item);
+        Q_EMIT surfaceCreated(qmlSurface);
 
-        insert(0, item);
+        insert(0, qmlSurface);
     });
 
     // clean up after MirSurfaceItem is destroyed
@@ -138,7 +138,7 @@ void MirSurfaceManager::onSessionDestroyingSurface(const mir::scene::Session *se
     qCDebug(QTMIR_SURFACES) << "MirSurfaceManager::onSessionDestroyingSurface - session=" << session
                             << "surface=" << surface.get() << "surface.name=" << surface->name().c_str();
 
-    MirSurfaceItem* item = nullptr;
+    MirSurfaceItemInterface* item = nullptr;
     {
         QMutexLocker lock(&m_mutex);
         auto it = m_mirSurfaceToItemHash.find(surface.get());

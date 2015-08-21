@@ -12,7 +12,6 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 #define MIR_INCLUDE_DEPRECATED_EVENT_HEADER
@@ -23,7 +22,7 @@
 #include <QTest>
 
 // the test subject
-#include <mirsurfaceitem.h>
+#include <Unity/Application/mirsurfaceitem.h>
 
 // mocks
 #include <mock_surface.h>
