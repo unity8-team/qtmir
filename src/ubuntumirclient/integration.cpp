@@ -79,6 +79,8 @@ UbuntuClientIntegration::UbuntuClientIntegration()
                "running, and the correct socket is being used and is accessible. The shell may have\n"
                "rejected the incoming connection, so check its log file");
 
+    mNativeInterface->setMirConnection(u_application_instance_get_mir_connection(mInstance));
+
     // Create default screen.
     mScreen = new UbuntuScreen(u_application_instance_get_mir_connection(mInstance));
     screenAdded(mScreen);
@@ -240,4 +242,9 @@ QVariant UbuntuClientIntegration::styleHint(StyleHint hint) const
 QPlatformClipboard* UbuntuClientIntegration::clipboard() const
 {
     return mClipboard.data();
+}
+
+QPlatformNativeInterface* UbuntuClientIntegration::nativeInterface() const
+{
+    return mNativeInterface;
 }
