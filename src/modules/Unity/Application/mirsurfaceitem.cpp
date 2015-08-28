@@ -418,6 +418,8 @@ bool MirSurfaceItem::updateTexture(const void *userId)
     ensureProvider();
     bool textureUpdated = false;
 
+    userId = "needs to be the same for the optimization to work";
+
     int framesPending = m_surface->buffers_ready_for_compositor(userId);
 
     if (framesPending > 0 || !m_textureProvider->t
