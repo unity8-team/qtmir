@@ -1,3 +1,13 @@
+qtubuntu (0.62+15.04.20150828-0ubuntu1) vivid; urgency=medium
+
+  [ Daniel d'Andrada ]
+  * UbuntuClipboard: ensure DBus has been set up before setting
+    clipboard contents
+  * UbuntuWindow - keep redrawing a bit until you get the promised
+    resized buffer (LP: #1466510)
+
+ -- CI Train Bot <ci-train-bot@canonical.com>  Fri, 28 Aug 2015 08:13:58 +0000
+
 qtubuntu (0.62+15.04.20150814-0ubuntu1) vivid; urgency=medium
 
   [ Daniel D'Andrada ]
