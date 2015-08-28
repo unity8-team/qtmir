@@ -323,7 +323,7 @@ void UbuntuWindow::moveResize(const QRect& rect)
 void UbuntuWindow::handleSurfaceResize(int width, int height)
 {
     QMutexLocker(&d->mutex);
-    LOG("UbuntuWindow::handleSurfaceResize(width=%d, height=%d) [%d]", width, height,
+    DLOG("UbuntuWindow::handleSurfaceResize(width=%d, height=%d) [%d]", width, height,
         d->frameNumber);
 
     // The current buffer size hasn't actually changed. so just render on it and swap
