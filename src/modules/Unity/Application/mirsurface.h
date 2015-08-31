@@ -60,7 +60,7 @@ public:
 
     QSize size() const override;
     void resize(int width, int height) override;
-    void resize(const QSize &size) override { resize(size.width(), size.height()); }
+    void resize(const QSize &size) { resize(size.width(), size.height()); }
 
     Mir::State state() const override;
     void setState(Mir::State qmlState) override;
