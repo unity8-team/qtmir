@@ -49,6 +49,11 @@ void MirBufferSGTexture::freeBuffer()
     m_height = 0;
 }
 
+bool MirBufferSGTexture::hasBuffer() const
+{
+    return !!m_mirBuffer;
+}
+
 void MirBufferSGTexture::setBuffer(std::shared_ptr<mir::graphics::Buffer> buffer)
 {
     m_mirBuffer = buffer;
@@ -64,11 +69,22 @@ int MirBufferSGTexture::textureId() const
 
 QSize MirBufferSGTexture::textureSize() const
 {
+    /*
+     * In between buffer changes we like to keep the same texture allocated,
+     * for performance. So we need to remember the dimensions even after
+     * freeBuffer(), to avoid asking the GPU to reallocate texture memory.
+     */
     return QSize(m_width, m_height);
 }
 
 bool MirBufferSGTexture::hasAlphaChannel() const
 {
+    if (!m_mirBuffer) {
+        return false;
+    }
+
+    // TODO: Support new pixel formats.
+    // TODO more: Add a public function to do this in Mir.
     return m_mirBuffer->pixel_format() == mir_pixel_format_abgr_8888
         || m_mirBuffer->pixel_format() == mir_pixel_format_argb_8888;
 }
@@ -78,4 +94,24 @@ void MirBufferSGTexture::bind()
     glBindTexture(GL_TEXTURE_2D, m_textureId);
     updateBindOptions(true/* force */);
     m_mirBuffer->gl_bind_to_texture();
+    if (m_mirBuffer) {
+        /*
+         * NOTE: Optimal usage of texture binding depends on the type of
+         *       buffer being used. If it's a pure software buffer then
+         *       gl_bind_to_texture() does a copy and you can discard the
+         *       buffer immediately. For hardware buffers however it's more
+         *       common that the texture shares memory with the buffer and
+         *       so both must remain untouched till after swap buffers at
+         *       least.
+         */
+        glBindTexture(GL_TEXTURE_2D, m_textureId);
+        updateBindOptions(true/* force */);
+        m_mirBuffer->gl_bind_to_texture();
+    } else {
+        /*
+         * Occasionally we all forget to set a buffer. However it's most
+         * helpful to see such mistakes as a black surface, rather than crash.
+         */
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
 }

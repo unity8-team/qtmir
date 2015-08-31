@@ -32,6 +32,7 @@ public:
     MirBufferSGTexture();
     virtual ~MirBufferSGTexture();
 
+    bool hasBuffer() const;
     void setBuffer(std::shared_ptr<mir::graphics::Buffer> buffer);
     void freeBuffer();
 
