@@ -34,11 +34,13 @@
 namespace mir {
     namespace scene {
         class Session;
+        class Surface;
         class PromptSession;
     }
 }
 
 class MirServer;
+class SurfaceObserver;
 
 namespace qtmir {
 
@@ -68,6 +70,9 @@ Q_SIGNALS:
 public Q_SLOTS:
     void onSessionStarting(std::shared_ptr<mir::scene::Session> const& session);
     void onSessionStopping(std::shared_ptr<mir::scene::Session> const& session);
+    void onSessionCreatedSurface(const mir::scene::Session *mirSession,
+                                 const std::shared_ptr<mir::scene::Surface> &surface,
+                                 const std::shared_ptr<SurfaceObserver> &observer);
 
     void onPromptSessionStarting(const std::shared_ptr<mir::scene::PromptSession>& promptSession);
     void onPromptSessionStopping(const std::shared_ptr<mir::scene::PromptSession>& promptSession);
@@ -79,6 +84,7 @@ protected:
 private:
     QSharedPointer<MirServer> m_mirServer;
     ApplicationManager* m_applicationManager;
+    QPointer<Session> m_boosterSession;
     static SessionManager *the_session_manager;
 
     QList<Session*> m_sessions;

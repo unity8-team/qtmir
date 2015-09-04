@@ -582,6 +582,13 @@ void ApplicationManager::authorizeSession(const quint64 pid, bool &authorized)
         return;
     }
 
+
+    if (info->startsWith("/usr/libexec/mapplauncherd/booster-qtcomponents-qt5")) {
+        authorized = true;
+        m_boosterPid = pid;
+        return;
+    }
+
     const QString desktopFileName = info->getParameter("--desktop_file_hint=");
 
     if (desktopFileName.isNull()) {

@@ -114,6 +114,8 @@ public:
     const QList<Application*> &list() const { return m_applications; }
     qtmir::Application* findApplicationWithPid(const qint64 pid);
 
+    quint64 boosterPid() const { return m_boosterPid; }
+
 public Q_SLOTS:
     void authorizeSession(const quint64 pid, bool &authorized);
 
@@ -161,6 +163,7 @@ private:
     QSharedPointer<ProcInfo> m_procInfo;
     QSharedPointer<SharedWakelock> m_sharedWakelock;
     QSharedPointer<SettingsInterface> m_settings;
+    quint64 m_boosterPid;
     static ApplicationManager* the_application_manager;
 
     friend class Application;
