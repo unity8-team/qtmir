@@ -32,7 +32,6 @@
 #include "nativeinterface.h"
 #include "sessionlistener.h"
 #include "sessionauthorizer.h"
-#include "taskcontroller.h"
 #include "logging.h"
 
 // mir
@@ -92,19 +91,19 @@ void connectToSessionAuthorizer(ApplicationManager *manager, SessionAuthorizer *
                      manager, &ApplicationManager::authorizeSession, Qt::BlockingQueuedConnection);
 }
 
-void connectToTaskController(ApplicationManager *manager, TaskController *controller)
+void connectToTaskController(ApplicationManager *manager, TaskControllerInterface *controller)
 {
-    QObject::connect(controller, &TaskController::processStarting,
+    QObject::connect(controller, &TaskControllerInterface::processStarting,
                      manager, &ApplicationManager::onProcessStarting);
-    QObject::connect(controller, &TaskController::processStopped,
+    QObject::connect(controller, &TaskControllerInterface::processStopped,
                      manager, &ApplicationManager::onProcessStopped);
-    QObject::connect(controller, &TaskController::processSuspended,
+    QObject::connect(controller, &TaskControllerInterface::processSuspended,
                      manager, &ApplicationManager::onProcessSuspended);
-    QObject::connect(controller, &TaskController::processFailed,
+    QObject::connect(controller, &TaskControllerInterface::processFailed,
                      manager, &ApplicationManager::onProcessFailed);
-    QObject::connect(controller, &TaskController::focusRequested,
+    QObject::connect(controller, &TaskControllerInterface::focusRequested,
                      manager, &ApplicationManager::onFocusRequested);
-    QObject::connect(controller, &TaskController::resumeRequested,
+    QObject::connect(controller, &TaskControllerInterface::resumeRequested,
                      manager, &ApplicationManager::onResumeRequested);
 }
 
@@ -126,7 +125,7 @@ ApplicationManager* ApplicationManager::Factory::Factory::create()
     SessionAuthorizer *sessionAuthorizer = static_cast<SessionAuthorizer*>(nativeInterface->nativeResourceForIntegration("SessionAuthorizer"));
 
     QSharedPointer<upstart::ApplicationController> appController(new upstart::ApplicationController());
-    QSharedPointer<TaskController> taskController(new TaskController(nullptr, appController));
+    QSharedPointer<TaskControllerInterface> taskController(new TaskController(nullptr, appController));
     QSharedPointer<DesktopFileReader::Factory> fileReaderFactory(new DesktopFileReader::Factory());
     QSharedPointer<ProcInfo> procInfo(new ProcInfo());
     QSharedPointer<SharedWakelock> sharedWakelock(new SharedWakelock);
@@ -148,7 +147,6 @@ ApplicationManager* ApplicationManager::Factory::Factory::create()
 
     connectToSessionListener(appManager, sessionListener);
     connectToSessionAuthorizer(appManager, sessionAuthorizer);
-    connectToTaskController(appManager, taskController.data());
 
     // Emit signal to notify Upstart that Mir is ready to receive client connections
     // see http://upstart.ubuntu.com/cookbook/#expect-stop
@@ -175,7 +173,7 @@ ApplicationManager* ApplicationManager::singleton()
 
 ApplicationManager::ApplicationManager(
         const QSharedPointer<MirServer>& mirServer,
-        const QSharedPointer<TaskController>& taskController,
+        const QSharedPointer<TaskControllerInterface>& taskController,
         const QSharedPointer<SharedWakelock>& sharedWakelock,
         const QSharedPointer<DesktopFileReader::Factory>& desktopFileReaderFactory,
         const QSharedPointer<ProcInfo>& procInfo,
@@ -191,6 +189,8 @@ ApplicationManager::ApplicationManager(
     , m_sharedWakelock(sharedWakelock)
     , m_settings(settings)
 {
+    connectToTaskController(this, taskController.data());
+
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::ApplicationManager (this=%p)" << this;
     setObjectName("qtmir::ApplicationManager");
 
@@ -509,6 +509,8 @@ void ApplicationManager::onProcessStopped(const QString &appId)
 
 void ApplicationManager::onProcessSuspended(const QString &appId)
 {
+    qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessSuspended - appId=" << appId;
+
     Application *application = findApplication(appId);
     if (application) {
         application->setProcessState(Application::ProcessSuspended);
@@ -744,6 +746,8 @@ void ApplicationManager::add(Application* application)
     QString appId = application->appId();
     QString longAppId = application->longAppId();
     QStringList arguments = application->arguments();
+
+    qDebug() << "XXXX" << longAppId;
 
     // The connection is queued as a workaround an issue in the PhoneStage animation that
     // happens when you tap on a killed app in the spread to bring it to foreground, causing

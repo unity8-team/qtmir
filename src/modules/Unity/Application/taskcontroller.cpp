@@ -34,7 +34,7 @@ namespace qtmir
 TaskController::TaskController(
         QObject *parent,
         const QSharedPointer<ApplicationController> &appController) :
-    QObject(parent),
+    TaskControllerInterface(parent),
     m_appController(appController)
 {
     connect(m_appController.data(),

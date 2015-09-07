@@ -47,7 +47,7 @@ class DBusWindowStack;
 class MirSurfaceManager;
 class ProcInfo;
 class SharedWakelock;
-class TaskController;
+class TaskControllerInterface;
 class SettingsInterface;
 
 class ApplicationManager : public unity::shell::application::ApplicationManagerInterface
@@ -83,7 +83,7 @@ public:
 
     explicit ApplicationManager(
             const QSharedPointer<MirServer> &mirServer,
-            const QSharedPointer<TaskController> &taskController,
+            const QSharedPointer<TaskControllerInterface> &taskController,
             const QSharedPointer<SharedWakelock> &sharedWakelock,
             const QSharedPointer<DesktopFileReader::Factory> &desktopFileReaderFactory,
             const QSharedPointer<ProcInfo> &processInfo,
@@ -157,7 +157,7 @@ private:
     QList<Application*> m_applications;
     Application* m_focusedApplication;
     DBusWindowStack* m_dbusWindowStack;
-    QSharedPointer<TaskController> m_taskController;
+    QSharedPointer<TaskControllerInterface> m_taskController;
     QSharedPointer<DesktopFileReader::Factory> m_desktopFileReaderFactory;
     QSharedPointer<ProcInfo> m_procInfo;
     QSharedPointer<SharedWakelock> m_sharedWakelock;

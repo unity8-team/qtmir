@@ -40,6 +40,7 @@
 #include "mock_prompt_session.h"
 #include "mock_shared_wakelock.h"
 #include "mock_settings.h"
+#include "mock_task_controller.h"
 
 namespace ms = mir::scene;
 using namespace qtmir;
@@ -96,19 +97,9 @@ public:
         : mirServer{
             QSharedPointer<FakeMirServer> (new FakeMirServer)
         }
-        , taskController{
-              QSharedPointer<TaskController> (
-                  new TaskController(
-                      nullptr,
-                      QSharedPointer<ApplicationController>(
-                          &appController,
-                          [](ApplicationController*){})
-                  )
-              )
-        }
         , applicationManager{
             mirServer,
-            taskController,
+            QSharedPointer<MockTaskController>(&taskController, [](MockTaskController *){}),
             QSharedPointer<MockSharedWakelock>(&sharedWakelock, [](MockSharedWakelock *){}),
             QSharedPointer<DesktopFileReader::Factory>(
                 &desktopFileReaderFactory,
@@ -132,20 +123,10 @@ public:
     {
         using namespace testing;
 
-        ON_CALL(appController,appIdHasProcessId(procId, appId)).WillByDefault(Return(true));
+        ON_CALL(taskController,appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
 
         // Set up Mocks & signal watcher
-        auto mockDesktopFileReader = new NiceMock<MockDesktopFileReader>(appId, QFileInfo());
-        ON_CALL(*mockDesktopFileReader, loaded()).WillByDefault(Return(true));
-        ON_CALL(*mockDesktopFileReader, appId()).WillByDefault(Return(appId));
-
-        EXPECT_CALL(desktopFileReaderFactory, createInstance(appId, _))
-                .Times(1)
-                .WillOnce(Return(mockDesktopFileReader));
-
-        EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-                .Times(1)
-                .WillOnce(Return(true));
+        EXPECT_CALL(taskController, start(appId, _));
 
         auto application = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
         applicationManager.onProcessStarting(appId);
@@ -158,9 +139,24 @@ public:
         applicationManager.onSessionStarting(appSession);
         sessionManager.onSessionStarting(appSession);
         
-        Mock::VerifyAndClearExpectations(&appController);
-        Mock::VerifyAndClearExpectations(&desktopFileReaderFactory);
+        Mock::VerifyAndClearExpectations(&taskController);
         return application;
+    }
+
+    void connectToTaskController(ApplicationManager *manager, TaskControllerInterface *controller)
+    {
+        QObject::connect(controller, &TaskControllerInterface::processStarting,
+                         manager, &ApplicationManager::onProcessStarting);
+        QObject::connect(controller, &TaskControllerInterface::processStopped,
+                         manager, &ApplicationManager::onProcessStopped);
+        QObject::connect(controller, &TaskControllerInterface::processSuspended,
+                         manager, &ApplicationManager::onProcessSuspended);
+        QObject::connect(controller, &TaskControllerInterface::processFailed,
+                         manager, &ApplicationManager::onProcessFailed);
+        QObject::connect(controller, &TaskControllerInterface::focusRequested,
+                         manager, &ApplicationManager::onFocusRequested);
+        QObject::connect(controller, &TaskControllerInterface::resumeRequested,
+                         manager, &ApplicationManager::onResumeRequested);
     }
 
     testing::NiceMock<testing::MockApplicationController> appController;
@@ -170,7 +166,7 @@ public:
     testing::NiceMock<testing::MockSettings> settings;
     QSharedPointer<FakeMirServer> mirServer;
     MirShell *mirShell{nullptr};
-    QSharedPointer<TaskController> taskController;
+    testing::NiceMock<testing::MockTaskController> taskController;
     ApplicationManager applicationManager;
     SessionManager sessionManager;
     MirSurfaceManager surfaceManager;

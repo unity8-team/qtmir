@@ -17,7 +17,7 @@
 #ifndef TASKCONTROLLER_H
 #define TASKCONTROLLER_H
 
-#include <QObject>
+#include "task_controller_interface.h"
 
 #include "application.h"
 #include "applicationcontroller.h"
@@ -25,7 +25,7 @@
 namespace qtmir
 {
 
-class TaskController : public QObject
+class TaskController : public TaskControllerInterface
 {
     Q_OBJECT
 public:
@@ -34,22 +34,14 @@ public:
             const QSharedPointer<ApplicationController> &appController);
     ~TaskController();
 
-    bool start(const QString &appId, const QStringList &args);
-    bool stop(const QString &appId);
+    bool start(const QString &appId, const QStringList &args) override;
+    bool stop(const QString &appId) override;
 
-    bool suspend(const QString &appId);
-    bool resume(const QString &appId);
+    bool suspend(const QString &appId) override;
+    bool resume(const QString &appId) override;
 
-    bool appIdHasProcessId(const QString &appId, const quint64 pid) const;
-    QFileInfo findDesktopFileForAppId(const QString &appId) const;
-
-Q_SIGNALS:
-    void processStarting(const QString &appId);
-    void processStopped(const QString &appId);
-    void processSuspended(const QString &appId);
-    void processFailed(const QString &appId, const bool duringStartup);
-    void focusRequested(const QString &appId);
-    void resumeRequested(const QString &appId);
+    bool appIdHasProcessId(const QString &appId, const quint64 pid) const override;
+    QFileInfo findDesktopFileForAppId(const QString &appId) const override;
 
 private Q_SLOTS:
     void onApplicationError(const QString &id, ApplicationController::Error error);

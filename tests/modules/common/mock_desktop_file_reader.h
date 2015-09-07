@@ -25,8 +25,8 @@ namespace testing
 {
 struct MockDesktopFileReader : public qtmir::DesktopFileReader
 {
-    MockDesktopFileReader(const QString &appId, const QFileInfo& fileInfo)
-        : DesktopFileReader(appId, fileInfo)
+    MockDesktopFileReader(const QString &appId)
+        : DesktopFileReader(appId, QString("/usr/share/applications/%1.desktop").arg(appId))
     {
         using namespace ::testing;
 
@@ -111,8 +111,9 @@ struct MockDesktopFileReaderFactory : public qtmir::DesktopFileReader::Factory
 
     virtual qtmir::DesktopFileReader* doCreateInstance(const QString &appId, const QFileInfo &fi)
     {
+        Q_UNUSED(fi);
         using namespace ::testing;
-        auto instance = new NiceMock<MockDesktopFileReader>(appId, fi);
+        auto instance = new NiceMock<MockDesktopFileReader>(appId);
         ON_CALL(*instance, loaded()).WillByDefault(Return(true));
 
         return instance;
