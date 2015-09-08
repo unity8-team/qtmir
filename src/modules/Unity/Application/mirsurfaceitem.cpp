@@ -51,6 +51,11 @@ public:
     QObject *textureProvider;
 };
 
+inline int divideAndRoundUp(int numerator, qreal denominator)
+    {
+        return ceil((qreal)numerator / denominator);
+    }
+
 } // namespace {
 
 class MirTextureProvider : public QSGTextureProvider
@@ -505,10 +510,12 @@ void MirSurfaceItem::updateMirSurfaceSize()
     }
 
     // If one dimension is not set, fallback to the current value
-    int width = m_surfaceWidth > 0 ? m_surfaceWidth : m_surface->size().width();
-    int height = m_surfaceHeight > 0 ? m_surfaceHeight : m_surface->size().height();
+    const int width = m_surfaceWidth > 0 ? m_surfaceWidth : m_surface->size().width();
+    const int height = m_surfaceHeight > 0 ? m_surfaceHeight : m_surface->size().height();
+    const int widthPx = width * devicePixelRatio();
+    const int heightPx = height * devicePixelRatio();
 
-    m_surface->resize(width, height);
+    m_surface->resize(widthPx, heightPx);
 }
 
 void MirSurfaceItem::updateMirSurfaceFocus(bool focused)
@@ -620,7 +627,8 @@ void MirSurfaceItem::setSurface(unity::shell::application::MirSurfaceInterface *
         Q_EMIT surfaceStateChanged(m_surface->state());
 
         updateMirSurfaceSize();
-        setImplicitSize(m_surface->size().width(), m_surface->size().height());
+        setImplicitSize(divideAndRoundUp(m_surface->size().width(), devicePixelRatio()),
+                        divideAndRoundUp(m_surface->size().height(), devicePixelRatio()));
 
         if (m_orientationAngle) {
             m_surface->setOrientationAngle(*m_orientationAngle);
@@ -664,7 +672,8 @@ void MirSurfaceItem::setSurfaceWidth(int value)
 
 void MirSurfaceItem::onActualSurfaceSizeChanged(const QSize &size)
 {
-    setImplicitSize(size.width(), size.height());
+    setImplicitSize(divideAndRoundUp(size.width(), devicePixelRatio()),
+                    divideAndRoundUp(size.height(), devicePixelRatio()));
 }
 
 int MirSurfaceItem::surfaceHeight() const
