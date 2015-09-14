@@ -1,3 +1,16 @@
+qtubuntu (0.62+15.10.20150914-0ubuntu1) wily; urgency=medium
+
+  [ Daniel d'Andrada ]
+  * Add
+    QPlatformNativeInterface::nativeResourceForIntegration("mirConnectio
+    n")
+  * Remove QtSensors dependency (LP: #1481389)
+
+  [ Paul Olav Tvete ]
+  * Remove QtSensors dependency (LP: #1481389)
+
+ -- Gerry Boland <ci-train-bot@canonical.com>  Mon, 14 Sep 2015 13:12:19 +0000
+
 qtubuntu (0.62+15.04.20150828-0ubuntu1) vivid; urgency=medium
 
   [ Daniel d'Andrada ]
