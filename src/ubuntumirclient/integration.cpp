@@ -55,7 +55,12 @@ static void aboutToStopCallback(UApplicationArchive *archive, void* context)
     Q_UNUSED(archive)
     DASSERT(context != NULL);
     UbuntuClientIntegration* integration = static_cast<UbuntuClientIntegration*>(context);
-    integration->inputContext()->hideInputPanel();
+    QPlatformInputContext *inputContext = integration->inputContext();
+    if (inputContext) {
+        inputContext->hideInputPanel();
+    } else {
+        qWarning("UbuntuClientIntegration aboutToStopCallback(): no input context");
+    }
     QCoreApplication::postEvent(QCoreApplication::instance(),
                                 new QEvent(QEvent::ApplicationDeactivate));
 }
