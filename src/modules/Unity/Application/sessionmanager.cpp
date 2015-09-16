@@ -108,7 +108,7 @@ SessionInterface *SessionManager::findSession(const mir::scene::Session* session
 {
     if (!session) return nullptr;
 
-    for (SessionInterface* child : list()) {
+    for (SessionInterface* child : list()) { qDebug() << child << ":" << child->session().get() << "=?" << session;
         if (child->session().get() == session)
             return child;
     }
@@ -117,7 +117,7 @@ SessionInterface *SessionManager::findSession(const mir::scene::Session* session
 
 void SessionManager::onSessionStarting(std::shared_ptr<mir::scene::Session> const& session)
 {
-    qCDebug(QTMIR_SESSIONS) << "SessionManager::onSessionStarting - sessionName=" <<  session->name().c_str();
+    qCDebug(QTMIR_SESSIONS) << "SessionManager::onSessionStarting - session=" << session.get();
 
     Session* qmlSession = new Session(session,
                                        m_mirServer->the_prompt_session_manager());
@@ -125,7 +125,8 @@ void SessionManager::onSessionStarting(std::shared_ptr<mir::scene::Session> cons
 
     // if Booster session, manage separately as it will later spawn a real application session.
     if (session->process_id() == (pid_t)m_applicationManager->boosterPid()) {
-        m_boosterSession = qmlSession;
+            qDebug() << "FOUND BOOSTER" << qmlSession;
+            m_boosterSessions.append(qmlSession);
     } else {
         Application* application = m_applicationManager->findApplicationWithSession(session);
         if (application && application->state() != Application::Running) {
@@ -145,6 +146,8 @@ void SessionManager::onSessionCreatedSurface(const mir::scene::Session *mirSessi
                                              const std::shared_ptr<mir::scene::Surface> &/*surface*/,
                                              const std::shared_ptr<SurfaceObserver> &/*observer*/)
 {
+    qCDebug(QTMIR_SESSIONS) << "SessionManager::onSessionCreatedSurface - session=" << mirSession;
+
     // This is only relevant for the case when the MAppLauncherD booster daemon launches the app.
     // In that case, the booster creates a new Session before any app may start, and then passes
     // that Session to the app when it starts. The only way AppMan can determine that is when
@@ -152,7 +155,8 @@ void SessionManager::onSessionCreatedSurface(const mir::scene::Session *mirSessi
     SessionInterface* qmlSession = findSession(mirSession);
     if (!qmlSession) return;
 
-    if (qmlSession == m_boosterSession) {
+    if (m_boosterSessions.contains(qmlSession)) {
+        m_boosterSessions.removeAll(qmlSession);
         // Session has been passed from Booster to the actual App. So must update App/Session association
         // This is a bit of a guess - we've no reliable data to figure out the app. So look for a Starting app
         Q_FOREACH(Application *application, m_applicationManager->list()) {
@@ -171,6 +175,7 @@ void SessionManager::onSessionStopping(std::shared_ptr<mir::scene::Session> cons
     SessionInterface* qmlSession = findSession(session.get());
     if (!qmlSession) return;
 
+    m_boosterSessions.removeAll(qmlSession);
     remove(qmlSession);
 
     qmlSession->setLive(false);

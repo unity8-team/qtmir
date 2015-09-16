@@ -84,7 +84,7 @@ protected:
 private:
     QSharedPointer<MirServer> m_mirServer;
     ApplicationManager* m_applicationManager;
-    QPointer<Session> m_boosterSession;
+    QVector<SessionInterface*> m_boosterSessions;
     static SessionManager *the_session_manager;
 
     QList<Session*> m_sessions;
