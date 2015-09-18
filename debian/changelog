@@ -1,3 +1,9 @@
+qtmir (0.4.7) UNRELEASED; urgency=medium
+
+  * Add support for devicePixelRatio, the Qt5.4 UI scaling system
+
+ -- Gerry Boland <gerry.boland@canonical.com>  Fri, 18 Sep 2015 12:30:00 +0100
+
 qtmir (0.4.6+15.10.20150914-0ubuntu1) wily; urgency=medium
 
   [ Daniel d'Andrada ]
@@ -29,12 +35,6 @@ qtmir (0.4.6+15.04.20150827.1-0ubuntu1) vivid; urgency=medium
     (LP: #1466510)
 
  -- CI Train Bot <ci-train-bot@canonical.com>  Thu, 27 Aug 2015 13:58:54 +0000
-
-qtmir (0.4.6) UNRELEASED; urgency=medium
-
-  * Add support for devicePixelRatio, the Qt5.4 UI scaling system
-
- -- Gerry Boland <gerry.boland@canonical.com>  Tue, 14 Jul 2015 17:53:09 +0100
 
 qtmir (0.4.5+15.10.20150817-0ubuntu1) wily; urgency=medium
 
