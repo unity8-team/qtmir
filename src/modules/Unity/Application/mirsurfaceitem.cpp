@@ -641,6 +641,8 @@ void MirSurfaceItem::setSurface(unity::shell::application::MirSurfaceInterface *
         }
     }
 
+    update();
+
     Q_EMIT surfaceChanged(m_surface);
 }
 
