@@ -100,6 +100,7 @@ public:
     QSize bufferSize;
     QMutex mutex;
     QSharedPointer<UbuntuClipboard> clipboard;
+    bool exposed;
     int resizeCatchUpAttempts;
 #if !defined(QT_NO_DEBUG)
     int frameNumber;
@@ -137,6 +138,7 @@ UbuntuWindow::UbuntuWindow(QWindow* w, QSharedPointer<UbuntuClipboard> clipboard
     d->connection = connection;
     d->clipboard = clipboard;
     d->resizeCatchUpAttempts = 0;
+    d->exposed = true;
 
     static int id = 1;
     d->id = id++;
@@ -363,14 +365,19 @@ void UbuntuWindow::handleSurfaceFocusChange(bool focused)
     QWindowSystemInterface::handleWindowActivated(activatedWindow, Qt::ActiveWindowFocusReason);
 }
 
-void UbuntuWindow::handleSurfaceVisibilityChange(bool visible)
+void UbuntuWindow::handleSurfaceExposeChange(bool exposed)
 {
-    DLOG("UbuntuWindow::handleSurfaceVisibilityChange(visible=%s)", visible ? "true" : "false");
+    DLOG("UbuntuWindow::handleSurfaceExposeChange(visible=%s)", visible ? "true" : "false");
 
-    QRegion region;
-    if (visible)
-        region = QRect(QPoint(), geometry().size());
-    QWindowSystemInterface::handleExposeEvent(window(), region);
+    window()->setVisible(exposed);
+    if (d->exposed != exposed) {
+        d->exposed = exposed;
+
+        QRegion region;
+        if (d->exposed)
+            region = QRect(QPoint(), geometry().size());
+        QWindowSystemInterface::handleExposeEvent(window(), region);
+    }
 }
 
 void UbuntuWindow::setWindowState(Qt::WindowState state)
@@ -418,6 +425,11 @@ void UbuntuWindow::setVisible(bool visible)
         //       Will have to change qtmir and unity8 for that.
         mir_wait_for(mir_surface_set_state(d->surface, mir_surface_state_minimized));
     }
+}
+
+bool UbuntuWindow::isExposed() const
+{
+    return d->exposed && window()->isVisible();
 }
 
 void* UbuntuWindow::eglSurface() const

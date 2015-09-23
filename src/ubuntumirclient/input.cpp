@@ -239,8 +239,8 @@ void UbuntuInput::customEvent(QEvent* event)
                 mir_surface_focused);
 
         } else if (surfaceEventAttribute == mir_surface_attrib_visibility) {
-            ubuntuEvent->window->handleSurfaceVisibilityChange(mir_surface_event_get_attribute_value(surfaceEvent) !=
-                                                               mir_surface_visibility_occluded);
+            ubuntuEvent->window->handleSurfaceExposeChange(mir_surface_event_get_attribute_value(surfaceEvent) ==
+                                                           mir_surface_visibility_exposed);
         }
         break;
     }
