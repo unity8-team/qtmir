@@ -363,6 +363,16 @@ void UbuntuWindow::handleSurfaceFocusChange(bool focused)
     QWindowSystemInterface::handleWindowActivated(activatedWindow, Qt::ActiveWindowFocusReason);
 }
 
+void UbuntuWindow::handleSurfaceVisibilityChange(bool visible)
+{
+    DLOG("UbuntuWindow::handleSurfaceVisibilityChange(visible=%s)", visible ? "true" : "false");
+
+    QRegion region;
+    if (visible)
+        region = QRect(QPoint(), geometry().size());
+    QWindowSystemInterface::handleExposeEvent(window(), region);
+}
+
 void UbuntuWindow::setWindowState(Qt::WindowState state)
 {
     QMutexLocker(&d->mutex);
