@@ -583,7 +583,7 @@ void ApplicationManager::authorizeSession(const quint64 pid, bool &authorized)
     }
 
 
-    if (info->startsWith("/usr/libexec/mapplauncherd/booster-qtcomponents-qt5")) {
+    if (info->startsWith("/usr/bin/booster-ubuntu-components")) {
         authorized = true;
         m_boosterPid = pid;
         return;

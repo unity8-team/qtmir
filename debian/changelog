@@ -1,3 +1,9 @@
+qtmir (0.4.6+156.10.20151455-0ubuntu3) vivid; urgency=medium
+
+  * Applauncherd
+
+ -- Benjamin Zeller <benjamin.zeller@canonical.com>  Wed, 23 Sep 2015 19:42:39 +0200
+
 qtmir (0.4.6+15.10.20150904-0ubuntu1) wily; urgency=medium
 
   [ Michal Sawicz ]
