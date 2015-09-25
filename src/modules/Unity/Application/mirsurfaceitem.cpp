@@ -67,10 +67,6 @@ public:
 
     bool smooth;
 
-    void releaseTexture() {
-        t.reset();
-    }
-
     void setTexture(QSharedPointer<QSGTexture> newTexture) {
         t = newTexture;
     }
@@ -586,9 +582,15 @@ void MirSurfaceItem::setSurface(unity::shell::application::MirSurfaceInterface *
         if (!m_surface->isBeingDisplayed() && window()) {
             disconnect(window(), nullptr, m_surface, nullptr);
         }
-        if (m_textureProvider) {
-            m_textureProvider->releaseTexture();
-        }
+
+        // Note we don't release the texture from m_textureProvider here.
+        // Any attempt to release the texture here will silently succeed and
+        // also leak (file descriptors and GPU resources) because the requisite
+        // GL context is missing in the GUI thread. Such a leak is known as
+        // "orphaning" the EGLImage that is used inside the Mir Buffer object;
+        // https://www.khronos.org/registry/egl/extensions/KHR/EGL_KHR_image_base.txt
+        // Instead, we just wait patiently for the render thread to clean up
+        // properly and calls MirSurfaceItem::releaseResources() below.
     }
 
     m_surface = surface;
