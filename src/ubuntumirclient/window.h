@@ -49,6 +49,9 @@ public:
 
     UbuntuWindowPrivate* priv() { return d; }
 
+private Q_SLOTS:
+    void onWindowTitleChanged(const QString &name);
+
 private:
     void createWindow();
     void moveResize(const QRect& rect);
