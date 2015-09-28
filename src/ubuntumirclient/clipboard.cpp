@@ -244,9 +244,11 @@ void UbuntuClipboard::setMimeData(QMimeData* mimeData, QClipboard::Mode mode)
         delete mPendingGetContentsCall.data();
     }
 
-    QByteArray serializedMimeData = serializeMimeData(mimeData);
-    if (!serializedMimeData.isEmpty()) {
-        setDBusClipboardContents(serializedMimeData);
+    if (mimeData != nullptr) {
+        QByteArray serializedMimeData = serializeMimeData(mimeData);
+        if (!serializedMimeData.isEmpty()) {
+            setDBusClipboardContents(serializedMimeData);
+        }
     }
 
     mMimeData = mimeData;
