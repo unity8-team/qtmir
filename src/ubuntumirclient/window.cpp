@@ -123,7 +123,7 @@ static void surfaceCreateCallback(MirSurface* surface, void* context)
     mir_surface_set_event_handler(surface, eventCallback, context);
 }
 
-UbuntuWindow::UbuntuWindow(QWindow* w, QSharedPointer<UbuntuClipboard> clipboard, UbuntuScreen* screen,
+UbuntuWindow::UbuntuWindow(QWindow* w, const QSharedPointer<UbuntuClipboard> &clipboard, UbuntuScreen* screen,
                            UbuntuInput* input, MirConnection* connection)
     : QObject(nullptr), QPlatformWindow(w)
 {
