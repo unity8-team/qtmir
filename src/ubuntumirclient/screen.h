@@ -46,7 +46,7 @@ public:
     void handleWindowSurfaceResize(int width, int height);
 
     // QObject methods.
-    void customEvent(QEvent* event);
+    void customEvent(QEvent* event) override;
 
 private:
     QRect mGeometry;
