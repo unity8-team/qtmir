@@ -412,10 +412,12 @@ Qt::MouseButtons extract_buttons(const MirPointerEvent *pev)
     if (mir_pointer_event_button_state(pev, mir_pointer_button_secondary))
         buttons |= Qt::RightButton;
     if (mir_pointer_event_button_state(pev, mir_pointer_button_tertiary))
-        buttons |= Qt::MidButton;
+        buttons |= Qt::MiddleButton;
+    if (mir_pointer_event_button_state(pev, mir_pointer_button_back))
+        buttons |= Qt::BackButton;
+    if (mir_pointer_event_button_state(pev, mir_pointer_button_forward))
+        buttons |= Qt::ForwardButton;
 
-    // TODO: Should mir back and forward buttons exist?
-    // should they be Qt::X button 1 and 2?
     return buttons;
 }
 }
