@@ -27,7 +27,6 @@
 #include <QMutexLocker>
 #include <QSize>
 #include <QtMath>
-#include <QDebug>
 
 // Platform API
 #include <ubuntu/application/instance.h>
@@ -467,7 +466,6 @@ void UbuntuWindow::onBuffersSwapped_threadSafe(int newBufferWidth, int newBuffer
 
 void UbuntuWindow::onWindowTitleChanged(const QString &name)
 {
-    qDebug() << "CAYBRO:" << "window title changes to:" << name;
     MirSurfaceSpec *spec = mir_connection_create_spec_for_changes(d->connection);
     mir_surface_spec_set_name(spec, name.toUtf8().constData());
     mir_surface_apply_spec(d->surface, spec);
