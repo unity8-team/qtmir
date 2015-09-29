@@ -149,9 +149,6 @@ UbuntuWindow::UbuntuWindow(QWindow* w, QSharedPointer<UbuntuClipboard> clipboard
         window()->geometry() : screen->availableGeometry());
     createWindow();
     DLOG("UbuntuWindow::UbuntuWindow (this=%p, w=%p, screen=%p, input=%p)", this, w, screen, input);
-
-    // react to window title changes
-    connect(window(), &QWindow::windowTitleChanged, this, &UbuntuWindow::onWindowTitleChanged);
 }
 
 UbuntuWindow::~UbuntuWindow()
@@ -412,6 +409,14 @@ void UbuntuWindow::setVisible(bool visible)
     }
 }
 
+void UbuntuWindow::setWindowTitle(const QString &title)
+{
+    MirSurfaceSpec *spec = mir_connection_create_spec_for_changes(d->connection);
+    mir_surface_spec_set_name(spec, title.toUtf8().constData());
+    mir_surface_apply_spec(d->surface, spec);
+    mir_surface_spec_release(spec);
+}
+
 void* UbuntuWindow::eglSurface() const
 {
     return d->eglSurface;
@@ -462,12 +467,4 @@ void UbuntuWindow::onBuffersSwapped_threadSafe(int newBufferWidth, int newBuffer
         DLOG("UbuntuWindow::onBuffersSwapped_threadSafe [%d] - buffer size (%d,%d). resizeCatchUpAttempts=%d",
                d->frameNumber, d->bufferSize.width(), d->bufferSize.height(), d->resizeCatchUpAttempts);
     }
-}
-
-void UbuntuWindow::onWindowTitleChanged(const QString &name)
-{
-    MirSurfaceSpec *spec = mir_connection_create_spec_for_changes(d->connection);
-    mir_surface_spec_set_name(spec, name.toUtf8().constData());
-    mir_surface_apply_spec(d->surface, spec);
-    mir_surface_spec_release(spec);
 }

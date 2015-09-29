@@ -40,6 +40,7 @@ public:
     void setGeometry(const QRect&) override;
     void setWindowState(Qt::WindowState state) override;
     void setVisible(bool visible) override;
+    void setWindowTitle(const QString &title) override;
 
     // New methods.
     void* eglSurface() const;
@@ -48,9 +49,6 @@ public:
     void onBuffersSwapped_threadSafe(int newBufferWidth, int newBufferHeight);
 
     UbuntuWindowPrivate* priv() { return d; }
-
-private Q_SLOTS:
-    void onWindowTitleChanged(const QString &name);
 
 private:
     void createWindow();
