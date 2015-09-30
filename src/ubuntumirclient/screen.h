@@ -21,18 +21,20 @@
 #include <QSurfaceFormat>
 #include <EGL/egl.h>
 
+struct MirConnection;
+
 class UbuntuScreen : public QObject, public QPlatformScreen
 {
     Q_OBJECT
 public:
-    UbuntuScreen();
+    UbuntuScreen(MirConnection *connection);
     virtual ~UbuntuScreen();
 
     // QPlatformScreen methods.
     QImage::Format format() const override { return mFormat; }
     int depth() const override { return mDepth; }
     QRect geometry() const override { return mGeometry; }
-    QRect availableGeometry() const override { return mAvailableGeometry; }
+    QRect availableGeometry() const override { return mGeometry; }
     Qt::ScreenOrientation nativeOrientation() const override { return mNativeOrientation; }
     Qt::ScreenOrientation orientation() const override { return mNativeOrientation; }
 
@@ -41,13 +43,13 @@ public:
     EGLDisplay eglDisplay() const { return mEglDisplay; }
     EGLConfig eglConfig() const { return mEglConfig; }
     EGLNativeDisplayType eglNativeDisplay() const { return mEglNativeDisplay; }
+    void handleWindowSurfaceResize(int width, int height);
 
     // QObject methods.
     void customEvent(QEvent* event);
 
 private:
     QRect mGeometry;
-    QRect mAvailableGeometry;
     Qt::ScreenOrientation mNativeOrientation;
     Qt::ScreenOrientation mCurrentOrientation;
     QImage::Format mFormat;

@@ -266,6 +266,10 @@ bool UbuntuClipboard::ownsMode(QClipboard::Mode mode) const
 
 void UbuntuClipboard::setDBusClipboardContents(const QByteArray &clipboardContents)
 {
+    if (!mDBusSetupDone) {
+        setupDBus();
+    }
+
     if (!mPendingSetContentsCall.isNull()) {
         // Ignore any previous set call as we are going to overwrite it anyway
         QObject::disconnect(mPendingSetContentsCall.data(), 0, this, 0);

@@ -1,3 +1,138 @@
+qtubuntu (0.62+15.10.20150914-0ubuntu1) wily; urgency=medium
+
+  [ Daniel d'Andrada ]
+  * Add
+    QPlatformNativeInterface::nativeResourceForIntegration("mirConnectio
+    n")
+  * Remove QtSensors dependency (LP: #1481389)
+
+  [ Paul Olav Tvete ]
+  * Remove QtSensors dependency (LP: #1481389)
+
+ -- Gerry Boland <ci-train-bot@canonical.com>  Mon, 14 Sep 2015 13:12:19 +0000
+
+qtubuntu (0.62+15.04.20150828-0ubuntu1) vivid; urgency=medium
+
+  [ Daniel d'Andrada ]
+  * UbuntuClipboard: ensure DBus has been set up before setting
+    clipboard contents
+  * UbuntuWindow - keep redrawing a bit until you get the promised
+    resized buffer (LP: #1466510)
+
+ -- CI Train Bot <ci-train-bot@canonical.com>  Fri, 28 Aug 2015 08:13:58 +0000
+
+qtubuntu (0.62+15.04.20150814-0ubuntu1) vivid; urgency=medium
+
+  [ Daniel D'Andrada ]
+  * fix busy buffer swapping
+
+ -- CI Train Bot <ci-train-bot@canonical.com>  Fri, 14 Aug 2015 12:18:27 +0000
+
+qtubuntu (0.61+15.10.20150722-0ubuntu3) wily; urgency=medium
+
+  * No-change rebuild to pick up qtbase change.
+
+ -- Timo Jyrinki <timo-jyrinki@ubuntu.com>  Fri, 14 Aug 2015 08:46:44 +0300
+
+qtubuntu (0.61+15.10.20150722-0ubuntu2~gcc5.1) wily; urgency=medium
+
+  * No-change test rebuild for g++5 ABI transition
+
+ -- Steve Langasek <steve.langasek@ubuntu.com>  Wed, 22 Jul 2015 23:29:31 +0000
+
+qtubuntu (0.61+15.10.20150722-0ubuntu1) wily; urgency=medium
+
+  [ Andreas Pokorny ]
+  * in step with mir release 0.14.0
+
+  [ CI Train Bot ]
+  * New rebuild forced.
+
+ -- CI Train Bot <ci-train-bot@canonical.com>  Wed, 22 Jul 2015 14:09:19 +0000
+
+qtubuntu (0.61+15.10.20150706-0ubuntu1) wily; urgency=medium
+
+  [ Alberto Aguirre ]
+  * Migrate to platform-api 3
+
+  [ CI Train Bot ]
+  * New rebuild forced.
+
+ -- CI Train Bot <ci-train-bot@canonical.com>  Mon, 06 Jul 2015 23:12:54 +0000
+
+qtubuntu (0.61+15.10.20150617-0ubuntu1) wily; urgency=medium
+
+  [ Daniel d'Andrada ]
+  * Drastically improve surface resize responsiveness
+
+  [ Gerry Boland ]
+  * Add support for Mir window close event (LP: #1434584)
+
+  [ Lukáš Tinkl ]
+  * fix logic error when testing QFlags
+
+  [ Timo Jyrinki ]
+  * Build depend against libinput-dev to fix build with Qt 5.5 (LP:
+    #1437192) (LP: #1437192)
+
+ -- CI Train Bot <ci-train-bot@canonical.com>  Wed, 17 Jun 2015 13:46:52 +0000
+
+qtubuntu (0.61+15.10.20150611-0ubuntu2) wily; urgency=medium
+
+  * No-change rebuild against Qt 5.4.2.
+
+ -- Timo Jyrinki <timo-jyrinki@ubuntu.com>  Mon, 15 Jun 2015 12:31:56 +0300
+
+qtubuntu (0.61+15.10.20150611-0ubuntu1) wily; urgency=medium
+
+  [ Daniel d'Andrada ]
+  * Flip screen dimensions to compensate for a rotated window
+
+  [ Alan Griffiths ]
+  * Track mir deprecations and renames.
+
+ -- CI Train Bot <ci-train-bot@canonical.com>  Thu, 11 Jun 2015 09:10:57 +0000
+
+qtubuntu (0.60+15.04.20150318-0ubuntu3) vivid; urgency=medium
+
+  * No-change rebuild against latest platform-api
+
+ -- Ricardo Salveti de Araujo <ricardo.salveti@canonical.com>  Thu, 19 Mar 2015 22:37:16 -0300
+
+qtubuntu (0.60+15.04.20150318-0ubuntu2) vivid; urgency=medium
+
+  * No-change rebuild to correct platform-api dependency
+
+ -- Timo Jyrinki <timo-jyrinki@ubuntu.com>  Thu, 19 Mar 2015 11:54:20 +0200
+
+qtubuntu (0.60+15.04.20150318-0ubuntu1) vivid; urgency=medium
+
+  [ Alberto Aguirre ]
+  * Port qtubuntu to direct mirclient usage for window creation and
+    input handling.
+
+  [ Daniel d'Andrada ]
+  * Port qtubuntu to direct mirclient usage for window creation and
+    input handling.
+
+  [ Robert Carr ]
+  * Port qtubuntu to direct mirclient usage for window creation and
+    input handling.
+
+ -- CI Train Bot <ci-train-bot@canonical.com>  Wed, 18 Mar 2015 10:12:48 +0000
+
+qtubuntu (0.60+15.04.20141212-0ubuntu3) vivid; urgency=medium
+
+  * No-change rebuild against Qt 5.4.1.
+
+ -- Timo Jyrinki <timo-jyrinki@ubuntu.com>  Wed, 11 Mar 2015 08:25:45 +0200
+
+qtubuntu (0.60+15.04.20141212-0ubuntu2) vivid; urgency=medium
+
+  * No-change rebuild against Qt 5.4.0.
+
+ -- Timo Jyrinki <timo-jyrinki@ubuntu.com>  Fri, 06 Feb 2015 14:48:16 +0200
+
 qtubuntu (0.60+15.04.20141212-0ubuntu1) vivid; urgency=low
 
   [ Gerry Boland ]
