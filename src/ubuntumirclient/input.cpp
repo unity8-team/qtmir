@@ -32,6 +32,7 @@
 #include <private/qguiapplication_p.h>
 #include <qpa/qplatforminputcontext.h>
 #include <qpa/qwindowsysteminterface.h>
+#include <QDebug>
 
 #include <xkbcommon/xkbcommon.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
@@ -412,7 +413,7 @@ Qt::MouseButtons extract_buttons(const MirPointerEvent *pev)
     if (mir_pointer_event_button_state(pev, mir_pointer_button_secondary))
         buttons |= Qt::RightButton;
     if (mir_pointer_event_button_state(pev, mir_pointer_button_tertiary))
-        buttons |= Qt::MidButton;
+        buttons |= Qt::MiddleButton;
     if (mir_pointer_event_button_state(pev, mir_pointer_button_back))
         buttons |= Qt::BackButton;
     if (mir_pointer_event_button_state(pev, mir_pointer_button_forward))
@@ -437,9 +438,18 @@ void UbuntuInput::dispatchPointerEvent(QWindow *window, const MirInputEvent *ev)
     case mir_pointer_action_button_down:
     case mir_pointer_action_motion:
     {
-        auto buttons = extract_buttons(pev);
-        QWindowSystemInterface::handleMouseEvent(window, timestamp, localPoint, localPoint /* Should we omit global point instead? */,
-                                                 buttons, modifiers);
+        const float hDelta = mir_pointer_event_axis_value(pev, mir_pointer_axis_hscroll);
+        const float vDelta = mir_pointer_event_axis_value(pev, mir_pointer_axis_vscroll);
+
+        if (hDelta != 0 || vDelta != 0) {
+            const QPoint angleDelta = QPoint(hDelta * 15, vDelta * 15);
+            QWindowSystemInterface::handleWheelEvent(window, timestamp, localPoint, localPoint,
+                                                     QPoint(), angleDelta, modifiers, Qt::ScrollUpdate);
+        } else {
+            auto buttons = extract_buttons(pev);
+            QWindowSystemInterface::handleMouseEvent(window, timestamp, localPoint, localPoint /* Should we omit global point instead? */,
+                                                     buttons, modifiers);
+        }
         break;
     }
     case mir_pointer_action_enter:
@@ -450,14 +460,6 @@ void UbuntuInput::dispatchPointerEvent(QWindow *window, const MirInputEvent *ev)
         break;
     default:
         DLOG("Unrecognized pointer event");
-    }
-
-    auto scroll = QPoint(mir_pointer_event_axis_value(pev, mir_pointer_axis_vscroll),
-                         mir_pointer_event_axis_value(pev, mir_pointer_axis_hscroll));
-    if (scroll.x() != 0 || scroll.y() != 0) {
-        QPoint angleDelta = scroll; // FIXME: need number of scroll ticks per 360 degree rotation of wheel.
-        QWindowSystemInterface::handleWheelEvent(window, timestamp, localPoint, localPoint,
-                                                 scroll, angleDelta, modifiers, Qt::ScrollUpdate);
     }
 }
 
