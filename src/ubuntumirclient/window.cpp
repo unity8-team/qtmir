@@ -367,7 +367,7 @@ void UbuntuWindow::handleSurfaceFocusChange(bool focused)
 
 void UbuntuWindow::handleSurfaceExposeChange(bool exposed)
 {
-    DLOG("UbuntuWindow::handleSurfaceExposeChange(visible=%s)", visible ? "true" : "false");
+    DLOG("UbuntuWindow::handleSurfaceExposeChange(exposed=%s)", exposed ? "true" : "false");
 
     window()->setVisible(exposed);
     if (d->exposed != exposed) {
