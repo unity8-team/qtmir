@@ -32,7 +32,6 @@
 #include <private/qguiapplication_p.h>
 #include <qpa/qplatforminputcontext.h>
 #include <qpa/qwindowsysteminterface.h>
-#include <QDebug>
 
 #include <xkbcommon/xkbcommon.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
