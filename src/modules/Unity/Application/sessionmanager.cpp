@@ -124,7 +124,7 @@ void SessionManager::onSessionStarting(std::shared_ptr<mir::scene::Session> cons
     insert(0, qmlSession);
 
     // if Booster session, manage separately as it will later spawn a real application session.
-    if (session->process_id() == (pid_t)m_applicationManager->boosterPid()) {
+    if (session->process_id() == m_applicationManager->boosterPid()) {
         qCDebug(QTMIR_SESSIONS) << "Found AppLauncherD session=" << qmlSession << "with pid" << session->process_id();
         m_boosterSessions.append(qmlSession);
     } else {

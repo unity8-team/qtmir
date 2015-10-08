@@ -190,6 +190,7 @@ ApplicationManager::ApplicationManager(
     , m_procInfo(procInfo)
     , m_sharedWakelock(sharedWakelock)
     , m_settings(settings)
+    , m_boosterPid(0)
 {
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::ApplicationManager (this=%p)" << this;
     setObjectName("qtmir::ApplicationManager");
