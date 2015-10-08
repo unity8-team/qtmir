@@ -545,7 +545,7 @@ void ApplicationManager::onSettingsChanged(const QString &key)
     }
 }
 
-void ApplicationManager::authorizeSession(const quint64 pid, bool &authorized)
+void ApplicationManager::authorizeSession(const pid_t pid, bool &authorized)
 {
     tracepoint(qtmir, authorizeSession);
     authorized = false; //to be proven wrong
@@ -710,7 +710,7 @@ Application* ApplicationManager::findApplicationWithSession(const ms::Session *s
     return findApplicationWithPid(session->process_id());
 }
 
-Application* ApplicationManager::findApplicationWithPid(const qint64 pid)
+Application* ApplicationManager::findApplicationWithPid(const pid_t pid)
 {
     if (pid <= 0)
         return nullptr;
