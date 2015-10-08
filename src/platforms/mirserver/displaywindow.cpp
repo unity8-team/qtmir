@@ -41,7 +41,8 @@ DisplayWindow::DisplayWindow(
     , m_isExposed(true)
     , m_winId(newWId())
     , m_displayGroup(displayGroup)
-    , m_displayBuffer(displayBuffer)
+    , m_displayBuffer(
+        reinterpret_cast<mir::renderer::gl::RenderTarget*>(displayBuffer->native_display_buffer()))
 {
     qDebug() << "DisplayWindow::DisplayWindow";
     qWarning("Window %p: %p 0x%x\n", this, window, uint(m_winId));
@@ -101,7 +102,7 @@ bool DisplayWindow::event(QEvent *event)
 
 void DisplayWindow::swapBuffers()
 {
-    m_displayBuffer->gl_swap_buffers();
+    m_displayBuffer->swap_buffers();
 
     // FIXME this exposes a QtMir architecture problem now, as DisplayWindow
     // is supposed to wrap a mg::DisplayBuffer. We use Qt's multithreaded
