@@ -42,7 +42,7 @@ DisplayWindow::DisplayWindow(
     , m_winId(newWId())
     , m_displayGroup(displayGroup)
     , m_displayBuffer(
-        reinterpret_cast<mir::renderer::gl::RenderTarget*>(displayBuffer->native_display_buffer()))
+        dynamic_cast<mir::renderer::gl::RenderTarget*>(displayBuffer->native_display_buffer()))
 {
     qDebug() << "DisplayWindow::DisplayWindow";
     qWarning("Window %p: %p 0x%x\n", this, window, uint(m_winId));
