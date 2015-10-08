@@ -108,7 +108,7 @@ SessionInterface *SessionManager::findSession(const mir::scene::Session* session
 {
     if (!session) return nullptr;
 
-    for (SessionInterface* child : list()) { qDebug() << child << ":" << child->session().get() << "=?" << session;
+    for (SessionInterface* child : list()) {
         if (child->session().get() == session)
             return child;
     }
@@ -125,8 +125,8 @@ void SessionManager::onSessionStarting(std::shared_ptr<mir::scene::Session> cons
 
     // if Booster session, manage separately as it will later spawn a real application session.
     if (session->process_id() == (pid_t)m_applicationManager->boosterPid()) {
-            qDebug() << "FOUND BOOSTER" << qmlSession;
-            m_boosterSessions.append(qmlSession);
+        qCDebug(QTMIR_SESSIONS) << "Found AppLauncherD session=" << qmlSession << "with pid" << session->process_id();
+        m_boosterSessions.append(qmlSession);
     } else {
         Application* application = m_applicationManager->findApplicationWithSession(session);
         if (application && application->state() != Application::Running) {
@@ -151,7 +151,7 @@ void SessionManager::onSessionCreatedSurface(const mir::scene::Session *mirSessi
     // This is only relevant for the case when the MAppLauncherD booster daemon launches the app.
     // In that case, the booster creates a new Session before any app may start, and then passes
     // that Session to the app when it starts. The only way AppMan can determine that is when
-    // the Session belongong to the booster daemon creates a surface.
+    // the Session belonging to the booster daemon creates a surface.
     SessionInterface* qmlSession = findSession(mirSession);
     if (!qmlSession) return;
 
