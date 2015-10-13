@@ -85,8 +85,8 @@ private:
 };
 
 /*
- * Note: all geometry is in device-pixels, except that contained in variables with the
- * suffix "Px" - whose units are pixels
+ * Note: all geometry is in device-independent pixels, except that contained in variables with the
+ * suffix "Px" - whose units are physical pixels
  */
 
 MirSurfaceItem::MirSurfaceItem(QQuickItem *parent)
