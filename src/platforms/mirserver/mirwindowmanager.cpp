@@ -137,7 +137,7 @@ auto CanonicalWindowManagerPolicy::handle_place_new_surface(
     display_layout->size_to_output(rect);
     parameters.size = rect.size;
 
-    qCDebug(QTMIR_MIR_MESSAGES) << "MirWindowManagerImpl::add_surface(): size requested ("
+    qCDebug(QTMIR_MIR_MESSAGES) << "CanonicalWindowManagerPolicy::handle_place_new_surface(): size requested ("
                                 << request_parameters.size.width.as_int() << "," << request_parameters.size.height.as_int() << ") and placed ("
                                 << parameters.size.width.as_int() << "," << parameters.size.height.as_int() << ")";
 
