@@ -419,7 +419,7 @@ void MirSurfaceItem::validateAndDeliverTouchEvent(int eventType,
     }
     m_lastTouchEvent->type = eventType;
     m_lastTouchEvent->timestamp = timestamp;
-    m_lastTouchEvent->touchPoints = touchPoints; ////????
+    m_lastTouchEvent->touchPoints = touchPoints;
     m_lastTouchEvent->touchPointStates = touchPointStates;
 }
 
