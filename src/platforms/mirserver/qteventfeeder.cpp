@@ -614,7 +614,7 @@ void QtEventFeeder::dispatchTouch(MirInputEvent const* event)
         const float kY = mir_touch_event_axis_value(tev, i, mir_touch_axis_y) / dpr;
         const float kW = mir_touch_event_axis_value(tev, i, mir_touch_axis_touch_major) / dpr;
         const float kH = mir_touch_event_axis_value(tev, i, mir_touch_axis_touch_minor) / dpr;
-        const float kP = mir_touch_event_axis_value(tev, i, mir_touch_axis_pressure) / dpr;
+        const float kP = mir_touch_event_axis_value(tev, i, mir_touch_axis_pressure);
         touchPoint.id = mir_touch_event_id(tev, i);
 
         touchPoint.normalPosition = QPointF(kX / kWindowGeometry.width(), kY / kWindowGeometry.height());
