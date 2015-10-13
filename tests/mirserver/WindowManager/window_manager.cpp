@@ -60,7 +60,7 @@ struct StubFocusController : msh::FocusController
 public:
     void focus_next_session() override {}
 
-    auto focused_session() const -> std::shared_ptr<ms::Session> override { return {}; }
+    std::shared_ptr<ms::Session> focused_session() const override { return {}; }
 
     void set_focus_to(
         std::shared_ptr<ms::Session> const& /*focus_session*/,
@@ -68,7 +68,7 @@ public:
 
     std::shared_ptr<ms::Surface> focused_surface() const override { return {}; }
 
-    virtual auto surface_at(Point /*cursor*/) const -> std::shared_ptr<ms::Surface> override { return {}; }
+    std::shared_ptr<ms::Surface> surface_at(Point /*cursor*/) const override { return {}; }
 
     void raise(msh::SurfaceSet const& /*surfaces*/) override {}
 };
@@ -117,6 +117,8 @@ struct WindowManager : Test
                     return build_surface(session, params);
                 });
     }
+
+    static constexpr uint64_t arbitrary_mac = __LINE__;
 };
 }
 
@@ -251,12 +253,13 @@ TEST_F(WindowManager, HandlesKeyboardEvent)
     const auto arbitrary_timestamp = std::chrono::steady_clock().now().time_since_epoch();
     const auto arbitrary_action = mir_keyboard_action_down;
     const xkb_keysym_t arbitrary_key_code{0};
-    const auto arbitrary_scan_code = 0;
+    const int arbitrary_scan_code = 0;
     const MirInputEventModifiers arbitrary_event_modifiers{0};
 
     const auto generic_event = make_event(
         arbitrary_device,
         arbitrary_timestamp,
+        arbitrary_mac,
         arbitrary_action,
         arbitrary_key_code,
         arbitrary_scan_code,
@@ -277,6 +280,7 @@ TEST_F(WindowManager, HandlesTouchEvent)
     const auto generic_event = make_event(
         arbitrary_device,
         arbitrary_timestamp,
+        arbitrary_mac,
         arbitrary_event_modifiers);
 
     const auto input_event = mir_event_get_input_event(generic_event.get());
@@ -296,17 +300,22 @@ TEST_F(WindowManager, HandlesPointerEvent)
     const float arbitrary_y_axis_value{0};
     const float arbitrary_hscroll_value{0};
     const float arbitrary_vscroll_value{0};
+    const float arbitrary_relative_x_value{0};
+    const float arbitrary_relative_y_value{0};
 
     const auto generic_event = make_event(
         arbitrary_device,
         arbitrary_timestamp,
+        arbitrary_mac,
         arbitrary_event_modifiers,
         arbitrary_pointer_action,
         arbitrary_pointer_buttons,
         arbitrary_x_axis_value,
         arbitrary_y_axis_value,
         arbitrary_hscroll_value,
-        arbitrary_vscroll_value);
+        arbitrary_vscroll_value,
+        arbitrary_relative_x_value,
+        arbitrary_relative_y_value);
 
     const auto input_event = mir_event_get_input_event(generic_event.get());
     const auto event = mir_input_event_get_pointer_event(input_event);

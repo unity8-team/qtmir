@@ -981,10 +981,9 @@ bool CanonicalWindowManagerPolicy::handle_pointer_event(MirPointerEvent const* /
 //    tools->raise(surfaces);
 //}
 
-auto MirWindowManager::create(
+std::unique_ptr<MirWindowManager> MirWindowManager::create(
     mir::shell::FocusController* focus_controller,
     const std::shared_ptr<mir::shell::DisplayLayout> &displayLayout)
--> std::unique_ptr<MirWindowManager>
 {
     using WindowManager = msh::QtmirBasicWindowManager<CanonicalWindowManagerPolicy, msh::QtmirSessionInfo, msh::QtmirSurfaceInfo>;
     return std::make_unique<WindowManager>(focus_controller, displayLayout);

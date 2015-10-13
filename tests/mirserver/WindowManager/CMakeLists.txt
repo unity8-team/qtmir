@@ -11,6 +11,7 @@ add_executable(WindowManagerTest
 
 target_link_libraries(
   WindowManagerTest
+
   qpa-mirserver
 
   ${GTEST_BOTH_LIBRARIES}
