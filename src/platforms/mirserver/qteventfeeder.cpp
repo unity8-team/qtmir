@@ -525,8 +525,9 @@ void QtEventFeeder::dispatchPointer(MirInputEvent const* ev)
     auto modifiers = getQtModifiersFromMir(mir_pointer_event_modifiers(pev));
     auto buttons = getQtMouseButtonsfromMirPointerEvent(pev);
 
-    auto local_point = QPointF(mir_pointer_event_axis_value(pev, mir_pointer_axis_x),
-                               mir_pointer_event_axis_value(pev, mir_pointer_axis_y));
+    const qreal dpr = mQtWindowSystem->targetWindowDevicePixelRatio();
+    auto local_point = QPointF(mir_pointer_event_axis_value(pev, mir_pointer_axis_x) / dpr,
+                               mir_pointer_event_axis_value(pev, mir_pointer_axis_y) / dpr);
 
     mQtWindowSystem->handleMouseEvent(timestamp, local_point,
                                       buttons, modifiers);
