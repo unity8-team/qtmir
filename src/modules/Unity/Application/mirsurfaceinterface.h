@@ -30,6 +30,7 @@ class QHoverEvent;
 class QMouseEvent;
 class QKeyEvent;
 class QSGTexture;
+class QSGNode;
 
 namespace qtmir {
 
@@ -52,10 +53,7 @@ public:
     virtual void decrementViewCount() = 0;
 
     // methods called from the rendering (scene graph) thread:
-    virtual QSharedPointer<QSGTexture> texture() = 0;
-    virtual QSGTexture *weakTexture() const = 0;
-    virtual void updateTexture() = 0;
-    virtual unsigned int currentFrameNumber() const = 0;
+    virtual QSGNode *updateSubgraph(QSGNode* root) = 0;
     virtual bool numBuffersReadyForCompositor() = 0;
     // end of methods called from the rendering (scene graph) thread
 
@@ -77,9 +75,6 @@ public:
             ulong qtTimestamp) = 0;
 
     virtual QString appId() const = 0;
-
-public Q_SLOTS:
-    virtual void onCompositorSwappedBuffers() = 0;
 
 Q_SIGNALS:
     void firstFrameDrawn();

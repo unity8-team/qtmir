@@ -55,6 +55,7 @@ set(QMLMIRPLUGIN_SRC
     session_interface.h
     applicationcontroller.h
     settings_interface.h
+    mirsurface.h
     )
 
 add_library(unityapplicationplugin SHARED

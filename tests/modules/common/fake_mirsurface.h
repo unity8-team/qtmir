@@ -131,10 +131,7 @@ public:
     }
 
     // methods called from the rendering (scene graph) thread:
-    QSharedPointer<QSGTexture> texture() override { return QSharedPointer<QSGTexture>(); }
-    QSGTexture *weakTexture() const override { return nullptr; }
-    void updateTexture() override {}
-    unsigned int currentFrameNumber() const override { return 0; }
+    QSGNode *updateSubgraph(QSGNode *root) { return root; }
     bool numBuffersReadyForCompositor() override { return 0; }
     // end of methods called from the rendering (scene graph) thread
 
@@ -158,9 +155,6 @@ public:
     }
 
     QString appId() const override { return "foo-app"; }
-
-public Q_SLOTS:
-    void onCompositorSwappedBuffers() override {}
 
     ////
     // Test API from now on

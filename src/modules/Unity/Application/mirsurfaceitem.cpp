@@ -39,52 +39,10 @@
 
 namespace qtmir {
 
-namespace {
-
-class MirSurfaceItemReleaseResourcesJob : public QRunnable
-{
-public:
-    MirSurfaceItemReleaseResourcesJob() : textureProvider(nullptr) {}
-    void run() {
-        delete textureProvider;
-        textureProvider = nullptr;
-    }
-    QObject *textureProvider;
-};
-
-} // namespace {
-
-class MirTextureProvider : public QSGTextureProvider
-{
-    Q_OBJECT
-public:
-    MirTextureProvider(QSharedPointer<QSGTexture> texture) : t(texture) {}
-    QSGTexture *texture() const {
-        if (t)
-            t->setFiltering(smooth ? QSGTexture::Linear : QSGTexture::Nearest);
-        return t.data();
-    }
-
-    bool smooth;
-
-    void releaseTexture() {
-        t.reset();
-    }
-
-    void setTexture(QSharedPointer<QSGTexture> newTexture) {
-        t = newTexture;
-    }
-
-private:
-    QSharedPointer<QSGTexture> t;
-};
-
 MirSurfaceItem::MirSurfaceItem(QQuickItem *parent)
     : MirSurfaceItemInterface(parent)
     , m_surface(nullptr)
-    , m_textureProvider(nullptr)
     , m_lastTouchEvent(nullptr)
-    , m_lastFrameNumberRendered(nullptr)
     , m_surfaceWidth(0)
     , m_surfaceHeight(0)
     , m_orientationAngle(nullptr)
@@ -113,7 +71,6 @@ MirSurfaceItem::~MirSurfaceItem()
     setSurface(nullptr);
 
     delete m_lastTouchEvent;
-    delete m_lastFrameNumberRendered;
     delete m_orientationAngle;
 
     // Belongs to the scene graph thread. Can't delete here.
@@ -173,89 +130,31 @@ bool MirSurfaceItem::live() const
     return m_surface && m_surface->live();
 }
 
-// Called from the rendering (scene graph) thread
-QSGTextureProvider *MirSurfaceItem::textureProvider() const
-{
-    QMutexLocker mutexLocker(const_cast<QMutex*>(&m_mutex));
-    const_cast<MirSurfaceItem *>(this)->ensureTextureProvider();
-    return m_textureProvider;
-}
-
-void MirSurfaceItem::ensureTextureProvider()
-{
-    if (!m_surface) {
-        return;
-    }
-
-    if (!m_textureProvider) {
-        m_textureProvider = new MirTextureProvider(m_surface->texture());
-
-    // Check that the item is indeed using the texture from the MirSurface it currently holds
-    // If until now we were drawing a MirSurface "A" and it replaced with a MirSurface "B",
-    // we will still hold the texture from "A" until the first time we're asked to draw "B".
-    // That's the moment when we finally discard the texture from "A" and get the one from "B".
-    //
-    // Also note that m_surface->weakTexture() will return null if m_surface->texture() was never
-    // called before.
-    } else if (!m_textureProvider->texture() || m_textureProvider->texture() != m_surface->weakTexture()) {
-        m_textureProvider->setTexture(m_surface->texture());
-    }
-}
-
 QSGNode *MirSurfaceItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)    // called by render thread
 {
     QMutexLocker mutexLocker(&m_mutex);
 
     if (!m_surface) {
-        if (m_textureProvider) {
-            m_textureProvider->releaseTexture();
-        }
         delete oldNode;
         return 0;
     }
-
-    ensureTextureProvider();
-
-    m_surface->updateTexture();
 
     if (m_surface->numBuffersReadyForCompositor() > 0) {
         QTimer::singleShot(0, this, SLOT(update()));
     }
 
-    if (!m_textureProvider->texture()) {
-        delete oldNode;
-        return 0;
+    auto node = m_surface->updateSubgraph(oldNode);
+
+    if (node == nullptr)
+    {
+        return node;
     }
 
-    m_textureProvider->smooth = smooth();
-
-    QSGDefaultImageNode *node = static_cast<QSGDefaultImageNode*>(oldNode);
-    if (!node) {
-        node = new QSGDefaultImageNode;
-        node->setTexture(m_textureProvider->texture());
-
-        node->setMipmapFiltering(QSGTexture::None);
-        node->setHorizontalWrapMode(QSGTexture::ClampToEdge);
-        node->setVerticalWrapMode(QSGTexture::ClampToEdge);
-        node->setSubSourceRect(QRectF(0, 0, 1, 1));
-    } else {
-        if (!m_lastFrameNumberRendered  || (*m_lastFrameNumberRendered != m_surface->currentFrameNumber())) {
-            node->markDirty(QSGNode::DirtyMaterial);
-        }
+    for (QSGNode *current = node->firstChild(); current; current = current->nextSibling()) {
+        auto texNode = static_cast<QSGDefaultImageNode*>(current->firstChild());
+        texNode->setFiltering(smooth() ? QSGTexture::Linear : QSGTexture::Nearest);
+        texNode->setAntialiasing(antialiasing());
     }
-
-    node->setTargetRect(QRectF(0, 0, width(), height()));
-    node->setInnerTargetRect(QRectF(0, 0, width(), height()));
-
-    node->setFiltering(smooth() ? QSGTexture::Linear : QSGTexture::Nearest);
-    node->setAntialiasing(antialiasing());
-
-    node->update();
-
-    if (!m_lastFrameNumberRendered) {
-        m_lastFrameNumberRendered = new unsigned int;
-    }
-    *m_lastFrameNumberRendered = m_surface->currentFrameNumber();
 
     return node;
 }
@@ -523,12 +422,6 @@ void MirSurfaceItem::updateMirSurfaceFocus(bool focused)
     }
 }
 
-void MirSurfaceItem::invalidateSceneGraph()
-{
-    delete m_textureProvider;
-    m_textureProvider = nullptr;
-}
-
 void MirSurfaceItem::TouchEvent::updateTouchPointStatesAndType()
 {
     touchPointStates = 0;
@@ -615,9 +508,6 @@ void MirSurfaceItem::setSurface(unity::shell::application::MirSurfaceInterface *
         connect(m_surface, &MirSurfaceInterface::liveChanged, this, &MirSurfaceItem::liveChanged);
         connect(m_surface, &MirSurfaceInterface::sizeChanged, this, &MirSurfaceItem::onActualSurfaceSizeChanged);
 
-        connect(window(), &QQuickWindow::frameSwapped, m_surface, &MirSurfaceInterface::onCompositorSwappedBuffers,
-            (Qt::ConnectionType) (Qt::DirectConnection | Qt::UniqueConnection));
-
         Q_EMIT typeChanged(m_surface->type());
         Q_EMIT liveChanged(true);
         Q_EMIT surfaceStateChanged(m_surface->state());
@@ -643,18 +533,6 @@ void MirSurfaceItem::setSurface(unity::shell::application::MirSurfaceInterface *
     update();
 
     Q_EMIT surfaceChanged(m_surface);
-}
-
-void MirSurfaceItem::releaseResources()
-{
-    if (m_textureProvider) {
-        Q_ASSERT(window());
-
-        MirSurfaceItemReleaseResourcesJob *job = new MirSurfaceItemReleaseResourcesJob;
-        job->textureProvider = m_textureProvider;
-        m_textureProvider = nullptr;
-        window()->scheduleRenderJob(job, QQuickWindow::AfterSynchronizingStage);
-    }
 }
 
 int MirSurfaceItem::surfaceWidth() const

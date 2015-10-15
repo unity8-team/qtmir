@@ -85,10 +85,7 @@ public:
     void decrementViewCount() override;
 
     // methods called from the rendering (scene graph) thread:
-    QSharedPointer<QSGTexture> texture() override;
-    QSGTexture *weakTexture() const override { return m_texture.data(); }
-    void updateTexture() override;
-    unsigned int currentFrameNumber() const override;
+    QSGNode *updateSubgraph(QSGNode *root) override;
     bool numBuffersReadyForCompositor() override;
     // end of methods called from the rendering (scene graph) thread
 
@@ -110,9 +107,6 @@ public:
             ulong qtTimestamp) override;
 
     QString appId() const override;
-
-public Q_SLOTS:
-    void onCompositorSwappedBuffers() override;
 
 private Q_SLOTS:
     void dropPendingBuffer();
@@ -136,11 +130,6 @@ private:
     QTimer m_frameDropperTimer;
 
     QMutex m_mutex;
-
-    // Lives in the rendering (scene graph) thread
-    QWeakPointer<QSGTexture> m_texture;
-    bool m_textureUpdated;
-    unsigned int m_currentFrameNumber;
 
     bool m_live;
     int m_viewCount;

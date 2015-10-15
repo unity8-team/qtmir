@@ -69,12 +69,6 @@ public:
     void setSurfaceHeight(int value) override;
 
     ////////
-    // QQuickItem
-
-    bool isTextureProvider() const override { return true; }
-    QSGTextureProvider *textureProvider() const override;
-
-    ////////
     // own API
 
     // to allow easy touch event injection from tests
@@ -84,10 +78,6 @@ public:
             const QList<QTouchEvent::TouchPoint> &touchPoints,
             Qt::TouchPointStates touchPointStates);
 
-
-public Q_SLOTS:
-    // Called by QQuickWindow from the rendering thread
-    void invalidateSceneGraph();
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;
@@ -105,8 +95,6 @@ protected:
 
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *);
 
-    void releaseResources() override;
-
 private Q_SLOTS:
     void scheduleMirSurfaceSizeUpdate();
     void updateMirSurfaceSize();
@@ -116,8 +104,6 @@ private Q_SLOTS:
     void onActualSurfaceSizeChanged(const QSize &size);
 
 private:
-    void ensureTextureProvider();
-
     bool hasTouchInsideUbuntuKeyboard(const QList<QTouchEvent::TouchPoint> &touchPoints);
     bool isMouseInsideUbuntuKeyboard(const QMouseEvent *event);
 
@@ -132,7 +118,6 @@ private:
     MirSurfaceInterface* m_surface;
 
     QMutex m_mutex;
-    MirTextureProvider *m_textureProvider;
 
     QTimer m_updateMirSurfaceSizeTimer;
 
@@ -155,8 +140,6 @@ private:
         QList<QTouchEvent::TouchPoint> touchPoints;
         Qt::TouchPointStates touchPointStates;
     } *m_lastTouchEvent;
-
-    unsigned int *m_lastFrameNumberRendered;
 
     int m_surfaceWidth;
     int m_surfaceHeight;

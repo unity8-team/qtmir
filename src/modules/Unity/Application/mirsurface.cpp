@@ -28,6 +28,9 @@
 // mirserver
 #include <logging.h>
 
+#include <QtQuick/qsgnode.h>
+#include <private/qsgdefaultimagenode_p.h>
+
 using namespace qtmir;
 
 namespace {
@@ -139,6 +142,47 @@ mir::EventUPtr makeMirEvent(Qt::KeyboardModifiers qmods,
 
 } // namespace {
 
+class QSGMirRenderableNode : public QSGDefaultImageNode
+{
+public:
+    QSGMirRenderableNode()
+    {
+        initialised = false;
+        setMipmapFiltering(QSGTexture::None);
+        setHorizontalWrapMode(QSGTexture::ClampToEdge);
+        setVerticalWrapMode(QSGTexture::ClampToEdge);
+        setSubSourceRect(QRectF(0, 0, 1, 1));
+    }
+
+    void updateFromRenderable(mir::graphics::Renderable const& renderable)
+    {
+        if (initialised) {
+            // Avoid holding two buffers for the compositor at the same time. Thus free the current
+            // before acquiring the next
+            texture.freeBuffer();
+            texture.setBuffer(renderable.buffer());
+        } else {
+            texture.setBuffer(renderable.buffer());
+            setTexture(&texture);
+            initialised = true;
+        }
+
+
+        auto const newWidth = renderable.screen_position().size.width.as_float();
+        auto const newHeight = renderable.screen_position().size.height.as_float();
+        setTargetRect(QRectF(0, 0, newWidth, newHeight));
+        setInnerTargetRect(QRectF(0, 0, newWidth, newHeight));
+
+        markDirty(QSGNode::DirtyMaterial);
+
+        update();
+    }
+
+private:
+    MirBufferSGTexture texture;
+    bool initialised;
+};
+
 MirSurface::MirSurface(std::shared_ptr<mir::scene::Surface> surface,
         SessionInterface* session,
         mir::shell::Shell* shell,
@@ -149,8 +193,6 @@ MirSurface::MirSurface(std::shared_ptr<mir::scene::Surface> surface,
     , m_shell(shell)
     , m_firstFrameDrawn(false)
     , m_orientationAngle(Mir::Angle0)
-    , m_textureUpdated(false)
-    , m_currentFrameNumber(0)
     , m_live(true)
     , m_viewCount(0)
 {
@@ -296,58 +338,6 @@ void MirSurface::startFrameDropper()
     if (!m_frameDropperTimer.isActive()) {
         m_frameDropperTimer.start();
     }
-}
-
-QSharedPointer<QSGTexture> MirSurface::texture()
-{
-    if (!m_texture) {
-        QSharedPointer<QSGTexture> texture(new MirBufferSGTexture);
-        m_texture = texture.toWeakRef();
-        return texture;
-    } else {
-        return m_texture.toStrongRef();
-    }
-}
-
-void MirSurface::updateTexture()
-{
-    QMutexLocker locker(&m_mutex);
-
-    if (m_textureUpdated) {
-        return;
-    }
-
-    Q_ASSERT(!m_texture.isNull());
-    MirBufferSGTexture *texture = static_cast<MirBufferSGTexture*>(m_texture.data());
-
-    const void* const userId = (void*)123;
-    auto renderables = m_surface->generate_renderables(userId);
-
-    if (m_surface->buffers_ready_for_compositor(userId) > 0 && renderables.size() > 0) {
-        // Avoid holding two buffers for the compositor at the same time. Thus free the current
-        // before acquiring the next
-        texture->freeBuffer();
-        texture->setBuffer(renderables[0]->buffer());
-        ++m_currentFrameNumber;
-
-        if (texture->textureSize() != m_size) {
-            m_size = texture->textureSize();
-            QMetaObject::invokeMethod(this, "emitSizeChanged", Qt::QueuedConnection);
-        }
-    }
-
-    if (m_surface->buffers_ready_for_compositor(userId) > 0) {
-        // restart the frame dropper to give MirSurfaceItems enough time to render the next frame.
-        // queued since the timer lives in a different thread
-        QMetaObject::invokeMethod(&m_frameDropperTimer, "start", Qt::QueuedConnection);
-    }
-
-    m_textureUpdated = true;
-}
-
-void MirSurface::onCompositorSwappedBuffers()
-{
-    m_textureUpdated = false;
 }
 
 bool MirSurface::numBuffersReadyForCompositor()
@@ -628,11 +618,6 @@ void MirSurface::decrementViewCount()
     }
 }
 
-unsigned int MirSurface::currentFrameNumber() const
-{
-    return m_currentFrameNumber;
-}
-
 void MirSurface::onSessionDestroyed()
 {
     if (m_viewCount == 0) {
@@ -655,4 +640,99 @@ QString MirSurface::appId() const
         appId.append("-");
     }
     return appId;
+}
+
+namespace {
+bool operator==(mir::geometry::Size const& lhs, QSize const& rhs)
+{
+    return lhs.height.as_int() == rhs.height() &&
+           lhs.width.as_int() == rhs.height();
+}
+
+bool operator!=(mir::geometry::Size const& lhs, QSize const& rhs)
+{
+    return !(lhs == rhs);
+}
+
+}
+
+namespace {
+void resizeSubgraph(QSGNode *root, size_t newSize)
+{
+    int geometryDelta = root->childCount() - newSize;
+
+    if (geometryDelta != 0)
+    {
+        qCDebug(QTMIR_SURFACES).nospace() << "Surface geometry count changed from "
+                               << root->childCount() << " to " << newSize;
+    }
+
+    while (geometryDelta > 0) {
+        // We have a surplus; trim the children to fit.
+        root->removeChildNode(root->firstChild());
+        geometryDelta--;
+    }
+    while (geometryDelta < 0) {
+        // We have a deficit; add new child nodes
+        auto transform = new QSGTransformNode;
+        transform->appendChildNode(new QSGMirRenderableNode);
+        root->appendChildNode(transform);
+        geometryDelta++;
+    }
+}
+}
+
+QSGNode *MirSurface::updateSubgraph(QSGNode *root)
+{
+    QMutexLocker locker(&m_mutex);
+
+    if (root == nullptr) {
+        root = new QSGNode;
+    }
+
+    const void* const userId = (void*)123;
+
+    if (m_surface->buffers_ready_for_compositor(userId) > 0) {
+        auto renderables = m_surface->generate_renderables(userId);
+
+        if (static_cast<size_t>(root->childCount()) != renderables.size())
+        {
+            resizeSubgraph(root, renderables.size());
+        }
+
+        // Renderables in the RenderableList are absolutely-positioned, but we want
+        // relative positioning. This seems to be a flaw in the generate_renderables() API.
+        auto const top_left = m_surface->top_left();
+
+
+        QSGNode *current = root->firstChild();
+        for (auto const& renderable : renderables) {
+            auto const pos = renderable->screen_position().top_left - top_left;
+            auto transformNode = static_cast<QSGTransformNode*>(current);
+
+            if (transformNode->matrix()(0, 3) != pos.dx.as_float() ||
+                transformNode->matrix()(1, 3) != pos.dy.as_float()) {
+                auto newTranslation = QMatrix4x4();
+                newTranslation.translate(pos.dx.as_float(), pos.dy.as_float());
+                transformNode->setMatrix(newTranslation);
+                transformNode->markDirty(QSGNode::DirtyMatrix);
+            }
+            auto textureNode = static_cast<QSGMirRenderableNode*>(transformNode->firstChild());
+
+            textureNode->updateFromRenderable(*renderable);
+
+            current = current->nextSibling();
+        }
+
+        // restart the frame dropper to give MirSurfaceItems enough time to render the next frame.
+        // queued since the timer lives in a different thread
+        QMetaObject::invokeMethod(&m_frameDropperTimer, "start", Qt::QueuedConnection);
+    }
+
+    if (m_surface->size() != m_size) {
+        m_size = QSize(m_surface->size().width.as_int(), m_surface->size().height.as_int());
+        QMetaObject::invokeMethod(this, "emitSizeChanged", Qt::QueuedConnection);
+    }
+
+    return root;
 }
