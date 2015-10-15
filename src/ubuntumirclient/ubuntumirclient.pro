@@ -2,7 +2,7 @@ TARGET = qpa-ubuntumirclient
 TEMPLATE = lib
 
 QT -= gui
-QT += core-private gui-private platformsupport-private sensors dbus
+QT += core-private platformsupport-private dbus
 
 CONFIG += plugin no_keywords qpa/genericunixfontdatabase
 
@@ -35,7 +35,7 @@ HEADERS = \
     integration.h \
     logging.h \
     nativeinterface.h \
-    orientationchangeevent_p.h \    
+    orientationchangeevent_p.h \
     platformservices.h \
     plugin.h \
     screen.h \

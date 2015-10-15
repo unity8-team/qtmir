@@ -18,19 +18,20 @@
 #define ORIENTATIONCHANGEEVENT_P_H
 
 #include <QEvent>
-#include <QOrientationReading>
 #include "logging.h"
 
 class OrientationChangeEvent : public QEvent {
 public:
-    OrientationChangeEvent(QEvent::Type type, QOrientationReading::Orientation orientation)
+    enum Orientation { TopUp, LeftUp, TopDown, RightUp };
+
+    OrientationChangeEvent(QEvent::Type type, Orientation orientation)
         : QEvent(type)
         , mOrientation(orientation)
     {
     }
 
     static const QEvent::Type mType;
-    QOrientationReading::Orientation mOrientation;
+    Orientation mOrientation;
 };
 
 #endif // ORIENTATIONCHANGEEVENT_P_H

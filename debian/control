@@ -16,8 +16,6 @@ Build-Depends: debhelper (>= 9),
                libxkbcommon-dev,
                qt5-default,
                qtbase5-private-dev,
-               qtdeclarative5-dev,
-               libqt5sensors5-dev,
                libmirclient-dev (>= 0.13.0),
 # if you don't have have commit access to this branch but would like to upload
 # directly to Ubuntu, don't worry: your changes will be merged back into the
@@ -39,8 +37,6 @@ Breaks: qthybris (<< 0.37),
 Provides: qtubuntu,
 Depends: ${misc:Depends},
          ${shlibs:Depends},
-         libqt5sensors5,
-         qtubuntu-sensors,
          ubuntu-application-api3-touch,
 Description: Qt plugins for Ubuntu Platform API (mobile)
  QtUbuntu is a set of Qt5 components for the Ubuntu Platform API. It contains a
@@ -62,8 +58,6 @@ Breaks: qthybris (<< 0.37),
 Provides: qtubuntu,
 Depends: ${misc:Depends},
          ${shlibs:Depends},
-         libqt5sensors5,
-         qtubuntu-sensors,
          ubuntu-application-api3-desktop,
 Description: Qt plugins for Ubuntu Platform API (desktop)
  QtUbuntu is a set of Qt5 components for the Ubuntu Platform API. It contains a

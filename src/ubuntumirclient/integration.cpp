@@ -55,7 +55,12 @@ static void aboutToStopCallback(UApplicationArchive *archive, void* context)
     Q_UNUSED(archive)
     DASSERT(context != NULL);
     UbuntuClientIntegration* integration = static_cast<UbuntuClientIntegration*>(context);
-    integration->inputContext()->hideInputPanel();
+    QPlatformInputContext *inputContext = integration->inputContext();
+    if (inputContext) {
+        inputContext->hideInputPanel();
+    } else {
+        qWarning("UbuntuClientIntegration aboutToStopCallback(): no input context");
+    }
     QCoreApplication::postEvent(QCoreApplication::instance(),
                                 new QEvent(QEvent::ApplicationDeactivate));
 }
@@ -78,6 +83,8 @@ UbuntuClientIntegration::UbuntuClientIntegration()
         qFatal("UbuntuClientIntegration: connection to Mir server failed. Check that a Mir server is\n"
                "running, and the correct socket is being used and is accessible. The shell may have\n"
                "rejected the incoming connection, so check its log file");
+
+    mNativeInterface->setMirConnection(u_application_instance_get_mir_connection(mInstance));
 
     // Create default screen.
     mScreen = new UbuntuScreen(u_application_instance_get_mir_connection(mInstance));
@@ -239,4 +246,9 @@ QVariant UbuntuClientIntegration::styleHint(StyleHint hint) const
 QPlatformClipboard* UbuntuClientIntegration::clipboard() const
 {
     return mClipboard.data();
+}
+
+QPlatformNativeInterface* UbuntuClientIntegration::nativeInterface() const
+{
+    return mNativeInterface;
 }

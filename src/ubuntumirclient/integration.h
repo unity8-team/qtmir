@@ -28,6 +28,7 @@
 
 class UbuntuClipboard;
 class UbuntuInput;
+class UbuntuNativeInterface;
 class UbuntuScreen;
 
 class UbuntuClientIntegration : public QPlatformIntegration {
@@ -38,7 +39,7 @@ public:
     // QPlatformIntegration methods.
     bool hasCapability(QPlatformIntegration::Capability cap) const override;
     QAbstractEventDispatcher *createEventDispatcher() const override;
-    QPlatformNativeInterface* nativeInterface() const override { return mNativeInterface; }
+    QPlatformNativeInterface* nativeInterface() const override;
     QPlatformBackingStore* createPlatformBackingStore(QWindow* window) const override;
     QPlatformOpenGLContext* createPlatformOpenGLContext(QOpenGLContext* context) const override;
     QPlatformFontDatabase* fontDatabase() const override { return mFontDb; }
@@ -58,7 +59,7 @@ private:
     void setupOptions();
     void setupDescription();
 
-    QPlatformNativeInterface* mNativeInterface;
+    UbuntuNativeInterface* mNativeInterface;
     QPlatformFontDatabase* mFontDb;
 
     UbuntuPlatformServices* mServices;
