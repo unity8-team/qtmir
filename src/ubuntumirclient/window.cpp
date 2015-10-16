@@ -460,7 +460,14 @@ void UbuntuWindow::handleSurfaceResize(int width, int height)
 void UbuntuWindow::handleSurfaceFocusChange(bool focused)
 {
     DLOG("[ubuntumirclient QPA] handleSurfaceFocusChange(window=%p, focused=%s)", this, focused ? "true" : "false");
-    QWindow *activatedWindow = focused ? window() : nullptr;
+    if (!focused) {
+    	// Mir will send a pair of events when a new surface is focused, one for the surface
+    	// that was unfocused and one for the surface what just gained focus. There is no
+    	// equivalent Qt API to "unfocus" a single window only handleWindowActivated(NULL, ...)
+    	// which has different semantics (all windows lose focus) which is problematic for popups.
+    	// Hence unfocused events are ignored.
+    	return;
+    }
 
     // System clipboard contents might have changed while this window was unfocused and without
     // this process getting notified about it because it might have been suspended (due to
@@ -468,11 +475,8 @@ void UbuntuWindow::handleSurfaceFocusChange(bool focused)
     // D-Bus.
     // Therefore let's ensure we are up to date with the system clipboard now that we are getting
     // focused again.
-    if (focused) {
-        d->mClipboard->requestDBusClipboardContents();
-    }
-
-    QWindowSystemInterface::handleWindowActivated(activatedWindow, Qt::ActiveWindowFocusReason);
+    d->mClipboard->requestDBusClipboardContents();
+    QWindowSystemInterface::handleWindowActivated(window(), Qt::ActiveWindowFocusReason);
 }
 
 void UbuntuWindow::setWindowState(Qt::WindowState state)
@@ -557,8 +561,5 @@ void UbuntuWindow::onBuffersSwapped_threadSafe(int newBufferWidth, int newBuffer
                " resizeCatchUpAttempts=%d",
                d->mBufferSize.width(), d->mBufferSize.height(), d->mResizeCatchUpAttempts);
         QWindowSystemInterface::handleExposeEvent(window(), geometry());
-    } else {
-        DLOG("UbuntuWindow::onBuffersSwapped_threadSafe - buffer size (%d,%d). resizeCatchUpAttempts=%d",
-              d->mBufferSize.width(), d->mBufferSize.height(), d->mResizeCatchUpAttempts);
     }
 }
