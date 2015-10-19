@@ -103,6 +103,8 @@ protected:
 
     void touchEvent(QTouchEvent *event) override;
 
+    void itemChange(ItemChange change, const ItemChangeData &data);
+
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *);
 
     void releaseResources() override;
@@ -115,7 +117,14 @@ private Q_SLOTS:
 
     void onActualSurfaceSizeChanged(const QSize &size);
 
+    void onSmoothChanged(bool smooth);
+
 private:
+    enum {
+        DirtyFiltering    = (1 << 0),
+        DirtyAntialiasing = (1 << 1)
+    };
+
     void ensureTextureProvider();
 
     bool hasTouchInsideUbuntuKeyboard(const QList<QTouchEvent::TouchPoint> &touchPoints);
@@ -163,6 +172,8 @@ private:
     Mir::OrientationAngle *m_orientationAngle;
 
     bool m_consumesInput;
+
+    quint8 m_flags;
 };
 
 } // namespace qtmir

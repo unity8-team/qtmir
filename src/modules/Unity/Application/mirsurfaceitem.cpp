@@ -17,6 +17,7 @@
 // local
 #include "application.h"
 #include "session.h"
+#include "mirsurfacenode.h"
 #include "mirsurfaceitem.h"
 #include "logging.h"
 #include "ubuntukeyboardinfo.h"
@@ -31,7 +32,6 @@
 #include <QQmlEngine>
 #include <QQuickWindow>
 #include <QScreen>
-#include <private/qsgdefaultimagenode_p.h>
 #include <QTimer>
 #include <QSGTextureProvider>
 
@@ -89,6 +89,7 @@ MirSurfaceItem::MirSurfaceItem(QQuickItem *parent)
     , m_surfaceHeight(0)
     , m_orientationAngle(nullptr)
     , m_consumesInput(false)
+    , m_flags(0)
 {
     qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::MirSurfaceItem";
 
@@ -104,6 +105,7 @@ MirSurfaceItem::MirSurfaceItem(QQuickItem *parent)
     connect(&m_updateMirSurfaceSizeTimer, &QTimer::timeout, this, &MirSurfaceItem::updateMirSurfaceSize);
 
     connect(this, &QQuickItem::activeFocusChanged, this, &MirSurfaceItem::updateMirSurfaceFocus);
+    connect(this, &QQuickItem::smoothChanged, this, &MirSurfaceItem::onSmoothChanged);
 }
 
 MirSurfaceItem::~MirSurfaceItem()
@@ -173,6 +175,15 @@ bool MirSurfaceItem::live() const
     return m_surface && m_surface->live();
 }
 
+void MirSurfaceItem::itemChange(ItemChange change, const ItemChangeData &data)
+{
+    if (change == ItemAntialiasingHasChanged) {
+        m_flags |= DirtyAntialiasing;
+        update();
+    }
+    QQuickItem::itemChange(change, data);
+}
+
 // Called from the rendering (scene graph) thread
 QSGTextureProvider *MirSurfaceItem::textureProvider() const
 {
@@ -229,33 +240,39 @@ QSGNode *MirSurfaceItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
 
     m_textureProvider->smooth = smooth();
 
-    QSGDefaultImageNode *node = static_cast<QSGDefaultImageNode*>(oldNode);
-    if (!node) {
-        node = new QSGDefaultImageNode;
-        node->setTexture(m_textureProvider->texture());
-
-        node->setMipmapFiltering(QSGTexture::None);
-        node->setHorizontalWrapMode(QSGTexture::ClampToEdge);
-        node->setVerticalWrapMode(QSGTexture::ClampToEdge);
-        node->setSubSourceRect(QRectF(0, 0, 1, 1));
-    } else {
-        if (!m_lastFrameNumberRendered  || (*m_lastFrameNumberRendered != m_surface->currentFrameNumber())) {
-            node->markDirty(QSGNode::DirtyMaterial);
+    MirSurfaceNode *node;
+    if (oldNode) {
+        node = static_cast<MirSurfaceNode*>(oldNode);
+        if (m_flags & DirtyFiltering) {
+            node->setFiltering(smooth() ? QSGTexture::Linear : QSGTexture::Nearest);
         }
+        if (m_flags & DirtyAntialiasing) {
+            node->setAntialiasing(antialiasing());
+        }
+        // FIXME(loicm) This code was here before the switch to a dedicated node
+        // and it is maintained as it is to prevent potential issues, but I'm
+        // not sure if it really makes sense to explicitly mark the material as
+        // dirty since the texture id stays the same and the node will be
+        // rendered after this update pass anyway. Commenting it out seems not
+        // to change anything, so that would need to be investigated IMO.
+        if (!m_lastFrameNumberRendered
+            || (*m_lastFrameNumberRendered != m_surface->currentFrameNumber())) {
+            node->updateMaterial();
+        }
+    } else {
+        node = new MirSurfaceNode(
+            m_textureProvider->texture(),
+            smooth() ? QSGTexture::Linear : QSGTexture::Nearest, antialiasing());
     }
 
-    node->setTargetRect(QRectF(0, 0, width(), height()));
-    node->setInnerTargetRect(QRectF(0, 0, width(), height()));
-
-    node->setFiltering(smooth() ? QSGTexture::Linear : QSGTexture::Nearest);
-    node->setAntialiasing(antialiasing());
-
-    node->update();
+    node->updateGeometry(width(), height());
 
     if (!m_lastFrameNumberRendered) {
         m_lastFrameNumberRendered = new unsigned int;
     }
     *m_lastFrameNumberRendered = m_surface->currentFrameNumber();
+
+    m_flags = 0;
 
     return node;
 }
@@ -674,6 +691,13 @@ void MirSurfaceItem::setSurfaceWidth(int value)
 void MirSurfaceItem::onActualSurfaceSizeChanged(const QSize &size)
 {
     setImplicitSize(size.width(), size.height());
+}
+
+void MirSurfaceItem::onSmoothChanged(bool smooth)
+{
+    Q_UNUSED(smooth);
+    m_flags |= DirtyFiltering;
+    update();
 }
 
 int MirSurfaceItem::surfaceHeight() const

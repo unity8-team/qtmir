@@ -36,6 +36,7 @@ set(QMLMIRPLUGIN_SRC
     ubuntukeyboardinfo.cpp
     mirsurface.cpp
     mirsurfaceinterface.h
+    mirsurfacenode.cpp
     mirsurfaceitem.cpp
     mirbuffersgtexture.cpp
     proc_info.cpp
@@ -59,6 +60,7 @@ set(QMLMIRPLUGIN_SRC
 
 add_library(unityapplicationplugin SHARED
     ${QMLMIRPLUGIN_SRC}
+    resources.qrc
 )
 
 target_link_libraries(

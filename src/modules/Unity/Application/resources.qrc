@@ -1,0 +1,10 @@
+<!DOCTYPE RCC><RCC version="1.0">
+  <qresource>
+    <file>shaders/fill.vert</file>
+    <file>shaders/fill.frag</file>
+    <file>shaders/opaquefill.frag</file>
+    <file>shaders/offsetfill.vert</file>
+    <file>shaders/edge.vert</file>
+    <file>shaders/edge.frag</file>
+  </qresource>
+</RCC>
