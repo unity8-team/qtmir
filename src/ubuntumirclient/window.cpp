@@ -482,7 +482,7 @@ void UbuntuWindow::handleSurfaceFocusChange(bool focused)
 void UbuntuWindow::setWindowState(Qt::WindowState state)
 {
     QMutexLocker(&d->mMutex);
-    DLOG("UbuntuWindow::setWindowState(window=%p, %s)", this, qtWindowStateToStr(state));
+    DLOG("[ubuntumirclient QPA] setWindowState(window=%p, %s)", this, qtWindowStateToStr(state));
 
     if (state == d->mState)
         return;
@@ -537,11 +537,14 @@ void UbuntuWindow::onBuffersSwapped_threadSafe(int newBufferWidth, int newBuffer
     QMutexLocker(&d->mMutex);
 
     bool sizeKnown = newBufferWidth > 0 && newBufferHeight > 0;
-
+#if !defined(QT_NO_DEBUG)
+    static int frameNumber = 0;
+    ++frameNumber;
+#endif
     if (sizeKnown && (d->mBufferSize.width() != newBufferWidth ||
                 d->mBufferSize.height() != newBufferHeight)) {
         d->mResizeCatchUpAttempts = 0;
-        DLOG("UbuntuWindow::onBuffersSwapped_threadSafe - buffer size changed from (%d,%d) to (%d,%d)",
+        DLOG("[ubuntumirclient QPA] onBuffersSwapped_threadSafe - buffer size changed from (%d,%d) to (%d,%d)",
                 d->mBufferSize.width(), d->mBufferSize.height(), newBufferWidth, newBufferHeight);
 
         d->mBufferSize.rwidth() = newBufferWidth;
@@ -557,9 +560,12 @@ void UbuntuWindow::onBuffersSwapped_threadSafe(int newBufferWidth, int newBuffer
         QWindowSystemInterface::handleGeometryChange(window(), newGeometry, QRect());
     } else if (d->mResizeCatchUpAttempts > 0) {
         --d->mResizeCatchUpAttempts;
-        DLOG("UbuntuWindow::onBuffersSwapped_threadSafe - buffer size (%d,%d). Redrawing to catch up a resized buffer."
+        DLOG("[ubuntumirclient QPA] onBuffersSwapped_threadSafe - buffer size (%d,%d). Redrawing to catch up a resized buffer."
                " resizeCatchUpAttempts=%d",
                d->mBufferSize.width(), d->mBufferSize.height(), d->mResizeCatchUpAttempts);
         QWindowSystemInterface::handleExposeEvent(window(), geometry());
+    } else {
+        DLOG("[ubuntumirclient QPA] onBuffersSwapped_threadSafe [%d] - buffer size (%d,%d). resizeCatchUpAttempts=%d",
+               frameNumber, d->mBufferSize.width(), d->mBufferSize.height(), d->mResizeCatchUpAttempts);
     }
 }
