@@ -415,6 +415,8 @@ void UbuntuWindowPrivate::setSurfaceState(Qt::WindowState newState)
 
 void UbuntuWindowPrivate::setVisible(bool visible)
 {
+    // TODO: Use the new mir_surface_state_hidden state instead of mir_surface_state_minimized.
+    //       Will have to change qtmir and unity8 for that.
     const auto newState = visible ? qtWindowStateToMirSurfaceState(mState) : mir_surface_state_minimized;
     mir_wait_for(mir_surface_set_state(mSurface->mirSurface(), newState));
 }
