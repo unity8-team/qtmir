@@ -447,11 +447,11 @@ void UbuntuWindow::handleSurfaceResize(int width, int height)
     // no synchronicity whatsoever between the processing of resize events and the
     // consumption of buffers.
     if (d->mBufferSize.width() != width || d->mBufferSize.height() != height) {
-    	// if the next buffer doesn't have a different size, try some
-		// more
-		// FIXME: This is working around a mir bug! We really shound't have to
-		// swap more than once to get a buffer with the new size!
-		d->mResizeCatchUpAttempts = 2;
+        // if the next buffer doesn't have a different size, try some
+        // more
+        // FIXME: This is working around a mir bug! We really shound't have to
+        // swap more than once to get a buffer with the new size!
+        d->mResizeCatchUpAttempts = 2;
         QWindowSystemInterface::handleExposeEvent(window(), geometry());
         QWindowSystemInterface::flushWindowSystemEvents();
     }
@@ -461,12 +461,12 @@ void UbuntuWindow::handleSurfaceFocusChange(bool focused)
 {
     DLOG("[ubuntumirclient QPA] handleSurfaceFocusChange(window=%p, focused=%s)", this, focused ? "true" : "false");
     if (!focused) {
-    	// Mir will send a pair of events when a new surface is focused, one for the surface
-    	// that was unfocused and one for the surface what just gained focus. There is no
-    	// equivalent Qt API to "unfocus" a single window only handleWindowActivated(NULL, ...)
-    	// which has different semantics (all windows lose focus) which is problematic for popups.
-    	// Hence unfocused events are ignored.
-    	return;
+        // Mir will send a pair of events when a new surface is focused, one for the surface
+        // that was unfocused and one for the surface what just gained focus. There is no
+        // equivalent Qt API to "unfocus" a single window only handleWindowActivated(NULL, ...)
+        // which has different semantics (all windows lose focus) which is problematic for popups.
+        // Hence unfocused events are ignored.
+        return;
     }
 
     // System clipboard contents might have changed while this window was unfocused and without
@@ -540,7 +540,7 @@ void UbuntuWindow::onBuffersSwapped_threadSafe(int newBufferWidth, int newBuffer
 
     if (sizeKnown && (d->mBufferSize.width() != newBufferWidth ||
                 d->mBufferSize.height() != newBufferHeight)) {
-    	d->mResizeCatchUpAttempts = 0;
+        d->mResizeCatchUpAttempts = 0;
         DLOG("UbuntuWindow::onBuffersSwapped_threadSafe - buffer size changed from (%d,%d) to (%d,%d)",
                 d->mBufferSize.width(), d->mBufferSize.height(), newBufferWidth, newBufferHeight);
 
