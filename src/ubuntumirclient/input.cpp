@@ -412,10 +412,12 @@ Qt::MouseButtons extract_buttons(const MirPointerEvent *pev)
     if (mir_pointer_event_button_state(pev, mir_pointer_button_secondary))
         buttons |= Qt::RightButton;
     if (mir_pointer_event_button_state(pev, mir_pointer_button_tertiary))
-        buttons |= Qt::MidButton;
+        buttons |= Qt::MiddleButton;
+    if (mir_pointer_event_button_state(pev, mir_pointer_button_back))
+        buttons |= Qt::BackButton;
+    if (mir_pointer_event_button_state(pev, mir_pointer_button_forward))
+        buttons |= Qt::ForwardButton;
 
-    // TODO: Should mir back and forward buttons exist?
-    // should they be Qt::X button 1 and 2?
     return buttons;
 }
 }
@@ -425,14 +427,39 @@ void UbuntuInput::dispatchPointerEvent(QWindow *window, const MirInputEvent *ev)
     auto timestamp = mir_input_event_get_event_time(ev) / 1000000;
 
     auto pev = mir_input_event_get_pointer_event(ev);
+    auto action = mir_pointer_event_action(pev);
+    auto localPoint = QPointF(mir_pointer_event_axis_value(pev, mir_pointer_axis_x),
+                              mir_pointer_event_axis_value(pev, mir_pointer_axis_y));
     auto modifiers = qt_modifiers_from_mir(mir_pointer_event_modifiers(pev));
-    auto buttons = extract_buttons(pev);
 
-    auto local_point = QPointF(mir_pointer_event_axis_value(pev, mir_pointer_axis_x),
-                               mir_pointer_event_axis_value(pev, mir_pointer_axis_y));
+    switch (action) {
+    case mir_pointer_action_button_up:
+    case mir_pointer_action_button_down:
+    case mir_pointer_action_motion:
+    {
+        const float hDelta = mir_pointer_event_axis_value(pev, mir_pointer_axis_hscroll);
+        const float vDelta = mir_pointer_event_axis_value(pev, mir_pointer_axis_vscroll);
 
-    QWindowSystemInterface::handleMouseEvent(window, timestamp, local_point, local_point /* Should we omit global point instead? */,
-                                             buttons, modifiers);
+        if (hDelta != 0 || vDelta != 0) {
+            const QPoint angleDelta = QPoint(hDelta * 15, vDelta * 15);
+            QWindowSystemInterface::handleWheelEvent(window, timestamp, localPoint, localPoint,
+                                                     QPoint(), angleDelta, modifiers, Qt::ScrollUpdate);
+        } else {
+            auto buttons = extract_buttons(pev);
+            QWindowSystemInterface::handleMouseEvent(window, timestamp, localPoint, localPoint /* Should we omit global point instead? */,
+                                                     buttons, modifiers);
+        }
+        break;
+    }
+    case mir_pointer_action_enter:
+        QWindowSystemInterface::handleEnterEvent(window, localPoint, localPoint);
+        break;
+    case mir_pointer_action_leave:
+        QWindowSystemInterface::handleLeaveEvent(window);
+        break;
+    default:
+        DLOG("Unrecognized pointer event");
+    }
 }
 
 #if (LOG_EVENTS != 0)
