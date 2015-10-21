@@ -193,6 +193,7 @@ struct UbuntuWindowPrivate
     const MirPixelFormat mPixelFormat;
     const QSharedPointer<UbuntuClipboard> mClipboard;
     const WId mId;
+    bool mVisible;
     Qt::WindowState mState;
     std::unique_ptr<Surface> mSurface;
     QSize mBufferSize;
@@ -415,6 +416,11 @@ void UbuntuWindowPrivate::setSurfaceState(Qt::WindowState newState)
 
 void UbuntuWindowPrivate::setVisible(bool visible)
 {
+    if (mVisible == visible)
+        return;
+
+    mVisible = visible;
+
     // TODO: Use the new mir_surface_state_hidden state instead of mir_surface_state_minimized.
     //       Will have to change qtmir and unity8 for that.
     const auto newState = visible ? qtWindowStateToMirSurfaceState(mState) : mir_surface_state_minimized;
@@ -494,17 +500,15 @@ void UbuntuWindow::setWindowState(Qt::WindowState state)
 
 void UbuntuWindow::setGeometry(const QRect& rect)
 {
+    QMutexLocker(&d->mMutex);
     DLOG("[ubuntumirclient QPA] setGeometry (window=%p, x=%d, y=%d, width=%d, height=%d)", this, rect.x(), rect.y(), rect.width(), rect.height());
 
-    bool resize;
-    {
-        QMutexLocker(&d->mMutex);
-        resize = d->mState != Qt::WindowFullScreen && d->mState != Qt::WindowMaximized;
-        QPlatformWindow::setGeometry(rect);
-    }
-
-    if (resize) {
-        d->resize(rect);
+    QPlatformWindow::setGeometry(rect);
+    if (d->mVisible) {
+        if (d->mState != Qt::WindowFullScreen && d->mState != Qt::WindowMaximized) {
+            d->resize(rect);
+        }
+        QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(0, 0), rect.size()));
     }
 }
 
