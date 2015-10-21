@@ -23,7 +23,6 @@
 
 // Qt
 #include <qpa/qwindowsysteminterface.h>
-#include <qpa/qwindowsysteminterface.h>
 #include <QMutex>
 #include <QMutexLocker>
 #include <QSize>
@@ -408,6 +407,14 @@ void UbuntuWindow::setVisible(bool visible)
         //       Will have to change qtmir and unity8 for that.
         mir_wait_for(mir_surface_set_state(d->surface, mir_surface_state_minimized));
     }
+}
+
+void UbuntuWindow::setWindowTitle(const QString &title)
+{
+    MirSurfaceSpec *spec = mir_connection_create_spec_for_changes(d->connection);
+    mir_surface_spec_set_name(spec, title.toUtf8().constData());
+    mir_surface_apply_spec(d->surface, spec);
+    mir_surface_spec_release(spec);
 }
 
 void* UbuntuWindow::eglSurface() const
