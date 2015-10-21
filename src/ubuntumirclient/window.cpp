@@ -521,7 +521,7 @@ void UbuntuWindow::setVisible(bool visible)
         d->createWindow();
         d->setVisible(true);
 
-        QWindowSystemInterface::handleExposeEvent(window(), QRect());
+        QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(0, 0), geometry().size()));
         QWindowSystemInterface::flushWindowSystemEvents();
     } else {
         d->setVisible(false);
