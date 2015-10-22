@@ -52,7 +52,7 @@ public:
     void onBuffersSwapped_threadSafe(int newBufferWidth, int newBufferHeight);
 
 private:
-    QMutex mMutex;
+    mutable QMutex mMutex;
     std::unique_ptr<UbuntuWindowPrivate> d;
 };
 

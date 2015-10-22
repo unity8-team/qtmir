@@ -69,7 +69,7 @@ public:
     :  mMirSurface{surface},
        mEglDisplay{screen->eglDisplay()},
        mEglConfig{screen->eglConfig()},
-       mEglSurface{EGL_NO_SURFACE}
+       mEglSurface{eglCreateWindowSurface(mEglDisplay, mEglConfig, nativeWindowFor(mMirSurface), nullptr)}
     {
     }
 
@@ -81,14 +81,8 @@ public:
             mir_surface_release_sync(mMirSurface);
     }
 
-    EGLSurface eglSurface()
+    EGLSurface eglSurface() const
     {
-        // We use lazy instantiation as so that the EGL surface can be created by the
-        // thread context in which it'll be rendered
-        if (mEglSurface == EGL_NO_SURFACE)
-        {
-            mEglSurface = eglCreateWindowSurface(mEglDisplay, mEglConfig, nativeWindowFor(mMirSurface), nullptr);
-        }
         return mEglSurface;
     }
 
@@ -98,7 +92,7 @@ private:
     MirSurface * const mMirSurface;
     const EGLDisplay mEglDisplay;
     const EGLConfig mEglConfig;
-    EGLSurface mEglSurface;
+    const EGLSurface mEglSurface;
 };
 
 MirSurfaceState qtWindowStateToMirSurfaceState(Qt::WindowState state)
@@ -181,7 +175,7 @@ struct UbuntuWindowPrivate
     void setSurfaceState(Qt::WindowState state);
     void setVisible(bool state);
 
-    EGLSurface eglSurface()
+    EGLSurface eglSurface() const
     {
         return mSurface->eglSurface();
     }
