@@ -26,7 +26,6 @@
 // Qt
 #include <qpa/qwindowsysteminterface.h>
 #include <qpa/qwindowsysteminterface.h>
-#include <QMutex>
 #include <QMutexLocker>
 #include <QSize>
 #include <QtMath>
@@ -188,7 +187,6 @@ struct UbuntuWindowPrivate
     }
     MirSurface *mirSurface() const { return mSurface->mirSurface(); }
 
-    QMutex mMutex;
     UbuntuWindow * const mWindow;
     UbuntuScreen * const mScreen;
     UbuntuInput * const mInput;
@@ -440,7 +438,7 @@ UbuntuWindow::~UbuntuWindow()
 
 void UbuntuWindow::handleSurfaceResize(int width, int height)
 {
-    QMutexLocker(&d->mMutex);
+    QMutexLocker lock(&mMutex);
     DLOG("[ubuntumirclient QPA] handleSurfaceResize(window=%p, width=%d, height=%d)", this, width, height);
 
     // The current buffer size hasn't actually changed. so just render on it and swap
@@ -457,6 +455,9 @@ void UbuntuWindow::handleSurfaceResize(int width, int height)
         // swap more than once to get a buffer with the new size!
         d->mResizeCatchUpAttempts = 2;
         QWindowSystemInterface::handleExposeEvent(window(), geometry());
+
+        //NOTE: Don't flush with lock held or deadlocks will happen
+        lock.unlock();
         QWindowSystemInterface::flushWindowSystemEvents();
     }
 }
@@ -485,7 +486,7 @@ void UbuntuWindow::handleSurfaceFocusChange(bool focused)
 
 void UbuntuWindow::setWindowState(Qt::WindowState state)
 {
-    QMutexLocker(&d->mMutex);
+    QMutexLocker lock(&mMutex);
     DLOG("[ubuntumirclient QPA] setWindowState(window=%p, %s)", this, qtWindowStateToStr(state));
 
     if (state == d->mState)
@@ -496,31 +497,30 @@ void UbuntuWindow::setWindowState(Qt::WindowState state)
 
 void UbuntuWindow::setGeometry(const QRect& rect)
 {
-    QMutexLocker(&d->mMutex);
+    QMutexLocker lock(&mMutex);
     DLOG("[ubuntumirclient QPA] setGeometry (window=%p, x=%d, y=%d, width=%d, height=%d)", this, rect.x(), rect.y(), rect.width(), rect.height());
 
     QPlatformWindow::setGeometry(rect);
+    if (d->mState != Qt::WindowFullScreen && d->mState != Qt::WindowMaximized) {
+        d->resize(rect);
+    }
     if (d->mVisible) {
-        if (d->mState != Qt::WindowFullScreen && d->mState != Qt::WindowMaximized) {
-            d->resize(rect);
-        }
         QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(0, 0), rect.size()));
     }
 }
 
 void UbuntuWindow::setVisible(bool visible)
 {
-    QMutexLocker(&d->mMutex);
+    QMutexLocker lock(&mMutex);
     DLOG("[ubuntumirclient QPA] setVisible (window=%p, visible=%s)", this, visible ? "true" : "false");
 
-    if (visible) {
-        d->setVisible(true);
+    d->setVisible(visible);
+    const QRect& exposeRect = visible ? QRect(QPoint(0, 0), geometry().size()) : QRect();
+    QWindowSystemInterface::handleExposeEvent(window(), exposeRect);
 
-        QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(0, 0), geometry().size()));
-        QWindowSystemInterface::flushWindowSystemEvents();
-    } else {
-        d->setVisible(false);
-    }
+    //NOTE: Don't flush with lock held or deadlocks will happen
+    lock.unlock();
+    QWindowSystemInterface::flushWindowSystemEvents();
 }
 
 void* UbuntuWindow::eglSurface() const
@@ -535,7 +535,7 @@ WId UbuntuWindow::winId() const
 
 void UbuntuWindow::onBuffersSwapped_threadSafe(int newBufferWidth, int newBufferHeight)
 {
-    QMutexLocker(&d->mMutex);
+    QMutexLocker lock(&mMutex);
 
     bool sizeKnown = newBufferWidth > 0 && newBufferHeight > 0;
 #if !defined(QT_NO_DEBUG)
@@ -545,8 +545,8 @@ void UbuntuWindow::onBuffersSwapped_threadSafe(int newBufferWidth, int newBuffer
     if (sizeKnown && (d->mBufferSize.width() != newBufferWidth ||
                 d->mBufferSize.height() != newBufferHeight)) {
         d->mResizeCatchUpAttempts = 0;
-        DLOG("[ubuntumirclient QPA] onBuffersSwapped_threadSafe - buffer size changed from (%d,%d) to (%d,%d)",
-                d->mBufferSize.width(), d->mBufferSize.height(), newBufferWidth, newBufferHeight);
+        DLOG("[ubuntumirclient QPA] onBuffersSwapped_threadSafe(window=%p) - buffer size changed from (%d,%d) to (%d,%d)",
+                this, d->mBufferSize.width(), d->mBufferSize.height(), newBufferWidth, newBufferHeight);
 
         d->mBufferSize.rwidth() = newBufferWidth;
         d->mBufferSize.rheight() = newBufferHeight;
@@ -561,12 +561,12 @@ void UbuntuWindow::onBuffersSwapped_threadSafe(int newBufferWidth, int newBuffer
         QWindowSystemInterface::handleGeometryChange(window(), newGeometry, QRect());
     } else if (d->mResizeCatchUpAttempts > 0) {
         --d->mResizeCatchUpAttempts;
-        DLOG("[ubuntumirclient QPA] onBuffersSwapped_threadSafe - buffer size (%d,%d). Redrawing to catch up a resized buffer."
+        DLOG("[ubuntumirclient QPA] onBuffersSwapped_threadSafe(window=%p) - buffer size (%d,%d). Redrawing to catch up a resized buffer."
                " resizeCatchUpAttempts=%d",
-               d->mBufferSize.width(), d->mBufferSize.height(), d->mResizeCatchUpAttempts);
+               this, d->mBufferSize.width(), d->mBufferSize.height(), d->mResizeCatchUpAttempts);
         QWindowSystemInterface::handleExposeEvent(window(), geometry());
     } else {
-        DLOG("[ubuntumirclient QPA] onBuffersSwapped_threadSafe [%d] - buffer size (%d,%d). resizeCatchUpAttempts=%d",
-               frameNumber, d->mBufferSize.width(), d->mBufferSize.height(), d->mResizeCatchUpAttempts);
+        DLOG("[ubuntumirclient QPA] onBuffersSwapped_threadSafe(window=%p) [%d] - buffer size (%d,%d). resizeCatchUpAttempts=%d",
+               this, frameNumber, d->mBufferSize.width(), d->mBufferSize.height(), d->mResizeCatchUpAttempts);
     }
 }

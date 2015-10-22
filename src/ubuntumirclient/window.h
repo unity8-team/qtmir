@@ -19,6 +19,7 @@
 
 #include <qpa/qplatformwindow.h>
 #include <QSharedPointer>
+#include <QMutex>
 
 #include <memory>
 
@@ -51,6 +52,7 @@ public:
     void onBuffersSwapped_threadSafe(int newBufferWidth, int newBufferHeight);
 
 private:
+    QMutex mMutex;
     std::unique_ptr<UbuntuWindowPrivate> d;
 };
 
