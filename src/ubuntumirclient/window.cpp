@@ -163,12 +163,12 @@ struct UbuntuWindowPrivate
     UbuntuWindowPrivate(UbuntuWindow *w, UbuntuScreen *screen, UbuntuInput *input, Qt::WindowState state,
         MirConnection *connection, const QSharedPointer<UbuntuClipboard>& clipboard)
         : mWindow{w}, mScreen{screen}, mInput{input}, mConnection{connection}, mPixelFormat{defaultPixelFormat(connection)},
-          mClipboard{clipboard}, mId{generateWindowID()}, mState{state}, mResizeCatchUpAttempts{0}
+          mClipboard{clipboard}, mId{generateWindowID()}, mVisible{false}, mResizeCatchUpAttempts{0}, mState{state}
     {}
 
     UAUiWindowRole role();
     UbuntuWindow *transientParent();
-    MirSurface *parentSurface();
+    MirSurface *mirSurfaceFor(UbuntuWindow *window);
 
     void createWindow();
     std::unique_ptr<MirSurfaceSpec, MirSpecDeleter> createSpec(const QRect& rect);
@@ -194,11 +194,11 @@ struct UbuntuWindowPrivate
     const QSharedPointer<UbuntuClipboard> mClipboard;
     const WId mId;
     bool mVisible;
+    int mResizeCatchUpAttempts;
     Qt::WindowState mState;
     std::unique_ptr<Surface> mSurface;
     QSize mBufferSize;
     QMutex mMutex;
-    int mResizeCatchUpAttempts;
 };
 
 namespace
@@ -261,18 +261,16 @@ UbuntuWindow *UbuntuWindowPrivate::transientParent()
     return parent ? dynamic_cast<UbuntuWindow *>(parent->handle()) : nullptr;
 }
 
-MirSurface *UbuntuWindowPrivate::parentSurface()
+MirSurface *UbuntuWindowPrivate::mirSurfaceFor(UbuntuWindow *window)
 {
-    UbuntuWindow *parent = transientParent();
-
     // Sometimes children become visible before their parents - create the
     // parent window at this time if that's the case.
-    if (parent->d->mSurface == nullptr) {
+    if (window->d->mSurface == nullptr) {
         DLOG("[ubuntumirclient QPA] (window=%p) creating parent window before it is visible!", mWindow);
-        parent->d->createWindow();
+        window->d->createWindow();
     }
 
-    return parent->d->mSurface->mirSurface();
+    return window->d->mSurface->mirSurface();
 }
 
 std::unique_ptr<MirSurfaceSpec, MirSpecDeleter> UbuntuWindowPrivate::createSpec(const QRect& rect)
@@ -290,14 +288,22 @@ std::unique_ptr<MirSurfaceSpec, MirSpecDeleter> UbuntuWindowPrivate::createSpec(
    Qt::WindowType type = qWindow->type();
    if (type == Qt::Popup) {
        auto parent = transientParent();
+       if (parent == nullptr) {
+           //We cannot have a parentless popup -
+           //try using the last surface to receive input as that will most likely be
+           //the one that made caused this popup to be created
+           parent = mInput->lastWindow();
+       }
        if (parent) {
            auto pos = mWindow->geometry().topLeft();
            pos -= parent->geometry().topLeft();
            MirRectangle location{pos.x(), pos.y(), 0, 0};
            DLOG("[ubuntumirclient QPA] createSpec(window=%p) - creating menu surface", mWindow);
            return up{mir_connection_create_spec_for_menu(
-               mConnection, width, height, mPixelFormat, parentSurface(),
+               mConnection, width, height, mPixelFormat, mirSurfaceFor(parent),
                &location, mir_edge_attachment_any)};
+       } else {
+           DLOG("[ubuntumirclient QPA] createSpec(window=%p) - menu without a parent!", mWindow);
        }
    } else if (type == Qt::Dialog) {
        auto parent = transientParent();
@@ -305,7 +311,7 @@ std::unique_ptr<MirSurfaceSpec, MirSpecDeleter> UbuntuWindowPrivate::createSpec(
            // Modal dialog
            DLOG("[ubuntumirclient QPA] createSpec(window=%p) - creating modal dialog", mWindow);
            return up{mir_connection_create_spec_for_modal_dialog(
-               mConnection, width, height, mPixelFormat, parentSurface())};
+               mConnection, width, height, mPixelFormat, mirSurfaceFor(parent))};
        } else {
            // TODO: do Qt parentless dialogs have the same semantics as mir?
            DLOG("[ubuntumirclient QPA] createSpec(window=%p) - creating parentless dialog", mWindow);

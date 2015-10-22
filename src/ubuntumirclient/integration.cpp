@@ -162,10 +162,8 @@ QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window) 
 
 QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window)
 {
-    QPlatformWindow* platformWindow = new UbuntuWindow(
-            window, mClipboard, static_cast<UbuntuScreen*>(mScreen), mInput, u_application_instance_get_mir_connection(mInstance));
-    platformWindow->requestActivateWindow();
-    return platformWindow;
+    return new UbuntuWindow(window, mClipboard, static_cast<UbuntuScreen*>(mScreen),
+                            mInput, u_application_instance_get_mir_connection(mInstance));
 }
 
 bool UbuntuClientIntegration::hasCapability(QPlatformIntegration::Capability cap) const

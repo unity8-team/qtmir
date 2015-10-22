@@ -142,6 +142,7 @@ UbuntuInput::UbuntuInput(UbuntuClientIntegration* integration)
     , mEventFilterType(static_cast<UbuntuNativeInterface*>(
         integration->nativeInterface())->genericEventFilterType())
     , mEventType(static_cast<QEvent::Type>(QEvent::registerEventType()))
+    , mLastWindow(nullptr)
 {
     // Initialize touch device.
     mTouchDevice = new QTouchDevice;
@@ -213,7 +214,7 @@ void UbuntuInput::customEvent(QEvent* event)
     switch (mir_event_get_type(nativeEvent))
     {
     case mir_event_type_input:
-        dispatchInputEvent(ubuntuEvent->window->window(), mir_event_get_input_event(nativeEvent));
+        dispatchInputEvent(ubuntuEvent->window, mir_event_get_input_event(nativeEvent));
         break;
     case mir_event_type_resize:
     {
@@ -263,7 +264,7 @@ void UbuntuInput::postEvent(UbuntuWindow *platformWindow, const MirEvent *event)
     }
 }
 
-void UbuntuInput::dispatchInputEvent(QWindow *window, const MirInputEvent *ev)
+void UbuntuInput::dispatchInputEvent(UbuntuWindow *window, const MirInputEvent *ev)
 {
     switch (mir_input_event_get_type(ev))
     {
@@ -281,7 +282,7 @@ void UbuntuInput::dispatchInputEvent(QWindow *window, const MirInputEvent *ev)
     }
 }
 
-void UbuntuInput::dispatchTouchEvent(QWindow *window, const MirInputEvent *ev)
+void UbuntuInput::dispatchTouchEvent(UbuntuWindow *window, const MirInputEvent *ev)
 {
     const MirTouchEvent *tev = mir_input_event_get_touch_event(ev);
 
@@ -312,6 +313,7 @@ void UbuntuInput::dispatchTouchEvent(QWindow *window, const MirInputEvent *ev)
         switch (touch_action)
         {
         case mir_touch_action_down:
+            mLastWindow = window;
             touchPoint.state = Qt::TouchPointPressed;
             break;
         case mir_touch_action_up:
@@ -326,7 +328,7 @@ void UbuntuInput::dispatchTouchEvent(QWindow *window, const MirInputEvent *ev)
     }
 
     ulong timestamp = mir_input_event_get_event_time(ev) / 1000000;
-    QWindowSystemInterface::handleTouchEvent(window, timestamp,
+    QWindowSystemInterface::handleTouchEvent(window->window(), timestamp,
             mTouchDevice, touchPoints);
 }
 
@@ -369,7 +371,7 @@ Qt::KeyboardModifiers qt_modifiers_from_mir(MirInputEventModifiers modifiers)
 }
 }
 
-void UbuntuInput::dispatchKeyEvent(QWindow *window, const MirInputEvent *event)
+void UbuntuInput::dispatchKeyEvent(UbuntuWindow *window, const MirInputEvent *event)
 {
     const MirKeyboardEvent *key_event = mir_input_event_get_keyboard_event(event);
 
@@ -382,6 +384,9 @@ void UbuntuInput::dispatchKeyEvent(QWindow *window, const MirInputEvent *event)
     MirKeyboardAction action = mir_keyboard_event_action(key_event);
     QEvent::Type keyType = action == mir_keyboard_action_up
         ? QEvent::KeyRelease : QEvent::KeyPress;
+
+    if (action == mir_keyboard_action_down)
+        mLastWindow = window;
 
     char s[2];
     int sym = translateKeysym(xk_sym, s, sizeof(s));
@@ -399,7 +404,7 @@ void UbuntuInput::dispatchKeyEvent(QWindow *window, const MirInputEvent *event)
         }
     }
 
-    QWindowSystemInterface::handleKeyEvent(window, timestamp, keyType, sym, modifiers, text, is_auto_rep);
+    QWindowSystemInterface::handleKeyEvent(window->window(), timestamp, keyType, sym, modifiers, text, is_auto_rep);
 }
 
 namespace
@@ -420,7 +425,7 @@ Qt::MouseButtons extract_buttons(const MirPointerEvent *pev)
 }
 }
 
-void UbuntuInput::dispatchPointerEvent(QWindow *window, const MirInputEvent *ev)
+void UbuntuInput::dispatchPointerEvent(UbuntuWindow *window, const MirInputEvent *ev)
 {
     auto timestamp = mir_input_event_get_event_time(ev) / 1000000;
 
@@ -428,10 +433,13 @@ void UbuntuInput::dispatchPointerEvent(QWindow *window, const MirInputEvent *ev)
     auto modifiers = qt_modifiers_from_mir(mir_pointer_event_modifiers(pev));
     auto buttons = extract_buttons(pev);
 
+    if (buttons != Qt::NoButton)
+        mLastWindow = window;
+
     auto local_point = QPointF(mir_pointer_event_axis_value(pev, mir_pointer_axis_x),
                                mir_pointer_event_axis_value(pev, mir_pointer_axis_y));
 
-    QWindowSystemInterface::handleMouseEvent(window, timestamp, local_point, local_point /* Should we omit global point instead? */,
+    QWindowSystemInterface::handleMouseEvent(window->window(), timestamp, local_point, local_point /* Should we omit global point instead? */,
                                              buttons, modifiers);
 }
 

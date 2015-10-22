@@ -38,13 +38,14 @@ public:
 
     void postEvent(UbuntuWindow* window, const MirEvent *event);
     UbuntuClientIntegration* integration() const { return mIntegration; }
+    UbuntuWindow *lastWindow() const {return mLastWindow; }
 
 protected:
-    void dispatchKeyEvent(QWindow *window, const MirInputEvent *event);
-    void dispatchPointerEvent(QWindow *window, const MirInputEvent *event);
-    void dispatchTouchEvent(QWindow *window, const MirInputEvent *event);
-    void dispatchInputEvent(QWindow *window, const MirInputEvent *event);
-    
+    void dispatchKeyEvent(UbuntuWindow *window, const MirInputEvent *event);
+    void dispatchPointerEvent(UbuntuWindow *window, const MirInputEvent *event);
+    void dispatchTouchEvent(UbuntuWindow *window, const MirInputEvent *event);
+    void dispatchInputEvent(UbuntuWindow *window, const MirInputEvent *event);
+
     void dispatchOrientationEvent(QWindow* window, const MirOrientationEvent *event);
 
 private:
@@ -52,6 +53,7 @@ private:
     QTouchDevice* mTouchDevice;
     const QByteArray mEventFilterType;
     const QEvent::Type mEventType;
+    UbuntuWindow *mLastWindow;
 };
 
 #endif // UBUNTU_INPUT_H
