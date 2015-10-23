@@ -49,7 +49,7 @@ public:
     MirSurface *mirSurface() const;
     void handleSurfaceResized(int width, int height);
     void handleSurfaceFocusChange(bool focused);
-    void onSwapBuffers(int newBufferWidth, int newBufferHeight);
+    void onSwapBuffersDone();
 
 private:
     mutable QMutex mMutex;

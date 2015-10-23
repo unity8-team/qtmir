@@ -215,7 +215,6 @@ public:
         , mEglSurface(eglCreateWindowSurface(mEglDisplay, screen->eglConfig(), nativeWindowFor(mMirSurface), nullptr))
         , mVisible(false)
         , mWindowState(mWindow->windowState())
-        , mResizeCatchUpAttempts(0)
 
     {
         mir_surface_set_event_handler(mMirSurface, surfaceEventCallback, this);
@@ -231,6 +230,7 @@ public:
 
         // Assume that the buffer size matches the surface size at creation time
         mBufferSize = geom.size();
+        platformWindow->QPlatformWindow::setGeometry(geom);
         QWindowSystemInterface::handleGeometryChange(mWindow, geom);
 
 #if !defined(QT_NO_DEBUG)
@@ -252,11 +252,9 @@ public:
     void setState(Qt::WindowState newState);
     void setVisible(bool state);
 
-    bool hasBufferSize(int width, int height) const;
-    void expectBufferSizeChange();
-    bool isWaitingForBufferSizeChange();
-    void updateBufferSize(int width, int height);
-    const QSize& bufferSize() const { return mBufferSize; }
+    void onSwapBuffersDone();
+    void handleSurfaceResized(int width, int height);
+    bool needsRepaint() const { return mNeedsRepaint; }
 
     EGLSurface eglSurface() const { return mEglSurface; }
     MirSurface *mirSurface() const { return mMirSurface; }
@@ -276,9 +274,12 @@ private:
     const EGLSurface mEglSurface;
 
     bool mVisible;
+    bool mNeedsRepaint;
     Qt::WindowState mWindowState;
     QSize mBufferSize;
-    int mResizeCatchUpAttempts;
+
+    QMutex mTargetSizeMutex;
+    QSize mTargetSize;
 };
 
 void UbuntuSurface::resize(const QSize& size)
@@ -295,10 +296,6 @@ void UbuntuSurface::resize(const QSize& size)
     mir_surface_spec_set_width(spec.get(), size.width());
     mir_surface_spec_set_height(spec.get(), size.height());
     mir_surface_apply_spec(mirSurface(), spec.get());
-
-    if (mVisible) {
-        QWindowSystemInterface::handleExposeEvent(mWindow, QRect(QPoint(0, 0), size));
-    }
 }
 
 void UbuntuSurface::setState(Qt::WindowState newState)
@@ -320,32 +317,50 @@ void UbuntuSurface::setVisible(bool visible)
     mir_wait_for(mir_surface_set_state(mMirSurface, newState));
 }
 
-bool UbuntuSurface::hasBufferSize(int width, int height) const
+void UbuntuSurface::handleSurfaceResized(int width, int height)
 {
-    return mBufferSize.width() == width && mBufferSize.height() == height;
+    QMutexLocker lock(&mTargetSizeMutex);
+
+    // mir's resize event is mainly a signal that we need to redraw our content. We use the
+    // width/height as identifiers to figure out if this is the latest surface resize event
+    // we have posted, discarding any old ones. This avoids issuing too many redraw events.
+    // see TODO in postEvent as the ideal way we should handle this.
+    // The actual buffer size may or may have not changed at this point, so let the rendering
+    // thread drive the window geometry updates.
+    mNeedsRepaint = mTargetSize.width() == width && mTargetSize.height() == height;
 }
 
-void UbuntuSurface::expectBufferSizeChange()
+void UbuntuSurface::onSwapBuffersDone()
 {
-    // If the next buffer doesn't have a different size, try some more
-    // FIXME: This is working around a mir bug! We really shound't have to
-    // swap more than once to get a buffer with the new size!
-    mResizeCatchUpAttempts = 2;
-}
+#if !defined(QT_NO_DEBUG)
+    static int sFrameNumber = 0;
+    ++sFrameNumber;
+#endif
 
-bool UbuntuSurface::isWaitingForBufferSizeChange()
-{
-    const bool stillWaiting = mResizeCatchUpAttempts > 0;
-    if (stillWaiting) {
-        --mResizeCatchUpAttempts;
+    EGLint eglSurfaceWidth = -1;
+    EGLint eglSurfaceHeight = -1;
+    eglQuerySurface(mEglDisplay, mEglSurface, EGL_WIDTH, &eglSurfaceWidth);
+    eglQuerySurface(mEglDisplay, mEglSurface, EGL_HEIGHT, &eglSurfaceHeight);
+
+    const bool validSize = eglSurfaceWidth > 0 && eglSurfaceHeight > 0;
+
+    if (validSize && (mBufferSize.width() != eglSurfaceWidth || mBufferSize.height() != eglSurfaceHeight)) {
+
+        DLOG("[ubuntumirclient QPA] onSwapBuffersDone(window=%p) [%d] - size changed (%d, %d) => (%d, %d)",
+               mWindow, sFrameNumber, mBufferSize.width(), mBufferSize.height(), eglSurfaceWidth, eglSurfaceHeight);
+
+        mBufferSize.rwidth() = eglSurfaceWidth;
+        mBufferSize.rheight() = eglSurfaceHeight;
+
+        QRect newGeometry = mPlatformWindow->geometry();
+        newGeometry.setSize(mBufferSize);
+
+        mPlatformWindow->QPlatformWindow::setGeometry(newGeometry);
+        QWindowSystemInterface::handleGeometryChange(mWindow, newGeometry);
+    } else {
+        DLOG("[ubuntumirclient QPA] onSwapBuffersDone(window=%p) [%d] - buffer size (%d,%d)",
+               mWindow, sFrameNumber, mBufferSize.width(), mBufferSize.height());
     }
-    return stillWaiting;
-}
-void UbuntuSurface::updateBufferSize(int width, int height)
-{
-    mResizeCatchUpAttempts = 0;
-    mBufferSize.setWidth(width);
-    mBufferSize.setHeight(height);
 }
 
 void UbuntuSurface::surfaceEventCallback(MirSurface *surface, const MirEvent *event, void* context)
@@ -359,6 +374,22 @@ void UbuntuSurface::surfaceEventCallback(MirSurface *surface, const MirEvent *ev
 
 void UbuntuSurface::postEvent(const MirEvent *event)
 {
+    if (mir_event_type_resize == mir_event_get_type(event))
+    {
+        // TODO: The current event queue just accumulates all resize events;
+        // It would be nicer if we could update just one event if that event has not been dispatched.
+        // As a workaround, we use the width/height as an identifier of this latest event
+        // so the event handler (handleSurfaceResized) can discard/ignore old ones.
+        const auto resizeEvent = mir_event_get_resize_event(event);
+        const auto width =  mir_resize_event_get_width(resizeEvent);
+        const auto height =  mir_resize_event_get_height(resizeEvent);
+        DLOG("[ubuntumirclient QPA] resizeEvent(window=%p, width=%d, height=%d)", mWindow, width, height);
+
+        QMutexLocker lock(&mTargetSizeMutex);
+        mTargetSize.rwidth() = width;
+        mTargetSize.rheight() = height;
+    }
+
     mInput->postEvent(mPlatformWindow, event);
 }
 
@@ -383,18 +414,13 @@ void UbuntuWindow::handleSurfaceResized(int width, int height)
     QMutexLocker lock(&mMutex);
     DLOG("[ubuntumirclient QPA] handleSurfaceResize(window=%p, width=%d, height=%d)", window(), width, height);
 
-    // The current buffer size hasn't actually changed. so just render on it and swap
-    // buffers in the hope that the next buffer will match the surface size advertised
-    // in this event.
-    // But since this event is processed by a thread different from the one that swaps
-    // buffers, you can never know if this information is already outdated as there's
-    // no synchronicity whatsoever between the processing of resize events and the
-    // consumption of buffers.
-    if (!mSurface->hasBufferSize(width, height)) {
-        mSurface->expectBufferSizeChange();
-        QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(0, 0), geometry().size()));
+    mSurface->handleSurfaceResized(width, height);
+    if (mSurface->needsRepaint()) {
+        // NOTE: geometry is updated from different threads so query latest size inside the lock
+        QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(), geometry().size()));
 
-        //NOTE: Don't flush with lock held or deadlocks will happen
+        // NOTE: flushing will wait for the rendering thread to finish; the rendering
+        // thread calls onSwapBuffersDone, so drop the lock here
         lock.unlock();
         QWindowSystemInterface::flushWindowSystemEvents();
     }
@@ -435,9 +461,8 @@ void UbuntuWindow::setGeometry(const QRect& rect)
     DLOG("[ubuntumirclient QPA] setGeometry (window=%p, x=%d, y=%d, width=%d, height=%d)",
            window(), rect.x(), rect.y(), rect.width(), rect.height());
 
-    //NOTE: topLeft are just used as hints to the window manager during surface creation
-    // they cannot be changed by the client after surface is shown
-    auto newSize = rect.size();
+    //NOTE: mir surfaces cannot be moved by the client so ignore the topLeft coordinates
+    const auto newSize = rect.size();
     auto newGeometry = geometry();
     newGeometry.setSize(newSize);
     QPlatformWindow::setGeometry(newGeometry);
@@ -451,11 +476,10 @@ void UbuntuWindow::setVisible(bool visible)
     DLOG("[ubuntumirclient QPA] setVisible (window=%p, visible=%s)", window(), visible ? "true" : "false");
 
     mSurface->setVisible(visible);
-    const QRect& exposeRect = visible ? QRect(QPoint(0, 0), geometry().size()) : QRect();
-    QWindowSystemInterface::handleExposeEvent(window(), exposeRect);
+    const QRect& exposeRect = visible ? QRect(QPoint(), geometry().size()) : QRect();
 
-    //NOTE: Don't flush with lock held or deadlocks will happen
     lock.unlock();
+    QWindowSystemInterface::handleExposeEvent(window(), exposeRect);
     QWindowSystemInterface::flushWindowSystemEvents();
 }
 
@@ -474,31 +498,8 @@ WId UbuntuWindow::winId() const
     return mId;
 }
 
-void UbuntuWindow::onSwapBuffers(int newBufferWidth, int newBufferHeight)
+void UbuntuWindow::onSwapBuffersDone()
 {
     QMutexLocker lock(&mMutex);
-
-    const bool sizeKnown = newBufferWidth > 0 && newBufferHeight > 0;
-#if !defined(QT_NO_DEBUG)
-    static int frameNumber = 0;
-    ++frameNumber;
-#endif
-    if (sizeKnown && !mSurface->hasBufferSize(newBufferWidth, newBufferHeight)) {
-        DLOG("[ubuntumirclient QPA] updateBufferSize(window=%p) [%d] - buffer size changed from (%d,%d) to (%d,%d)",
-               window(), frameNumber, mSurface->bufferSize().width(), mSurface->bufferSize().height(), newBufferWidth, newBufferHeight);
-        mSurface->updateBufferSize(newBufferWidth, newBufferHeight);
-
-        QRect newGeometry = geometry();
-        newGeometry.setSize(mSurface->bufferSize());
-
-        QPlatformWindow::setGeometry(newGeometry);
-        QWindowSystemInterface::handleGeometryChange(window(), newGeometry);
-    } else if (mSurface->isWaitingForBufferSizeChange()) {
-        DLOG("[ubuntumirclient QPA] onSwapBuffers(window=%p) [%d] - buffer size (%d,%d). Redrawing to catch up a resized buffer.",
-               window(), frameNumber, mSurface->bufferSize().width(), mSurface->bufferSize().height());
-        QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(0, 0), geometry().size()));
-    } else {
-        DLOG("[ubuntumirclient QPA] onSwapBuffers(window=%p) [%d] - buffer size (%d,%d)",
-               window(), frameNumber, mSurface->bufferSize().width(), mSurface->bufferSize().height());
-    }
+    mSurface->onSwapBuffersDone();
 }
