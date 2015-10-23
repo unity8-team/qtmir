@@ -121,7 +121,7 @@ void UbuntuOpenGLContext::swapBuffers(QPlatformSurface* surface)
     eglQuerySurface(mEglDisplay, eglSurface, EGL_WIDTH, &newBufferWidth);
     eglQuerySurface(mEglDisplay, eglSurface, EGL_HEIGHT, &newBufferHeight);
 
-    ubuntuWindow->onBuffersSwapped_threadSafe(newBufferWidth, newBufferHeight);
+    ubuntuWindow->onSwapBuffers(newBufferWidth, newBufferHeight);
 }
 
 void (*UbuntuOpenGLContext::getProcAddress(const QByteArray& procName)) ()

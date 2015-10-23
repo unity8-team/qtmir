@@ -26,17 +26,16 @@
 class UbuntuClipboard;
 class UbuntuInput;
 class UbuntuScreen;
-struct UbuntuWindowPrivate;
+class UbuntuSurface;
 struct MirConnection;
+struct MirSurface;
 
 class UbuntuWindow : public QObject, public QPlatformWindow
 {
-    friend struct UbuntuWindowPrivate;
-
     Q_OBJECT
 public:
     UbuntuWindow(QWindow *w, QSharedPointer<UbuntuClipboard> clipboard, UbuntuScreen *screen,
-                 UbuntuInput *input, MirConnection *mir_connection);
+                 UbuntuInput *input, MirConnection *mirConnection);
     virtual ~UbuntuWindow();
 
     // QPlatformWindow methods.
@@ -46,14 +45,17 @@ public:
     void setVisible(bool visible) override;
 
     // New methods.
-    void* eglSurface() const;
-    void handleSurfaceResize(int width, int height);
+    void *eglSurface() const;
+    MirSurface *mirSurface() const;
+    void handleSurfaceResized(int width, int height);
     void handleSurfaceFocusChange(bool focused);
-    void onBuffersSwapped_threadSafe(int newBufferWidth, int newBufferHeight);
+    void onSwapBuffers(int newBufferWidth, int newBufferHeight);
 
 private:
     mutable QMutex mMutex;
-    std::unique_ptr<UbuntuWindowPrivate> d;
+    const WId mId;
+    const QSharedPointer<UbuntuClipboard> mClipboard;
+    std::unique_ptr<UbuntuSurface> mSurface;
 };
 
 #endif // UBUNTU_WINDOW_H

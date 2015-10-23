@@ -226,7 +226,7 @@ void UbuntuInput::customEvent(QEvent* event)
                 mir_resize_event_get_width(resizeEvent),
                 mir_resize_event_get_height(resizeEvent));
 
-        ubuntuEvent->window->handleSurfaceResize(mir_resize_event_get_width(resizeEvent),
+        ubuntuEvent->window->handleSurfaceResized(mir_resize_event_get_width(resizeEvent),
             mir_resize_event_get_height(resizeEvent));
         break;
     }
