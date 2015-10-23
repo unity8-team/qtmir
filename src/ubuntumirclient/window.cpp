@@ -186,12 +186,7 @@ MirSurface *createMirSurface(QWindow *window, UbuntuScreen *screen, UbuntuInput 
     mir_surface_spec_set_name(spec.get(), title.constData());
 
     if (window->windowState() == Qt::WindowFullScreen) {
-        //FIXME: What does it mean to be fullscreen when there are multiple screens?
-        auto displayConfig = mir_connection_create_display_config(connection);
-        if (displayConfig->num_outputs > 0) {
-            auto outputId = displayConfig->outputs[0].output_id;
-            mir_surface_spec_set_fullscreen_on_output(spec.get(), outputId);
-        }
+        mir_surface_spec_set_fullscreen_on_output(spec.get(), screen->mOutputId);
     }
 
     auto surface = mir_surface_create_sync(spec.get());

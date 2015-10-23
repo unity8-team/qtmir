@@ -128,6 +128,7 @@ static const MirDisplayOutput *find_active_output(
 UbuntuScreen::UbuntuScreen(MirConnection *connection)
     : mFormat(QImage::Format_RGB32)
     , mDepth(32)
+    , mOutputId(0)
     , mSurfaceFormat()
     , mEglDisplay(EGL_NO_DISPLAY)
     , mEglConfig(nullptr)
@@ -182,6 +183,7 @@ UbuntuScreen::UbuntuScreen(MirConnection *connection)
     auto const displayOutput = find_active_output(displayConfig.get());
     ASSERT(displayOutput != nullptr);
 
+    mOutputId = displayOutput->output_id;
     const MirDisplayMode *mode = &displayOutput->modes[displayOutput->current_mode];
     const int kScreenWidth = mode->horizontal_resolution;
     const int kScreenHeight = mode->vertical_resolution;
