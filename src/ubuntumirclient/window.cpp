@@ -149,7 +149,7 @@ std::unique_ptr<MirSurfaceSpec, MirSpecDeleter> makeSurfaceSpec(QWindow *window,
            //NOTE: We cannot have a parentless popup -
            //try using the last surface to receive input as that will most likely be
            //the one that made caused this popup to be created
-           parent = input->lastWindow();
+           parent = input->lastFocusedWindow();
        }
        if (parent) {
            auto pos = geom.topLeft();
@@ -186,7 +186,7 @@ MirSurface *createMirSurface(QWindow *window, UbuntuScreen *screen, UbuntuInput 
     mir_surface_spec_set_name(spec.get(), title.constData());
 
     if (window->windowState() == Qt::WindowFullScreen) {
-        mir_surface_spec_set_fullscreen_on_output(spec.get(), screen->mOutputId);
+        mir_surface_spec_set_fullscreen_on_output(spec.get(), screen->mirOutputId());
     }
 
     auto surface = mir_surface_create_sync(spec.get());
@@ -369,8 +369,7 @@ void UbuntuSurface::surfaceEventCallback(MirSurface *surface, const MirEvent *ev
 
 void UbuntuSurface::postEvent(const MirEvent *event)
 {
-    if (mir_event_type_resize == mir_event_get_type(event))
-    {
+    if (mir_event_type_resize == mir_event_get_type(event)) {
         // TODO: The current event queue just accumulates all resize events;
         // It would be nicer if we could update just one event if that event has not been dispatched.
         // As a workaround, we use the width/height as an identifier of this latest event
@@ -421,17 +420,9 @@ void UbuntuWindow::handleSurfaceResized(int width, int height)
     }
 }
 
-void UbuntuWindow::handleSurfaceFocusChange(bool focused)
+void UbuntuWindow::handleSurfaceFocused()
 {
-    DLOG("[ubuntumirclient QPA] handleSurfaceFocusChange(window=%p, focused=%s)", window(), focused ? "true" : "false");
-    if (!focused) {
-        // Mir will send a pair of events when a new surface is focused, one for the surface
-        // that was unfocused and one for the surface what just gained focus. There is no
-        // equivalent Qt API to "unfocus" a single window only handleWindowActivated(NULL, ...)
-        // which has different semantics (all windows lose focus) which is problematic for popups.
-        // Hence unfocused events are ignored.
-        return;
-    }
+    DLOG("[ubuntumirclient QPA] handleSurfaceFocused(window=%p)", window());
 
     // System clipboard contents might have changed while this window was unfocused and without
     // this process getting notified about it because it might have been suspended (due to

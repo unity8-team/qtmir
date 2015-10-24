@@ -48,7 +48,7 @@ public:
     void *eglSurface() const;
     MirSurface *mirSurface() const;
     void handleSurfaceResized(int width, int height);
-    void handleSurfaceFocusChange(bool focused);
+    void handleSurfaceFocused();
     void onSwapBuffersDone();
 
 private:

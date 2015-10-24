@@ -142,7 +142,7 @@ UbuntuInput::UbuntuInput(UbuntuClientIntegration* integration)
     , mEventFilterType(static_cast<UbuntuNativeInterface*>(
         integration->nativeInterface())->genericEventFilterType())
     , mEventType(static_cast<QEvent::Type>(QEvent::registerEventType()))
-    , mLastWindow(nullptr)
+    , mLastFocusedWindow(nullptr)
 {
     // Initialize touch device.
     mTouchDevice = new QTouchDevice;
@@ -234,8 +234,16 @@ void UbuntuInput::customEvent(QEvent* event)
     {
         auto surfaceEvent = mir_event_get_surface_event(nativeEvent);
         if (mir_surface_event_get_attribute(surfaceEvent) == mir_surface_attrib_focus) {
-            ubuntuEvent->window->handleSurfaceFocusChange(mir_surface_event_get_attribute_value(surfaceEvent) ==
-                mir_surface_focused);
+            const bool focused = mir_surface_event_get_attribute_value(surfaceEvent) == mir_surface_focused;
+            // Mir may have sent a pair of focus lost/gained events, so we need to "peek" into the queue
+            // so that we don't deactivate windows prematurely.
+            if (focused) {
+                mPendingFocusGainedEvents--;
+                ubuntuEvent->window->handleSurfaceFocused();
+            } else if(!mPendingFocusGainedEvents) {
+                DLOG("All surfaces unfocused");
+                QWindowSystemInterface::handleWindowActivated(nullptr, Qt::ActiveWindowFocusReason);
+            }
         }
         break;
     }
@@ -253,6 +261,17 @@ void UbuntuInput::customEvent(QEvent* event)
 void UbuntuInput::postEvent(UbuntuWindow *platformWindow, const MirEvent *event)
 {
     QWindow *window = platformWindow->window();
+
+    const auto eventType = mir_event_get_type(event);
+    if (mir_event_type_surface == eventType) {
+        auto surfaceEvent = mir_event_get_surface_event(event);
+        if (mir_surface_attrib_focus == mir_surface_event_get_attribute(surfaceEvent)) {
+            const bool focused = mir_surface_event_get_attribute_value(surfaceEvent) == mir_surface_focused;
+            if (focused) {
+                mPendingFocusGainedEvents++;
+            }
+        }
+    }
 
     QCoreApplication::postEvent(this, new UbuntuEvent(
             platformWindow, event, mEventType));
@@ -313,7 +332,7 @@ void UbuntuInput::dispatchTouchEvent(UbuntuWindow *window, const MirInputEvent *
         switch (touch_action)
         {
         case mir_touch_action_down:
-            mLastWindow = window;
+            mLastFocusedWindow = window;
             touchPoint.state = Qt::TouchPointPressed;
             break;
         case mir_touch_action_up:
@@ -386,7 +405,7 @@ void UbuntuInput::dispatchKeyEvent(UbuntuWindow *window, const MirInputEvent *ev
         ? QEvent::KeyRelease : QEvent::KeyPress;
 
     if (action == mir_keyboard_action_down)
-        mLastWindow = window;
+        mLastFocusedWindow = window;
 
     char s[2];
     int sym = translateKeysym(xk_sym, s, sizeof(s));
@@ -434,7 +453,7 @@ void UbuntuInput::dispatchPointerEvent(UbuntuWindow *window, const MirInputEvent
     auto buttons = extract_buttons(pev);
 
     if (buttons != Qt::NoButton)
-        mLastWindow = window;
+        mLastFocusedWindow = window;
 
     auto local_point = QPointF(mir_pointer_event_axis_value(pev, mir_pointer_axis_x),
                                mir_pointer_event_axis_value(pev, mir_pointer_axis_y));
