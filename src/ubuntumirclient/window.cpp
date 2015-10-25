@@ -54,6 +54,8 @@ struct MirSpecDeleter
     void operator()(MirSurfaceSpec *spec) { mir_surface_spec_release(spec); }
 };
 
+using Spec = std::unique_ptr<MirSurfaceSpec, MirSpecDeleter>;
+
 EGLNativeWindowType nativeWindowFor(MirSurface *surf)
 {
     auto stream = mir_surface_get_buffer_stream(surf);
@@ -130,8 +132,6 @@ UbuntuWindow *transientParentFor(QWindow *window)
 
 std::unique_ptr<MirSurfaceSpec, MirSpecDeleter> makeSurfaceSpec(QWindow *window, UbuntuInput *input, MirConnection *connection)
 {
-   using up = std::unique_ptr<MirSurfaceSpec, MirSpecDeleter>;
-
    const auto geom = window->geometry();
    const int width = geom.width();
    const int height = geom.height();
@@ -139,7 +139,7 @@ std::unique_ptr<MirSurfaceSpec, MirSpecDeleter> makeSurfaceSpec(QWindow *window,
 
    if (U_ON_SCREEN_KEYBOARD_ROLE == roleFor(window)) {
        DLOG("[ubuntumirclient QPA] makeSurfaceSpec(window=%p) - creating input method surface", window);
-       return up{mir_connection_create_spec_for_input_method(connection, width, height, pixelFormat)};
+       return Spec{mir_connection_create_spec_for_input_method(connection, width, height, pixelFormat)};
    }
 
    const Qt::WindowType type = window->type();
@@ -156,7 +156,7 @@ std::unique_ptr<MirSurfaceSpec, MirSpecDeleter> makeSurfaceSpec(QWindow *window,
            pos -= parent->geometry().topLeft();
            MirRectangle location{pos.x(), pos.y(), 0, 0};
            DLOG("[ubuntumirclient QPA] makeSurfaceSpec(window=%p) - creating menu surface", window);
-           return up{mir_connection_create_spec_for_menu(
+           return Spec{mir_connection_create_spec_for_menu(
                        connection, width, height, pixelFormat, parent->mirSurface(),
                        &location, mir_edge_attachment_any)};
        } else {
@@ -167,15 +167,15 @@ std::unique_ptr<MirSurfaceSpec, MirSpecDeleter> makeSurfaceSpec(QWindow *window,
        if (parent) {
            // Modal dialog
            DLOG("[ubuntumirclient QPA] makeSurfaceSpec(window=%p) - creating modal dialog", window);
-           return up{mir_connection_create_spec_for_modal_dialog(connection, width, height, pixelFormat, parent->mirSurface())};
+           return Spec{mir_connection_create_spec_for_modal_dialog(connection, width, height, pixelFormat, parent->mirSurface())};
        } else {
            // TODO: do Qt parentless dialogs have the same semantics as mir?
            DLOG("[ubuntumirclient QPA] makeSurfaceSpec(window=%p) - creating parentless dialog", window);
-           return up{mir_connection_create_spec_for_dialog(connection, width, height, pixelFormat)};
+           return Spec{mir_connection_create_spec_for_dialog(connection, width, height, pixelFormat)};
        }
    }
    DLOG("[ubuntumirclient QPA] makeSurfaceSpec(window=%p) - creating normal surface(type=0x%x)", window, type);
-   return up{mir_connection_create_spec_for_normal_surface(connection, width, height, pixelFormat)};
+   return Spec{mir_connection_create_spec_for_normal_surface(connection, width, height, pixelFormat)};
 }
 
 MirSurface *createMirSurface(QWindow *window, UbuntuScreen *screen, UbuntuInput *input, MirConnection *connection)
@@ -209,6 +209,8 @@ public:
         , mEglDisplay(screen->eglDisplay())
         , mEglSurface(eglCreateWindowSurface(mEglDisplay, screen->eglConfig(), nativeWindowFor(mMirSurface), nullptr))
         , mVisible(false)
+        , mNeedsRepaint(false)
+        , mParented(mWindow->transientParent() || mWindow->parent())
         , mWindowState(mWindow->windowState())
 
     {
@@ -257,6 +259,7 @@ public:
 private:
     static void surfaceEventCallback(MirSurface* surface, const MirEvent *event, void* context);
     void postEvent(const MirEvent *event);
+    void updateSurface();
 
     QWindow * const mWindow;
     UbuntuWindow * const mPlatformWindow;
@@ -270,6 +273,7 @@ private:
 
     bool mVisible;
     bool mNeedsRepaint;
+    bool mParented;
     Qt::WindowState mWindowState;
     QSize mBufferSize;
 
@@ -286,11 +290,10 @@ void UbuntuSurface::resize(const QSize& size)
         return;
     }
 
-    using up = std::unique_ptr<MirSurfaceSpec, MirSpecDeleter>;
-    auto spec = up{mir_connection_create_spec_for_changes(mConnection)};
+    Spec spec{mir_connection_create_spec_for_changes(mConnection)};
     mir_surface_spec_set_width(spec.get(), size.width());
     mir_surface_spec_set_height(spec.get(), size.height());
-    mir_surface_apply_spec(mirSurface(), spec.get());
+    mir_surface_apply_spec(mMirSurface, spec.get());
 }
 
 void UbuntuSurface::setState(Qt::WindowState newState)
@@ -305,6 +308,9 @@ void UbuntuSurface::setVisible(bool visible)
         return;
 
     mVisible = visible;
+
+    if (mVisible)
+        updateSurface();
 
     // TODO: Use the new mir_surface_state_hidden state instead of mir_surface_state_minimized.
     //       Will have to change qtmir and unity8 for that.
@@ -385,6 +391,24 @@ void UbuntuSurface::postEvent(const MirEvent *event)
     }
 
     mInput->postEvent(mPlatformWindow, event);
+}
+
+void UbuntuSurface::updateSurface()
+{
+    DLOG("[ubuntumirclient QPA] updateSurface(window=%p)", mWindow);
+
+    if (!mParented && mWindow->type() == Qt::Dialog) {
+        // The dialog may have been parented after creation time
+        // so morph it into a modal dialog
+        auto parent = transientParentFor(mWindow);
+        if (parent) {
+            DLOG("[ubuntumirclient QPA] updateSurface(window=%p) dialog now parented", mWindow);
+            mParented = true;
+            Spec spec{mir_connection_create_spec_for_changes(mConnection)};
+            mir_surface_spec_set_parent(spec.get(), parent->mirSurface());
+            mir_surface_apply_spec(mMirSurface, spec.get());
+        }
+    }
 }
 
 UbuntuWindow::UbuntuWindow(QWindow *w, QSharedPointer<UbuntuClipboard> clipboard, UbuntuScreen *screen,
