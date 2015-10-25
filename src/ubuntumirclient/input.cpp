@@ -241,7 +241,7 @@ void UbuntuInput::customEvent(QEvent* event)
                 mPendingFocusGainedEvents--;
                 ubuntuEvent->window->handleSurfaceFocused();
             } else if(!mPendingFocusGainedEvents) {
-                DLOG("All surfaces unfocused");
+                DLOG("[ubuntumirclient QPA] No windows have focus");
                 QWindowSystemInterface::handleWindowActivated(nullptr, Qt::ActiveWindowFocusReason);
             }
         }
