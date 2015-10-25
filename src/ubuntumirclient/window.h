@@ -43,6 +43,7 @@ public:
     void setGeometry(const QRect&) override;
     void setWindowState(Qt::WindowState state) override;
     void setVisible(bool visible) override;
+    void setWindowTitle(const QString &title) override;
 
     // New methods.
     void *eglSurface() const;

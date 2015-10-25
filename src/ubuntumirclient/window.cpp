@@ -248,6 +248,7 @@ public:
     void resize(const QSize& newSize);
     void setState(Qt::WindowState newState);
     void setVisible(bool state);
+    void updateTitle(const QString& title);
 
     void onSwapBuffersDone();
     void handleSurfaceResized(int width, int height);
@@ -318,6 +319,14 @@ void UbuntuSurface::setVisible(bool visible)
     mir_wait_for(mir_surface_set_state(mMirSurface, newState));
 }
 
+void UbuntuSurface::updateTitle(const QString& newTitle)
+{
+    const auto title = newTitle.toUtf8();
+    Spec spec{mir_connection_create_spec_for_changes(mConnection)};
+    mir_surface_spec_set_name(spec.get(), title.constData());
+    mir_surface_apply_spec(mMirSurface, spec.get());
+}
+
 void UbuntuSurface::handleSurfaceResized(int width, int height)
 {
     QMutexLocker lock(&mTargetSizeMutex);
@@ -359,8 +368,8 @@ void UbuntuSurface::onSwapBuffersDone()
         mPlatformWindow->QPlatformWindow::setGeometry(newGeometry);
         QWindowSystemInterface::handleGeometryChange(mWindow, newGeometry);
     } else {
-        DLOG("[ubuntumirclient QPA] onSwapBuffersDone(window=%p) [%d] - buffer size (%d,%d)",
-               mWindow, sFrameNumber, mBufferSize.width(), mBufferSize.height());
+        //DLOG("[ubuntumirclient QPA] onSwapBuffersDone(window=%p) [%d] - buffer size (%d,%d)",
+        //       mWindow, sFrameNumber, mBufferSize.width(), mBufferSize.height());
     }
 }
 
@@ -491,6 +500,12 @@ void UbuntuWindow::setVisible(bool visible)
     lock.unlock();
     QWindowSystemInterface::handleExposeEvent(window(), exposeRect);
     QWindowSystemInterface::flushWindowSystemEvents();
+}
+
+void UbuntuWindow::setWindowTitle(const QString& title)
+{
+    DLOG("[ubuntumirclient QPA] setWindowTitle (window=%p, title=%s)", window(), title.toUtf8().constData());
+    mSurface->updateTitle(title);
 }
 
 void* UbuntuWindow::eglSurface() const
