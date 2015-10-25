@@ -249,6 +249,7 @@ public:
     void setState(Qt::WindowState newState);
     void setVisible(bool state);
     void updateTitle(const QString& title);
+    void setSizingConstraints(const QSize& minSize, const QSize& maxSize, const QSize& increment);
 
     void onSwapBuffersDone();
     void handleSurfaceResized(int width, int height);
@@ -327,6 +328,26 @@ void UbuntuSurface::updateTitle(const QString& newTitle)
     mir_surface_apply_spec(mMirSurface, spec.get());
 }
 
+void UbuntuSurface::setSizingConstraints(const QSize& minSize, const QSize& maxSize, const QSize& increment)
+{
+    Spec spec{mir_connection_create_spec_for_changes(mConnection)};
+    mir_surface_spec_set_min_width(spec.get(), minSize.width());
+    mir_surface_spec_set_min_height(spec.get(), minSize.height());
+    if (maxSize.width() >= minSize.width()) {
+        mir_surface_spec_set_max_width(spec.get(), maxSize.width());
+    }
+    if (maxSize.height() >= minSize.height()) {
+        mir_surface_spec_set_max_height(spec.get(), maxSize.height());
+    }
+    if (increment.width() > 0) {
+        mir_surface_spec_set_width_increment(spec.get(), increment.width());
+    }
+    if (increment.height() > 0) {
+        mir_surface_spec_set_height_increment(spec.get(), increment.height());
+    }
+    mir_surface_apply_spec(mMirSurface, spec.get());
+}
+
 void UbuntuSurface::handleSurfaceResized(int width, int height)
 {
     QMutexLocker lock(&mTargetSizeMutex);
@@ -368,8 +389,8 @@ void UbuntuSurface::onSwapBuffersDone()
         mPlatformWindow->QPlatformWindow::setGeometry(newGeometry);
         QWindowSystemInterface::handleGeometryChange(mWindow, newGeometry);
     } else {
-        //DLOG("[ubuntumirclient QPA] onSwapBuffersDone(window=%p) [%d] - buffer size (%d,%d)",
-        //       mWindow, sFrameNumber, mBufferSize.width(), mBufferSize.height());
+        DLOG("[ubuntumirclient QPA] onSwapBuffersDone(window=%p) [%d] - buffer size (%d,%d)",
+               mWindow, sFrameNumber, mBufferSize.width(), mBufferSize.height());
     }
 }
 
@@ -504,8 +525,20 @@ void UbuntuWindow::setVisible(bool visible)
 
 void UbuntuWindow::setWindowTitle(const QString& title)
 {
-    DLOG("[ubuntumirclient QPA] setWindowTitle (window=%p, title=%s)", window(), title.toUtf8().constData());
+    QMutexLocker lock(&mMutex);
+    DLOG("[ubuntumirclient QPA] setWindowTitle(window=%p) title=%s)", window(), title.toUtf8().constData());
     mSurface->updateTitle(title);
+}
+
+void UbuntuWindow::propagateSizeHints()
+{
+    QMutexLocker lock(&mMutex);
+    const auto win = window();
+    DLOG("[ubuntumirclient QPA] propagateSizeHints(window=%p) min(%d,%d), max(%d,%d) increment(%d, %d)",
+           win, win->minimumSize().width(), win->minimumSize().height(),
+           win->maximumSize().width(), win->maximumSize().height(),
+           win->sizeIncrement().width(), win->sizeIncrement().height());
+    mSurface->setSizingConstraints(win->minimumSize(), win->maximumSize(), win->sizeIncrement());
 }
 
 void* UbuntuWindow::eglSurface() const
