@@ -130,7 +130,7 @@ UbuntuWindow *transientParentFor(QWindow *window)
     return parent ? static_cast<UbuntuWindow *>(parent->handle()) : nullptr;
 }
 
-std::unique_ptr<MirSurfaceSpec, MirSpecDeleter> makeSurfaceSpec(QWindow *window, UbuntuInput *input, MirConnection *connection)
+Spec makeSurfaceSpec(QWindow *window, UbuntuInput *input, MirConnection *connection)
 {
    const auto geom = window->geometry();
    const int width = geom.width();
@@ -148,7 +148,7 @@ std::unique_ptr<MirSurfaceSpec, MirSpecDeleter> makeSurfaceSpec(QWindow *window,
        if (parent == nullptr) {
            //NOTE: We cannot have a parentless popup -
            //try using the last surface to receive input as that will most likely be
-           //the one that made caused this popup to be created
+           //the one that caused this popup to be created
            parent = input->lastFocusedWindow();
        }
        if (parent) {
@@ -180,7 +180,6 @@ std::unique_ptr<MirSurfaceSpec, MirSpecDeleter> makeSurfaceSpec(QWindow *window,
 
 MirSurface *createMirSurface(QWindow *window, UbuntuScreen *screen, UbuntuInput *input, MirConnection *connection)
 {
-    Q_UNUSED(screen);
     auto spec = makeSurfaceSpec(window, input, connection);
     const auto title = window->title().toUtf8();
     mir_surface_spec_set_name(spec.get(), title.constData());
@@ -230,11 +229,8 @@ public:
         platformWindow->QPlatformWindow::setGeometry(geom);
         QWindowSystemInterface::handleGeometryChange(mWindow, geom);
 
-#if !defined(QT_NO_DEBUG)
-        const auto title = mWindow->title().toUtf8();
-#endif
         DLOG("[ubuntumirclient QPA] created surface at (%d, %d) with size (%d, %d), title '%s', role: '%d'\n",
-             geom.x(), geom.y(), geom.width(), geom.height(), title.constData(), roleFor(mWindow));
+             geom.x(), geom.y(), geom.width(), geom.height(), mWindow->title().toUtf8().constData(), roleFor(mWindow));
     }
 
     ~UbuntuSurface()
@@ -354,7 +350,7 @@ void UbuntuSurface::handleSurfaceResized(int width, int height)
 
     // mir's resize event is mainly a signal that we need to redraw our content. We use the
     // width/height as identifiers to figure out if this is the latest surface resize event
-    // we have posted, discarding any old ones. This avoids issuing too many redraw events.
+    // that has posted, discarding any old ones. This avoids issuing too many redraw events.
     // see TODO in postEvent as the ideal way we should handle this.
     // The actual buffer size may or may have not changed at this point, so let the rendering
     // thread drive the window geometry updates.
