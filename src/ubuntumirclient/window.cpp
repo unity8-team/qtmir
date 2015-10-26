@@ -249,7 +249,7 @@ public:
 
     void onSwapBuffersDone();
     void handleSurfaceResized(int width, int height);
-    bool needsRepaint() const { return mNeedsRepaint; }
+    int needsRepaint() const;
 
     EGLSurface eglSurface() const { return mEglSurface; }
     MirSurface *mirSurface() const { return mMirSurface; }
@@ -357,6 +357,23 @@ void UbuntuSurface::handleSurfaceResized(int width, int height)
     mNeedsRepaint = mTargetSize.width() == width && mTargetSize.height() == height;
 }
 
+int UbuntuSurface::needsRepaint() const
+{
+    if (mNeedsRepaint) {
+        if (mTargetSize != mBufferSize) {
+            //If the buffer hasn't changed yet, we need at least two redraws,
+            //once to get the new buffer size and propagate the geometry changes
+            //and the second to redraw the content at the new size
+            return 2;
+        } else {
+            // The buffer size has already been updated so we only need one redraw
+            // to render at the new size
+            return 1;
+        }
+    }
+    return 0;
+}
+
 void UbuntuSurface::onSwapBuffersDone()
 {
 #if !defined(QT_NO_DEBUG)
@@ -459,14 +476,17 @@ void UbuntuWindow::handleSurfaceResized(int width, int height)
     DLOG("[ubuntumirclient QPA] handleSurfaceResize(window=%p, width=%d, height=%d)", window(), width, height);
 
     mSurface->handleSurfaceResized(width, height);
-    if (mSurface->needsRepaint()) {
-        // NOTE: geometry is updated from different threads so query latest size inside the lock
-        QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(), geometry().size()));
 
-        // NOTE: flushing will wait for the rendering thread to finish; the rendering
-        // thread calls onSwapBuffersDone, so drop the lock here
-        lock.unlock();
-        QWindowSystemInterface::flushWindowSystemEvents();
+    // This resize event could have occurred just after the last buffer swap for this window.
+    // This means the client may still be holding a buffer with the older size. The first redraw call
+    // will then render at the old size. After swapping the client now will get a new buffer with the
+    // updated size but it still needs re-rendering so another redraw may be needed.
+    // A mir API to drop the currently held buffer would help here, so that we wouldn't have to redraw twice
+    auto const numRepaints = mSurface->needsRepaint();
+    DLOG("[ubuntumirclient QPA] handleSurfaceResize(window=%p) redraw %d times", window(), numRepaints);
+    for (int i = 0; i < numRepaints; i++) {
+        DLOG("[ubuntumirclient QPA] handleSurfaceResize(window=%p) repainting width=%d, height=%d", window(), geometry().size().width(), geometry().size().height());
+        QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(), geometry().size()));
     }
 }
 
