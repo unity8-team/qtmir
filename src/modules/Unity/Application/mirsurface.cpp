@@ -713,7 +713,7 @@ void resizeSubgraph(QSGNode *root, size_t newSize)
 }
 }
 
-QSGNode *MirSurface::updateSubgraph(QSGNode *root)
+QSGNode *MirSurface::updateSubgraph(QSGNode *root, bool smooth, bool antialiasing)
 {
     QMutexLocker locker(&m_mutex);
 
@@ -750,6 +750,8 @@ QSGNode *MirSurface::updateSubgraph(QSGNode *root)
             auto textureNode = static_cast<QSGMirRenderableNode*>(transformNode->firstChild());
 
             textureNode->updateFromRenderable(*renderable);
+            textureNode->setFiltering(smooth ? QSGTexture::Linear : QSGTexture::Nearest);
+            textureNode->setAntialiasing(antialiasing);
 
             current = current->nextSibling();
         }
@@ -757,6 +759,14 @@ QSGNode *MirSurface::updateSubgraph(QSGNode *root)
         // restart the frame dropper to give MirSurfaceItems enough time to render the next frame.
         // queued since the timer lives in a different thread
         QMetaObject::invokeMethod(&m_frameDropperTimer, "start", Qt::QueuedConnection);
+
+    } else {
+        for (QSGNode *current = root->firstChild(); current; current = current->nextSibling()) {
+            auto textureNode = static_cast<QSGDefaultImageNode*>(current->firstChild());
+            textureNode->setFiltering(smooth ? QSGTexture::Linear : QSGTexture::Nearest);
+            textureNode->setAntialiasing(antialiasing);
+            textureNode->update();
+        }
     }
 
     if (m_surface->size() != m_size) {

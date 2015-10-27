@@ -145,21 +145,7 @@ QSGNode *MirSurfaceItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
         QTimer::singleShot(0, this, SLOT(update()));
     }
 
-    auto node = m_surface->updateSubgraph(oldNode);
-
-    if (node == nullptr)
-    {
-        return node;
-    }
-
-    for (QSGNode *current = node->firstChild(); current; current = current->nextSibling()) {
-        auto texNode = static_cast<QSGDefaultImageNode*>(current->firstChild());
-        texNode->setFiltering(smooth() ? QSGTexture::Linear : QSGTexture::Nearest);
-        texNode->setAntialiasing(antialiasing());
-        texNode->update();
-    }
-
-    return node;
+    return m_surface->updateSubgraph(oldNode, smooth(), antialiasing());
 }
 
 void MirSurfaceItem::mousePressEvent(QMouseEvent *event)
