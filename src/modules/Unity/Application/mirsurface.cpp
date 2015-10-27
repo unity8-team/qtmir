@@ -746,7 +746,6 @@ QSGNode *MirSurface::updateSubgraph(QSGNode *root)
                 auto newTranslation = QMatrix4x4();
                 newTranslation.translate(pos.dx.as_float(), pos.dy.as_float());
                 transformNode->setMatrix(newTranslation);
-                transformNode->markDirty(QSGNode::DirtyMatrix);
             }
             auto textureNode = static_cast<QSGMirRenderableNode*>(transformNode->firstChild());
 
