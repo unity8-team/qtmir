@@ -133,12 +133,12 @@ UbuntuWindow *transientParentFor(QWindow *window)
 Spec makeSurfaceSpec(QWindow *window, UbuntuInput *input, MirConnection *connection)
 {
    const auto geom = window->geometry();
-   const int width = geom.width();
-   const int height = geom.height();
+   const int width = geom.width() > 0 ? geom.width() : 1;
+   const int height = geom.height() > 0 ? geom.height() : 1;
    const auto pixelFormat = defaultPixelFormatFor(connection);
 
    if (U_ON_SCREEN_KEYBOARD_ROLE == roleFor(window)) {
-       DLOG("[ubuntumirclient QPA] makeSurfaceSpec(window=%p) - creating input method surface", window);
+       DLOG("[ubuntumirclient QPA] makeSurfaceSpec(window=%p) - creating input method surface (width=%d, height=%d", window, width, height);
        return Spec{mir_connection_create_spec_for_input_method(connection, width, height, pixelFormat)};
    }
 
@@ -155,7 +155,7 @@ Spec makeSurfaceSpec(QWindow *window, UbuntuInput *input, MirConnection *connect
            auto pos = geom.topLeft();
            pos -= parent->geometry().topLeft();
            MirRectangle location{pos.x(), pos.y(), 0, 0};
-           DLOG("[ubuntumirclient QPA] makeSurfaceSpec(window=%p) - creating menu surface", window);
+           DLOG("[ubuntumirclient QPA] makeSurfaceSpec(window=%p) - creating menu surface(width:%d, height:%d)", window, width, height);
            return Spec{mir_connection_create_spec_for_menu(
                        connection, width, height, pixelFormat, parent->mirSurface(),
                        &location, mir_edge_attachment_any)};
@@ -166,15 +166,15 @@ Spec makeSurfaceSpec(QWindow *window, UbuntuInput *input, MirConnection *connect
        auto parent = transientParentFor(window);
        if (parent) {
            // Modal dialog
-           DLOG("[ubuntumirclient QPA] makeSurfaceSpec(window=%p) - creating modal dialog", window);
+           DLOG("[ubuntumirclient QPA] makeSurfaceSpec(window=%p) - creating modal dialog (width=%d, height=%d", window, width, height);
            return Spec{mir_connection_create_spec_for_modal_dialog(connection, width, height, pixelFormat, parent->mirSurface())};
        } else {
            // TODO: do Qt parentless dialogs have the same semantics as mir?
-           DLOG("[ubuntumirclient QPA] makeSurfaceSpec(window=%p) - creating parentless dialog", window);
+           DLOG("[ubuntumirclient QPA] makeSurfaceSpec(window=%p) - creating parentless dialog (width=%d, height=%d)", window, width, height);
            return Spec{mir_connection_create_spec_for_dialog(connection, width, height, pixelFormat)};
        }
    }
-   DLOG("[ubuntumirclient QPA] makeSurfaceSpec(window=%p) - creating normal surface(type=0x%x)", window, type);
+   DLOG("[ubuntumirclient QPA] makeSurfaceSpec(window=%p) - creating normal surface(type=0x%x, width=%d, height=%d)", window, type, width, height);
    return Spec{mir_connection_create_spec_for_normal_surface(connection, width, height, pixelFormat)};
 }
 
@@ -285,6 +285,11 @@ void UbuntuSurface::resize(const QSize& size)
 
     if (mWindowState == Qt::WindowFullScreen || mWindowState == Qt::WindowMaximized) {
         DLOG("[ubuntumirclient QPA] resize(window=%p) - not resizing, window is maximized or fullscreen", mWindow);
+        return;
+    }
+
+    if (size.isEmpty()) {
+        DLOG("[ubuntumirclient QPA] resize(window=%p) - not resizing, size is empty", mWindow);
         return;
     }
 
