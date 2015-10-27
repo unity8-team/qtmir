@@ -156,6 +156,7 @@ QSGNode *MirSurfaceItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
         auto texNode = static_cast<QSGDefaultImageNode*>(current->firstChild());
         texNode->setFiltering(smooth() ? QSGTexture::Linear : QSGTexture::Nearest);
         texNode->setAntialiasing(antialiasing());
+        texNode->update();
     }
 
     return node;
