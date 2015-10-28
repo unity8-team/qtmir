@@ -12,7 +12,7 @@ template<typename T>
 T compressTimestamp(std::chrono::nanoseconds timestamp)
 {
     std::chrono::nanoseconds startTime = getStartTime(timestamp);
-    std::chrono::nanoseconds result = timestamp - startTime;
+    std::chrono::nanoseconds result = (timestamp - startTime) / 1000000; // ms in nanosecond type to compare overflow
 
     if (std::numeric_limits<std::chrono::nanoseconds::rep>::max() > std::numeric_limits<T>::max() &&
         result > std::chrono::nanoseconds(std::numeric_limits<T>::max())) {
@@ -27,7 +27,7 @@ T compressTimestamp(std::chrono::nanoseconds timestamp)
 template<typename T>
 std::chrono::nanoseconds uncompressTimestamp(T timestamp)
 {
-    auto tsNS = std::chrono::nanoseconds(timestamp);
+    auto tsNS = std::chrono::milliseconds(timestamp);
     return getStartTime(tsNS, false) + std::chrono::nanoseconds(tsNS);
 }
 

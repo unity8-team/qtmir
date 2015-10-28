@@ -41,7 +41,7 @@ TEST(TimestampTest, TestCompressAndUncompress)
 
         ulong compressedTimestamp = qtmir::compressTimestamp<ulong>(timestamp);
 
-        EXPECT_EQ(addToTimestamp.count(), compressedTimestamp);
+        EXPECT_EQ(addToTimestamp.count(), compressedTimestamp * 1000000);
         EXPECT_EQ(qtmir::uncompressTimestamp<ulong>(compressedTimestamp), timestamp);
 
         addToTimestamp += std::chrono::milliseconds(1);
@@ -63,7 +63,7 @@ TEST(TimestampTest, TestOverflowWhenExceeding32bitCompression)
     quint32 compressedTimestamp = qtmir::compressTimestamp<quint32>(timestamp);
 
     // Add the quint32 limit +1 to get an overflow when we compress the timestamp
-    timestamp += std::chrono::nanoseconds(std::numeric_limits<quint32>::max()) + std::chrono::nanoseconds(1);
+    timestamp += std::chrono::milliseconds(std::numeric_limits<quint32>::max()) + std::chrono::milliseconds(1);
     compressedTimestamp = qtmir::compressTimestamp<quint32>(timestamp);
 
     EXPECT_EQ(0, compressedTimestamp);
