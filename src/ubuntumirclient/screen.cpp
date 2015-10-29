@@ -14,6 +14,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// local
+#include "screen.h"
+#include "logging.h"
+#include "orientationchangeevent_p.h"
+
 #include <mir_toolkit/mir_client_library.h>
 
 // Qt
@@ -24,12 +29,7 @@
 #include <qpa/qwindowsysteminterface.h>
 #include <QtPlatformSupport/private/qeglconvenience_p.h>
 
-// local
-#include "screen.h"
-#include "logging.h"
-#include "orientationchangeevent_p.h"
-
-#include "memory"
+#include <memory>
 
 static const int kSwapInterval = 1;
 
@@ -128,6 +128,7 @@ static const MirDisplayOutput *find_active_output(
 UbuntuScreen::UbuntuScreen(MirConnection *connection)
     : mFormat(QImage::Format_RGB32)
     , mDepth(32)
+    , mOutputId(0)
     , mSurfaceFormat()
     , mEglDisplay(EGL_NO_DISPLAY)
     , mEglConfig(nullptr)
@@ -182,6 +183,7 @@ UbuntuScreen::UbuntuScreen(MirConnection *connection)
     auto const displayOutput = find_active_output(displayConfig.get());
     ASSERT(displayOutput != nullptr);
 
+    mOutputId = displayOutput->output_id;
     const MirDisplayMode *mode = &displayOutput->modes[displayOutput->current_mode];
     const int kScreenWidth = mode->horizontal_resolution;
     const int kScreenHeight = mode->vertical_resolution;
