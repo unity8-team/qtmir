@@ -27,13 +27,14 @@
 #include <ubuntu/application/instance.h>
 
 class UbuntuClipboard;
+class UbuntuDebugExtension;
 class UbuntuInput;
 class UbuntuNativeInterface;
 class UbuntuScreen;
 
 class UbuntuClientIntegration : public QPlatformIntegration {
 public:
-    UbuntuClientIntegration();
+    UbuntuClientIntegration(int argc, char **argv);
     virtual ~UbuntuClientIntegration();
 
     // QPlatformIntegration methods.
@@ -54,6 +55,7 @@ public:
     QPlatformOpenGLContext* createPlatformOpenGLContext(QOpenGLContext* context);
     QPlatformWindow* createPlatformWindow(QWindow* window);
     UbuntuScreen* screen() const { return mScreen; }
+    UbuntuDebugExtension* debugExtension() const { return mDebugExtension.data(); }
 
 private:
     void setupOptions();
@@ -68,6 +70,7 @@ private:
     UbuntuInput* mInput;
     QPlatformInputContext* mInputContext;
     QSharedPointer<UbuntuClipboard> mClipboard;
+    QScopedPointer<UbuntuDebugExtension> mDebugExtension;
     qreal mScaleFactor;
 
     // Platform API stuff

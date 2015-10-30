@@ -23,7 +23,7 @@
 
 #include <memory>
 
-class UbuntuClipboard;
+class UbuntuClientIntegration;
 class UbuntuInput;
 class UbuntuScreen;
 class UbuntuSurface;
@@ -34,7 +34,7 @@ class UbuntuWindow : public QObject, public QPlatformWindow
 {
     Q_OBJECT
 public:
-    UbuntuWindow(QWindow *w, QSharedPointer<UbuntuClipboard> clipboard, UbuntuScreen *screen,
+    UbuntuWindow(QWindow *w, UbuntuClientIntegration *integration, UbuntuScreen *screen,
                  UbuntuInput *input, MirConnection *mirConnection);
     virtual ~UbuntuWindow();
 
@@ -46,6 +46,8 @@ public:
     void setWindowTitle(const QString &title) override;
     void propagateSizeHints() override;
 
+    QPoint mapToGlobal(const QPoint &pos) const override;
+
     // New methods.
     void *eglSurface() const;
     MirSurface *mirSurface() const;
@@ -56,7 +58,7 @@ public:
 private:
     mutable QMutex mMutex;
     const WId mId;
-    const QSharedPointer<UbuntuClipboard> mClipboard;
+    const UbuntuClientIntegration *mIntegration;
     std::unique_ptr<UbuntuSurface> mSurface;
 };
 

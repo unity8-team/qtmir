@@ -17,15 +17,9 @@
 #include "plugin.h"
 #include "integration.h"
 
-QStringList UbuntuMirClientIntegrationPlugin::keys() const
-{
-    QStringList list;
-    list << "ubuntumirclient";
-    return list;
-}
-
-QPlatformIntegration* UbuntuMirClientIntegrationPlugin::create(const QString &system,
-                                                               const QStringList &)
+QPlatformIntegration *UbuntuMirClientIntegrationPlugin::create(const QString &system,
+                                                               const QStringList &/*paramList*/,
+                                                               int &argc, char **argv)
 {
     if (system.toLower() == "ubuntumirclient") {
 #ifdef PLATFORM_API_TOUCH
@@ -33,7 +27,7 @@ QPlatformIntegration* UbuntuMirClientIntegrationPlugin::create(const QString &sy
 #else
         setenv("UBUNTU_PLATFORM_API_BACKEND", "desktop_mirclient", 1);
 #endif
-        return new UbuntuClientIntegration;
+        return new UbuntuClientIntegration(argc, argv);
     } else {
         return 0;
     }

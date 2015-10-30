@@ -17,7 +17,9 @@
 // Local
 #include "window.h"
 #include "clipboard.h"
+#include "debugextension.h"
 #include "input.h"
+#include "integration.h"
 #include "screen.h"
 #include "logging.h"
 
@@ -459,12 +461,12 @@ void UbuntuSurface::updateSurface()
     }
 }
 
-UbuntuWindow::UbuntuWindow(QWindow *w, QSharedPointer<UbuntuClipboard> clipboard, UbuntuScreen *screen,
+UbuntuWindow::UbuntuWindow(QWindow *w, UbuntuClientIntegration *integration, UbuntuScreen *screen,
                            UbuntuInput *input, MirConnection *connection)
     : QObject(nullptr)
     , QPlatformWindow(w)
     , mId(makeId())
-    , mClipboard(clipboard)
+    , mIntegration(integration)
     , mSurface(new UbuntuSurface{this, screen, input, connection})
 {
     DLOG("[ubuntumirclient QPA] UbuntuWindow(window=%p, screen=%p, input=%p, surf=%p)", w, screen, input, mSurface.get());
@@ -505,7 +507,7 @@ void UbuntuWindow::handleSurfaceFocused()
     // D-Bus.
     // Therefore let's ensure we are up to date with the system clipboard now that we are getting
     // focused again.
-    mClipboard->requestDBusClipboardContents();
+    static_cast<UbuntuClipboard*>(mIntegration->clipboard())->requestDBusClipboardContents();
     QWindowSystemInterface::handleWindowActivated(window(), Qt::ActiveWindowFocusReason);
 }
 
@@ -560,6 +562,15 @@ void UbuntuWindow::propagateSizeHints()
            win->maximumSize().width(), win->maximumSize().height(),
            win->sizeIncrement().width(), win->sizeIncrement().height());
     mSurface->setSizingConstraints(win->minimumSize(), win->maximumSize(), win->sizeIncrement());
+}
+
+QPoint UbuntuWindow::mapToGlobal(const QPoint &pos) const
+{
+    if (mIntegration->debugExtension()) {
+        return mIntegration->debugExtension()->mapSurfacePointToScreen(mSurface->mirSurface(), pos);
+    } else {
+        return pos;
+    }
 }
 
 void* UbuntuWindow::eglSurface() const

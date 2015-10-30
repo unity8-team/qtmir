@@ -25,7 +25,8 @@ SOURCES = \
     plugin.cpp \
     screen.cpp \
     theme.cpp \
-    window.cpp
+    window.cpp \
+    debugextension.cpp
 
 HEADERS = \
     backingstore.h \
@@ -40,7 +41,8 @@ HEADERS = \
     plugin.h \
     screen.h \
     theme.h \
-    window.h
+    window.h \
+    debugextension.h
 
 # Installation path
 target.path +=  $$[QT_INSTALL_PLUGINS]/platforms
