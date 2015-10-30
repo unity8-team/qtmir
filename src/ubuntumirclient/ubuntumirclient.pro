@@ -17,6 +17,7 @@ PKGCONFIG += egl mirclient ubuntu-platform-api
 SOURCES = \
     backingstore.cpp \
     clipboard.cpp \
+    debugextension.cpp \
     glcontext.cpp \
     input.cpp \
     integration.cpp \
@@ -25,12 +26,12 @@ SOURCES = \
     plugin.cpp \
     screen.cpp \
     theme.cpp \
-    window.cpp \
-    debugextension.cpp
+    window.cpp
 
 HEADERS = \
     backingstore.h \
     clipboard.h \
+    debugextension.h \
     glcontext.h \
     input.h \
     integration.h \
@@ -41,8 +42,7 @@ HEADERS = \
     plugin.h \
     screen.h \
     theme.h \
-    window.h \
-    debugextension.h
+    window.h
 
 # Installation path
 target.path +=  $$[QT_INSTALL_PLUGINS]/platforms
