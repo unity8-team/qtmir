@@ -28,7 +28,7 @@ UbuntuDebugExtension::UbuntuDebugExtension()
     qDebug() << "NOTICE: Loading mirclient-debug-extension";
     m_mapper = (MapperPrototype) m_mirclientDebug.resolve("mir_debug_surface_coords_to_screen");
 
-    if (m_mirclientDebug.isLoaded()) {
+    if (!m_mirclientDebug.isLoaded()) {
         qWarning() << "ERROR: mirclient-debug-extension failed to load:" << m_mirclientDebug.errorString();
     } else if (!m_mapper) {
         qWarning() << "ERROR: unable to find required symbols in mirclient-debug-extension:"
