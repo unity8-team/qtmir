@@ -19,7 +19,7 @@
 #include <QDebug>
 
 // mir client debug
-#include "mir_toolkit/debug/surface.h"
+#include <mir_toolkit/debug/surface.h>
 
 UbuntuDebugExtension::UbuntuDebugExtension()
     : m_mirclientDebug(QStringLiteral("mirclient-debug-extension"))
