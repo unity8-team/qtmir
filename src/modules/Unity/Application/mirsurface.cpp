@@ -700,7 +700,9 @@ void resizeSubgraph(QSGNode *root, size_t newSize)
 
     while (geometryDelta > 0) {
         // We have a surplus; trim the children to fit.
-        root->removeChildNode(root->firstChild());
+        auto node = root->firstChild();
+        root->removeChildNode(node);
+        delete node;
         geometryDelta--;
     }
     while (geometryDelta < 0) {
