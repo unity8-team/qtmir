@@ -357,6 +357,10 @@ void UbuntuWindow::handleSurfaceFocusChange(bool focused)
     // focused again.
     if (focused) {
         d->clipboard->requestDBusClipboardContents();
+        QWindowSystemInterface::handleApplicationStateChanged(Qt::ApplicationActive);
+    }
+    else {
+        QWindowSystemInterface::handleApplicationStateChanged(Qt::ApplicationInactive);
     }
 
     QWindowSystemInterface::handleWindowActivated(activatedWindow, Qt::ActiveWindowFocusReason);
