@@ -178,7 +178,8 @@ public:
         setSubSourceRect(QRectF(0, 0, 1, 1));
     }
 
-    void updateFromRenderable(mir::graphics::Renderable const& renderable)
+    void updateFromRenderable(
+        mir::graphics::Renderable const& renderable, mir::geometry::Point const& surfaceTopLeft)
     {
         if (initialised) {
             // Avoid holding two buffers for the compositor at the same time. Thus free the current
@@ -191,11 +192,14 @@ public:
             initialised = true;
         }
 
-
-        auto const newWidth = renderable.screen_position().size.width.as_float();
-        auto const newHeight = renderable.screen_position().size.height.as_float();
-        setTargetRect(QRectF(0, 0, newWidth, newHeight));
-        setInnerTargetRect(QRectF(0, 0, newWidth, newHeight));
+        // Renderables in the RenderableList are absolutely-positioned, but we want
+        // relative positioning. This seems to be a flaw in the generate_renderables() API.
+        auto const position = renderable.screen_position().top_left - surfaceTopLeft;
+        auto const size = renderable.screen_position().size;
+        auto const rectangle = QRect(position.dx.as_float(), position.dy.as_float(),
+                                     size.width.as_float(), size.height.as_float());
+        setTargetRect(rectangle);
+        setInnerTargetRect(rectangle);
 
         markDirty(QSGNode::DirtyMaterial);
 
@@ -707,9 +711,7 @@ void resizeSubgraph(QSGNode *root, size_t newSize)
     }
     while (geometryDelta < 0) {
         // We have a deficit; add new child nodes
-        auto transform = new QSGTransformNode;
-        transform->appendChildNode(new QSGMirRenderableNode);
-        root->appendChildNode(transform);
+        root->appendChildNode(new QSGMirRenderableNode);
         geometryDelta++;
     }
 }
@@ -733,29 +735,13 @@ QSGNode *MirSurface::updateSubgraph(QSGNode *root, bool smooth, bool antialiasin
             resizeSubgraph(root, renderables.size());
         }
 
-        // Renderables in the RenderableList are absolutely-positioned, but we want
-        // relative positioning. This seems to be a flaw in the generate_renderables() API.
         auto const top_left = m_surface->top_left();
-
-
-        QSGNode *current = root->firstChild();
+        auto node = static_cast<QSGMirRenderableNode*>(root->firstChild());
         for (auto const& renderable : renderables) {
-            auto const pos = renderable->screen_position().top_left - top_left;
-            auto transformNode = static_cast<QSGTransformNode*>(current);
-
-            if (transformNode->matrix()(0, 3) != pos.dx.as_float() ||
-                transformNode->matrix()(1, 3) != pos.dy.as_float()) {
-                auto newTranslation = QMatrix4x4();
-                newTranslation.translate(pos.dx.as_float(), pos.dy.as_float());
-                transformNode->setMatrix(newTranslation);
-            }
-            auto textureNode = static_cast<QSGMirRenderableNode*>(transformNode->firstChild());
-
-            textureNode->updateFromRenderable(*renderable);
-            textureNode->setFiltering(smooth ? QSGTexture::Linear : QSGTexture::Nearest);
-            textureNode->setAntialiasing(antialiasing);
-
-            current = current->nextSibling();
+            node->updateFromRenderable(*renderable, top_left);
+            node->setFiltering(smooth ? QSGTexture::Linear : QSGTexture::Nearest);
+            node->setAntialiasing(antialiasing);
+            node = static_cast<QSGMirRenderableNode*>(node->nextSibling());
         }
 
         // restart the frame dropper to give MirSurfaceItems enough time to render the next frame.
@@ -763,11 +749,11 @@ QSGNode *MirSurface::updateSubgraph(QSGNode *root, bool smooth, bool antialiasin
         QMetaObject::invokeMethod(&m_frameDropperTimer, "start", Qt::QueuedConnection);
 
     } else {
-        for (QSGNode *current = root->firstChild(); current; current = current->nextSibling()) {
-            auto textureNode = static_cast<QSGDefaultImageNode*>(current->firstChild());
-            textureNode->setFiltering(smooth ? QSGTexture::Linear : QSGTexture::Nearest);
-            textureNode->setAntialiasing(antialiasing);
-            textureNode->update();
+        for (auto node = static_cast<QSGMirRenderableNode*>(root->firstChild()); node;
+             node = static_cast<QSGMirRenderableNode*>(node->nextSibling())) {
+            node->setFiltering(smooth ? QSGTexture::Linear : QSGTexture::Nearest);
+            node->setAntialiasing(antialiasing);
+            node->update();
         }
     }
 
