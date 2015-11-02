@@ -178,32 +178,25 @@ public:
         setSubSourceRect(QRectF(0, 0, 1, 1));
     }
 
-    void updateFromRenderable(
-        mir::graphics::Renderable const& renderable, mir::geometry::Point const& surfaceTopLeft)
+    void setBuffer(std::shared_ptr<mir::graphics::Buffer> buffer)
     {
         if (initialised) {
             // Avoid holding two buffers for the compositor at the same time. Thus free the current
             // before acquiring the next
             texture.freeBuffer();
-            texture.setBuffer(renderable.buffer());
+            texture.setBuffer(buffer);
+            markDirty(QSGNode::DirtyMaterial);
         } else {
-            texture.setBuffer(renderable.buffer());
+            texture.setBuffer(buffer);
             setTexture(&texture);
             initialised = true;
         }
+    }
 
-        // Renderables in the RenderableList are absolutely-positioned, but we want
-        // relative positioning. This seems to be a flaw in the generate_renderables() API.
-        auto const position = renderable.screen_position().top_left - surfaceTopLeft;
-        auto const size = renderable.screen_position().size;
-        auto const rectangle = QRect(position.dx.as_float(), position.dy.as_float(),
-                                     size.width.as_float(), size.height.as_float());
-        setTargetRect(rectangle);
-        setInnerTargetRect(rectangle);
-
-        markDirty(QSGNode::DirtyMaterial);
-
-        update();
+    void setGeometry(const QRectF& geometry)
+    {
+        setTargetRect(geometry);
+        setInnerTargetRect(geometry);
     }
 
 private:
@@ -717,7 +710,8 @@ void resizeSubgraph(QSGNode *root, size_t newSize)
 }
 }
 
-QSGNode *MirSurface::updateSubgraph(QSGNode *root, bool smooth, bool antialiasing)
+QSGNode *MirSurface::updateSubgraph(
+    QSGNode *root, float width, float height, bool smooth, bool antialiasing)
 {
     QMutexLocker locker(&m_mutex);
 
@@ -726,35 +720,46 @@ QSGNode *MirSurface::updateSubgraph(QSGNode *root, bool smooth, bool antialiasin
     }
 
     const void* const userId = (void*)123;
+    auto renderables = m_surface->generate_renderables(userId);
+    auto renderableCount = renderables.size();
+    const bool dirtyBuffers = m_surface->buffers_ready_for_compositor(userId) > 0;
 
-    if (m_surface->buffers_ready_for_compositor(userId) > 0) {
-        auto renderables = m_surface->generate_renderables(userId);
+    if (static_cast<size_t>(root->childCount()) != renderableCount) {
+        resizeSubgraph(root, renderableCount);
+    }
 
-        if (static_cast<size_t>(root->childCount()) != renderables.size())
-        {
-            resizeSubgraph(root, renderables.size());
-        }
+    if (renderableCount > 0) {
+        auto const topLeft = m_surface->top_left();
+        auto const mainSize = renderables[0]->screen_position().size;
+        const float sx = width / mainSize.width.as_float();
+        const float sy = height / mainSize.height.as_float();
+        int i = 0;
 
-        auto const top_left = m_surface->top_left();
-        auto node = static_cast<QSGMirRenderableNode*>(root->firstChild());
-        for (auto const& renderable : renderables) {
-            node->updateFromRenderable(*renderable, top_left);
-            node->setFiltering(smooth ? QSGTexture::Linear : QSGTexture::Nearest);
-            node->setAntialiasing(antialiasing);
-            node = static_cast<QSGMirRenderableNode*>(node->nextSibling());
-        }
-
-        // restart the frame dropper to give MirSurfaceItems enough time to render the next frame.
-        // queued since the timer lives in a different thread
-        QMetaObject::invokeMethod(&m_frameDropperTimer, "start", Qt::QueuedConnection);
-
-    } else {
         for (auto node = static_cast<QSGMirRenderableNode*>(root->firstChild()); node;
-             node = static_cast<QSGMirRenderableNode*>(node->nextSibling())) {
+             node = static_cast<QSGMirRenderableNode*>(node->nextSibling()), i++) {
+            if (dirtyBuffers) {
+                node->setBuffer(renderables[i]->buffer());
+            }
+
+            // Renderables in the RenderableList are absolutely-positioned, but we want
+            // relative positioning. This seems to be a flaw in the generate_renderables() API.
+            // Note that the geometry is always stretched for now.
+            auto const screenPosition = renderables[i]->screen_position();
+            auto const position = screenPosition.top_left - topLeft;
+            auto const size = screenPosition.size;
+            node->setGeometry(QRectF(position.dx.as_float() * sx, position.dy.as_float() * sy,
+                                     size.width.as_float() * sx, size.height.as_float() * sy));
+
             node->setFiltering(smooth ? QSGTexture::Linear : QSGTexture::Nearest);
             node->setAntialiasing(antialiasing);
             node->update();
         }
+    }
+
+    if (dirtyBuffers) {
+        // restart the frame dropper to give MirSurfaceItems enough time to render the next frame.
+        // queued since the timer lives in a different thread
+        QMetaObject::invokeMethod(&m_frameDropperTimer, "start", Qt::QueuedConnection);
     }
 
     if (m_surface->size() != m_size) {

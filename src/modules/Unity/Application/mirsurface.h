@@ -85,7 +85,8 @@ public:
     void decrementViewCount() override;
 
     // methods called from the rendering (scene graph) thread:
-    QSGNode *updateSubgraph(QSGNode *root, bool smooth, bool antialiasing) override;
+    QSGNode *updateSubgraph(
+        QSGNode *root, float width, float height, bool smooth, bool antialiasing) override;
     bool numBuffersReadyForCompositor() override;
     // end of methods called from the rendering (scene graph) thread
 

@@ -145,7 +145,7 @@ QSGNode *MirSurfaceItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
         QTimer::singleShot(0, this, SLOT(update()));
     }
 
-    return m_surface->updateSubgraph(oldNode, smooth(), antialiasing());
+    return m_surface->updateSubgraph(oldNode, width(), height(), smooth(), antialiasing());
 }
 
 void MirSurfaceItem::mousePressEvent(QMouseEvent *event)
