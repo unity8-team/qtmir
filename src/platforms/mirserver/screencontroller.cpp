@@ -163,7 +163,7 @@ void ScreenController::update()
                          buffer.view_area().size.height.as_int());
 
             for (auto screen : m_screenList) {
-                if (dbGeom == screen->geometry()) {
+                if (dbGeom == screen->nativeGeometry()) {
                     screen->setMirDisplayBuffer(&buffer, &group);
                     break;
                 }
@@ -174,7 +174,7 @@ void ScreenController::update()
     qCDebug(QTMIR_SCREENS) << "=======================================";
     for (auto screen: m_screenList) {
         qCDebug(QTMIR_SCREENS) << screen << "- id:" << screen->m_outputId.as_value()
-                               << "geometry:" << screen->geometry()
+                               << "geometry (px):" << screen->nativeGeometry()
                                << "window:" << screen->window()
                                << "type" << static_cast<int>(screen->outputType());
     }

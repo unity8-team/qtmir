@@ -206,14 +206,20 @@ void Screen::setMirDisplayConfiguration(const mir::graphics::DisplayConfiguratio
     m_powerMode = screen.power_mode;
 
     QRect oldGeometry = m_geometry;
-    // Position of screen in virtual desktop coordinate space
-    m_geometry.setTop(screen.top_left.y.as_int());
-    m_geometry.setLeft(screen.top_left.x.as_int());
+    // Position of screen in virtual desktop coordinate space (physical pixels)
+    m_nativeGeometry.setTop(screen.top_left.y.as_int());
+    m_nativeGeometry.setLeft(screen.top_left.x.as_int());
 
     // Mode = current resolution & refresh rate
     mir::graphics::DisplayConfigurationMode mode = screen.modes.at(screen.current_mode_index);
-    m_geometry.setWidth(mode.size.width.as_int() / m_devicePixelRatio);
-    m_geometry.setHeight(mode.size.height.as_int() / m_devicePixelRatio);
+    m_nativeGeometry.setWidth(mode.size.width.as_int());
+    m_nativeGeometry.setHeight(mode.size.height.as_int());
+
+    // Geometry is in terms of device-independent pixels
+    m_geometry.setTop(m_nativeGeometry.top() / m_devicePixelRatio);
+    m_geometry.setLeft(m_nativeGeometry.left() / m_devicePixelRatio);
+    m_geometry.setWidth(m_nativeGeometry.width() / m_devicePixelRatio);
+    m_geometry.setHeight(m_nativeGeometry.height() / m_devicePixelRatio);
 
     // DPI - unnecessary to calculate, default implementation in QPlatformScreen is sufficient
 

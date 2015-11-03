@@ -44,7 +44,8 @@ public:
     ~Screen();
 
     // QPlatformScreen methods.
-    QRect geometry() const override { return m_geometry; }
+    QRect geometry() const override { return m_geometry; } // in device-independent pixels
+    QRect nativeGeometry() const { return m_nativeGeometry; } // in physical pixels
     int depth() const override { return m_depth; }
     QImage::Format format() const override { return m_format; }
     QSizeF physicalSize() const override { return m_physicalSize; }
@@ -80,7 +81,7 @@ protected:
     void doneCurrent();
 
 private:
-    QRect m_geometry;
+    QRect m_geometry, m_nativeGeometry;
     int m_depth;
     QImage::Format m_format;
     QSizeF m_physicalSize;
