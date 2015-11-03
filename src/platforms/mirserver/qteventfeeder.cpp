@@ -672,7 +672,6 @@ void QtEventFeeder::dispatchTouch(MirInputEvent const* event)
     const float kMaxPressure = 1.28;
     const qreal dpr = mQtWindowSystem->getDevicePixelRatio();
     const int kPointerCount = mir_touch_event_point_count(tev);
-
     QList<QWindowSystemInterface::TouchPoint> touchPoints;
     QWindow *window = nullptr;
 

@@ -75,7 +75,7 @@ mir::EventUPtr makeMirEvent(QMouseEvent *qtEvent, MirPointerAction action, qreal
     auto buttons = getMirButtonsFromQt(qtEvent->buttons());
 
     return mir::events::make_event(0 /*DeviceID */, timestamp, 0 /* mac */, modifiers, action,
-                                   buttons,  qtEvent->x() * dpr, qtEvent->y() * dpr, 0, 0, 0, 0);
+                                   buttons, qtEvent->x() * dpr, qtEvent->y() * dpr, 0, 0, 0, 0);
 }
 
 mir::EventUPtr makeMirEvent(QHoverEvent *qtEvent, MirPointerAction action, qreal dpr)
@@ -412,8 +412,8 @@ void MirSurface::setFocus(bool focus)
 
 void MirSurface::resize(int width, int height)
 {
-    int mirWidth = m_surface->size().width.as_int();
-    int mirHeight = m_surface->size().height.as_int();
+    const int mirWidth = m_surface->size().width.as_int();
+    const int mirHeight = m_surface->size().height.as_int();
 
     bool mirSizeIsDifferent = width != mirWidth || height != mirHeight;
 
