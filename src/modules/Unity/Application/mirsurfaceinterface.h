@@ -25,6 +25,7 @@
 // Qt
 #include <QSharedPointer>
 #include <QTouchEvent>
+#include <QtQuick/QSGTexture>
 
 class QHoverEvent;
 class QMouseEvent;
@@ -38,6 +39,13 @@ class MirSurfaceInterface : public unity::shell::application::MirSurfaceInterfac
 {
     Q_OBJECT
 public:
+    enum DirtyFlags {
+        DirtyFiltering    = (1 << 0),
+        DirtyAntialiasing = (1 << 1),
+        DirtyGeometry     = (1 << 2),
+        DirtyAll          = (DirtyFiltering | DirtyAntialiasing | DirtyGeometry)
+    };
+
     MirSurfaceInterface(QObject *parent = nullptr) : unity::shell::application::MirSurfaceInterface(parent) {}
     virtual ~MirSurfaceInterface() {}
 
@@ -53,11 +61,12 @@ public:
     virtual void decrementViewCount() = 0;
 
     // methods called from the rendering (scene graph) thread:
-    virtual QSGNode *updateSubgraph(QSGNode* root,
+    virtual QSGNode *updateSubgraph(QSGNode *root,
             float width,
             float height,
-            bool smooth,
-            bool antialiasing) = 0;
+            QSGTexture::Filtering filtering,
+            bool antialiasing,
+            DirtyFlags flags) = 0;
     virtual bool numBuffersReadyForCompositor() = 0;
     // end of methods called from the rendering (scene graph) thread
 

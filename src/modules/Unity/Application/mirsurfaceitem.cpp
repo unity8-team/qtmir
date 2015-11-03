@@ -49,6 +49,7 @@ MirSurfaceItem::MirSurfaceItem(QQuickItem *parent)
     , m_surfaceHeight(0)
     , m_orientationAngle(nullptr)
     , m_consumesInput(false)
+    , m_flags(0)
 {
     qCDebug(QTMIR_SURFACES) << "MirSurfaceItem::MirSurfaceItem";
 
@@ -64,6 +65,7 @@ MirSurfaceItem::MirSurfaceItem(QQuickItem *parent)
     connect(&m_updateMirSurfaceSizeTimer, &QTimer::timeout, this, &MirSurfaceItem::updateMirSurfaceSize);
 
     connect(this, &QQuickItem::activeFocusChanged, this, &MirSurfaceItem::updateMirSurfaceFocus);
+    connect(this, &QQuickItem::smoothChanged, this, &MirSurfaceItem::onSmoothChanged);
 }
 
 MirSurfaceItem::~MirSurfaceItem()
@@ -132,6 +134,32 @@ bool MirSurfaceItem::live() const
     return m_surface && m_surface->live();
 }
 
+void MirSurfaceItem::itemChange(ItemChange change, const ItemChangeData &data)
+{
+    if (change == ItemAntialiasingHasChanged) {
+        m_flags |= DirtyAntialiasing;
+        update();
+    }
+    QQuickItem::itemChange(change, data);
+}
+
+void MirSurfaceItem::geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry)
+{
+    if (newGeometry.width() != oldGeometry.width()
+        || newGeometry.height() != oldGeometry.height()) {
+        m_flags |= DirtyGeometry;
+        update();
+    }
+    QQuickItem::geometryChanged(newGeometry, oldGeometry);
+}
+
+void MirSurfaceItem::onSmoothChanged(bool smooth)
+{
+    Q_UNUSED(smooth);
+    m_flags |= DirtyFiltering;
+    update();
+}
+
 QSGNode *MirSurfaceItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)    // called by render thread
 {
     QMutexLocker mutexLocker(&m_mutex);
@@ -145,7 +173,12 @@ QSGNode *MirSurfaceItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
         QTimer::singleShot(0, this, SLOT(update()));
     }
 
-    return m_surface->updateSubgraph(oldNode, width(), height(), smooth(), antialiasing());
+    oldNode = m_surface->updateSubgraph(
+        oldNode, width(), height(), smooth() ? QSGTexture::Linear : QSGTexture::Nearest,
+        antialiasing(), static_cast<MirSurfaceInterface::DirtyFlags>(m_flags));
+    m_flags = 0;
+
+    return oldNode;
 }
 
 void MirSurfaceItem::mousePressEvent(QMouseEvent *event)

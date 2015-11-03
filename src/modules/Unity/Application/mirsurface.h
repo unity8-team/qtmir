@@ -87,8 +87,9 @@ public:
     QSGNode *updateSubgraph(QSGNode *root,
             float width,
             float height,
-            bool smooth,
-            bool antialiasing) override;
+            QSGTexture::Filtering filtering,
+            bool antialiasing,
+            DirtyFlags flags) override;
     bool numBuffersReadyForCompositor() override;
     // end of methods called from the rendering (scene graph) thread
 

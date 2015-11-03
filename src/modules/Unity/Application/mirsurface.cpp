@@ -713,8 +713,9 @@ void resizeSubgraph(QSGNode *root, size_t newSize)
 QSGNode *MirSurface::updateSubgraph(QSGNode *root,
                                     float width,
                                     float height,
-                                    bool smooth,
-                                    bool antialiasing)
+                                    QSGTexture::Filtering filtering,
+                                    bool antialiasing,
+                                    DirtyFlags flags)
 {
     QMutexLocker locker(&m_mutex);
 
@@ -729,6 +730,7 @@ QSGNode *MirSurface::updateSubgraph(QSGNode *root,
 
     if (static_cast<size_t>(root->childCount()) != renderableCount) {
         resizeSubgraph(root, renderableCount);
+        flags = DirtyAll;
     }
 
     if (renderableCount > 0) {
@@ -743,19 +745,25 @@ QSGNode *MirSurface::updateSubgraph(QSGNode *root,
             if (dirtyBuffers) {
                 node->setBuffer(renderables[i]->buffer());
             }
-
-            // Renderables in the RenderableList are absolutely-positioned, but we want
-            // relative positioning. This seems to be a flaw in the generate_renderables() API.
-            // Note that the geometry is always stretched for now.
-            auto const screenPosition = renderables[i]->screen_position();
-            auto const position = screenPosition.top_left - topLeft;
-            auto const size = screenPosition.size;
-            node->setGeometry(QRectF(position.dx.as_float() * sx, position.dy.as_float() * sy,
-                                     size.width.as_float() * sx, size.height.as_float() * sy));
-
-            node->setFiltering(smooth ? QSGTexture::Linear : QSGTexture::Nearest);
-            node->setAntialiasing(antialiasing);
-            node->update();
+            if (flags & DirtyGeometry) {
+                // Renderables in the RenderableList are absolutely-positioned, but we want
+                // relative positioning. This seems to be a flaw in the generate_renderables() API.
+                // Note that the geometry is always stretched for now.
+                auto const screenPosition = renderables[i]->screen_position();
+                auto const position = screenPosition.top_left - topLeft;
+                auto const size = screenPosition.size;
+                node->setGeometry(QRectF(position.dx.as_float() * sx, position.dy.as_float() * sy,
+                                         size.width.as_float() * sx, size.height.as_float() * sy));
+            }
+            if (flags & DirtyFiltering) {
+                node->setFiltering(filtering);
+            }
+            if (flags & DirtyAntialiasing) {
+                node->setAntialiasing(antialiasing);
+            }
+            if (flags & (DirtyGeometry | DirtyAntialiasing)) {
+                node->update();
+            }
         }
     }
 
