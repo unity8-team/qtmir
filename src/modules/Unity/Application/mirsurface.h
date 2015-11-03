@@ -23,7 +23,6 @@
 #include <QMutex>
 #include <QPointer>
 #include <QSharedPointer>
-#include <QSGTextureProvider>
 #include <QTimer>
 #include <QWeakPointer>
 
