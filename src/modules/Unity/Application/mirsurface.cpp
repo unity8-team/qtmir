@@ -710,8 +710,11 @@ void resizeSubgraph(QSGNode *root, size_t newSize)
 }
 }
 
-QSGNode *MirSurface::updateSubgraph(
-    QSGNode *root, float width, float height, bool smooth, bool antialiasing)
+QSGNode *MirSurface::updateSubgraph(QSGNode *root,
+                                    float width,
+                                    float height,
+                                    bool smooth,
+                                    bool antialiasing)
 {
     QMutexLocker locker(&m_mutex);
 

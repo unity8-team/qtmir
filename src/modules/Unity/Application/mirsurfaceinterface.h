@@ -53,8 +53,11 @@ public:
     virtual void decrementViewCount() = 0;
 
     // methods called from the rendering (scene graph) thread:
-    virtual QSGNode *updateSubgraph(
-        QSGNode* root, float width, float height, bool smooth, bool antialiasing) = 0;
+    virtual QSGNode *updateSubgraph(QSGNode* root,
+            float width,
+            float height,
+            bool smooth,
+            bool antialiasing) = 0;
     virtual bool numBuffersReadyForCompositor() = 0;
     // end of methods called from the rendering (scene graph) thread
 
