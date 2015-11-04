@@ -76,8 +76,12 @@ QSize MirBufferSGTexture::textureSize() const
 
 bool MirBufferSGTexture::hasAlphaChannel() const
 {
-    return m_mirBuffer->pixel_format() == mir_pixel_format_abgr_8888
-        || m_mirBuffer->pixel_format() == mir_pixel_format_argb_8888;
+    if (hasBuffer()) {
+        return m_mirBuffer->pixel_format() == mir_pixel_format_abgr_8888
+            || m_mirBuffer->pixel_format() == mir_pixel_format_argb_8888;
+    } else {
+        return false;
+    }
 }
 
 void MirBufferSGTexture::bind()
