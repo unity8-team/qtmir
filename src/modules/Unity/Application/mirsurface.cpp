@@ -15,6 +15,7 @@
  */
 
 #include "mirsurface.h"
+#include "timestamp.h"
 
 // mirserver
 #include <surfaceobserver.h>
@@ -52,18 +53,29 @@ getMirModifiersFromQt(Qt::KeyboardModifiers mods)
     return m_mods;
 }
 
+MirPointerButtons
+getMirButtonsFromQt(Qt::MouseButtons buttons)
+{
+    MirPointerButtons result = 0;
+    if (buttons & Qt::LeftButton)
+        result |= mir_pointer_button_primary;
+    if (buttons & Qt::RightButton)
+        result |= mir_pointer_button_secondary;
+    if (buttons & Qt::MiddleButton)
+        result |= mir_pointer_button_tertiary;
+    if (buttons & Qt::BackButton)
+        result |= mir_pointer_button_back;
+    if (buttons & Qt::ForwardButton)
+        result |= mir_pointer_button_forward;
+
+    return result;
+}
+
 mir::EventUPtr makeMirEvent(QMouseEvent *qtEvent, MirPointerAction action)
 {
-    auto timestamp = std::chrono::milliseconds(qtEvent->timestamp());
+    auto timestamp = uncompressTimestamp<ulong>(qtEvent->timestamp());
     auto modifiers = getMirModifiersFromQt(qtEvent->modifiers());
-
-    MirPointerButtons buttons = 0;
-    if (qtEvent->buttons() & Qt::LeftButton)
-        buttons |= mir_pointer_button_primary;
-    if (qtEvent->buttons() & Qt::RightButton)
-        buttons |= mir_pointer_button_secondary;
-    if (qtEvent->buttons() & Qt::MidButton)
-        buttons |= mir_pointer_button_tertiary;
+    auto buttons = getMirButtonsFromQt(qtEvent->buttons());
 
     return mir::events::make_event(0 /*DeviceID */, timestamp, 0 /* mac */, modifiers, action,
                                    buttons, qtEvent->x(), qtEvent->y(), 0, 0, 0, 0);
@@ -71,12 +83,24 @@ mir::EventUPtr makeMirEvent(QMouseEvent *qtEvent, MirPointerAction action)
 
 mir::EventUPtr makeMirEvent(QHoverEvent *qtEvent, MirPointerAction action)
 {
-    auto timestamp = std::chrono::milliseconds(qtEvent->timestamp());
+    auto timestamp = uncompressTimestamp<ulong>(qtEvent->timestamp());
 
     MirPointerButtons buttons = 0;
 
     return mir::events::make_event(0 /*DeviceID */, timestamp, 0 /* mac */, mir_input_event_modifier_none, action,
                                    buttons, qtEvent->posF().x(), qtEvent->posF().y(), 0, 0, 0, 0);
+}
+
+mir::EventUPtr makeMirEvent(QWheelEvent *qtEvent)
+{
+    auto timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::milliseconds(qtEvent->timestamp()));
+    auto modifiers = getMirModifiersFromQt(qtEvent->modifiers());
+    auto buttons = getMirButtonsFromQt(qtEvent->buttons());
+
+    return mir::events::make_event(0 /*DeviceID */, timestamp, 0 /* mac */, modifiers, mir_pointer_action_motion,
+                                   buttons, qtEvent->x(), qtEvent->y(),
+                                   qtEvent->angleDelta().x(), qtEvent->angleDelta().y(),
+                                   0, 0);
 }
 
 mir::EventUPtr makeMirEvent(QKeyEvent *qtEvent)
@@ -96,7 +120,7 @@ mir::EventUPtr makeMirEvent(QKeyEvent *qtEvent)
     if (qtEvent->isAutoRepeat())
         action = mir_keyboard_action_repeat;
 
-    return mir::events::make_event(0 /* DeviceID */, std::chrono::milliseconds(qtEvent->timestamp()),
+    return mir::events::make_event(0 /* DeviceID */, uncompressTimestamp<ulong>(qtEvent->timestamp()),
                            0 /* mac */, action, qtEvent->nativeVirtualKey(),
                            qtEvent->nativeScanCode(),
                            qtEvent->nativeModifiers());
@@ -108,7 +132,7 @@ mir::EventUPtr makeMirEvent(Qt::KeyboardModifiers qmods,
                             ulong qtTimestamp)
 {
     auto modifiers = getMirModifiersFromQt(qmods);
-    auto ev = mir::events::make_event(0, std::chrono::milliseconds(qtTimestamp),
+    auto ev = mir::events::make_event(0, uncompressTimestamp<ulong>(qtTimestamp),
                                       0 /* mac */, modifiers);
 
     for (int i = 0; i < qtTouchPoints.count(); ++i) {
@@ -154,28 +178,25 @@ public:
         setSubSourceRect(QRectF(0, 0, 1, 1));
     }
 
-    void updateFromRenderable(mir::graphics::Renderable const& renderable)
+    void setBuffer(std::shared_ptr<mir::graphics::Buffer> buffer)
     {
         if (initialised) {
             // Avoid holding two buffers for the compositor at the same time. Thus free the current
             // before acquiring the next
             texture.freeBuffer();
-            texture.setBuffer(renderable.buffer());
+            texture.setBuffer(buffer);
+            markDirty(QSGNode::DirtyMaterial);
         } else {
-            texture.setBuffer(renderable.buffer());
+            texture.setBuffer(buffer);
             setTexture(&texture);
             initialised = true;
         }
+    }
 
-
-        auto const newWidth = renderable.screen_position().size.width.as_float();
-        auto const newHeight = renderable.screen_position().size.height.as_float();
-        setTargetRect(QRectF(0, 0, newWidth, newHeight));
-        setInnerTargetRect(QRectF(0, 0, newWidth, newHeight));
-
-        markDirty(QSGNode::DirtyMaterial);
-
-        update();
+    void setGeometry(const QRectF& geometry)
+    {
+        setTargetRect(geometry);
+        setInnerTargetRect(geometry);
     }
 
 private:
@@ -200,6 +221,7 @@ MirSurface::MirSurface(std::shared_ptr<mir::scene::Surface> surface,
     if (observer) {
         connect(observer.get(), &SurfaceObserver::framesPosted, this, &MirSurface::onFramesPostedObserved);
         connect(observer.get(), &SurfaceObserver::attributeChanged, this, &MirSurface::onAttributeChanged);
+        connect(observer.get(), &SurfaceObserver::nameChanged, this, &MirSurface::nameChanged);
         observer->setListener(this);
     }
 
@@ -458,7 +480,6 @@ void MirSurface::setOrientationAngle(Mir::OrientationAngle angle)
 
 QString MirSurface::name() const
 {
-    //FIXME - how to listen to change in this property?
     return QString::fromStdString(m_surface->name());
 }
 
@@ -555,6 +576,13 @@ void MirSurface::hoverLeaveEvent(QHoverEvent *event)
 void MirSurface::hoverMoveEvent(QHoverEvent *event)
 {
     auto ev = makeMirEvent(event, mir_pointer_action_motion);
+    m_surface->consume(*ev);
+    event->accept();
+}
+
+void MirSurface::wheelEvent(QWheelEvent *event)
+{
+    auto ev = makeMirEvent(event);
     m_surface->consume(*ev);
     event->accept();
 }
@@ -669,20 +697,24 @@ void resizeSubgraph(QSGNode *root, size_t newSize)
 
     while (geometryDelta > 0) {
         // We have a surplus; trim the children to fit.
-        root->removeChildNode(root->firstChild());
+        auto node = root->firstChild();
+        root->removeChildNode(node);
+        delete node;
         geometryDelta--;
     }
     while (geometryDelta < 0) {
         // We have a deficit; add new child nodes
-        auto transform = new QSGTransformNode;
-        transform->appendChildNode(new QSGMirRenderableNode);
-        root->appendChildNode(transform);
+        root->appendChildNode(new QSGMirRenderableNode);
         geometryDelta++;
     }
 }
 }
 
-QSGNode *MirSurface::updateSubgraph(QSGNode *root)
+QSGNode *MirSurface::updateSubgraph(QSGNode *root,
+                                    float width,
+                                    float height,
+                                    bool smooth,
+                                    bool antialiasing)
 {
     QMutexLocker locker(&m_mutex);
 
@@ -691,39 +723,43 @@ QSGNode *MirSurface::updateSubgraph(QSGNode *root)
     }
 
     const void* const userId = (void*)123;
+    auto renderables = m_surface->generate_renderables(userId);
+    auto renderableCount = renderables.size();
+    const bool dirtyBuffers = m_surface->buffers_ready_for_compositor(userId) > 0;
 
-    if (m_surface->buffers_ready_for_compositor(userId) > 0) {
-        auto renderables = m_surface->generate_renderables(userId);
+    if (static_cast<size_t>(root->childCount()) != renderableCount) {
+        resizeSubgraph(root, renderableCount);
+    }
 
-        if (static_cast<size_t>(root->childCount()) != renderables.size())
-        {
-            resizeSubgraph(root, renderables.size());
-        }
+    if (renderableCount > 0) {
+        auto const topLeft = m_surface->top_left();
+        auto const mainSize = renderables[0]->screen_position().size;
+        const float sx = width / mainSize.width.as_float();
+        const float sy = height / mainSize.height.as_float();
+        int i = 0;
 
-        // Renderables in the RenderableList are absolutely-positioned, but we want
-        // relative positioning. This seems to be a flaw in the generate_renderables() API.
-        auto const top_left = m_surface->top_left();
-
-
-        QSGNode *current = root->firstChild();
-        for (auto const& renderable : renderables) {
-            auto const pos = renderable->screen_position().top_left - top_left;
-            auto transformNode = static_cast<QSGTransformNode*>(current);
-
-            if (transformNode->matrix()(0, 3) != pos.dx.as_float() ||
-                transformNode->matrix()(1, 3) != pos.dy.as_float()) {
-                auto newTranslation = QMatrix4x4();
-                newTranslation.translate(pos.dx.as_float(), pos.dy.as_float());
-                transformNode->setMatrix(newTranslation);
-                transformNode->markDirty(QSGNode::DirtyMatrix);
+        for (auto node = static_cast<QSGMirRenderableNode*>(root->firstChild()); node;
+             node = static_cast<QSGMirRenderableNode*>(node->nextSibling()), i++) {
+            if (dirtyBuffers) {
+                node->setBuffer(renderables[i]->buffer());
             }
-            auto textureNode = static_cast<QSGMirRenderableNode*>(transformNode->firstChild());
 
-            textureNode->updateFromRenderable(*renderable);
+            // Renderables in the RenderableList are absolutely-positioned, but we want
+            // relative positioning. This seems to be a flaw in the generate_renderables() API.
+            // Note that the geometry is always stretched for now.
+            auto const screenPosition = renderables[i]->screen_position();
+            auto const position = screenPosition.top_left - topLeft;
+            auto const size = screenPosition.size;
+            node->setGeometry(QRectF(position.dx.as_float() * sx, position.dy.as_float() * sy,
+                                     size.width.as_float() * sx, size.height.as_float() * sy));
 
-            current = current->nextSibling();
+            node->setFiltering(smooth ? QSGTexture::Linear : QSGTexture::Nearest);
+            node->setAntialiasing(antialiasing);
+            node->update();
         }
+    }
 
+    if (dirtyBuffers) {
         // restart the frame dropper to give MirSurfaceItems enough time to render the next frame.
         // queued since the timer lives in a different thread
         QMetaObject::invokeMethod(&m_frameDropperTimer, "start", Qt::QueuedConnection);

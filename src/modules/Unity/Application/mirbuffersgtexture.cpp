@@ -59,6 +59,11 @@ void MirBufferSGTexture::setBuffer(std::shared_ptr<mir::graphics::Buffer> buffer
     m_width = size.width.as_int();
 }
 
+bool MirBufferSGTexture::hasBuffer() const
+{
+    return !!m_mirBuffer;
+}
+
 int MirBufferSGTexture::textureId() const
 {
     return m_textureId;
@@ -77,6 +82,7 @@ bool MirBufferSGTexture::hasAlphaChannel() const
 
 void MirBufferSGTexture::bind()
 {
+    Q_ASSERT(hasBuffer());
     glBindTexture(GL_TEXTURE_2D, m_textureId);
     updateBindOptions(true/* force */);
 

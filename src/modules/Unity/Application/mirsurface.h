@@ -23,7 +23,6 @@
 #include <QMutex>
 #include <QPointer>
 #include <QSharedPointer>
-#include <QSGTextureProvider>
 #include <QTimer>
 #include <QWeakPointer>
 
@@ -85,7 +84,11 @@ public:
     void decrementViewCount() override;
 
     // methods called from the rendering (scene graph) thread:
-    QSGNode *updateSubgraph(QSGNode *root) override;
+    QSGNode *updateSubgraph(QSGNode *root,
+            float width,
+            float height,
+            bool smooth,
+            bool antialiasing) override;
     bool numBuffersReadyForCompositor() override;
     // end of methods called from the rendering (scene graph) thread
 
@@ -97,6 +100,7 @@ public:
     void hoverEnterEvent(QHoverEvent *event) override;
     void hoverLeaveEvent(QHoverEvent *event) override;
     void hoverMoveEvent(QHoverEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
 
     void keyPressEvent(QKeyEvent *event) override;
     void keyReleaseEvent(QKeyEvent *event) override;

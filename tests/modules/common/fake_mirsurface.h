@@ -131,7 +131,12 @@ public:
     }
 
     // methods called from the rendering (scene graph) thread:
-    QSGNode *updateSubgraph(QSGNode *root) { return root; }
+    QSGNode *updateSubgraph(
+        QSGNode *root,
+        float /*width*/,
+        float /*height*/,
+        bool /*smooth*/,
+        bool /*antialiasing*/) override { return root; }
     bool numBuffersReadyForCompositor() override { return 0; }
     // end of methods called from the rendering (scene graph) thread
 
@@ -143,6 +148,7 @@ public:
     void hoverEnterEvent(QHoverEvent *) override {}
     void hoverLeaveEvent(QHoverEvent *) override {}
     void hoverMoveEvent(QHoverEvent *) override {}
+    void wheelEvent(QWheelEvent *) override {}
 
     void keyPressEvent(QKeyEvent *) override {}
     void keyReleaseEvent(QKeyEvent *) override {}
