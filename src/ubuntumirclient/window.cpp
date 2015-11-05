@@ -101,6 +101,7 @@ public:
     QSharedPointer<UbuntuClipboard> clipboard;
     bool exposed;
     int resizeCatchUpAttempts;
+    bool exposeCatchUp;
 #if !defined(QT_NO_DEBUG)
     int frameNumber;
 #endif
@@ -138,6 +139,7 @@ UbuntuWindow::UbuntuWindow(QWindow* w, QSharedPointer<UbuntuClipboard> clipboard
     d->clipboard = clipboard;
     d->resizeCatchUpAttempts = 0;
     d->exposed = true;
+    d->exposeCatchUp = false;
 
     static int id = 1;
     d->id = id++;
@@ -285,6 +287,7 @@ void UbuntuWindow::createWindow()
     // Create platform window
     mir_wait_for(mir_surface_create(spec, surfaceCreateCallback, this));
     mir_surface_spec_release(spec);
+    d->exposeCatchUp = mir_surface_get_visibility(d->surface) == mir_surface_visibility_occluded;
 
     DASSERT(d->surface != NULL);
     d->createEGLSurface((EGLNativeWindowType)mir_buffer_stream_get_egl_native_window(mir_surface_get_buffer_stream(d->surface)));
@@ -457,6 +460,13 @@ void UbuntuWindow::onBuffersSwapped_threadSafe(int newBufferWidth, int newBuffer
     ++d->frameNumber;
 #endif
 
+    bool exposureChanged = false;
+    if (d->exposeCatchUp) {
+        d->exposeCatchUp = false;
+        d->exposed = false;
+        exposureChanged = true;
+    }
+
     if (sizeKnown && (d->bufferSize.width() != newBufferWidth ||
                 d->bufferSize.height() != newBufferHeight)) {
         d->resizeCatchUpAttempts = 0;
@@ -486,5 +496,9 @@ void UbuntuWindow::onBuffersSwapped_threadSafe(int newBufferWidth, int newBuffer
     } else {
         DLOG("UbuntuWindow::onBuffersSwapped_threadSafe [%d] - buffer size (%d,%d). resizeCatchUpAttempts=%d",
                d->frameNumber, d->bufferSize.width(), d->bufferSize.height(), d->resizeCatchUpAttempts);
+
+        if (exposureChanged) {
+            QWindowSystemInterface::handleExposeEvent(window(), d->exposed ? QRect(QPoint(), geometry().size()) : QRect());
+        }
     }
 }
