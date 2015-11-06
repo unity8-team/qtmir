@@ -55,9 +55,9 @@ public:
 };
 
 inline int divideAndRoundUp(int numerator, qreal denominator)
-    {
-        return ceil((qreal)numerator / denominator);
-    }
+{
+    return ceil((qreal)numerator / denominator);
+}
 
 } // namespace {
 
