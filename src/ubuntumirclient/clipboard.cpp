@@ -141,6 +141,8 @@ void UbuntuClipboard::setupDBus()
 
 QByteArray UbuntuClipboard::serializeMimeData(QMimeData *mimeData) const
 {
+    Q_ASSERT(mimeData != nullptr);
+
     const QStringList formats = mimeData->formats();
     const int formatCount = qMin(formats.size(), maxFormatsCount);
     const int headerSize = sizeof(int) + (formatCount * 4 * sizeof(int));
@@ -249,10 +251,10 @@ void UbuntuClipboard::setMimeData(QMimeData* mimeData, QClipboard::Mode mode)
         if (!serializedMimeData.isEmpty()) {
             setDBusClipboardContents(serializedMimeData);
         }
-    }
 
-    mMimeData = mimeData;
-    emitChanged(QClipboard::Clipboard);
+        mMimeData = mimeData;
+        emitChanged(QClipboard::Clipboard);
+    }
 }
 
 bool UbuntuClipboard::supportsMode(QClipboard::Mode mode) const
