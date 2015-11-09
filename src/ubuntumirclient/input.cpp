@@ -448,7 +448,7 @@ void UbuntuInput::dispatchPointerEvent(QWindow *window, const MirInputEvent *ev)
 
         if (hDelta != 0 || vDelta != 0) {
             const QPoint angleDelta = QPoint(hDelta * 15, vDelta * 15);
-            QWindowSystemInterface::handleWheelEvent(nullptr, timestamp, localPoint, QCursor::pos(),
+            QWindowSystemInterface::handleWheelEvent(window, timestamp, localPoint, QCursor::pos(),
                                                      QPoint(), angleDelta, modifiers, Qt::ScrollUpdate);
         }
         auto buttons = extract_buttons(pev);
