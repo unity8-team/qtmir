@@ -1,3 +1,10 @@
+qtubuntu (0.62+16.04.20151109-0ubuntu1) xenial; urgency=medium
+
+  [ Nick Dedekind ]
+  * Reverted occlusion detection (lp#1514556) (LP: #1514556)
+
+ -- Gerry Boland <ci-train-bot@canonical.com>  Mon, 09 Nov 2015 22:43:18 +0000
+
 qtubuntu (0.62+16.04.20151105-0ubuntu1) xenial; urgency=medium
 
   [ Nick Dedekind ]
