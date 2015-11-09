@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Canonical, Ltd.
+ * Copyright (C) 2014-2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -181,6 +181,9 @@ UbuntuScreen::UbuntuScreen(MirConnection *connection)
 
     auto const displayOutput = find_active_output(displayConfig.get());
     ASSERT(displayOutput != nullptr);
+
+    mPhysicalSize = QSizeF(displayOutput->physical_width_mm, displayOutput->physical_height_mm);
+    DLOG("ubuntumirclient: screen physical size: %.2fx%.2f", mPhysicalSize.width(), mPhysicalSize.height());
 
     const MirDisplayMode *mode = &displayOutput->modes[displayOutput->current_mode];
     const int kScreenWidth = mode->horizontal_resolution;
