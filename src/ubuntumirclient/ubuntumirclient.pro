@@ -17,6 +17,7 @@ PKGCONFIG += egl mirclient ubuntu-platform-api
 SOURCES = \
     backingstore.cpp \
     clipboard.cpp \
+    cursor.cpp \
     glcontext.cpp \
     input.cpp \
     integration.cpp \
@@ -30,6 +31,7 @@ SOURCES = \
 HEADERS = \
     backingstore.h \
     clipboard.h \
+    cursor.h \
     glcontext.h \
     input.h \
     integration.h \

@@ -45,6 +45,7 @@ public:
 
     // New methods.
     void* eglSurface() const;
+    MirSurface *mirSurface() const;
     void handleSurfaceResize(int width, int height);
     void handleSurfaceFocusChange(bool focused);
     void handleSurfaceExposeChange(bool visible);

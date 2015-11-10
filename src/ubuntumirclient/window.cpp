@@ -445,6 +445,11 @@ void* UbuntuWindow::eglSurface() const
     return d->eglSurface;
 }
 
+MirSurface *UbuntuWindow::mirSurface() const
+{
+    return d->surface;
+}
+
 WId UbuntuWindow::winId() const
 {
     return d->id;
