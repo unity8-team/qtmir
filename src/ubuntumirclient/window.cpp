@@ -99,9 +99,7 @@ public:
     QSize bufferSize;
     QMutex mutex;
     QSharedPointer<UbuntuClipboard> clipboard;
-    bool exposed;
     int resizeCatchUpAttempts;
-    bool exposeCatchUp;
 #if !defined(QT_NO_DEBUG)
     int frameNumber;
 #endif
@@ -138,8 +136,6 @@ UbuntuWindow::UbuntuWindow(QWindow* w, QSharedPointer<UbuntuClipboard> clipboard
     d->connection = connection;
     d->clipboard = clipboard;
     d->resizeCatchUpAttempts = 0;
-    d->exposed = true;
-    d->exposeCatchUp = false;
 
     static int id = 1;
     d->id = id++;
@@ -287,7 +283,6 @@ void UbuntuWindow::createWindow()
     // Create platform window
     mir_wait_for(mir_surface_create(spec, surfaceCreateCallback, this));
     mir_surface_spec_release(spec);
-    d->exposeCatchUp = mir_surface_get_visibility(d->surface) == mir_surface_visibility_occluded;
 
     DASSERT(d->surface != NULL);
     d->createEGLSurface((EGLNativeWindowType)mir_buffer_stream_get_egl_native_window(mir_surface_get_buffer_stream(d->surface)));
@@ -344,7 +339,7 @@ void UbuntuWindow::handleSurfaceResize(int width, int height)
         // swap more than once to get a buffer with the new size!
         d->resizeCatchUpAttempts = 2;
 
-        QWindowSystemInterface::handleExposeEvent(window(), d->exposed ? QRect(QPoint(), geometry().size()) : QRect());
+        QWindowSystemInterface::handleExposeEvent(window(), geometry());
         QWindowSystemInterface::flushWindowSystemEvents();
     }
 }
@@ -365,19 +360,6 @@ void UbuntuWindow::handleSurfaceFocusChange(bool focused)
     }
 
     QWindowSystemInterface::handleWindowActivated(activatedWindow, Qt::ActiveWindowFocusReason);
-}
-
-void UbuntuWindow::handleSurfaceExposeChange(bool exposed)
-{
-    QMutexLocker(&d->mutex);
-    DLOG("UbuntuWindow::handleSurfaceExposeChange(exposed=%s)", exposed ? "true" : "false");
-
-    if (d->exposed != exposed) {
-        d->exposed = exposed;
-
-        QWindowSystemInterface::handleExposeEvent(window(), d->exposed ? QRect(QPoint(), geometry().size()) : QRect());
-        QWindowSystemInterface::flushWindowSystemEvents();
-    }
 }
 
 void UbuntuWindow::setWindowState(Qt::WindowState state)
@@ -417,19 +399,14 @@ void UbuntuWindow::setVisible(bool visible)
 
     if (visible) {
         mir_wait_for(mir_surface_set_state(d->surface, qtWindowStateToMirSurfaceState(d->state)));
+
+        QWindowSystemInterface::handleExposeEvent(window(), QRect());
+        QWindowSystemInterface::flushWindowSystemEvents();
     } else {
         // TODO: Use the new mir_surface_state_hidden state instead of mir_surface_state_minimized.
         //       Will have to change qtmir and unity8 for that.
         mir_wait_for(mir_surface_set_state(d->surface, mir_surface_state_minimized));
     }
-
-    QWindowSystemInterface::handleExposeEvent(window(), d->exposed ? QRect(QPoint(), geometry().size()) : QRect());
-    QWindowSystemInterface::flushWindowSystemEvents();
-}
-
-bool UbuntuWindow::isExposed() const
-{
-    return d->exposed && window()->isVisible();
 }
 
 void UbuntuWindow::setWindowTitle(const QString &title)
@@ -465,13 +442,6 @@ void UbuntuWindow::onBuffersSwapped_threadSafe(int newBufferWidth, int newBuffer
     ++d->frameNumber;
 #endif
 
-    bool exposureChanged = false;
-    if (d->exposeCatchUp) {
-        d->exposeCatchUp = false;
-        d->exposed = false;
-        exposureChanged = true;
-    }
-
     if (sizeKnown && (d->bufferSize.width() != newBufferWidth ||
                 d->bufferSize.height() != newBufferHeight)) {
         d->resizeCatchUpAttempts = 0;
@@ -497,13 +467,9 @@ void UbuntuWindow::onBuffersSwapped_threadSafe(int newBufferWidth, int newBuffer
         DLOG("UbuntuWindow::onBuffersSwapped_threadSafe [%d] - buffer size (%d,%d). Redrawing to catch up a resized buffer."
                " resizeCatchUpAttempts=%d",
                d->frameNumber, d->bufferSize.width(), d->bufferSize.height(), d->resizeCatchUpAttempts);
-        QWindowSystemInterface::handleExposeEvent(window(), d->exposed ? QRect(QPoint(), geometry().size()) : QRect());
+        QWindowSystemInterface::handleExposeEvent(window(), geometry());
     } else {
         DLOG("UbuntuWindow::onBuffersSwapped_threadSafe [%d] - buffer size (%d,%d). resizeCatchUpAttempts=%d",
                d->frameNumber, d->bufferSize.width(), d->bufferSize.height(), d->resizeCatchUpAttempts);
-
-        if (exposureChanged) {
-            QWindowSystemInterface::handleExposeEvent(window(), d->exposed ? QRect(QPoint(), geometry().size()) : QRect());
-        }
     }
 }

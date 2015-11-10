@@ -40,7 +40,6 @@ public:
     void setGeometry(const QRect&) override;
     void setWindowState(Qt::WindowState state) override;
     void setVisible(bool visible) override;
-    bool isExposed() const override;
     void setWindowTitle(const QString &title) override;
 
     // New methods.
@@ -48,7 +47,6 @@ public:
     MirSurface *mirSurface() const;
     void handleSurfaceResize(int width, int height);
     void handleSurfaceFocusChange(bool focused);
-    void handleSurfaceExposeChange(bool visible);
     void onBuffersSwapped_threadSafe(int newBufferWidth, int newBufferHeight);
 
     UbuntuWindowPrivate* priv() { return d; }
