@@ -37,15 +37,15 @@ UbuntuCursor::UbuntuCursor()
     mShapeToCursorName[Qt::BlankCursor] = "blank";
     mShapeToCursorName[Qt::SplitVCursor] = "split_v";
     mShapeToCursorName[Qt::SplitHCursor] = "split_h";
-    mShapeToCursorName[Qt::PointingHandCursor] = "pointing_hand";
+    mShapeToCursorName[Qt::PointingHandCursor] = "hand";
     mShapeToCursorName[Qt::ForbiddenCursor] = "forbidden";
     mShapeToCursorName[Qt::WhatsThisCursor] = "whats_this";
     mShapeToCursorName[Qt::BusyCursor] = "left_ptr_watch";
     mShapeToCursorName[Qt::OpenHandCursor] = "openhand";
     mShapeToCursorName[Qt::ClosedHandCursor] = "closedhand";
-    mShapeToCursorName[Qt::DragCopyCursor] = "copy";
-    mShapeToCursorName[Qt::DragMoveCursor] = "move";
-    mShapeToCursorName[Qt::DragLinkCursor] = "link";
+    mShapeToCursorName[Qt::DragCopyCursor] = "dnd-copy";
+    mShapeToCursorName[Qt::DragMoveCursor] = "dnd-move";
+    mShapeToCursorName[Qt::DragLinkCursor] = "dnd-link";
 }
 
 namespace {
