@@ -22,7 +22,8 @@
 #include <mir_toolkit/mir_cursor_configuration.h>
 #include <mir_toolkit/cursors.h>
 
-UbuntuCursor::UbuntuCursor()
+UbuntuCursor::UbuntuCursor(MirConnection *connection)
+    : mConnection(connection)
 {
     mShapeToCursorName[Qt::ArrowCursor] = "left_ptr";
     mShapeToCursorName[Qt::UpArrowCursor] = "up_arrow";
@@ -49,6 +50,7 @@ UbuntuCursor::UbuntuCursor()
 }
 
 namespace {
+#if !defined(QT_NO_DEBUG)
 const char *qtCursorShapeToStr(Qt::CursorShape shape)
 {
     switch(shape) {
@@ -102,7 +104,8 @@ const char *qtCursorShapeToStr(Qt::CursorShape shape)
         return "???";
     }
 }
-}
+#endif // !defined(QT_NO_DEBUG)
+} // anonymous namespace
 
 void UbuntuCursor::changeCursor(QCursor *windowCursor, QWindow *window)
 {
@@ -116,21 +119,63 @@ void UbuntuCursor::changeCursor(QCursor *windowCursor, QWindow *window)
         return;
     }
 
-    MirCursorConfiguration *cursorConfiguration = nullptr;
 
     if (windowCursor) {
-        DLOG("UbuntuCursor::changeCursor shape=%s, window=%p\n", qtCursorShapeToStr(windowCursor->shape()), window);
-        if (!windowCursor->pixmap().isNull() || windowCursor->shape() == Qt::BitmapCursor) {
-            // TODO: Implement pixmap cursor support
-            cursorConfiguration = mir_cursor_configuration_from_name("left_ptr");
+        DLOG("[ubuntumirclient QPA] changeCursor shape=%s, window=%p\n", qtCursorShapeToStr(windowCursor->shape()), window);
+        if (!windowCursor->pixmap().isNull()) {
+            configureMirCursorWithPixmapQCursor(surface, *windowCursor);
+        } else if (windowCursor->shape() == Qt::BitmapCursor) {
+            // TODO: Implement bitmap cursor support
+            applyDefaultCursorConfiguration(surface);
         } else {
             const auto &cursorName = mShapeToCursorName.value(windowCursor->shape(), QByteArray("left_ptr"));
-            cursorConfiguration = mir_cursor_configuration_from_name(cursorName.data());
+            auto cursorConfiguration = mir_cursor_configuration_from_name(cursorName.data());
+            mir_surface_configure_cursor(surface, cursorConfiguration);
+            mir_cursor_configuration_destroy(cursorConfiguration);
         }
     } else {
-        cursorConfiguration = mir_cursor_configuration_from_name("left_ptr");
+        applyDefaultCursorConfiguration(surface);
     }
 
+}
+
+void UbuntuCursor::configureMirCursorWithPixmapQCursor(MirSurface *surface, QCursor &cursor)
+{
+    QImage image = cursor.pixmap().toImage();
+
+    if (image.format() != QImage::Format_ARGB32) {
+        image.convertToFormat(QImage::Format_ARGB32);
+    }
+
+    MirBufferStream *bufferStream = mir_connection_create_buffer_stream_sync(mConnection,
+            image.width(), image.height(), mir_pixel_format_argb_8888, mir_buffer_usage_software);
+
+    {
+        MirGraphicsRegion region;
+        mir_buffer_stream_get_graphics_region(bufferStream, &region);
+
+        char *regionLine = region.vaddr;
+        Q_ASSERT(image.bytesPerLine() <= region.stride);
+        for (int i = 0; i < image.height(); ++i) {
+            memcpy(regionLine, image.scanLine(i), image.bytesPerLine());
+            regionLine += region.stride;
+        }
+    }
+
+    mir_buffer_stream_swap_buffers_sync(bufferStream);
+
+    {
+        auto configuration = mir_cursor_configuration_from_buffer_stream(bufferStream, cursor.hotSpot().x(), cursor.hotSpot().y());
+        mir_surface_configure_cursor(surface, configuration);
+        mir_cursor_configuration_destroy(configuration);
+    }
+
+    mir_buffer_stream_release_sync(bufferStream);
+}
+
+void UbuntuCursor::applyDefaultCursorConfiguration(MirSurface *surface)
+{
+    auto cursorConfiguration = mir_cursor_configuration_from_name("left_ptr");
     mir_surface_configure_cursor(surface, cursorConfiguration);
     mir_cursor_configuration_destroy(cursorConfiguration);
 }

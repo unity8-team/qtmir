@@ -22,13 +22,19 @@
 #include <QMap>
 #include <QByteArray>
 
+struct MirConnection;
+struct MirSurface;
+
 class UbuntuCursor : public QPlatformCursor
 {
 public:
-    UbuntuCursor();
+    UbuntuCursor(MirConnection *connection);
     void changeCursor(QCursor *windowCursor, QWindow *window) override;
 private:
+    void configureMirCursorWithPixmapQCursor(MirSurface *surface, QCursor &cursor);
+    void applyDefaultCursorConfiguration(MirSurface *surface);
     QMap<int, QByteArray> mShapeToCursorName;
+    MirConnection *mConnection;
 };
 
 #endif // UBUNTU_CURSOR_H
