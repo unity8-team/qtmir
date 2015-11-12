@@ -682,6 +682,9 @@ void MirSurface::setViewVisibility(qintptr viewId, bool visible)
 
 void MirSurface::updateVisibility()
 {
+    // FIXME: https://bugs.launchpad.net/ubuntu/+source/unity8/+bug/1514556
+    return;
+
     bool newVisible = false;
     QHashIterator<qintptr, View> i(m_views);
     while (i.hasNext()) {
