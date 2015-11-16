@@ -40,7 +40,7 @@ public:
     QSizeF physicalSize() const override { return mPhysicalSize; }
     Qt::ScreenOrientation nativeOrientation() const override { return mNativeOrientation; }
     Qt::ScreenOrientation orientation() const override { return mNativeOrientation; }
-    QPlatformCursor *cursor() const override { return (QPlatformCursor*)&mCursor; }
+    QPlatformCursor *cursor() const override { return const_cast<UbuntuCursor*>(&mCursor); }
 
     // New methods.
     QSurfaceFormat surfaceFormat() const { return mSurfaceFormat; }
