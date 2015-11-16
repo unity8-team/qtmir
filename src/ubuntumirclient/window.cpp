@@ -27,6 +27,7 @@
 #include <qpa/qwindowsysteminterface.h>
 #include <QMutexLocker>
 #include <QSize>
+#include <QtMath>
 
 // Platform API
 #include <ubuntu/application/instance.h>
@@ -193,6 +194,24 @@ MirSurface *createMirSurface(QWindow *window, UbuntuScreen *screen, UbuntuInput 
     return surface;
 }
 
+// FIXME - in order to work around https://bugs.launchpad.net/mir/+bug/1346633
+// we need to guess the panel height (3GU + 2DP)
+int panelHeight()
+{
+    const int defaultGridUnit = 8;
+    int gridUnit = defaultGridUnit;
+    QByteArray gridUnitString = qgetenv("GRID_UNIT_PX");
+    if (!gridUnitString.isEmpty()) {
+        bool ok;
+        gridUnit = gridUnitString.toInt(&ok);
+        if (!ok) {
+            gridUnit = defaultGridUnit;
+        }
+    }
+    qreal densityPixelRatio = static_cast<qreal>(gridUnit) / defaultGridUnit;
+    return gridUnit * 3 + qFloor(densityPixelRatio) * 2;
+}
+
 } //namespace
 
 class UbuntuSurface
@@ -223,6 +242,7 @@ public:
         auto geom = mWindow->geometry();
         geom.setWidth(parameters.width);
         geom.setHeight(parameters.height);
+        geom.setY(panelHeight());
 
         // Assume that the buffer size matches the surface size at creation time
         mBufferSize = geom.size();
