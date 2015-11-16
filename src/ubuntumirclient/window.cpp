@@ -179,11 +179,31 @@ Spec makeSurfaceSpec(QWindow *window, UbuntuInput *input, MirConnection *connect
    return Spec{mir_connection_create_spec_for_normal_surface(connection, width, height, pixelFormat)};
 }
 
+void setSizingConstraints(MirSurfaceSpec *spec, const QSize& minSize, const QSize& maxSize, const QSize& increment)
+{
+    mir_surface_spec_set_min_width(spec, minSize.width());
+    mir_surface_spec_set_min_height(spec, minSize.height());
+    if (maxSize.width() >= minSize.width()) {
+        mir_surface_spec_set_max_width(spec, maxSize.width());
+    }
+    if (maxSize.height() >= minSize.height()) {
+        mir_surface_spec_set_max_height(spec, maxSize.height());
+    }
+    if (increment.width() > 0) {
+        mir_surface_spec_set_width_increment(spec, increment.width());
+    }
+    if (increment.height() > 0) {
+        mir_surface_spec_set_height_increment(spec, increment.height());
+    }
+}
+
 MirSurface *createMirSurface(QWindow *window, UbuntuScreen *screen, UbuntuInput *input, MirConnection *connection)
 {
     auto spec = makeSurfaceSpec(window, input, connection);
     const auto title = window->title().toUtf8();
     mir_surface_spec_set_name(spec.get(), title.constData());
+
+    setSizingConstraints(spec.get(), window->minimumSize(), window->maximumSize(), window->sizeIncrement());
 
     if (window->windowState() == Qt::WindowFullScreen) {
         mir_surface_spec_set_fullscreen_on_output(spec.get(), screen->mirOutputId());
@@ -352,20 +372,7 @@ void UbuntuSurface::updateTitle(const QString& newTitle)
 void UbuntuSurface::setSizingConstraints(const QSize& minSize, const QSize& maxSize, const QSize& increment)
 {
     Spec spec{mir_connection_create_spec_for_changes(mConnection)};
-    mir_surface_spec_set_min_width(spec.get(), minSize.width());
-    mir_surface_spec_set_min_height(spec.get(), minSize.height());
-    if (maxSize.width() >= minSize.width()) {
-        mir_surface_spec_set_max_width(spec.get(), maxSize.width());
-    }
-    if (maxSize.height() >= minSize.height()) {
-        mir_surface_spec_set_max_height(spec.get(), maxSize.height());
-    }
-    if (increment.width() > 0) {
-        mir_surface_spec_set_width_increment(spec.get(), increment.width());
-    }
-    if (increment.height() > 0) {
-        mir_surface_spec_set_height_increment(spec.get(), increment.height());
-    }
+    ::setSizingConstraints(spec.get(), minSize, maxSize, increment);
     mir_surface_apply_spec(mMirSurface, spec.get());
 }
 
