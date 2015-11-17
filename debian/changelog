@@ -4,6 +4,19 @@ qtmir (0.4.7) UNRELEASED; urgency=medium
 
  -- Gerry Boland <gerry.boland@canonical.com>  Fri, 18 Sep 2015 12:30:00 +0100
 
+qtmir (0.4.6+16.04.20151112-0ubuntu1) xenial; urgency=medium
+
+  * Fix armhf builds on Xenial by using -std=gnu99 instead of c99
+
+ -- Gerry Boland <ci-train-bot@canonical.com>  Thu, 12 Nov 2015 16:26:27 +0000
+
+qtmir (0.4.6+16.04.20151110-0ubuntu1) xenial; urgency=medium
+
+  [ Nick Dedekind ]
+  * Reverted occlusion detection (lp#1514556) (LP: #1514556)
+
+ -- Gerry Boland <ci-train-bot@canonical.com>  Tue, 10 Nov 2015 09:19:59 +0000
+
 qtmir (0.4.6+16.04.20151102-0ubuntu1) xenial; urgency=medium
 
   [ Alan Griffiths ]
