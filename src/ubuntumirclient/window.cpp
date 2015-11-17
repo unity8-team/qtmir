@@ -240,7 +240,6 @@ public:
     UbuntuSurface(UbuntuWindow *platformWindow, UbuntuScreen *screen, UbuntuInput *input, MirConnection *connection)
         : mWindow(platformWindow->window())
         , mPlatformWindow(platformWindow)
-        , mScreen(screen)
         , mInput(input)
         , mConnection(connection)
         , mMirSurface(createMirSurface(mWindow, screen, input, connection))
@@ -281,6 +280,9 @@ public:
             mir_surface_release_sync(mMirSurface);
     }
 
+    UbuntuSurface(UbuntuSurface const&) = delete;
+    UbuntuSurface& operator=(UbuntuSurface const&) = delete;
+
     void resize(const QSize& newSize);
     void setState(Qt::WindowState newState);
     void setVisible(bool state);
@@ -301,7 +303,6 @@ private:
 
     QWindow * const mWindow;
     UbuntuWindow * const mPlatformWindow;
-    UbuntuScreen * const mScreen;
     UbuntuInput * const mInput;
     MirConnection * const mConnection;
 
@@ -486,7 +487,7 @@ void UbuntuSurface::updateSurface()
     }
 }
 
-UbuntuWindow::UbuntuWindow(QWindow *w, QSharedPointer<UbuntuClipboard> clipboard, UbuntuScreen *screen,
+UbuntuWindow::UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &clipboard, UbuntuScreen *screen,
                            UbuntuInput *input, MirConnection *connection)
     : QObject(nullptr)
     , QPlatformWindow(w)

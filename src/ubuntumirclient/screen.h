@@ -48,7 +48,7 @@ public:
     uint32_t mirOutputId() const { return mOutputId; }
 
     // QObject methods.
-    void customEvent(QEvent* event);
+    void customEvent(QEvent* event) override;
 
 private:
     QRect mGeometry;
