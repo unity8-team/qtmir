@@ -1,3 +1,36 @@
+qtubuntu (0.62+16.04.20151109-0ubuntu1) xenial; urgency=medium
+
+  [ Nick Dedekind ]
+  * Reverted occlusion detection (lp#1514556) (LP: #1514556)
+
+ -- Gerry Boland <ci-train-bot@canonical.com>  Mon, 09 Nov 2015 22:43:18 +0000
+
+qtubuntu (0.62+16.04.20151105-0ubuntu1) xenial; urgency=medium
+
+  [ Nick Dedekind ]
+  * Support server->client visibility change to stop rendering
+    (lp:#1475678) (LP: #1475678)
+
+  [ Olivier Tilloy ]
+  * Re-implement QPlatformScreen::physicalSize(). (LP: #1504293)
+
+ -- Michał Sawicz <michal.sawicz@canonical.com>  Thu, 05 Nov 2015 16:56:48 +0000
+
+qtubuntu (0.62+15.10.20151021-0ubuntu1) wily; urgency=medium
+
+  [ CI Train Bot ]
+  * New rebuild forced.
+
+  [ Gerry Boland ]
+  * Implement support for mouse wheel events (LP: #1497091)
+
+  [ Lukáš Tinkl ]
+  * Implement support for mouse wheel events (LP: #1497091)
+  * Override QPlatformWindow::setWindowTitle() and update the caption
+    accordingly (LP: #1497092)
+
+ -- Michał Sawicz <michal.sawicz@canonical.com>  Wed, 21 Oct 2015 11:47:52 +0000
+
 qtubuntu (0.62+15.10.20150914-0ubuntu1) wily; urgency=medium
 
   [ Daniel d'Andrada ]

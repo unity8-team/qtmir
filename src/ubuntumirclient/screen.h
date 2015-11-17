@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Canonical, Ltd.
+ * Copyright (C) 2014-2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -35,6 +35,7 @@ public:
     int depth() const override { return mDepth; }
     QRect geometry() const override { return mGeometry; }
     QRect availableGeometry() const override { return mGeometry; }
+    QSizeF physicalSize() const override { return mPhysicalSize; }
     Qt::ScreenOrientation nativeOrientation() const override { return mNativeOrientation; }
     Qt::ScreenOrientation orientation() const override { return mNativeOrientation; }
 
@@ -44,16 +45,19 @@ public:
     EGLConfig eglConfig() const { return mEglConfig; }
     EGLNativeDisplayType eglNativeDisplay() const { return mEglNativeDisplay; }
     void handleWindowSurfaceResize(int width, int height);
+    uint32_t mirOutputId() const { return mOutputId; }
 
     // QObject methods.
     void customEvent(QEvent* event) override;
 
 private:
     QRect mGeometry;
+    QSizeF mPhysicalSize;
     Qt::ScreenOrientation mNativeOrientation;
     Qt::ScreenOrientation mCurrentOrientation;
     QImage::Format mFormat;
     int mDepth;
+    uint32_t mOutputId;
     QSurfaceFormat mSurfaceFormat;
     EGLDisplay mEglDisplay;
     EGLConfig mEglConfig;

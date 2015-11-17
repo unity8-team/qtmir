@@ -14,6 +14,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// Local
+#include "integration.h"
+#include "backingstore.h"
+#include "clipboard.h"
+#include "glcontext.h"
+#include "input.h"
+#include "logging.h"
+#include "nativeinterface.h"
+#include "screen.h"
+#include "theme.h"
+#include "window.h"
+
 // Qt
 #include <QGuiApplication>
 #include <private/qguiapplication_p.h>
@@ -23,18 +35,6 @@
 #include <QtPlatformSupport/private/qgenericunixfontdatabase_p.h>
 #include <QtPlatformSupport/private/qgenericunixeventdispatcher_p.h>
 #include <QOpenGLContext>
-
-// Local
-#include "backingstore.h"
-#include "clipboard.h"
-#include "glcontext.h"
-#include "input.h"
-#include "integration.h"
-#include "logging.h"
-#include "nativeinterface.h"
-#include "screen.h"
-#include "theme.h"
-#include "window.h"
 
 // platform-api
 #include <ubuntu/application/lifecycle_delegate.h>
@@ -162,10 +162,8 @@ QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window) 
 
 QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window)
 {
-    QPlatformWindow* platformWindow = new UbuntuWindow(
-            window, mClipboard, static_cast<UbuntuScreen*>(mScreen), mInput, u_application_instance_get_mir_connection(mInstance));
-    platformWindow->requestActivateWindow();
-    return platformWindow;
+    return new UbuntuWindow(window, mClipboard, static_cast<UbuntuScreen*>(mScreen),
+                            mInput, u_application_instance_get_mir_connection(mInstance));
 }
 
 bool UbuntuClientIntegration::hasCapability(QPlatformIntegration::Capability cap) const
@@ -173,11 +171,9 @@ bool UbuntuClientIntegration::hasCapability(QPlatformIntegration::Capability cap
     switch (cap) {
     case ThreadedPixmaps:
         return true;
-        break;
 
     case OpenGL:
         return true;
-        break;
 
     case ThreadedOpenGL:
         if (qEnvironmentVariableIsEmpty("QTUBUNTU_NO_THREADED_OPENGL")) {
@@ -186,8 +182,9 @@ bool UbuntuClientIntegration::hasCapability(QPlatformIntegration::Capability cap
             DLOG("ubuntumirclient: disabled threaded OpenGL");
             return false;
         }
-        break;
-
+    case MultipleWindows:
+    case NonFullScreenWindows:
+        return true;
     default:
         return QPlatformIntegration::hasCapability(cap);
     }
