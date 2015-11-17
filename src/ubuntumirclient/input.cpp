@@ -142,6 +142,7 @@ UbuntuInput::UbuntuInput(UbuntuClientIntegration* integration)
     , mEventFilterType(static_cast<UbuntuNativeInterface*>(
         integration->nativeInterface())->genericEventFilterType())
     , mEventType(static_cast<QEvent::Type>(QEvent::registerEventType()))
+    , mLastFocusedWindow(nullptr)
 {
     // Initialize touch device.
     mTouchDevice = new QTouchDevice;
@@ -213,7 +214,7 @@ void UbuntuInput::customEvent(QEvent* event)
     switch (mir_event_get_type(nativeEvent))
     {
     case mir_event_type_input:
-        dispatchInputEvent(ubuntuEvent->window->window(), mir_event_get_input_event(nativeEvent));
+        dispatchInputEvent(ubuntuEvent->window, mir_event_get_input_event(nativeEvent));
         break;
     case mir_event_type_resize:
     {
@@ -225,22 +226,24 @@ void UbuntuInput::customEvent(QEvent* event)
                 mir_resize_event_get_width(resizeEvent),
                 mir_resize_event_get_height(resizeEvent));
 
-        ubuntuEvent->window->handleSurfaceResize(mir_resize_event_get_width(resizeEvent),
+        ubuntuEvent->window->handleSurfaceResized(mir_resize_event_get_width(resizeEvent),
             mir_resize_event_get_height(resizeEvent));
         break;
     }
     case mir_event_type_surface:
     {
         auto surfaceEvent = mir_event_get_surface_event(nativeEvent);
-        auto surfaceEventAttribute = mir_surface_event_get_attribute(surfaceEvent);
-
-        if (surfaceEventAttribute == mir_surface_attrib_focus) {
-            ubuntuEvent->window->handleSurfaceFocusChange(mir_surface_event_get_attribute_value(surfaceEvent) ==
-                mir_surface_focused);
-
-        } else if (surfaceEventAttribute == mir_surface_attrib_visibility) {
-            ubuntuEvent->window->handleSurfaceExposeChange(mir_surface_event_get_attribute_value(surfaceEvent) ==
-                                                           mir_surface_visibility_exposed);
+        if (mir_surface_event_get_attribute(surfaceEvent) == mir_surface_attrib_focus) {
+            const bool focused = mir_surface_event_get_attribute_value(surfaceEvent) == mir_surface_focused;
+            // Mir may have sent a pair of focus lost/gained events, so we need to "peek" into the queue
+            // so that we don't deactivate windows prematurely.
+            if (focused) {
+                mPendingFocusGainedEvents--;
+                ubuntuEvent->window->handleSurfaceFocused();
+            } else if(!mPendingFocusGainedEvents) {
+                DLOG("[ubuntumirclient QPA] No windows have focus");
+                QWindowSystemInterface::handleWindowActivated(nullptr, Qt::ActiveWindowFocusReason);
+            }
         }
         break;
     }
@@ -259,6 +262,17 @@ void UbuntuInput::postEvent(UbuntuWindow *platformWindow, const MirEvent *event)
 {
     QWindow *window = platformWindow->window();
 
+    const auto eventType = mir_event_get_type(event);
+    if (mir_event_type_surface == eventType) {
+        auto surfaceEvent = mir_event_get_surface_event(event);
+        if (mir_surface_attrib_focus == mir_surface_event_get_attribute(surfaceEvent)) {
+            const bool focused = mir_surface_event_get_attribute_value(surfaceEvent) == mir_surface_focused;
+            if (focused) {
+                mPendingFocusGainedEvents++;
+            }
+        }
+    }
+
     QCoreApplication::postEvent(this, new UbuntuEvent(
             platformWindow, event, mEventType));
 
@@ -269,7 +283,7 @@ void UbuntuInput::postEvent(UbuntuWindow *platformWindow, const MirEvent *event)
     }
 }
 
-void UbuntuInput::dispatchInputEvent(QWindow *window, const MirInputEvent *ev)
+void UbuntuInput::dispatchInputEvent(UbuntuWindow *window, const MirInputEvent *ev)
 {
     switch (mir_input_event_get_type(ev))
     {
@@ -287,7 +301,7 @@ void UbuntuInput::dispatchInputEvent(QWindow *window, const MirInputEvent *ev)
     }
 }
 
-void UbuntuInput::dispatchTouchEvent(QWindow *window, const MirInputEvent *ev)
+void UbuntuInput::dispatchTouchEvent(UbuntuWindow *window, const MirInputEvent *ev)
 {
     const MirTouchEvent *tev = mir_input_event_get_touch_event(ev);
 
@@ -318,6 +332,7 @@ void UbuntuInput::dispatchTouchEvent(QWindow *window, const MirInputEvent *ev)
         switch (touch_action)
         {
         case mir_touch_action_down:
+            mLastFocusedWindow = window;
             touchPoint.state = Qt::TouchPointPressed;
             break;
         case mir_touch_action_up:
@@ -332,7 +347,7 @@ void UbuntuInput::dispatchTouchEvent(QWindow *window, const MirInputEvent *ev)
     }
 
     ulong timestamp = mir_input_event_get_event_time(ev) / 1000000;
-    QWindowSystemInterface::handleTouchEvent(window, timestamp,
+    QWindowSystemInterface::handleTouchEvent(window->window(), timestamp,
             mTouchDevice, touchPoints);
 }
 
@@ -375,7 +390,7 @@ Qt::KeyboardModifiers qt_modifiers_from_mir(MirInputEventModifiers modifiers)
 }
 }
 
-void UbuntuInput::dispatchKeyEvent(QWindow *window, const MirInputEvent *event)
+void UbuntuInput::dispatchKeyEvent(UbuntuWindow *window, const MirInputEvent *event)
 {
     const MirKeyboardEvent *key_event = mir_input_event_get_keyboard_event(event);
 
@@ -388,6 +403,9 @@ void UbuntuInput::dispatchKeyEvent(QWindow *window, const MirInputEvent *event)
     MirKeyboardAction action = mir_keyboard_event_action(key_event);
     QEvent::Type keyType = action == mir_keyboard_action_up
         ? QEvent::KeyRelease : QEvent::KeyPress;
+
+    if (action == mir_keyboard_action_down)
+        mLastFocusedWindow = window;
 
     char s[2];
     int sym = translateKeysym(xk_sym, s, sizeof(s));
@@ -405,7 +423,7 @@ void UbuntuInput::dispatchKeyEvent(QWindow *window, const MirInputEvent *event)
         }
     }
 
-    QWindowSystemInterface::handleKeyEvent(window, timestamp, keyType, sym, modifiers, text, is_auto_rep);
+    QWindowSystemInterface::handleKeyEvent(window->window(), timestamp, keyType, sym, modifiers, text, is_auto_rep);
 }
 
 namespace
@@ -428,8 +446,9 @@ Qt::MouseButtons extract_buttons(const MirPointerEvent *pev)
 }
 }
 
-void UbuntuInput::dispatchPointerEvent(QWindow *window, const MirInputEvent *ev)
+void UbuntuInput::dispatchPointerEvent(UbuntuWindow *platformWindow, const MirInputEvent *ev)
 {
+    auto window = platformWindow->window();
     auto timestamp = mir_input_event_get_event_time(ev) / 1000000;
 
     auto pev = mir_input_event_get_pointer_event(ev);
