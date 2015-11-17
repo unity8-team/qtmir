@@ -1,3 +1,22 @@
+qtubuntu (0.62+16.04.20151117-0ubuntu1) xenial; urgency=medium
+
+  [ Albert Astals Cid ]
+  * Improvements from running clazy over the code
+
+  [ Alberto Aguirre ]
+  * Add support for Qt popups and dialog windows.
+
+  [ Gerry Boland ]
+  * Fix inconsistent mouse wheel scrolling behavior
+
+  [ Lukáš Tinkl ]
+  * Fix inconsistent mouse wheel scrolling behavior
+
+  [ Nick Dedekind ]
+  * Added check for valid mime data. (LP: #1493530)
+
+ -- Gerry Boland <ci-train-bot@canonical.com>  Tue, 17 Nov 2015 14:49:33 +0000
+
 qtubuntu (0.62+16.04.20151109-0ubuntu1) xenial; urgency=medium
 
   [ Nick Dedekind ]
