@@ -467,19 +467,16 @@ void UbuntuInput::dispatchPointerEvent(UbuntuWindow *platformWindow, const MirIn
 
         if (hDelta != 0 || vDelta != 0) {
             const QPoint angleDelta = QPoint(hDelta * 15, vDelta * 15);
-            QWindowSystemInterface::handleWheelEvent(window, timestamp, localPoint, localPoint,
+            QWindowSystemInterface::handleWheelEvent(window, timestamp, localPoint, window->position() + localPoint,
                                                      QPoint(), angleDelta, modifiers, Qt::ScrollUpdate);
-        } else {
-            auto buttons = extract_buttons(pev);
-            if (buttons != Qt::NoButton)
-                mLastFocusedWindow = platformWindow;
-            QWindowSystemInterface::handleMouseEvent(window, timestamp, localPoint, localPoint /* Should we omit global point instead? */,
-                                                     buttons, modifiers);
         }
+        auto buttons = extract_buttons(pev);
+        QWindowSystemInterface::handleMouseEvent(window, timestamp, localPoint, window->position() + localPoint /* Should we omit global point instead? */,
+                                                 buttons, modifiers);
         break;
     }
     case mir_pointer_action_enter:
-        QWindowSystemInterface::handleEnterEvent(window, localPoint, localPoint);
+        QWindowSystemInterface::handleEnterEvent(window, localPoint, window->position() + localPoint);
         break;
     case mir_pointer_action_leave:
         QWindowSystemInterface::handleLeaveEvent(window);
