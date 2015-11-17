@@ -19,20 +19,23 @@
 
 #include <qpa/qplatformwindow.h>
 #include <QSharedPointer>
+#include <QMutex>
 
-#include <mir_toolkit/mir_client_library.h>
+#include <memory>
 
 class UbuntuClipboard;
 class UbuntuInput;
 class UbuntuScreen;
-class UbuntuWindowPrivate;
+class UbuntuSurface;
+struct MirConnection;
+struct MirSurface;
 
 class UbuntuWindow : public QObject, public QPlatformWindow
 {
     Q_OBJECT
 public:
     UbuntuWindow(QWindow *w, QSharedPointer<UbuntuClipboard> clipboard, UbuntuScreen *screen,
-                 UbuntuInput *input, MirConnection *mir_connection);
+                 UbuntuInput *input, MirConnection *mirConnection);
     virtual ~UbuntuWindow();
 
     // QPlatformWindow methods.
@@ -41,20 +44,20 @@ public:
     void setWindowState(Qt::WindowState state) override;
     void setVisible(bool visible) override;
     void setWindowTitle(const QString &title) override;
+    void propagateSizeHints() override;
 
     // New methods.
-    void* eglSurface() const;
-    void handleSurfaceResize(int width, int height);
-    void handleSurfaceFocusChange(bool focused);
-    void onBuffersSwapped_threadSafe(int newBufferWidth, int newBufferHeight);
-
-    UbuntuWindowPrivate* priv() { return d; }
+    void *eglSurface() const;
+    MirSurface *mirSurface() const;
+    void handleSurfaceResized(int width, int height);
+    void handleSurfaceFocused();
+    void onSwapBuffersDone();
 
 private:
-    void createWindow();
-    void moveResize(const QRect& rect);
-
-    UbuntuWindowPrivate *d;
+    mutable QMutex mMutex;
+    const WId mId;
+    const QSharedPointer<UbuntuClipboard> mClipboard;
+    std::unique_ptr<UbuntuSurface> mSurface;
 };
 
 #endif // UBUNTU_WINDOW_H
