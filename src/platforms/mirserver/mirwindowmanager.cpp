@@ -63,6 +63,11 @@ public:
         MirSurfaceAttrib attrib,
         int value) override;
 
+    void handle_raise_surface(
+        std::shared_ptr<ms::Session> const& session,
+        std::shared_ptr<ms::Surface> const& surface,
+        uint64_t timestamp) override;
+
     void modify_surface(
         const std::shared_ptr<mir::scene::Session>&,
         const std::shared_ptr<mir::scene::Surface>& surface,
@@ -151,6 +156,13 @@ int MirWindowManagerImpl::set_surface_attribute(
     int value)
 {
     return surface->configure(attrib, value);
+}
+
+void MirWindowManagerImpl::handle_raise_surface(
+    std::shared_ptr<ms::Session> const& /*session*/,
+    std::shared_ptr<ms::Surface> const& /*surface*/,
+    uint64_t /*timestamp*/)
+{
 }
 
 void MirWindowManagerImpl::modify_surface(const std::shared_ptr<mir::scene::Session>&,
