@@ -179,7 +179,6 @@ bool UbuntuClientIntegration::hasCapability(QPlatformIntegration::Capability cap
 
     case ApplicationState:
         return true;
-        break;
 
     case ThreadedOpenGL:
         if (qEnvironmentVariableIsEmpty("QTUBUNTU_NO_THREADED_OPENGL")) {
