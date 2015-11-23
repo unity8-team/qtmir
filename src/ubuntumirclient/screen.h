@@ -48,9 +48,10 @@ public:
     EGLConfig eglConfig() const { return mEglConfig; }
     EGLNativeDisplayType eglNativeDisplay() const { return mEglNativeDisplay; }
     void handleWindowSurfaceResize(int width, int height);
+    uint32_t mirOutputId() const { return mOutputId; }
 
     // QObject methods.
-    void customEvent(QEvent* event);
+    void customEvent(QEvent* event) override;
 
 private:
     QRect mGeometry;
@@ -59,6 +60,7 @@ private:
     Qt::ScreenOrientation mCurrentOrientation;
     QImage::Format mFormat;
     int mDepth;
+    uint32_t mOutputId;
     QSurfaceFormat mSurfaceFormat;
     EGLDisplay mEglDisplay;
     EGLConfig mEglConfig;
