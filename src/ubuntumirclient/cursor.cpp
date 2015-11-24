@@ -19,8 +19,7 @@
 #include "logging.h"
 #include "window.h"
 
-#include <mir_toolkit/mir_cursor_configuration.h>
-#include <mir_toolkit/cursors.h>
+#include <mir_toolkit/mir_client_library.h>
 
 UbuntuCursor::UbuntuCursor(MirConnection *connection)
     : mConnection(connection)
