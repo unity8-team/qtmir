@@ -21,6 +21,8 @@
 #include <QSurfaceFormat>
 #include <EGL/egl.h>
 
+#include "cursor.h"
+
 struct MirConnection;
 
 class UbuntuScreen : public QObject, public QPlatformScreen
@@ -38,6 +40,7 @@ public:
     QSizeF physicalSize() const override { return mPhysicalSize; }
     Qt::ScreenOrientation nativeOrientation() const override { return mNativeOrientation; }
     Qt::ScreenOrientation orientation() const override { return mNativeOrientation; }
+    QPlatformCursor *cursor() const override { return const_cast<UbuntuCursor*>(&mCursor); }
 
     // New methods.
     QSurfaceFormat surfaceFormat() const { return mSurfaceFormat; }
@@ -62,6 +65,7 @@ private:
     EGLDisplay mEglDisplay;
     EGLConfig mEglConfig;
     EGLNativeDisplayType mEglNativeDisplay;
+    UbuntuCursor mCursor;
 };
 
 #endif // UBUNTU_SCREEN_H

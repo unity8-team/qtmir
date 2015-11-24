@@ -132,6 +132,7 @@ UbuntuScreen::UbuntuScreen(MirConnection *connection)
     , mSurfaceFormat()
     , mEglDisplay(EGL_NO_DISPLAY)
     , mEglConfig(nullptr)
+    , mCursor(connection)
 {
     // Initialize EGL.
     ASSERT(eglBindAPI(EGL_OPENGL_ES_API) == EGL_TRUE);
