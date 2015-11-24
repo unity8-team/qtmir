@@ -1,3 +1,10 @@
+qtubuntu (0.62+16.04.20151124-0ubuntu1) xenial; urgency=medium
+
+  [ Daniel d'Andrada ]
+  * Implemented cursor support
+
+ -- Michał Sawicz <michal.sawicz@canonical.com>  Tue, 24 Nov 2015 13:26:05 +0000
+
 qtubuntu (0.62+16.04.20151117-0ubuntu1) xenial; urgency=medium
 
   [ Albert Astals Cid ]
