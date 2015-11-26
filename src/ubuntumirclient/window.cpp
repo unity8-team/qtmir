@@ -215,7 +215,7 @@ MirSurface *createMirSurface(QWindow *window, UbuntuScreen *screen, UbuntuInput 
 }
 
 // FIXME - in order to work around https://bugs.launchpad.net/mir/+bug/1346633
-// we need to guess the panel height (3GU + 2DP)
+// we need to guess the panel height (3GU)
 int panelHeight()
 {
     const int defaultGridUnit = 8;
@@ -228,8 +228,7 @@ int panelHeight()
             gridUnit = defaultGridUnit;
         }
     }
-    qreal densityPixelRatio = static_cast<qreal>(gridUnit) / defaultGridUnit;
-    return gridUnit * 3 + qFloor(densityPixelRatio) * 2;
+    return gridUnit * 3;
 }
 
 } //namespace
