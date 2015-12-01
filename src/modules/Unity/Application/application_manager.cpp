@@ -409,15 +409,23 @@ bool ApplicationManager::approveApplicationStart(const QString &appId, bool appr
     if (!application)
         return false;
 
+    // Allow stopped apps because url-dispatcher can relaunch apps which have
+    // been OOM-killed - AppMan must accept the newly spawned application and
+    // focus it immediately (as user expects app to still be running).
+    if (application->state() != Application::Starting && application->state() != Application::Stopped) {
+        return false;
+    }
+
     if (!m_taskController->approveStart(application->appId(), approved))
         return false;
 
-    application->setProcessState(Application::ProcessRunning);
-
-    if (application->state() == Application::Starting || application->state() == Application::Stopped) {
-        // url-dispatcher can relaunch apps which have been OOM-killed - AppMan must accept the newly spawned
-        // application and focus it immediately (as user expects app to still be running).
+    if (approved) {
+        application->setProcessState(Application::ProcessRunning);
         Q_EMIT focusRequested(application->appId());
+    } else {
+        application->close();
+        remove(application);
+        delete application;
     }
 
     return true;

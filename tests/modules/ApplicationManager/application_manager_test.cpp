@@ -113,7 +113,8 @@ TEST_F(ApplicationManagerTests,bug_case_1240400_second_dialer_app_fails_to_autho
 
     // now a second session without desktop file is launched:
     applicationManager.authorizeSession(secondProcId, authed);
-    onProcessStarting(dialer_app_id);
+    applicationManager.onProcessStarting(dialer_app_id);
+    EXPECT_FALSE(applicationManager.approveApplicationStart(dialer_app_id, true));
 
     EXPECT_FALSE(authed);
     EXPECT_EQ(application, applicationManager.findApplication(dialer_app_id));
@@ -734,6 +735,30 @@ TEST_F(ApplicationManagerTests, appStartingIsBlockedUntilApproval)
     ASSERT_EQ(1, focusRequestSpy.count());
     ASSERT_EQ(Application::Starting, application->state());
     ASSERT_EQ(Application::ProcessRunning, application->processState());
+}
+
+/*
+ * Test that we don't start running the app until we get approval
+ */
+TEST_F(ApplicationManagerTests, appStartingDenialClosesApplication)
+{
+    using namespace ::testing;
+    const QString appId("testAppId");
+
+    // Set up general mock responses
+    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
+    EXPECT_CALL(appController, approveApplicationStartForAppId(appId, false)).Times(1);
+    QSignalSpy focusRequestSpy(&applicationManager, SIGNAL(focusRequested(const QString &)));
+
+    // Start app
+    applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    applicationManager.onProcessStarting(appId);
+
+    // Deny app
+    ASSERT_TRUE(applicationManager.approveApplicationStart(appId, false));
+
+    ASSERT_EQ(0, focusRequestSpy.count());
+    ASSERT_EQ(nullptr, applicationManager.findApplication(appId));
 }
 
 /*
