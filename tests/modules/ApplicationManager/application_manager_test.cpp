@@ -43,7 +43,7 @@ public:
     }
     inline void onProcessStarting(const QString &appId) {
         applicationManager.onProcessStarting(appId);
-        applicationManager.approveApplicationStart(appId, true);
+        ASSERT_TRUE(applicationManager.approveApplicationStart(appId, true));
     }
     inline void onSessionStopping(const std::shared_ptr<mir::scene::Session> &session) {
         applicationManager.onSessionStopping(session);
@@ -729,7 +729,7 @@ TEST_F(ApplicationManagerTests, appStartingIsBlockedUntilApproval)
     // Now pretend that unity or whatever handled the approval request
     QSignalSpy focusRequestSpy(&applicationManager, SIGNAL(focusRequested(const QString &)));
     EXPECT_CALL(appController, approveApplicationStartForAppId(appId, true)).Times(1);
-    applicationManager.approveApplicationStart(appId, true);
+    ASSERT_TRUE(applicationManager.approveApplicationStart(appId, true));
     ASSERT_TRUE(Mock::VerifyAndClearExpectations(&appController));
     ASSERT_EQ(1, focusRequestSpy.count());
     ASSERT_EQ(Application::Starting, application->state());

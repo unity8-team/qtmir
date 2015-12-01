@@ -100,7 +100,7 @@ public:
     Q_INVOKABLE void unfocusCurrentApplication() override;
     Q_INVOKABLE qtmir::Application* startApplication(const QString &appId, const QStringList &arguments) override;
     Q_INVOKABLE bool stopApplication(const QString &appId) override;
-    Q_INVOKABLE void approveApplicationStart(const QString &appId, bool approved);
+    Q_INVOKABLE bool approveApplicationStart(const QString &appId, bool approved) override;
 
     // QAbstractListModel
     int rowCount(const QModelIndex & parent = QModelIndex()) const override;
@@ -133,7 +133,6 @@ public Q_SLOTS:
     void onResumeRequested(const QString& appId);
 
 Q_SIGNALS:
-    void applicationStartApprovalRequested(const QString &appId);
     void focusRequested(const QString &appId);
     void emptyChanged();
 

@@ -401,16 +401,16 @@ void ApplicationManager::onProcessStarting(const QString &appId)
     Q_EMIT applicationStartApprovalRequested(appId);
 }
 
-void ApplicationManager::approveApplicationStart(const QString &appId, bool approved)
+bool ApplicationManager::approveApplicationStart(const QString &appId, bool approved)
 {
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::approveApplicationStart - appId=" << appId << "approved=" << approved;
 
     Application *application = findApplication(appId);
     if (!application)
-        return;
+        return false;
 
     if (!m_taskController->approveStart(application->appId(), approved))
-        return;
+        return false;
 
     application->setProcessState(Application::ProcessRunning);
 
@@ -419,6 +419,8 @@ void ApplicationManager::approveApplicationStart(const QString &appId, bool appr
         // application and focus it immediately (as user expects app to still be running).
         Q_EMIT focusRequested(application->appId());
     }
+
+    return true;
 }
 
 /**
