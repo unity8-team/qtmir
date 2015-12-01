@@ -189,7 +189,7 @@ bool ApplicationController::stopApplicationWithAppId(const QString& appId)
     return result;
 }
 
-bool ApplicationController::startApplicationWithAppIdAndArgs(const QString& appId, const QStringList& arguments)
+void ApplicationController::startApplicationWithAppIdAndArgs(const QString& appId, const QStringList& arguments)
 {
     // Convert arguments QStringList into format suitable for ubuntu-app-launch
     // The last item should be null, which is done by g_new0, we just don't fill it.
@@ -199,14 +199,18 @@ bool ApplicationController::startApplicationWithAppIdAndArgs(const QString& appI
         upstartArgs[i] = g_strdup(arguments.at(i).toUtf8().data());
     }
 
-    auto result = ubuntu_app_launch_start_application(
+    ubuntu_app_launch_start_application_async(
                 toLongAppIdIfPossible(appId).toLatin1().constData(),
                 static_cast<const gchar * const *>(upstartArgs));
 
     g_strfreev(upstartArgs);
+}
 
+bool ApplicationController::approveApplicationStartForAppId(const QString& appId, bool approved)
+{
+    auto result = ubuntu_app_launch_observer_finish_app_starting(toLongAppIdIfPossible(appId).toLatin1().constData(), approved);
     if (!result)
-        qDebug() << "Application::Controller::startApplicationWithAppIdAndArgs FAILED to start appId" << appId;
+        qDebug() << "ApplicationController::approveApplicationStartForAppId FAILED to approve appId=" << appId;
 
     return result;
 }

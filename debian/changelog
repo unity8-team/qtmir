@@ -1,3 +1,9 @@
+qtmir (0.4.7) UNRELEASED; urgency=medium
+
+  * Add support for approving applications before they finish starting
+
+ -- Michael Terry <mterry@ubuntu.com>  Tue, 01 Dec 2015 09:55:49 -0500
+
 qtmir (0.4.6+16.04.20151125-0ubuntu1) xenial; urgency=medium
 
   [ Daniel d'Andrada ]

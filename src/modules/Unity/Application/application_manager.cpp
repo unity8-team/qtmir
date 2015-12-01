@@ -353,34 +353,27 @@ Application *ApplicationManager::startApplication(const QString &inputAppId, Exe
         return nullptr;
     }
 
-    if (!m_taskController->start(appId, arguments)) {
-        qWarning() << "Upstart failed to start application with appId" << appId;
+    application = new Application(
+                m_sharedWakelock,
+                m_desktopFileReaderFactory->createInstance(appId, m_taskController->findDesktopFileForAppId(appId)),
+                arguments,
+                this);
+
+    if (!application->isValid()) {
+        qWarning() << "Unable to instantiate application with appId" << appId;
+        delete application;
         return nullptr;
     }
 
-    // The TaskController may synchroneously callback onProcessStarting, so check if application already added
-    application = findApplication(appId);
-    if (application) {
-        application->setArguments(arguments);
-    } else {
-        application = new Application(
-                    m_sharedWakelock,
-                    m_desktopFileReaderFactory->createInstance(appId, m_taskController->findDesktopFileForAppId(appId)),
-                    arguments,
-                    this);
-
-        if (!application->isValid()) {
-            qWarning() << "Unable to instantiate application with appId" << appId;
-            return nullptr;
-        }
-
-        // override stage if necessary
-        if (application->stage() == Application::SideStage && flags.testFlag(ApplicationManager::ForceMainStage)) {
-            application->setStage(Application::MainStage);
-        }
-
-        add(application);
+    // override stage if necessary
+    if (application->stage() == Application::SideStage && flags.testFlag(ApplicationManager::ForceMainStage)) {
+        application->setStage(Application::MainStage);
     }
+
+    add(application);
+
+    m_taskController->start(appId, arguments);
+
     return application;
 }
 
@@ -403,20 +396,29 @@ void ApplicationManager::onProcessStarting(const QString &appId)
         }
 
         add(application);
-        Q_EMIT focusRequested(appId);
     }
-    else {
-        if (application->state() == Application::Stopped) {
-            // url-dispatcher can relaunch apps which have been OOM-killed - AppMan must accept the newly spawned
-            // application and focus it immediately (as user expects app to still be running).
-            qCDebug(QTMIR_APPLICATIONS) << "Stopped application appId=" << appId << "is being resumed externally";
-            Q_EMIT focusRequested(appId);
-        } else {
-            qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessStarting application already found with appId"
-                                        << appId;
-        }
-    }
+
+    Q_EMIT applicationStartApprovalRequested(appId);
+}
+
+void ApplicationManager::approveApplicationStart(const QString &appId, bool approved)
+{
+    qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::approveApplicationStart - appId=" << appId << "approved=" << approved;
+
+    Application *application = findApplication(appId);
+    if (!application)
+        return;
+
+    if (!m_taskController->approveStart(application->appId(), approved))
+        return;
+
     application->setProcessState(Application::ProcessRunning);
+
+    if (application->state() == Application::Starting || application->state() == Application::Stopped) {
+        // url-dispatcher can relaunch apps which have been OOM-killed - AppMan must accept the newly spawned
+        // application and focus it immediately (as user expects app to still be running).
+        Q_EMIT focusRequested(application->appId());
+    }
 }
 
 /**

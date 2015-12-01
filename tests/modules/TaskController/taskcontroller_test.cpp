@@ -49,7 +49,8 @@ struct TriggerableApplicationController : public ApplicationController
     MOCK_CONST_METHOD1(findDesktopFileForAppId, QFileInfo(const QString &appId));
 
     MOCK_METHOD1(stopApplicationWithAppId, bool(const QString&));
-    MOCK_METHOD2(startApplicationWithAppIdAndArgs, bool(const QString&, const QStringList&));
+    MOCK_METHOD2(startApplicationWithAppIdAndArgs, void(const QString&, const QStringList&));
+    MOCK_METHOD2(approveApplicationStartForAppId, bool(const QString&, bool));
     MOCK_METHOD1(pauseApplicationWithAppId, bool(const QString&));
     MOCK_METHOD1(resumeApplicationWithAppId, bool(const QString&));
 };
@@ -66,7 +67,7 @@ TEST(TaskController, startingAnApplicationCallsCorrectlyIntoApplicationControlle
                 &appController,
                 [](ApplicationController*){});
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, QStringList())).Times(1).WillRepeatedly(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, QStringList())).Times(1);
 
     TaskController taskController(nullptr,
                                   appControllerPtr);

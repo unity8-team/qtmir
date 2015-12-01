@@ -72,10 +72,10 @@ TaskController::~TaskController()
 {
 }
 
-bool TaskController::start(const QString& appId, const QStringList& arguments)
+void TaskController::start(const QString& appId, const QStringList& arguments)
 {
     qCDebug(QTMIR_APPLICATIONS) << "TaskController::start - appId=" << appId;
-    return m_appController->startApplicationWithAppIdAndArgs(appId, arguments);
+    m_appController->startApplicationWithAppIdAndArgs(appId, arguments);
 }
 
 bool TaskController::stop(const QString& appId)
@@ -84,6 +84,16 @@ bool TaskController::stop(const QString& appId)
     auto result = m_appController->stopApplicationWithAppId(appId);
     if (!result)
         qCDebug(QTMIR_APPLICATIONS) << "TaskController::stopApplication - FAILED to stop appId=" << appId;
+
+    return result;
+}
+
+bool TaskController::approveStart(const QString &appId, bool approved)
+{
+    qCDebug(QTMIR_APPLICATIONS) << "TaskController::approveStart - appId=" << appId << "approved=" << approved;
+    auto result = m_appController->approveApplicationStartForAppId(appId, approved);
+    if (!result)
+        qCDebug(QTMIR_APPLICATIONS) << "TaskController::approveStart - FAILED to approve appId=" << appId;
 
     return result;
 }

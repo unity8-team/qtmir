@@ -32,7 +32,8 @@ struct MockApplicationController : public qtmir::ApplicationController
     MOCK_CONST_METHOD1(findDesktopFileForAppId, QFileInfo(const QString &appId));
 
     MOCK_METHOD1(stopApplicationWithAppId, bool(const QString&));
-    MOCK_METHOD2(startApplicationWithAppIdAndArgs, bool(const QString&, const QStringList&));
+    MOCK_METHOD2(startApplicationWithAppIdAndArgs, void(const QString&, const QStringList&));
+    MOCK_METHOD2(approveApplicationStartForAppId, bool(const QString&, bool));
     MOCK_METHOD1(pauseApplicationWithAppId, bool(const QString&));
     MOCK_METHOD1(resumeApplicationWithAppId, bool(const QString&));
 
@@ -58,6 +59,10 @@ struct MockApplicationController : public qtmir::ApplicationController
         ON_CALL(*this, startApplicationWithAppIdAndArgs(_, _))
                 .WillByDefault(
                     Invoke(this, &MockApplicationController::doStartApplicationWithAppIdAndArgs));
+
+        ON_CALL(*this, approveApplicationStartForAppId(_, _))
+                .WillByDefault(
+                    Return(true));
 
         ON_CALL(*this, pauseApplicationWithAppId(_))
                 .WillByDefault(
@@ -99,7 +104,7 @@ struct MockApplicationController : public qtmir::ApplicationController
         return false;
     }
 
-    bool doStartApplicationWithAppIdAndArgs(const QString& appId, const QStringList& args)
+    void doStartApplicationWithAppIdAndArgs(const QString& appId, const QStringList& args)
     {
         Q_UNUSED(args);
 
@@ -113,10 +118,7 @@ struct MockApplicationController : public qtmir::ApplicationController
         if (child.pid() > 0)
         {
             children.insert(appId, child);
-            return true;
         }
-
-        return false;
     }
 
     bool doPauseApplicationWithAppId(const QString& appId)

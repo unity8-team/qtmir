@@ -35,7 +35,8 @@ public:
     bool appIdHasProcessId(pid_t pid, const QString& appId) override;
 
     bool stopApplicationWithAppId(const QString& appId) override;
-    bool startApplicationWithAppIdAndArgs(const QString& appId, const QStringList& arguments) override;
+    void startApplicationWithAppIdAndArgs(const QString& appId, const QStringList& arguments) override;
+    bool approveApplicationStartForAppId(const QString &appId, bool approved) override;
 
     bool pauseApplicationWithAppId(const QString& appId) override;
     bool resumeApplicationWithAppId(const QString& appId) override;

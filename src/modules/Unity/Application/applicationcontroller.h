@@ -46,7 +46,8 @@ public:
     virtual bool appIdHasProcessId(pid_t pid, const QString &appId) = 0;
 
     virtual bool stopApplicationWithAppId(const QString &appId) = 0;
-    virtual bool startApplicationWithAppIdAndArgs(const QString &appId, const QStringList &arguments) = 0;
+    virtual void startApplicationWithAppIdAndArgs(const QString &appId, const QStringList &arguments) = 0;
+    virtual bool approveApplicationStartForAppId(const QString &appId, bool approved) = 0;
 
     virtual bool pauseApplicationWithAppId(const QString &appId) = 0;
     virtual bool resumeApplicationWithAppId(const QString &appId) = 0;

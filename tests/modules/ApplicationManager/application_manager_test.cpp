@@ -41,6 +41,10 @@ public:
         applicationManager.onSessionStarting(session);
         sessionManager.onSessionStarting(session);
     }
+    inline void onProcessStarting(const QString &appId) {
+        applicationManager.onProcessStarting(appId);
+        applicationManager.approveApplicationStart(appId, true);
+    }
     inline void onSessionStopping(const std::shared_ptr<mir::scene::Session> &session) {
         applicationManager.onSessionStopping(session);
         sessionManager.onSessionStopping(session);
@@ -109,7 +113,7 @@ TEST_F(ApplicationManagerTests,bug_case_1240400_second_dialer_app_fails_to_autho
 
     // now a second session without desktop file is launched:
     applicationManager.authorizeSession(secondProcId, authed);
-    applicationManager.onProcessStarting(dialer_app_id);
+    onProcessStarting(dialer_app_id);
 
     EXPECT_FALSE(authed);
     EXPECT_EQ(application, applicationManager.findApplication(dialer_app_id));
@@ -132,7 +136,7 @@ TEST_F(ApplicationManagerTests,application_dies_while_starting)
     applicationManager.authorizeSession(procId, authed);
     onSessionStarting(mirSession);
     Application * beforeFailure = applicationManager.findApplication(app_id);
-    applicationManager.onProcessStarting(app_id);
+    onProcessStarting(app_id);
     onSessionStopping(mirSession);
     applicationManager.onProcessFailed(app_id, true);
     Application * afterFailure = applicationManager.findApplication(app_id);
@@ -310,7 +314,7 @@ TEST_F(ApplicationManagerTests,DISABLED_upstart_launching_sidestage_app_on_phone
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Return(mockDesktopFileReader));
 
     // mock upstart launching an app which reports itself as sidestage, but we're on phone
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
 
     // ensure the app stage is overridden to be main stage
     Application* theApp = applicationManager.findApplication(appId);
@@ -404,7 +408,7 @@ TEST_F(ApplicationManagerTests,starting_app_is_suspended_when_it_gets_ready_if_r
     EXPECT_EQ(Application::Starting, app->state());
 
     // Signal app is ready now
-    applicationManager.onProcessStarting("app");
+    onProcessStarting("app");
     onSessionCreatedSurface(session.get(), aSurface);
     aSurface->drawFirstFrame();
 
@@ -477,9 +481,7 @@ TEST_F(ApplicationManagerTests,appStartedByShell)
 
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Return(mockDesktopFileReader));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
     QSignalSpy addedSpy(&applicationManager, SIGNAL(applicationAdded(const QString &)));
@@ -527,7 +529,7 @@ TEST_F(ApplicationManagerTests,appStartedByUpstart)
     QSignalSpy focusSpy(&applicationManager, SIGNAL(focusRequested(const QString &)));
 
     // upstart sends notification that the application was started
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
 
     Application *theApp = applicationManager.findApplication(appId);
 
@@ -542,7 +544,7 @@ TEST_F(ApplicationManagerTests,appStartedByUpstart)
     EXPECT_EQ(1, applicationManager.count());
     EXPECT_EQ(1, addedSpy.count());
     EXPECT_EQ(appId, addedSpy.takeFirst().at(0).toString());
-    EXPECT_EQ(1, focusSpy.count());
+    EXPECT_EQ(1, focusSpy.count())  ;
     EXPECT_EQ(appId, focusSpy.takeFirst().at(0).toString());
 }
 
@@ -678,8 +680,7 @@ TEST_F(ApplicationManagerTests,synchronousProcessStartedCallDoesNotDuplicateEntr
     ON_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
         .WillByDefault(Invoke(
                         [&](const QString &appId, Unused) {
-                            applicationManager.onProcessStarting(appId);
-                            return true;
+                            onProcessStarting(appId);
                         }
                       ));
 
@@ -698,6 +699,41 @@ TEST_F(ApplicationManagerTests,synchronousProcessStartedCallDoesNotDuplicateEntr
     // check application in list of apps
     Application *theAppAgain = applicationManager.findApplication(appId);
     EXPECT_EQ(theAppAgain, theApp);
+}
+
+/*
+ * Test that we don't start running the app until we get approval
+ */
+TEST_F(ApplicationManagerTests, appStartingIsBlockedUntilApproval)
+{
+    using namespace ::testing;
+    const QString appId("testAppId");
+
+    // Set up general mock responses
+    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
+
+    // Now test that asking the app manager to start an app gets down to the app controller
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
+    auto application = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    ASSERT_TRUE(Mock::VerifyAndClearExpectations(&appController));
+    ASSERT_EQ(Application::Starting, application->state());
+    ASSERT_EQ(Application::ProcessUnknown, application->processState());
+
+    // Now pretend that app controller signals that the process is starting
+    QSignalSpy approvalRequestSpy(&applicationManager, SIGNAL(applicationStartApprovalRequested(const QString &)));
+    applicationManager.onProcessStarting(appId);
+    ASSERT_EQ(1, approvalRequestSpy.count());
+    ASSERT_EQ(Application::Starting, application->state());
+    ASSERT_EQ(Application::ProcessUnknown, application->processState());
+
+    // Now pretend that unity or whatever handled the approval request
+    QSignalSpy focusRequestSpy(&applicationManager, SIGNAL(focusRequested(const QString &)));
+    EXPECT_CALL(appController, approveApplicationStartForAppId(appId, true)).Times(1);
+    applicationManager.approveApplicationStart(appId, true);
+    ASSERT_TRUE(Mock::VerifyAndClearExpectations(&appController));
+    ASSERT_EQ(1, focusRequestSpy.count());
+    ASSERT_EQ(Application::Starting, application->state());
+    ASSERT_EQ(Application::ProcessRunning, application->processState());
 }
 
 /*
@@ -750,9 +786,7 @@ TEST_F(ApplicationManagerTests,onceAppAddedToApplicationLists_upstartStartingEve
     // Set up Mocks & signal watcher
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
     applicationManager.startApplication(appId, ApplicationManager::NoFlag);
 
@@ -760,7 +794,7 @@ TEST_F(ApplicationManagerTests,onceAppAddedToApplicationLists_upstartStartingEve
     QSignalSpy addedSpy(&applicationManager, SIGNAL(applicationAdded(const QString &)));
 
     // upstart sends notification that the application was started
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
 
     // check no new signals were emitted and application state unchanged
     EXPECT_EQ(countSpy.count(), 0);
@@ -787,12 +821,10 @@ TEST_F(ApplicationManagerTests,onceAppAddedToApplicationLists_mirSessionStarting
     EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
     applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
     QSignalSpy addedSpy(&applicationManager, SIGNAL(applicationAdded(const QString &)));
@@ -830,12 +862,10 @@ TEST_F(ApplicationManagerTests,onceAppAddedToApplicationLists_mirSurfaceCreatedE
     EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
     applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
 
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
 
@@ -868,12 +898,10 @@ TEST_F(ApplicationManagerTests,shellStopsAppCorrectlyBeforeSurfaceCreated)
     EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
     applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
     applicationManager.authorizeSession(procId, authed);
@@ -906,12 +934,10 @@ TEST_F(ApplicationManagerTests,shellStopsForegroundAppCorrectly)
     EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
     applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
     applicationManager.authorizeSession(procId, authed);
@@ -948,17 +974,15 @@ TEST_F(ApplicationManagerTests,shellStopsSuspendedAppCorrectly)
     EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
     Application *application = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
     applicationManager.authorizeSession(procId, authed);
     onSessionStarting(session);
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
 
     FakeMirSurface *surface = new FakeMirSurface;
     onSessionCreatedSurface(session.get(), surface);
@@ -993,12 +1017,10 @@ TEST_F(ApplicationManagerTests,upstartNotifiesOfStoppingForegroundApp)
     EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
     applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
     applicationManager.authorizeSession(procId, authed);
@@ -1037,12 +1059,10 @@ TEST_F(ApplicationManagerTests,upstartNotifiesOfUnexpectedStopOfRunningApp)
     EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
     applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
     applicationManager.authorizeSession(procId, authed);
@@ -1087,12 +1107,10 @@ TEST_F(ApplicationManagerTests,unexpectedStopOfBackgroundApp)
     EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
     Application *app = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
     applicationManager.authorizeSession(procId, authed);
@@ -1144,12 +1162,10 @@ TEST_F(ApplicationManagerTests,unexpectedStopOfBackgroundAppCheckingUpstartBug)
     EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
     Application *app = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
     applicationManager.authorizeSession(procId, authed);
@@ -1196,12 +1212,10 @@ TEST_F(ApplicationManagerTests,mirNotifiesStartingAppIsNowStopping)
     EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
     applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
     applicationManager.authorizeSession(procId, authed);
@@ -1234,12 +1248,10 @@ TEST_F(ApplicationManagerTests,mirNotifiesOfStoppingForegroundApp)
     EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
     applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
     applicationManager.authorizeSession(procId, authed);
@@ -1329,12 +1341,10 @@ TEST_F(ApplicationManagerTests,mirNotifiesOfStoppingBackgroundApp)
     EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
     Application *app = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
     applicationManager.authorizeSession(procId, authed);
@@ -1387,12 +1397,10 @@ TEST_F(ApplicationManagerTests,shellStoppedApp_upstartStoppingEventIgnored)
     EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
     applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
     applicationManager.authorizeSession(procId, authed);
@@ -1425,12 +1433,10 @@ TEST_F(ApplicationManagerTests,shellStoppedApp_mirSessionStoppingEventIgnored)
     EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
     applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
     applicationManager.authorizeSession(procId, authed);
@@ -1471,12 +1477,10 @@ TEST_F(ApplicationManagerTests,unexpectedStopOfForegroundWebapp)
     // Set up Mocks & signal watcher
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
     applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session1 = std::make_shared<MockSession>("", procId1);
     std::shared_ptr<mir::scene::Session> session2 = std::make_shared<MockSession>("", procId2);
 
@@ -1527,12 +1531,10 @@ TEST_F(ApplicationManagerTests,unexpectedStopOfBackgroundWebapp)
     // Set up Mocks & signal watcher
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
     Application *app = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session1 = std::make_shared<MockSession>("", procId1);
     std::shared_ptr<mir::scene::Session> session2 = std::make_shared<MockSession>("", procId2);
 
@@ -1584,12 +1586,10 @@ TEST_F(ApplicationManagerTests,stoppedBackgroundAppRelaunchedByUpstart)
     EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
     Application *app = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
     applicationManager.authorizeSession(procId, authed);
@@ -1610,7 +1610,7 @@ TEST_F(ApplicationManagerTests,stoppedBackgroundAppRelaunchedByUpstart)
     QSignalSpy focusRequestSpy(&applicationManager, SIGNAL(focusRequested(const QString &)));
 
     // Upstart re-launches app
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
 
     EXPECT_EQ(Application::Starting, app->state());
     EXPECT_EQ(1, focusRequestSpy.count());
@@ -1733,12 +1733,10 @@ TEST_F(ApplicationManagerTests,QMLcacheRetainedOnAppStop)
     EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
     applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
     applicationManager.authorizeSession(procId, authed);
@@ -1771,12 +1769,10 @@ TEST_F(ApplicationManagerTests,DISABLED_QMLcacheDeletedOnAppCrash)
     EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
     Application *the_app = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
     applicationManager.authorizeSession(procId, authed);
@@ -1818,12 +1814,10 @@ TEST_F(ApplicationManagerTests,QMLcacheRetainedOnAppShutdown)
     EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
     ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
+    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
     Application *the_app = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    applicationManager.onProcessStarting(appId);
+    onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
     applicationManager.authorizeSession(procId, authed);

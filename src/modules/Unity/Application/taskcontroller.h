@@ -34,8 +34,9 @@ public:
             const QSharedPointer<ApplicationController> &appController);
     ~TaskController();
 
-    bool start(const QString &appId, const QStringList &args);
+    void start(const QString &appId, const QStringList &args);
     bool stop(const QString &appId);
+    bool approveStart(const QString &appId, bool approved);
 
     bool suspend(const QString &appId);
     bool resume(const QString &appId);

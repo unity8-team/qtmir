@@ -141,12 +141,11 @@ public:
 
         ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Return(mockDesktopFileReader));
 
-        EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
-                .Times(1)
-                .WillOnce(Return(true));
+        EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
 
         auto application = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
         applicationManager.onProcessStarting(appId);
+        applicationManager.approveApplicationStart(appId, true);
 
         bool authed = false;
         applicationManager.authorizeSession(procId, authed);
