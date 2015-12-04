@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Canonical, Ltd.
+ * Copyright (C) 2014-2015 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -19,24 +19,22 @@
 #include "logging.h"
 #include <QtPlatformSupport/private/qeglconvenience_p.h>
 
-#if !defined(QT_NO_DEBUG)
 static void printOpenGLESConfig() {
   static bool once = true;
   if (once) {
     const char* string = (const char*) glGetString(GL_VENDOR);
-    LOG("OpenGL ES vendor: %s", string);
+    qCDebug(ubuntumirclient, "OpenGL ES vendor: %s", string);
     string = (const char*) glGetString(GL_RENDERER);
-    LOG("OpenGL ES renderer: %s", string);
+    qCDebug(ubuntumirclient, "OpenGL ES renderer: %s", string);
     string = (const char*) glGetString(GL_VERSION);
-    LOG("OpenGL ES version: %s", string);
+    qCDebug(ubuntumirclient, "OpenGL ES version: %s", string);
     string = (const char*) glGetString(GL_SHADING_LANGUAGE_VERSION);
-    LOG("OpenGL ES Shading Language version: %s", string);
+    qCDebug(ubuntumirclient, "OpenGL ES Shading Language version: %s", string);
     string = (const char*) glGetString(GL_EXTENSIONS);
-    LOG("OpenGL ES extensions: %s", string);
+    qCDebug(ubuntumirclient, "OpenGL ES extensions: %s", string);
     once = false;
   }
 }
-#endif
 
 static EGLenum api_in_use()
 {
@@ -62,7 +60,7 @@ UbuntuOpenGLContext::UbuntuOpenGLContext(UbuntuScreen* screen, UbuntuOpenGLConte
 
     mEglContext = eglCreateContext(mEglDisplay, screen->eglConfig(), share ? share->eglContext() : EGL_NO_CONTEXT,
                                    attribs.constData());
-    DASSERT(mEglContext != EGL_NO_CONTEXT);
+    Q_ASSERT(mEglContext != EGL_NO_CONTEXT);
 }
 
 UbuntuOpenGLContext::~UbuntuOpenGLContext()
@@ -72,28 +70,20 @@ UbuntuOpenGLContext::~UbuntuOpenGLContext()
 
 bool UbuntuOpenGLContext::makeCurrent(QPlatformSurface* surface)
 {
-    DASSERT(surface->surface()->surfaceType() == QSurface::OpenGLSurface);
+    Q_ASSERT(surface->surface()->surfaceType() == QSurface::OpenGLSurface);
     EGLSurface eglSurface = static_cast<UbuntuWindow*>(surface)->eglSurface();
-#if defined(QT_NO_DEBUG)
-    eglBindAPI(api_in_use());
-    eglMakeCurrent(mEglDisplay, eglSurface, eglSurface, mEglContext);
-#else
     ASSERT(eglBindAPI(api_in_use()) == EGL_TRUE);
     ASSERT(eglMakeCurrent(mEglDisplay, eglSurface, eglSurface, mEglContext) == EGL_TRUE);
-    printOpenGLESConfig();
-#endif
+    if (ubuntumirclient().isDebugEnabled()) {
+        printOpenGLESConfig();
+    }
     return true;
 }
 
 void UbuntuOpenGLContext::doneCurrent()
 {
-#if defined(QT_NO_DEBUG)
-    eglBindAPI(api_in_use());
-    eglMakeCurrent(mEglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-#else
     ASSERT(eglBindAPI(api_in_use()) == EGL_TRUE);
     ASSERT(eglMakeCurrent(mEglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT) == EGL_TRUE);
-#endif
 }
 
 void UbuntuOpenGLContext::swapBuffers(QPlatformSurface* surface)
@@ -101,23 +91,14 @@ void UbuntuOpenGLContext::swapBuffers(QPlatformSurface* surface)
     UbuntuWindow *ubuntuWindow = static_cast<UbuntuWindow*>(surface);
 
     EGLSurface eglSurface = ubuntuWindow->eglSurface();
-#if defined(QT_NO_DEBUG)
-    eglBindAPI(api_in_use());
-    eglSwapBuffers(mEglDisplay, eglSurface);
-#else
     ASSERT(eglBindAPI(api_in_use()) == EGL_TRUE);
     ASSERT(eglSwapBuffers(mEglDisplay, eglSurface) == EGL_TRUE);
-#endif
 
     ubuntuWindow->onSwapBuffersDone();
 }
 
 void (*UbuntuOpenGLContext::getProcAddress(const QByteArray& procName)) ()
 {
-#if defined(QT_NO_DEBUG)
-    eglBindAPI(api_in_use());
-#else
     ASSERT(eglBindAPI(api_in_use()) == EGL_TRUE);
-#endif
     return eglGetProcAddress(procName.constData());
 }

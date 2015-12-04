@@ -20,11 +20,14 @@
 // Qt
 #include <qpa/qwindowsysteminterface.h>
 #include <QAtomicInt>
+#include <QLoggingCategory>
 
 #include <mir_toolkit/mir_client_library.h>
 
 class UbuntuClientIntegration;
 class UbuntuWindow;
+
+Q_DECLARE_LOGGING_CATEGORY(ubuntumirclientInput)
 
 class UbuntuInput : public QObject
 {

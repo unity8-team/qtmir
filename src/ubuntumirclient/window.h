@@ -18,6 +18,7 @@
 #define UBUNTU_WINDOW_H
 
 #include <qpa/qplatformwindow.h>
+#include <QLoggingCategory>
 #include <QSharedPointer>
 #include <QMutex>
 
@@ -29,6 +30,8 @@ class UbuntuScreen;
 class UbuntuSurface;
 struct MirConnection;
 struct MirSurface;
+
+Q_DECLARE_LOGGING_CATEGORY(ubuntumirclientBufferSwap)
 
 class UbuntuWindow : public QObject, public QPlatformWindow
 {

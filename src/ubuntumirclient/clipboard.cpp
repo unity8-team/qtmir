@@ -15,6 +15,7 @@
  */
 
 #include "clipboard.h"
+#include "logging.h"
 
 #include <QtCore/QMimeData>
 #include <QtCore/QStringList>
@@ -80,7 +81,7 @@ void UbuntuClipboard::onDBusClipboardGetContentsFinished(QDBusPendingCallWatcher
 
     QDBusPendingReply<QByteArray> reply = *call;
     if (reply.isError()) {
-        qCritical("UbuntuClipboard - Failed to get system clipboard contents via D-Bus. %s, %s",
+        qCCritical(ubuntumirclient, "Failed to get system clipboard contents via D-Bus. %s, %s",
                 qPrintable(reply.error().name()), qPrintable(reply.error().message()));
         // TODO: Might try again later a number of times...
     } else {
@@ -94,7 +95,7 @@ void UbuntuClipboard::onDBusClipboardSetContentsFinished(QDBusPendingCallWatcher
 {
     QDBusPendingReply<void> reply = *call;
     if (reply.isError()) {
-        qCritical("UbuntuClipboard - Failed to set the system clipboard contents via D-Bus. %s, %s",
+        qCCritical(ubuntumirclient, "Failed to set the system clipboard contents via D-Bus. %s, %s",
                 qPrintable(reply.error().name()), qPrintable(reply.error().message()));
         // TODO: Might try again later a number of times...
     }
@@ -113,7 +114,7 @@ void UbuntuClipboard::updateMimeData(const QByteArray &serializedMimeData)
         mIsOutdated = false;
         emitChanged(QClipboard::Clipboard);
     } else {
-        qWarning("UbuntuClipboard - Got invalid serialized mime data. Ignoring it.");
+        qCWarning(ubuntumirclient) << "Got invalid serialized mime data. Ignoring it.";
     }
 }
 
@@ -128,7 +129,7 @@ void UbuntuClipboard::setupDBus()
             QStringLiteral("ContentsChanged"),
             this, SLOT(updateMimeData(QByteArray)));
     if (!ok) {
-        qCritical("UbuntuClipboard - Failed to connect to ContentsChanged signal form the D-Bus system clipboard.");
+        qCCritical(ubuntumirclient) << "Failed to connect to ContentsChanged signal form the D-Bus system clipboard.";
     }
 
     mDBusClipboard = new QDBusInterface(QStringLiteral("com.canonical.QtMir"),
@@ -176,7 +177,7 @@ QByteArray UbuntuClipboard::serializeMimeData(QMimeData *mimeData) const
             }
         }
     } else {
-        qWarning("UbuntuClipboard: Not sending contents (%d bytes) to the global clipboard as it's"
+        qCWarning(ubuntumirclient, "Not sending contents (%d bytes) to the global clipboard as it's"
                 " bigger than the maximum allowed size of %d bytes", bufferSize, maxBufferSize);
     }
 
