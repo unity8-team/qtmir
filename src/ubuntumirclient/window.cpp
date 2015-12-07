@@ -534,7 +534,6 @@ void UbuntuWindow::handleSurfaceFocused()
     // Therefore let's ensure we are up to date with the system clipboard now that we are getting
     // focused again.
     mClipboard->requestDBusClipboardContents();
-    QWindowSystemInterface::handleWindowActivated(window(), Qt::ActiveWindowFocusReason);
 }
 
 void UbuntuWindow::setWindowState(Qt::WindowState state)
