@@ -260,7 +260,11 @@ public:
         auto geom = mWindow->geometry();
         geom.setWidth(parameters.width);
         geom.setHeight(parameters.height);
-        geom.setY(panelHeight());
+        if (mWindowState == Qt::WindowFullScreen) {
+            geom.setY(0);
+        } else {
+            geom.setY(panelHeight());
+        }
 
         // Assume that the buffer size matches the surface size at creation time
         mBufferSize = geom.size();
@@ -540,6 +544,27 @@ void UbuntuWindow::setWindowState(Qt::WindowState state)
     QMutexLocker lock(&mMutex);
     DLOG("[ubuntumirclient QPA] setWindowState(window=%p, %s)", this, qtWindowStateToStr(state));
     mSurface->setState(state);
+
+    updatePanelHeightHack(state);
+}
+
+/*
+    FIXME: Mir does not let clients know the position of their windows in the virtual
+    desktop space. So we have this ugly hack that assumes a phone situation where the
+    window is always on the top-left corner, right below the indicators panel if not
+    in fullscreen.
+ */
+void UbuntuWindow::updatePanelHeightHack(Qt::WindowState state)
+{
+    if (state == Qt::WindowFullScreen && geometry().y() != 0) {
+        QRect newGeometry = geometry();
+        newGeometry.setY(0);
+        QWindowSystemInterface::handleGeometryChange(window(), newGeometry);
+    } else if (geometry().y() == 0) {
+        QRect newGeometry = geometry();
+        newGeometry.setY(panelHeight());
+        QWindowSystemInterface::handleGeometryChange(window(), newGeometry);
+    }
 }
 
 void UbuntuWindow::setGeometry(const QRect& rect)
