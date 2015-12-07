@@ -1,3 +1,9 @@
+qtmir-gles (0.4.7-0ubuntu1) UNRELEASED; urgency=medium
+
+  * New upstream version
+
+ -- Michal Sawicz <michal.sawicz@canonical.com>  Mon, 07 Dec 2015 14:40:18 +0100
+
 qtmir-gles (0.4.6+16.04.20151125-0ubuntu2) xenial; urgency=medium
 
   * Rebuild against Qt 5.5.1.
