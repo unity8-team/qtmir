@@ -9,14 +9,14 @@ Build-Depends: debhelper (>= 9),
                libgles2-mesa-dev,
                libglib2.0-dev,
                libinput-dev,
+               libmirclient-dev (>= 0.13.0),
                libmtdev-dev,
                libubuntu-application-api-dev (>= 2.9.0),
                libudev-dev,
-               libxrender-dev,
                libxkbcommon-dev,
+               libxrender-dev,
                qt5-default,
                qtbase5-private-dev,
-               libmirclient-dev (>= 0.13.0),
 # if you don't have have commit access to this branch but would like to upload
 # directly to Ubuntu, don't worry: your changes will be merged back into the
 # upstream branch
@@ -27,17 +27,17 @@ Section: libs
 Package: qtubuntu-android
 Architecture: armhf
 Multi-Arch: same
-Conflicts: qtubuntu-desktop
+Conflicts: qtubuntu-desktop,
 Replaces: qthybris (<< 0.37),
           qtubuntu (<< 0.52),
-          qtubuntu-desktop
+          qtubuntu-desktop,
 Breaks: qthybris (<< 0.37),
-        unity8 (<< 7.85),
         ubuntu-touch-session (<< 0.107),
+        unity8 (<< 7.85),
 Provides: qtubuntu,
-Depends: ${misc:Depends},
+Depends: ubuntu-application-api3-touch,
+         ${misc:Depends},
          ${shlibs:Depends},
-         ubuntu-application-api3-touch,
 Description: Qt plugins for Ubuntu Platform API (mobile)
  QtUbuntu is a set of Qt5 components for the Ubuntu Platform API. It contains a
  QPA (Qt Platform Abstraction) plugin based on the Ubuntu Platform API and a
@@ -50,15 +50,15 @@ Description: Qt plugins for Ubuntu Platform API (mobile)
 Package: qtubuntu-desktop
 Architecture: any
 Multi-Arch: same
-Conflicts: qtubuntu-android
+Conflicts: qtubuntu-android,
 Replaces: qtubuntu (<< 0.52),
-          qtubuntu-android
+          qtubuntu-android,
 Breaks: qthybris (<< 0.37),
         unity8 (<< 7.85),
 Provides: qtubuntu,
-Depends: ${misc:Depends},
+Depends: ubuntu-application-api3-desktop,
+         ${misc:Depends},
          ${shlibs:Depends},
-         ubuntu-application-api3-desktop,
 Description: Qt plugins for Ubuntu Platform API (desktop)
  QtUbuntu is a set of Qt5 components for the Ubuntu Platform API. It contains a
  QPA (Qt Platform Abstraction) plugin based on the Ubuntu Platform API and a
@@ -69,8 +69,8 @@ Description: Qt plugins for Ubuntu Platform API (desktop)
  This variant of the package is for GNU-based desktops.
 
 Package: qthybris
-Depends: ${misc:Depends},
-         qtubuntu-android,
+Depends: qtubuntu-android,
+         ${misc:Depends},
 Architecture: any
 Section: oldlibs
 Description: transitional dummy package
