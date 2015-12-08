@@ -1,3 +1,9 @@
+qtmir-gles (0.4.6+16.04.20151125-0ubuntu3) xenial; urgency=medium
+
+  * Add libqt5test5 to dependencies.
+
+ -- Timo Jyrinki <timo-jyrinki@ubuntu.com>  Tue, 08 Dec 2015 13:46:06 +0000
+
 qtmir-gles (0.4.6+16.04.20151125-0ubuntu2) xenial; urgency=medium
 
   * Rebuild against Qt 5.5.1.
