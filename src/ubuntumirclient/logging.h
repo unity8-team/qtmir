@@ -22,5 +22,7 @@
 #define ASSERT(cond) ((!(cond)) ? qt_assert(#cond,__FILE__,__LINE__) : qt_noop())
 
 Q_DECLARE_LOGGING_CATEGORY(ubuntumirclient)
+Q_DECLARE_LOGGING_CATEGORY(ubuntumirclientBufferSwap)
+Q_DECLARE_LOGGING_CATEGORY(ubuntumirclientInput)
 
 #endif  // QUBUNTULOGGING_H

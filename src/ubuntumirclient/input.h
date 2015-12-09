@@ -27,8 +27,6 @@
 class UbuntuClientIntegration;
 class UbuntuWindow;
 
-Q_DECLARE_LOGGING_CATEGORY(ubuntumirclientInput)
-
 class UbuntuInput : public QObject
 {
     Q_OBJECT

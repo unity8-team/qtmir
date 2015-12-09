@@ -31,8 +31,6 @@ class UbuntuSurface;
 struct MirConnection;
 struct MirSurface;
 
-Q_DECLARE_LOGGING_CATEGORY(ubuntumirclientBufferSwap)
-
 class UbuntuWindow : public QObject, public QPlatformWindow
 {
     Q_OBJECT
