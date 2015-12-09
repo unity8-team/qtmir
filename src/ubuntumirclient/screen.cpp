@@ -50,7 +50,7 @@ static const char *orientationToStr(Qt::ScreenOrientation orientation) {
     }
 }
 
-static void  printEglConfig(EGLDisplay display, EGLConfig config) {
+static void printEglConfig(EGLDisplay display, EGLConfig config) {
     Q_ASSERT(display != EGL_NO_DISPLAY);
     Q_ASSERT(config != nullptr);
 
