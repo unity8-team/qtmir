@@ -68,6 +68,9 @@ public:
     int surfaceHeight() const override;
     void setSurfaceHeight(int value) override;
 
+    FillMode fillMode() const override;
+    void setFillMode(FillMode value) override;
+
     ////////
     // QQuickItem
 
