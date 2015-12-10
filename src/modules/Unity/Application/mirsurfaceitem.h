@@ -168,6 +168,8 @@ private:
     Mir::OrientationAngle *m_orientationAngle;
 
     bool m_consumesInput;
+
+    FillMode m_fillMode;
 };
 
 } // namespace qtmir
