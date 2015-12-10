@@ -1,8 +1,12 @@
-qtmir-gles (0.4.7-0ubuntu1) UNRELEASED; urgency=medium
+qtmir-gles (0.4.7+16.04.20151210-0ubuntu1) xenial; urgency=medium
 
+  [ Michal Sawicz ]
   * New upstream version
 
- -- Michal Sawicz <michal.sawicz@canonical.com>  Mon, 07 Dec 2015 14:40:18 +0100
+  [ CI Train Bot ]
+  * No-change rebuild.
+
+ -- Gerry Boland <ci-train-bot@canonical.com>  Thu, 10 Dec 2015 13:08:57 +0000
 
 qtmir-gles (0.4.6+16.04.20151125-0ubuntu3) xenial; urgency=medium
 
