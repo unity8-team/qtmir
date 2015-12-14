@@ -438,8 +438,8 @@ void MirSurface::resize(int width, int height)
     if (clientIsRunning() && mirSizeIsDifferent) {
         mir::geometry::Size newMirSize(width, height);
         m_surface->resize(newMirSize);
-        DEBUG_MSG << " old (" << mirWidth << "," << mirHeight << ")"
-                  << ", new (" << width << "," << height << ")";
+        DEBUG_MSG << " old (" << mirWidth << "," << mirHeight << ")px"
+                  << ", new (" << width << "," << height << ")px";
     }
 }
 
