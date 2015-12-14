@@ -255,6 +255,7 @@ QSGNode *MirSurfaceItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
         }
     }
     node->setTexture(m_textureProvider->texture());
+    const qreal dpr = devicePixelRatio();
 
     if (m_fillMode == PadOrCrop) {
         const QSize &textureSize = m_textureProvider->texture()->textureSize();
@@ -263,8 +264,8 @@ QSGNode *MirSurfaceItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
         targetRect.setWidth(qMin(width(), static_cast<qreal>(textureSize.width())));
         targetRect.setHeight(qMin(height(), static_cast<qreal>(textureSize.height())));
 
-        qreal u = targetRect.width() / textureSize.width();
-        qreal v = targetRect.height() / textureSize.height();
+        qreal u = targetRect.width() / textureSize.width() * dpr;
+        qreal v = targetRect.height() / textureSize.height() * dpr;
         node->setSubSourceRect(QRectF(0, 0, u, v));
 
         node->setTargetRect(targetRect);
