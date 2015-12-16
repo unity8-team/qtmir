@@ -233,9 +233,16 @@ void UbuntuInput::customEvent(QEvent* event)
             if (focused) {
                 mPendingFocusGainedEvents--;
                 ubuntuEvent->window->handleSurfaceFocused();
+                QWindowSystemInterface::handleWindowActivated(ubuntuEvent->window->window(), Qt::ActiveWindowFocusReason);
+                if (qGuiApp->applicationState() == Qt::ApplicationInactive) {
+                    QWindowSystemInterface::handleApplicationStateChanged(Qt::ApplicationActive);
+                }
             } else if(!mPendingFocusGainedEvents) {
                 qCDebug(ubuntumirclient, "No windows have focus");
                 QWindowSystemInterface::handleWindowActivated(nullptr, Qt::ActiveWindowFocusReason);
+                if (qGuiApp->applicationState() == Qt::ApplicationActive) {
+                    QWindowSystemInterface::handleApplicationStateChanged(Qt::ApplicationInactive);
+                }
             }
         }
         break;

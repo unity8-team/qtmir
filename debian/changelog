@@ -1,3 +1,18 @@
+qtubuntu (0.62+16.04.20151207-0ubuntu1) xenial; urgency=medium
+
+  [ Daniel d'Andrada ]
+  * Implement support for application state (LP: #1504776)
+  * Update panel height hack when window enters or leaves fullscreen
+    (LP: #1422523)
+
+  [ Lukáš Tinkl ]
+  * Update the panel height hack, orange line is gone
+
+  [ Michał Sawicz ]
+  * Run wrap-and-sort -at
+
+ -- Gerry Boland <ci-train-bot@canonical.com>  Mon, 07 Dec 2015 16:21:01 +0000
+
 qtubuntu (0.62+16.04.20151124-0ubuntu2) xenial; urgency=medium
 
   * Rebuild against Qt 5.5.1.
