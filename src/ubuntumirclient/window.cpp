@@ -559,10 +559,12 @@ void UbuntuWindow::updatePanelHeightHack(Qt::WindowState state)
     if (state == Qt::WindowFullScreen && geometry().y() != 0) {
         QRect newGeometry = geometry();
         newGeometry.setY(0);
+        QPlatformWindow::setGeometry(newGeometry);
         QWindowSystemInterface::handleGeometryChange(window(), newGeometry);
     } else if (geometry().y() == 0) {
         QRect newGeometry = geometry();
         newGeometry.setY(panelHeight());
+        QPlatformWindow::setGeometry(newGeometry);
         QWindowSystemInterface::handleGeometryChange(window(), newGeometry);
     }
 }
