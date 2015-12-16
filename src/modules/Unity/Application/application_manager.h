@@ -68,7 +68,7 @@ public:
 
     // FIXME: these roles should be added to unity-api and removed from here
     enum MoreRoles {
-        RoleSession = RoleIsTouchApp+1,
+        RoleSession = RoleExemptFromLifecycle+1,
         RoleFullscreen,
     };
 
@@ -151,6 +151,7 @@ private:
     QString toString() const;
 
     Application* findApplicationWithPromptSession(const mir::scene::PromptSession* promptSession);
+    Application *findClosingApplication(const QString &inputAppId) const;
 
     QSharedPointer<MirServer> m_mirServer;
 
@@ -163,6 +164,8 @@ private:
     QSharedPointer<SharedWakelock> m_sharedWakelock;
     QSharedPointer<SettingsInterface> m_settings;
     pid_t m_boosterPid;
+    QList<Application*> m_closingApplications;
+    QList<QString> m_queuedStartApplications;
     static ApplicationManager* the_application_manager;
 
     friend class Application;
