@@ -1,3 +1,9 @@
+qtmir-gles (0.4.7+16.04.20151217-0ubuntu1) xenial; urgency=medium
+
+  * sync for mir 0.18 release
+
+ -- Kevin DuBois <kevin.dubois@canonical.com>  Thu, 17 Dec 2015 12:02:05 +0000
+
 qtmir-gles (0.4.7+16.04.20151210-0ubuntu1) xenial; urgency=medium
 
   [ Michal Sawicz ]
