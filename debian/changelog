@@ -1,3 +1,9 @@
+qtmir-gles (0.4.7+16.04.20151222-0ubuntu1) xenial; urgency=medium
+
+  * Sync with upstream
+
+ -- Michał Sawicz <michal.sawicz@canonical.com>  Tue, 22 Dec 2015 15:30:00 +0000
+
 qtmir-gles (0.4.7+16.04.20151217-0ubuntu1) xenial; urgency=medium
 
   * sync for mir 0.18 release
