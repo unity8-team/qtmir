@@ -1,3 +1,9 @@
+qtmir-gles (0.4.7+16.04.20160104-0ubuntu1) xenial; urgency=medium
+
+  * New upstream release
+
+ -- Michał Sawicz <michal.sawicz@canonical.com>  Mon, 04 Jan 2016 09:38:21 +0000
+
 qtmir-gles (0.4.7+16.04.20151222-0ubuntu1) xenial; urgency=medium
 
   * Sync with upstream
