@@ -49,7 +49,6 @@ UbuntuCursor::UbuntuCursor(MirConnection *connection)
 }
 
 namespace {
-#if !defined(QT_NO_DEBUG)
 const char *qtCursorShapeToStr(Qt::CursorShape shape)
 {
     switch(shape) {
@@ -103,7 +102,6 @@ const char *qtCursorShapeToStr(Qt::CursorShape shape)
         return "???";
     }
 }
-#endif // !defined(QT_NO_DEBUG)
 } // anonymous namespace
 
 void UbuntuCursor::changeCursor(QCursor *windowCursor, QWindow *window)
@@ -120,7 +118,7 @@ void UbuntuCursor::changeCursor(QCursor *windowCursor, QWindow *window)
 
 
     if (windowCursor) {
-        DLOG("[ubuntumirclient QPA] changeCursor shape=%s, window=%p\n", qtCursorShapeToStr(windowCursor->shape()), window);
+        qCDebug(ubuntumirclient, "changeCursor shape=%s, window=%p", qtCursorShapeToStr(windowCursor->shape()), window);
         if (!windowCursor->pixmap().isNull()) {
             configureMirCursorWithPixmapQCursor(surface, *windowCursor);
         } else if (windowCursor->shape() == Qt::BitmapCursor) {
