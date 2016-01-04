@@ -55,6 +55,8 @@ public:
     QPlatformWindow* createPlatformWindow(QWindow* window);
     UbuntuScreen* screen() const { return mScreen; }
 
+    QPlatformOffscreenSurface *createPlatformOffscreenSurface(QOffscreenSurface *surface) const override;
+
 private:
     void setupOptions();
     void setupDescription();

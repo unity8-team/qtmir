@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015 Canonical, Ltd.
+ * Copyright (C) 2014-2016 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -15,8 +15,11 @@
  */
 
 #include "glcontext.h"
-#include "window.h"
 #include "logging.h"
+#include "offscreensurface.h"
+#include "window.h"
+
+#include <QOpenGLFramebufferObject>
 #include <QtPlatformSupport/private/qeglconvenience_p.h>
 
 static void printOpenGLESConfig() {
@@ -71,13 +74,23 @@ UbuntuOpenGLContext::~UbuntuOpenGLContext()
 bool UbuntuOpenGLContext::makeCurrent(QPlatformSurface* surface)
 {
     Q_ASSERT(surface->surface()->surfaceType() == QSurface::OpenGLSurface);
-    EGLSurface eglSurface = static_cast<UbuntuWindow*>(surface)->eglSurface();
-    ASSERT(eglBindAPI(api_in_use()) == EGL_TRUE);
-    ASSERT(eglMakeCurrent(mEglDisplay, eglSurface, eglSurface, mEglContext) == EGL_TRUE);
-    if (ubuntumirclient().isDebugEnabled()) {
-        printOpenGLESConfig();
+
+    if (surface->surface()->surfaceClass() == QSurface::Offscreen) {
+        auto offscreen = static_cast<UbuntuOffscreenSurface *>(surface);
+        if (!offscreen->buffer()) {
+            auto buffer = new QOpenGLFramebufferObject(surface->surface()->size());
+            offscreen->setBuffer(buffer);
+        }
+        return offscreen->buffer()->bind();
+    } else {
+        EGLSurface eglSurface = static_cast<UbuntuWindow*>(surface)->eglSurface();
+        ASSERT(eglBindAPI(api_in_use()) == EGL_TRUE);
+        ASSERT(eglMakeCurrent(mEglDisplay, eglSurface, eglSurface, mEglContext) == EGL_TRUE);
+        if (ubuntumirclient().isDebugEnabled()) {
+            printOpenGLESConfig();
+        }
+        return true;
     }
-    return true;
 }
 
 void UbuntuOpenGLContext::doneCurrent()
