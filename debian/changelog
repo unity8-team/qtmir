@@ -1,3 +1,14 @@
+qtubuntu (0.62+16.04.20160104-0ubuntu1) xenial; urgency=medium
+
+  [ Daniel d'Andrada ]
+  * Fix QGuiApplication::applicationState() updates (LP: #1528668)
+
+  [ Gerry Boland ]
+  * On geometry change, save new geometry before creating change event
+    (LP: #1526328)
+
+ -- Michał Sawicz <michal.sawicz@canonical.com>  Mon, 04 Jan 2016 09:38:35 +0000
+
 qtubuntu (0.62+16.04.20151207-0ubuntu1) xenial; urgency=medium
 
   [ Daniel d'Andrada ]
