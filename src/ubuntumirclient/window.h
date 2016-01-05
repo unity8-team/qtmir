@@ -46,16 +46,18 @@ public:
     void setVisible(bool visible) override;
     void setWindowTitle(const QString &title) override;
     void propagateSizeHints() override;
+    qreal devicePixelRatio() const override;
 
     // New methods.
     void *eglSurface() const;
     MirSurface *mirSurface() const;
-    void handleSurfaceResized(int width, int height);
+    void updateWindowSize(int widthPx, int heightPx);
+    void handleSurfaceResized(int widthPx, int heightPx);
     void handleSurfaceFocused();
     void onSwapBuffersDone();
 
 private:
-    void updatePanelHeightHack(Qt::WindowState);
+    void enablePanelHeightHack(bool enable);
     mutable QMutex mMutex;
     const WId mId;
     const QSharedPointer<UbuntuClipboard> mClipboard;

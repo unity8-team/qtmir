@@ -18,6 +18,7 @@
 #include "screen.h"
 #include "logging.h"
 #include "orientationchangeevent_p.h"
+#include "utils.h"
 
 #include <mir_toolkit/mir_client_library.h>
 
@@ -101,6 +102,14 @@ static void printEglConfig(EGLDisplay display, EGLConfig config) {
     }
 }
 
+namespace {
+    int qGetEnvIntValue(const char *varName, bool *ok)
+    {
+        return qgetenv(varName).toInt(ok);
+    }
+} // anonymous namespace
+
+
 const QEvent::Type OrientationChangeEvent::mType =
         static_cast<QEvent::Type>(QEvent::registerEventType());
 
@@ -164,18 +173,18 @@ UbuntuScreen::UbuntuScreen(MirConnection *connection)
     }
 
     // Set vblank swap interval.
-    int swapInterval = kSwapInterval;
-    QByteArray swapIntervalString = qgetenv("QTUBUNTU_SWAPINTERVAL");
-    if (!swapIntervalString.isEmpty()) {
-        bool ok;
-        swapInterval = swapIntervalString.toInt(&ok);
-        if (!ok)
-            swapInterval = kSwapInterval;
-    }
-    qCDebug(ubuntumirclient, "setting swap interval to %d", swapInterval);
+    bool ok;
+    int swapInterval = qGetEnvIntValue("QTUBUNTU_SWAPINTERVAL", &ok);
+    if (!ok)
+        swapInterval = kSwapInterval;
+
+    qCDebug(ubuntumirclient, "Setting swap interval to %d", swapInterval);
     eglSwapInterval(mEglDisplay, swapInterval);
 
-    // Get screen resolution.
+    // Get screen resolution and properties.
+    int dpr = qGetEnvIntValue("QT_DEVICE_PIXEL_RATIO", &ok);
+    mDevicePixelRatio = (ok && dpr > 0) ? dpr : 1.0;
+
     auto configDeleter = [](MirDisplayConfiguration *config) { mir_display_config_destroy(config); };
     using configUp = std::unique_ptr<MirDisplayConfiguration, decltype(configDeleter)>;
     configUp displayConfig(mir_connection_create_display_config(connection), configDeleter);
@@ -187,14 +196,14 @@ UbuntuScreen::UbuntuScreen(MirConnection *connection)
     mOutputId = displayOutput->output_id;
 
     mPhysicalSize = QSizeF(displayOutput->physical_width_mm, displayOutput->physical_height_mm);
-    qCDebug(ubuntumirclient, "screen physical size: %.2fx%.2f", mPhysicalSize.width(), mPhysicalSize.height());
+    qCDebug(ubuntumirclient, "Screen physical size: %.2fx%.2f mm", mPhysicalSize.width(), mPhysicalSize.height());
 
     const MirDisplayMode *mode = &displayOutput->modes[displayOutput->current_mode];
-    const int kScreenWidth = mode->horizontal_resolution;
-    const int kScreenHeight = mode->vertical_resolution;
-    Q_ASSERT(kScreenWidth > 0 && kScreenHeight > 0);
+    const int kScreenWidth = divideAndRoundUp(mode->horizontal_resolution, mDevicePixelRatio);
+    const int kScreenHeight = divideAndRoundUp(mode->vertical_resolution, mDevicePixelRatio);
+    ASSERT(kScreenWidth > 0 && kScreenHeight > 0);
 
-    qCDebug(ubuntumirclient, "screen resolution: %dx%d", kScreenWidth, kScreenHeight);
+    qCDebug(ubuntumirclient, "Screen resolution: %dx%ddp", kScreenWidth, kScreenHeight);
 
     mGeometry = QRect(0, 0, kScreenWidth, kScreenHeight);
 

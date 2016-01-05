@@ -38,6 +38,7 @@ public:
     QRect geometry() const override { return mGeometry; }
     QRect availableGeometry() const override { return mGeometry; }
     QSizeF physicalSize() const override { return mPhysicalSize; }
+    qreal devicePixelRatio() const override { return mDevicePixelRatio; }
     Qt::ScreenOrientation nativeOrientation() const override { return mNativeOrientation; }
     Qt::ScreenOrientation orientation() const override { return mNativeOrientation; }
     QPlatformCursor *cursor() const override { return const_cast<UbuntuCursor*>(&mCursor); }
@@ -56,6 +57,7 @@ public:
 private:
     QRect mGeometry;
     QSizeF mPhysicalSize;
+    qreal mDevicePixelRatio;
     Qt::ScreenOrientation mNativeOrientation;
     Qt::ScreenOrientation mCurrentOrientation;
     QImage::Format mFormat;
