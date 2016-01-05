@@ -24,9 +24,7 @@
 #include "orientationchangeevent_p.h"
 
 // Qt
-#if !defined(QT_NO_DEBUG)
 #include <QtCore/QThread>
-#endif
 #include <QtCore/qglobal.h>
 #include <QtCore/QCoreApplication>
 #include <private/qguiapplication_p.h>
@@ -38,7 +36,7 @@
 
 #include <mir_toolkit/mir_client_library.h>
 
-#define LOG_EVENTS 0
+Q_LOGGING_CATEGORY(ubuntumirclientInput, "ubuntumirclient.input", QtWarningMsg)
 
 // XKB Keysyms which do not map directly to Qt types (i.e. Unicode points)
 static const uint32_t KeyTable[] = {
@@ -158,7 +156,6 @@ UbuntuInput::~UbuntuInput()
   // Qt will take care of deleting mTouchDevice.
 }
 
-#if (LOG_EVENTS != 0)
 static const char* nativeEventTypeToStr(MirEventType t)
 {
     switch (t)
@@ -180,20 +177,18 @@ static const char* nativeEventTypeToStr(MirEventType t)
     case mir_event_type_input:
         return "mir_event_type_input";
     default:
-        DLOG("Invalid event type %d", t);
         return "invalid";
     }
 }
-#endif // LOG_EVENTS != 0
 
 void UbuntuInput::customEvent(QEvent* event)
 {
-    DASSERT(QThread::currentThread() == thread());
+    Q_ASSERT(QThread::currentThread() == thread());
     UbuntuEvent* ubuntuEvent = static_cast<UbuntuEvent*>(event);
     const MirEvent *nativeEvent = ubuntuEvent->nativeEvent;
 
     if ((ubuntuEvent->window == nullptr) || (ubuntuEvent->window->window() == nullptr)) {
-        qWarning() << "Attempted to deliver an event to a non-existent window, ignoring.";
+        qCWarning(ubuntumirclient) << "Attempted to deliver an event to a non-existent window, ignoring.";
         return;
     }
 
@@ -202,13 +197,11 @@ void UbuntuInput::customEvent(QEvent* event)
     if (QWindowSystemInterface::handleNativeEvent(
             ubuntuEvent->window->window(), mEventFilterType,
             const_cast<void *>(static_cast<const void *>(nativeEvent)), &result) == true) {
-        DLOG("event filtered out by native interface");
+        qCDebug(ubuntumirclient, "event filtered out by native interface");
         return;
     }
 
-    #if (LOG_EVENTS != 0)
-    LOG("UbuntuInput::customEvent(type=%s)", nativeEventTypeToStr(mir_event_get_type(nativeEvent)));
-    #endif
+    qCDebug(ubuntumirclientInput, "customEvent(type=%s)", nativeEventTypeToStr(mir_event_get_type(nativeEvent)));
 
     // Event dispatching.
     switch (mir_event_get_type(nativeEvent))
@@ -248,7 +241,7 @@ void UbuntuInput::customEvent(QEvent* event)
                 QWindowSystemInterface::handleApplicationStateChanged(Qt::ApplicationActive);
 
             } else if(!mPendingFocusGainedEvents) {
-                DLOG("[ubuntumirclient QPA] No windows have focus");
+                qCDebug(ubuntumirclient, "No windows have focus");
                 QWindowSystemInterface::handleWindowActivated(nullptr, Qt::ActiveWindowFocusReason);
                 QWindowSystemInterface::handleApplicationStateChanged(Qt::ApplicationInactive);
             }
@@ -262,7 +255,7 @@ void UbuntuInput::customEvent(QEvent* event)
         QWindowSystemInterface::handleCloseEvent(ubuntuEvent->window->window());
         break;
     default:
-        DLOG("unhandled event type: %d", static_cast<int>(mir_event_get_type(nativeEvent)));
+        qCDebug(ubuntumirclient, "unhandled event type: %d", static_cast<int>(mir_event_get_type(nativeEvent)));
     }
 }
 
@@ -426,7 +419,7 @@ void UbuntuInput::dispatchKeyEvent(UbuntuWindow *window, const MirInputEvent *ev
         QKeyEvent qKeyEvent(keyType, sym, modifiers, text, is_auto_rep);
         qKeyEvent.setTimestamp(timestamp);
         if (context->filterEvent(&qKeyEvent)) {
-            DLOG("key event filtered out by input context");
+            qCDebug(ubuntumirclient, "key event filtered out by input context");
             return;
         }
     }
@@ -490,11 +483,10 @@ void UbuntuInput::dispatchPointerEvent(UbuntuWindow *platformWindow, const MirIn
         QWindowSystemInterface::handleLeaveEvent(window);
         break;
     default:
-        DLOG("Unrecognized pointer event");
+        qCDebug(ubuntumirclient, "Unrecognized pointer event");
     }
 }
 
-#if (LOG_EVENTS != 0)
 static const char* nativeOrientationDirectionToStr(MirOrientation orientation)
 {
     switch (orientation) {
@@ -514,18 +506,14 @@ static const char* nativeOrientationDirectionToStr(MirOrientation orientation)
         return "INVALID!";
     }
 }
-#endif
 
 void UbuntuInput::dispatchOrientationEvent(QWindow *window, const MirOrientationEvent *event)
 {
     MirOrientation mir_orientation = mir_orientation_event_get_direction(event);
-    #if (LOG_EVENTS != 0)
-    // Orientation event logging.
-    LOG("ORIENTATION direction: %s", nativeOrientationDirectionToStr(mir_orientation));
-    #endif
+    qCDebug(ubuntumirclientInput, "orientation direction: %s", nativeOrientationDirectionToStr(mir_orientation));
 
     if (!window->screen()) {
-        DLOG("Window has no associated screen, dropping orientation event");
+        qCDebug(ubuntumirclient, "Window has no associated screen, dropping orientation event");
         return;
     }
 
@@ -544,7 +532,7 @@ void UbuntuInput::dispatchOrientationEvent(QWindow *window, const MirOrientation
         orientation = OrientationChangeEvent::RightUp;
         break;
     default:
-        DLOG("No such orientation %d", mir_orientation);
+        qCDebug(ubuntumirclient, "No such orientation %d", mir_orientation);
         return;
     }
 

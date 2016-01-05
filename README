@@ -1,15 +1,15 @@
   1. Description
   2. Running
-  3. Building
-  4. QPA native interface
-  5. QPA properties
+  3. Debug messages and logging
+  4. Building
+  5. QPA native interface
 
 
 1. Description
 --------------
 
   QtUbuntu contains a QPA (Qt Platform Abstraction) plugin based on the Ubuntu
-  Platform API
+  Platform API and Mir client API
 
 
 2 Running
@@ -39,7 +39,20 @@
     QTUBUNTU_ICON_THEME: Specifies the default icon theme name.
 
 
-3. Building
+3 Debug messages and logging
+----------------------------
+
+  QtUbuntu uses Qt logging categories (see QLoggingCategory class documentation
+  for more information). By default warnings and critical messages are
+  logged and debug messages are disabled. QtUbuntu provides the following
+  logging categories:
+
+  * ubuntumirclient.input       - Messages related to input and other Mir events.
+  * ubuntumirclient.swapBuffers - Messages related to surface buffer swapping.
+  * ubuntumirclient             - For all other messages.
+
+
+4. Building
 -----------
 
   To compile QtUbuntu, create the makefiles with qmake and build with
@@ -54,7 +67,7 @@
     $ qmake CONFIG+=debug
 
 
-4. QPA native interface
+5. QPA native interface
 -----------------------
 
   The QPA plugin exposes a native interface allowing to retrieve
