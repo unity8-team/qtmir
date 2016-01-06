@@ -485,16 +485,16 @@ void UbuntuSurface::updateSurface()
     }
 }
 
-UbuntuWindow::UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &clipboard, UbuntuScreen *screen,
+UbuntuWindow::UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &clipboard,
                            UbuntuInput *input, MirConnection *connection)
     : QObject(nullptr)
     , QPlatformWindow(w)
     , mId(makeId())
     , mClipboard(clipboard)
-    , mSurface(new UbuntuSurface{this, screen, input, connection})
+    , mSurface(new UbuntuSurface{this, static_cast<UbuntuScreen*>(w->screen()->handle()), input, connection})
 {
     qCDebug(ubuntumirclient, "UbuntuWindow(window=%p, screen=%p, input=%p, surf=%p) with title '%s', role: '%d'",
-            w, screen, input, mSurface.get(), qPrintable(window()->title()), roleFor(window()));
+            w, w->screen()->handle(), input, mSurface.get(), qPrintable(window()->title()), roleFor(window()));
 
     enablePanelHeightHack(w->windowState() != Qt::WindowFullScreen);
 }
@@ -535,6 +535,18 @@ void UbuntuWindow::handleSurfaceResized(int widthPx, int heightPx)
         qCDebug(ubuntumirclient, "handleSurfaceResize(window=%p) repainting size=(%dx%d)dp", window(), geometry().size().width(), geometry().size().height());
         QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(), geometry().size()));
     }
+}
+
+void UbuntuWindow::handleSurfaceExposeChange(bool exposed)
+{
+    QMutexLocker lock(&mMutex);
+    qCDebug(ubuntumirclient, "handleSurfaceExposeChange(exposed=%s)", exposed ? "true" : "false");
+
+    mSurface->setVisible(exposed);
+    const QRect& exposeRect = exposed ? QRect(QPoint(), geometry().size()) : QRect();
+
+    lock.unlock();
+    QWindowSystemInterface::handleExposeEvent(window(), exposeRect);
 }
 
 void UbuntuWindow::handleSurfaceFocused()

@@ -49,6 +49,8 @@ protected:
     void dispatchInputEvent(UbuntuWindow *window, const MirInputEvent *event);
 
     void dispatchOrientationEvent(QWindow* window, const MirOrientationEvent *event);
+    void handleSurfaceEvent(const QPointer<UbuntuWindow> &window, const MirSurfaceEvent *event);
+    void handleSurfaceOutputEvent(const QPointer<UbuntuWindow> &window, const MirSurfaceOutputEvent *event);
 
 private:
     UbuntuClientIntegration* mIntegration;

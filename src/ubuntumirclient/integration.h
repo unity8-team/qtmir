@@ -21,6 +21,7 @@
 #include <QSharedPointer>
 
 #include "platformservices.h"
+#include "screenobserver.h"
 
 // platform-api
 #include <ubuntu/application/description.h>
@@ -53,7 +54,9 @@ public:
 
     QPlatformOpenGLContext* createPlatformOpenGLContext(QOpenGLContext* context);
     QPlatformWindow* createPlatformWindow(QWindow* window);
-    UbuntuScreen* screen() const { return mScreen; }
+    UbuntuScreenObserver *screenObserver() const { return mScreenObserver.data(); }
+
+    void initialize() override;
 
 private:
     void setupOptions();
@@ -64,10 +67,10 @@ private:
 
     UbuntuPlatformServices* mServices;
 
-    UbuntuScreen* mScreen;
     UbuntuInput* mInput;
     QPlatformInputContext* mInputContext;
     QSharedPointer<UbuntuClipboard> mClipboard;
+    QScopedPointer<UbuntuScreenObserver> mScreenObserver;
     qreal mScaleFactor;
 
     // Platform API stuff

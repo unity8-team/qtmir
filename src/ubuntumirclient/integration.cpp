@@ -87,19 +87,23 @@ UbuntuClientIntegration::UbuntuClientIntegration()
                "rejected the incoming connection, so check its log file");
 
     mNativeInterface->setMirConnection(u_application_instance_get_mir_connection(mInstance));
+}
 
-    // Create default screen.
-    mScreen = new UbuntuScreen(u_application_instance_get_mir_connection(mInstance));
-    screenAdded(mScreen);
+void UbuntuClientIntegration::initialize()
+{
+    MirConnection *mirConnection = u_application_instance_get_mir_connection(mInstance);
+
+    // Init the ScreenObserver
+    mScreenObserver.reset(new UbuntuScreenObserver(mirConnection));
+    QObject::connect(mScreenObserver.data(), &UbuntuScreenObserver::screenAdded,
+            [this](UbuntuScreen *screen) { this->screenAdded(screen); });
+    Q_FOREACH(auto screen, mScreenObserver->screens()) {
+        screenAdded(screen);
+    }
 
     // Initialize input.
-    if (qEnvironmentVariableIsEmpty("QTUBUNTU_NO_INPUT")) {
-        mInput = new UbuntuInput(this);
-        mInputContext = QPlatformInputContextFactory::create();
-    } else {
-        mInput = nullptr;
-        mInputContext = nullptr;
-    }
+    mInput = new UbuntuInput(this);
+    mInputContext = QPlatformInputContextFactory::create();
 
     // compute the scale factor
     const int defaultGridUnit = 8;
@@ -119,7 +123,6 @@ UbuntuClientIntegration::~UbuntuClientIntegration()
 {
     delete mInput;
     delete mInputContext;
-    delete mScreen;
     delete mServices;
 }
 
@@ -164,7 +167,7 @@ QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window) 
 
 QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window)
 {
-    return new UbuntuWindow(window, mClipboard, static_cast<UbuntuScreen*>(mScreen),
+    return new UbuntuWindow(window, mClipboard,
                             mInput, u_application_instance_get_mir_connection(mInstance));
 }
 

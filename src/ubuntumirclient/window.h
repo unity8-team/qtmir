@@ -18,7 +18,6 @@
 #define UBUNTU_WINDOW_H
 
 #include <qpa/qplatformwindow.h>
-#include <QLoggingCategory>
 #include <QSharedPointer>
 #include <QMutex>
 
@@ -35,7 +34,7 @@ class UbuntuWindow : public QObject, public QPlatformWindow
 {
     Q_OBJECT
 public:
-    UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &clipboard, UbuntuScreen *screen,
+    UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &clipboard,
                  UbuntuInput *input, MirConnection *mirConnection);
     virtual ~UbuntuWindow();
 
@@ -53,6 +52,7 @@ public:
     MirSurface *mirSurface() const;
     void updateWindowSize(int widthPx, int heightPx);
     void handleSurfaceResized(int widthPx, int heightPx);
+    void handleSurfaceExposeChange(bool exposed);
     void handleSurfaceFocused();
     void onSwapBuffersDone();
 
