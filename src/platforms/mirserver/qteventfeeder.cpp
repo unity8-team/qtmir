@@ -395,7 +395,7 @@ public:
         return m_screenController->getWindowForPoint(point);
     }
 
-    qreal getDevicePixelRatio() override
+    qreal devicePixelRatio() override
     {
         return qGuiApp->devicePixelRatio(); // FIXME: make per-screen.
     }
@@ -563,7 +563,7 @@ void QtEventFeeder::dispatchPointer(MirInputEvent const* ev)
 
     auto modifiers = getQtModifiersFromMir(mir_pointer_event_modifiers(pev));
 
-    const qreal dpr = mQtWindowSystem->getDevicePixelRatio();
+    const qreal dpr = mQtWindowSystem->devicePixelRatio();
     auto movement = QPointF(mir_pointer_event_axis_value(pev, mir_pointer_axis_relative_x) / dpr,
                             mir_pointer_event_axis_value(pev, mir_pointer_axis_relative_y)) / dpr;
 
@@ -659,7 +659,7 @@ void QtEventFeeder::dispatchTouch(MirInputEvent const* event)
     // FIXME(loicm) Max pressure is device specific. That one is for the Samsung Galaxy Nexus. That
     //     needs to be fixed as soon as the compat input lib adds query support.
     const float kMaxPressure = 1.28;
-    const qreal dpr = mQtWindowSystem->getDevicePixelRatio();
+    const qreal dpr = mQtWindowSystem->devicePixelRatio();
     const int kPointerCount = mir_touch_event_point_count(tev);
     QList<QWindowSystemInterface::TouchPoint> touchPoints;
     QWindow *window = nullptr;

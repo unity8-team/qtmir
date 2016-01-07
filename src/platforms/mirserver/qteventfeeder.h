@@ -39,7 +39,7 @@ public:
         virtual ~QtWindowSystemInterface() {}
         virtual void setScreenController(const QSharedPointer<ScreenController> &sc) = 0;
         virtual QWindow* getWindowForTouchPoint(const QPoint &point) = 0;
-        virtual qreal getDevicePixelRatio() { return 1.0; }
+        virtual qreal devicePixelRatio() { return 1.0; }
         virtual QWindow* focusedWindow() = 0;
         virtual void registerTouchDevice(QTouchDevice *device) = 0;
         virtual void handleExtendedKeyEvent(QWindow *window, ulong timestamp, QEvent::Type type, int key,
