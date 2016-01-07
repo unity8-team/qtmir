@@ -264,8 +264,8 @@ QSGNode *MirSurfaceItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
         targetRect.setWidth(qMin(width(), static_cast<qreal>(textureSize.width())));
         targetRect.setHeight(qMin(height(), static_cast<qreal>(textureSize.height())));
 
-        qreal u = targetRect.width() / textureSize.width() * dpr;
-        qreal v = targetRect.height() / textureSize.height() * dpr;
+        qreal u = (targetRect.width() * dpr) / textureSize.width();
+        qreal v = (targetRect.height() * dpr) / textureSize.height();
         node->setSubSourceRect(QRectF(0, 0, u, v));
 
         node->setTargetRect(targetRect);
