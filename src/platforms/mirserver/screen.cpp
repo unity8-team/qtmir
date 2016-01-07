@@ -44,6 +44,7 @@ bool isLittleEndian() {
     char *c = (char*)&i;
     return *c == 1;
 }
+
 static mir::renderer::gl::RenderTarget *as_render_target(
     mir::graphics::DisplayBuffer *displayBuffer)
 {
@@ -56,8 +57,15 @@ static mir::renderer::gl::RenderTarget *as_render_target(
     return render_target;
 }
 
-int qGetEnvIntValue(const char *varName, bool *ok) {
-    return qgetenv(varName).toInt(ok);
+qreal readDevicePixelRatioEnvVar()
+{
+    bool ok;
+    const int dpr = qgetenv("QT_DEVICE_PIXEL_RATIO").toInt(&ok);
+    if (ok && dpr > 0) {
+        return (qreal) dpr;
+    } else {
+        return 1.0; // fallback value
+    }
 }
 
 enum QImage::Format qImageFormatFromMirPixelFormat(MirPixelFormat mirPixelFormat) {
@@ -128,9 +136,7 @@ Screen::Screen(const mir::graphics::DisplayConfigurationOutput &screen)
     , m_unityScreen(nullptr)
 {
     // Get screen resolution and properties.
-    bool ok;
-    const int dpr = qGetEnvIntValue("QT_DEVICE_PIXEL_RATIO", &ok);
-    m_devicePixelRatio = (ok && dpr > 0) ? dpr : 1.0;
+    m_devicePixelRatio = readDevicePixelRatioEnvVar();
 
     setMirDisplayConfiguration(screen);
 
