@@ -565,7 +565,7 @@ void QtEventFeeder::dispatchPointer(MirInputEvent const* ev)
 
     const qreal dpr = mQtWindowSystem->devicePixelRatio();
     auto movement = QPointF(mir_pointer_event_axis_value(pev, mir_pointer_axis_relative_x) / dpr,
-                            mir_pointer_event_axis_value(pev, mir_pointer_axis_relative_y)) / dpr;
+                            mir_pointer_event_axis_value(pev, mir_pointer_axis_relative_y) / dpr);
 
     switch (action) {
     case mir_pointer_action_button_up:
