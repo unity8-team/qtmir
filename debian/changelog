@@ -1,3 +1,10 @@
+qtubuntu (0.62+16.04.20160111-0ubuntu1) xenial; urgency=medium
+
+  [ Gerry Boland ]
+  * Fix getting MirConnection pointer (LP: #1526684)
+
+ -- Michał Sawicz <michal.sawicz@canonical.com>  Mon, 11 Jan 2016 11:27:32 +0000
+
 qtubuntu (0.62+16.04.20160104-0ubuntu1) xenial; urgency=medium
 
   [ Daniel d'Andrada ]
