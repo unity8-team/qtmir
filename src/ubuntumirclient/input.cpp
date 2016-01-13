@@ -423,7 +423,9 @@ void UbuntuInput::dispatchKeyEvent(UbuntuWindow *window, const MirInputEvent *ev
 
     QPlatformInputContext *context = QGuiApplicationPrivate::platformIntegration()->inputContext();
     if (context) {
-        QKeyEvent qKeyEvent(keyType, sym, modifiers, text, is_auto_rep);
+        quint32 scan_code = mir_keyboard_event_scan_code(key_event);
+        quint32 native_modifiers = mir_keyboard_event_modifiers(key_event);
+        QKeyEvent qKeyEvent(keyType, sym, modifiers, scan_code, xk_sym, native_modifiers, text, is_auto_rep);
         qKeyEvent.setTimestamp(timestamp);
         if (context->filterEvent(&qKeyEvent)) {
             DLOG("key event filtered out by input context");
