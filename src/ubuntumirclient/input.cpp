@@ -404,6 +404,8 @@ void UbuntuInput::dispatchKeyEvent(UbuntuWindow *window, const MirInputEvent *ev
 
     ulong timestamp = mir_input_event_get_event_time(event) / 1000000;
     xkb_keysym_t xk_sym = mir_keyboard_event_key_code(key_event);
+    quint32 scan_code = mir_keyboard_event_scan_code(key_event);
+    quint32 native_modifiers = mir_keyboard_event_modifiers(key_event);
 
     // Key modifier and unicode index mapping.
     auto modifiers = qt_modifiers_from_mir(mir_keyboard_event_modifiers(key_event));
@@ -423,8 +425,6 @@ void UbuntuInput::dispatchKeyEvent(UbuntuWindow *window, const MirInputEvent *ev
 
     QPlatformInputContext *context = QGuiApplicationPrivate::platformIntegration()->inputContext();
     if (context) {
-        quint32 scan_code = mir_keyboard_event_scan_code(key_event);
-        quint32 native_modifiers = mir_keyboard_event_modifiers(key_event);
         QKeyEvent qKeyEvent(keyType, sym, modifiers, scan_code, xk_sym, native_modifiers, text, is_auto_rep);
         qKeyEvent.setTimestamp(timestamp);
         if (context->filterEvent(&qKeyEvent)) {
@@ -433,7 +433,7 @@ void UbuntuInput::dispatchKeyEvent(UbuntuWindow *window, const MirInputEvent *ev
         }
     }
 
-    QWindowSystemInterface::handleKeyEvent(window->window(), timestamp, keyType, sym, modifiers, text, is_auto_rep);
+    QWindowSystemInterface::handleExtendedKeyEvent(window->window(), timestamp, keyType, sym, modifiers, scan_code, xk_sym, native_modifiers, text, is_auto_rep);
 }
 
 namespace
