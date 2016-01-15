@@ -368,7 +368,7 @@ static uint32_t translateKeysym(uint32_t sym, char *string, size_t size)
         return Qt::Key_F1 + (int(sym) - XKB_KEY_F1);
 
     if (sym == XKB_KEY_Return || sym == XKB_KEY_KP_Enter) {
-        string[0] = '\n';
+        string[0] = '\r';
         string[1] = '\0';
     }
 
