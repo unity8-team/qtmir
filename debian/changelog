@@ -1,3 +1,9 @@
+qtmir-gles (0.4.8-0ubuntu1) UNRELEASED; urgency=medium
+
+  * New upstream release
+
+ -- Nick Dedekind <nick.dedekind@canonical.com>  Mon, 18 Jan 2016 10:03:33 -0600
+
 qtmir-gles (0.4.7+16.04.20160104-0ubuntu1) xenial; urgency=medium
 
   * New upstream release
