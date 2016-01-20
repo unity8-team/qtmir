@@ -48,6 +48,6 @@ void MirServerThread::stop()
 bool MirServerThread::waitForMirStartup()
 {
     std::unique_lock<decltype(mutex)> lock(mutex);
-    started_cv.wait_for(lock, std::chrono::seconds{10}, [&]{ return mir_running; });
+    started_cv.wait_for(lock, std::chrono::seconds{60}, [&]{ return mir_running; });
     return mir_running;
 }
