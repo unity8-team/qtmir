@@ -1,3 +1,9 @@
+qtmir (0.4.7+16.04.20160104-0ubuntu2) UNRELEASED; urgency=medium
+
+  * No-change rebuild for mir bugfix release.
+
+ -- Kevin DuBois <kevin.dubois@canonical.com>  Mon, 25 Jan 2016 14:55:24 -0500
+
 qtmir (0.4.7+16.04.20160104-0ubuntu1) xenial; urgency=medium
 
   [ Daniel d'Andrada ]
