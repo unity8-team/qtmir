@@ -51,6 +51,7 @@ class Application : public unity::shell::application::ApplicationInfoInterface
     Q_PROPERTY(QString desktopFile READ desktopFile CONSTANT)
     Q_PROPERTY(QString exec READ exec CONSTANT)
     Q_PROPERTY(bool fullscreen READ fullscreen NOTIFY fullscreenChanged)
+    Q_PROPERTY(bool hideDecorations READ hideDecorations NOTIFY hideDecorationsChanged)
     Q_PROPERTY(Stage stage READ stage WRITE setStage NOTIFY stageChanged)
     Q_PROPERTY(SessionInterface* session READ session NOTIFY sessionChanged DESIGNABLE false)
 
@@ -124,6 +125,7 @@ public:
     QString desktopFile() const;
     QString exec() const;
     bool fullscreen() const;
+    bool hideDecorations() const;
 
     Stages supportedStages() const;
 
@@ -136,6 +138,7 @@ public:
 
 Q_SIGNALS:
     void fullscreenChanged(bool fullscreen);
+    void hideDecorationsChanged(bool hideDecorations);
     void stageChanged(Stage stage);
     void sessionChanged(SessionInterface *session);
 

@@ -71,6 +71,7 @@ Session::Session(const std::shared_ptr<ms::Session>& session,
     , m_parentSession(nullptr)
     , m_children(new SessionModel(this))
     , m_fullscreen(false)
+    , m_hideDecorations(false)
     , m_state(State::Starting)
     , m_live(true)
     , m_released(false)
@@ -195,6 +196,11 @@ bool Session::fullscreen() const
     return m_fullscreen;
 }
 
+bool Session::hideDecorations() const
+{
+    return m_hideDecorations;
+}
+
 bool Session::live() const
 {
     return m_live;
@@ -227,7 +233,7 @@ void Session::appendSurface(MirSurfaceInterface *newSurface)
     qCDebug(QTMIR_SESSIONS) << "Session::appendSurface - session=" << name() << "surface=" << newSurface;
 
     connect(newSurface, &MirSurfaceInterface::stateChanged,
-        this, &Session::updateFullscreenProperty);
+        this, &Session::updateScreenProperties);
 
     m_surfaces.insert(m_surfaces.rowCount(), newSurface);
 
@@ -237,7 +243,7 @@ void Session::appendSurface(MirSurfaceInterface *newSurface)
         setState(Running);
     }
 
-    updateFullscreenProperty();
+    updateScreenProperties();
 }
 
 void Session::removeSurface(MirSurfaceInterface* surface)
@@ -255,11 +261,12 @@ void Session::removeSurface(MirSurfaceInterface* surface)
     }
 }
 
-void Session::updateFullscreenProperty()
+void Session::updateScreenProperties()
 {
     if (m_surfaces.rowCount() > 0) {
         // TODO: Figure out something better
         setFullscreen(m_surfaces.list().at(0)->state() == Mir::FullscreenState);
+        setHideDecorations(m_surfaces.list().at(0)->state() == Mir::HorizMaximizedState);
     } else {
         // Keep the current value of the fullscreen property until we get a new
         // surface
@@ -272,6 +279,15 @@ void Session::setFullscreen(bool fullscreen)
     if (m_fullscreen != fullscreen) {
         m_fullscreen = fullscreen;
         Q_EMIT fullscreenChanged(m_fullscreen);
+    }
+}
+
+void Session::setHideDecorations(bool hideDecorations)
+{
+    qCDebug(QTMIR_SESSIONS) << "Session::setHideDecorations - session=" << this << "hideDecorations=" << hideDecorations;
+    if (m_hideDecorations != hideDecorations) {
+        m_hideDecorations = hideDecorations;
+        Q_EMIT hideDecorationsChanged(m_hideDecorations);
     }
 }
 

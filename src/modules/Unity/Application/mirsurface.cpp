@@ -555,6 +555,7 @@ void MirSurface::setState(Mir::State qmlState)
         break;
     }
 
+    DEBUG_MSG << "() state=" << mirSurfaceStateToStr(mirState);
     m_shell->set_surface_attribute(m_session->session(), m_surface, mir_surface_attrib_state, mirState);
 }
 

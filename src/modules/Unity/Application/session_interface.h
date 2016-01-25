@@ -53,6 +53,7 @@ class SessionInterface : public QObject {
     Q_PROPERTY(SessionInterface* parentSession READ parentSession NOTIFY parentSessionChanged DESIGNABLE false)
     Q_PROPERTY(SessionModel* childSessions READ childSessions DESIGNABLE false CONSTANT)
     Q_PROPERTY(bool fullscreen READ fullscreen NOTIFY fullscreenChanged)
+    Q_PROPERTY(bool hideDecorations READ hideDecorations NOTIFY hideDecorationsChanged)
     Q_PROPERTY(bool live READ live NOTIFY liveChanged)
 public:
     SessionInterface(QObject *parent = 0) : QObject(parent) {}
@@ -77,6 +78,7 @@ public:
     virtual SessionModel* childSessions() const = 0;
     virtual State state() const = 0;
     virtual bool fullscreen() const = 0;
+    virtual bool hideDecorations() const = 0;
     virtual bool live() const = 0;
 
     virtual std::shared_ptr<mir::scene::Session> session() const = 0;
@@ -105,6 +107,7 @@ public:
     virtual void foreachPromptSession(std::function<void(const std::shared_ptr<mir::scene::PromptSession>&)> f) const = 0;
 
     virtual void setFullscreen(bool fullscreen) = 0;
+    virtual void setHideDecorations(bool hideDecorations) = 0;
     virtual void setLive(const bool) = 0;
     virtual void appendPromptSession(const std::shared_ptr<mir::scene::PromptSession>& session) = 0;
     virtual void removePromptSession(const std::shared_ptr<mir::scene::PromptSession>& session) = 0;
@@ -114,6 +117,7 @@ Q_SIGNALS:
     void applicationChanged(unity::shell::application::ApplicationInfoInterface* application);
     void stateChanged(State state);
     void fullscreenChanged(bool fullscreen);
+    void hideDecorationsChanged(bool hideDecorations);
     void liveChanged(bool live);
     void lastSurfaceChanged(MirSurfaceInterface* surface);
 };

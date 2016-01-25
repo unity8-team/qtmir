@@ -196,6 +196,7 @@ ApplicationManager::ApplicationManager(
 
     m_roleNames.insert(RoleSession, "session");
     m_roleNames.insert(RoleFullscreen, "fullscreen");
+    m_roleNames.insert(RoleHideDecorations, "hideDecorations");
 }
 
 ApplicationManager::~ApplicationManager()
@@ -235,6 +236,8 @@ QVariant ApplicationManager::data(const QModelIndex &index, int role) const
                 return QVariant::fromValue(application->session());
             case RoleFullscreen:
                 return QVariant::fromValue(application->fullscreen());
+            case RoleHideDecorations:
+                return QVariant::fromValue(application->hideDecorations());
             default:
                 return QVariant();
         }
@@ -737,6 +740,7 @@ void ApplicationManager::add(Application* application)
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::add - appId=" << application->appId();
 
     connect(application, &Application::fullscreenChanged, this, [this](bool) { onAppDataChanged(RoleFullscreen); });
+    connect(application, &Application::hideDecorationsChanged, this, [this](bool) { onAppDataChanged(RoleHideDecorations); });
     connect(application, &Application::focusedChanged, this, [this](bool) { onAppDataChanged(RoleFocused); });
     connect(application, &Application::stateChanged, this, [this](Application::State) { onAppDataChanged(RoleState); });
     connect(application, &Application::stageChanged, this, [this](Application::Stage) { onAppDataChanged(RoleStage); });
@@ -788,6 +792,7 @@ void ApplicationManager::remove(Application *application)
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::remove - appId=" << application->appId();
 
     disconnect(application, &Application::fullscreenChanged, this, 0);
+    disconnect(application, &Application::hideDecorationsChanged, this, 0);
     disconnect(application, &Application::focusedChanged, this, 0);
     disconnect(application, &Application::stateChanged, this, 0);
     disconnect(application, &Application::stageChanged, this, 0);

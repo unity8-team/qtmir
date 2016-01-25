@@ -70,6 +70,7 @@ public:
     enum MoreRoles {
         RoleSession = RoleExemptFromLifecycle+1,
         RoleFullscreen,
+        RoleHideDecorations,
     };
 
     // Mapping enums to Ubuntu Platform API enums.

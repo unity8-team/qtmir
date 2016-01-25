@@ -45,6 +45,7 @@ public:
     SessionModel* childSessions() const override { return nullptr; }
     State state() const override { return m_state; }
     bool fullscreen() const override { return false; }
+    bool hideDecorations() const override { return false; }
     bool live() const override { return true; }
 
     std::shared_ptr<mir::scene::Session> session() const override { return nullptr; }
@@ -92,6 +93,7 @@ public:
     void foreachPromptSession(std::function<void(const std::shared_ptr<mir::scene::PromptSession>&)>) const override {}
 
     void setFullscreen(bool) override {}
+    void setHideDecorations(bool) override {}
     void setLive(const bool) override {}
     void appendPromptSession(const std::shared_ptr<mir::scene::PromptSession>&) override {}
     void removePromptSession(const std::shared_ptr<mir::scene::PromptSession>&) override {}

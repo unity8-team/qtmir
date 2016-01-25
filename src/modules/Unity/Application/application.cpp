@@ -393,6 +393,11 @@ bool Application::fullscreen() const
     return m_session ? m_session->fullscreen() : false;
 }
 
+bool Application::hideDecorations() const
+{
+    return m_session ? m_session->hideDecorations() : false;
+}
+
 bool Application::canBeResumed() const
 {
     return m_processState != ProcessUnknown;
@@ -465,6 +470,7 @@ void Application::setSession(SessionInterface *newSession)
     }
 
     bool oldFullscreen = fullscreen();
+    bool oldHideDecorations = hideDecorations();
     m_session = newSession;
 
     if (m_session) {
@@ -491,9 +497,12 @@ void Application::setSession(SessionInterface *newSession)
 
         connect(m_session, &SessionInterface::stateChanged, this, &Application::onSessionStateChanged);
         connect(m_session, &SessionInterface::fullscreenChanged, this, &Application::fullscreenChanged);
+        connect(m_session, &SessionInterface::hideDecorationsChanged, this, &Application::hideDecorationsChanged);
 
         if (oldFullscreen != fullscreen())
             Q_EMIT fullscreenChanged(fullscreen());
+        if (oldHideDecorations != hideDecorations())
+            Q_EMIT hideDecorationsChanged(hideDecorations());
     } else {
         // this can only happen after the session has stopped and QML code called Session::release()
         Q_ASSERT(m_state == InternalState::Stopped || m_state == InternalState::StoppedResumable);

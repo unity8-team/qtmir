@@ -44,6 +44,7 @@ public:
     MOCK_CONST_METHOD0(state, State());
 
     MOCK_CONST_METHOD0(fullscreen, bool());
+    MOCK_CONST_METHOD0(hideDecorations, bool());
     MOCK_CONST_METHOD0(live, bool());
 
     MOCK_CONST_METHOD0(session, std::shared_ptr<mir::scene::Session>());
@@ -92,6 +93,7 @@ public:
 
 protected:
     MOCK_METHOD1(setFullscreen, void(bool fullscreen));
+    MOCK_METHOD1(setHideDecorations, void(bool hideDecorations));
     MOCK_METHOD1(setLive, void(const bool));
     MOCK_METHOD1(appendPromptSession, void(const std::shared_ptr<mir::scene::PromptSession>& session));
     MOCK_METHOD1(removePromptSession, void(const std::shared_ptr<mir::scene::PromptSession>& session));

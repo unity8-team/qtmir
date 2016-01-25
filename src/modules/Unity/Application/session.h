@@ -57,6 +57,7 @@ public:
     SessionInterface* parentSession() const override;
     State state() const override;
     bool fullscreen() const override;
+    bool hideDecorations() const override;
     bool live() const override;
 
     void setApplication(unity::shell::application::ApplicationInfoInterface* item) override;
@@ -82,6 +83,7 @@ public:
     SessionModel* childSessions() const override;
 
     void setFullscreen(bool fullscreen) override;
+    void setHideDecorations(bool hideDecorations) override;
     void setLive(const bool) override;
     void appendPromptSession(const std::shared_ptr<mir::scene::PromptSession>& session) override;
     void removePromptSession(const std::shared_ptr<mir::scene::PromptSession>& session) override;
@@ -91,7 +93,7 @@ public Q_SLOTS:
     void doSuspend();
 
 private Q_SLOTS:
-    void updateFullscreenProperty();
+    void updateScreenProperties();
 
 protected:
     void setParentSession(Session* session);
@@ -108,6 +110,7 @@ protected:
     SessionInterface* m_parentSession;
     SessionModel* m_children;
     bool m_fullscreen;
+    bool m_hideDecorations;
     State m_state;
     bool m_live;
     bool m_released;
