@@ -1,3 +1,9 @@
+qtmir-gles (0.4.7+16.04.20160104-0ubuntu2) xenial; urgency=medium
+
+  * No-change rebuild for mir bugfix release.
+
+ -- Kevin DuBois <kevin.dubois@canonical.com>  Mon, 25 Jan 2016 14:55:24 -0500
+
 qtmir-gles (0.4.7+16.04.20160122-0ubuntu1) xenial; urgency=medium
 
   * Sync with upstream
