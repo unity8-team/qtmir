@@ -35,8 +35,8 @@ public:
     QList<UbuntuScreen*> screens() const { return mScreenList; }
     UbuntuScreen *findScreenWithId(uint32_t id);
 
-    void windowScreenDataChanged(const QPointer<UbuntuWindow> &window, int dpi,
-                                 MirFormFactor formFactor, float scale);
+    void handleScreenPropertiesChange(UbuntuScreen *screen, int dpi,
+                                      MirFormFactor formFactor, float scale);
 
 Q_SIGNALS:
     void screenAdded(UbuntuScreen *screen);

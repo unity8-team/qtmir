@@ -85,11 +85,20 @@ void UbuntuScreenObserver::update()
      * Mir's MirDisplayOutput does not include formFactor or scale for some reason, but Qt
      * will want that information on creating the QScreen. Only way we get that info is when
      * Mir positions a Window on that Screen. It's ugly, but will have to re-create the window
-     * again, after that happens. See "windowScreenDataChanged" method
+     * again, after that happens. See "handleScreenPropertiesChange" method
      */
     Q_FOREACH (const auto screen, newScreenList) {
         Q_EMIT screenAdded(screen);
     }
+
+    qDebug() << "=======================================";
+    for (auto screen: mScreenList) {
+        qDebug() << screen << "- id:" << screen->outputId()
+                           << "geometry:" << screen->geometry()
+                           << "form factor:" << screen->formFactor()
+                           << "scale:" << screen->scale();
+    }
+    qDebug() << "=======================================";
 }
 
 UbuntuScreen *UbuntuScreenObserver::findScreenWithId(uint32_t id)
@@ -107,25 +116,37 @@ UbuntuScreen *UbuntuScreenObserver::findScreenWithId(const QList<UbuntuScreen *>
     return nullptr;
 }
 
-void UbuntuScreenObserver::windowScreenDataChanged(const QPointer<UbuntuWindow> &window, int dpi,
-                                                   MirFormFactor formFactor, float scale)
+void UbuntuScreenObserver::handleScreenPropertiesChange(UbuntuScreen *screen, int dpi,
+                                                        MirFormFactor formFactor, float scale)
 {
+    qDebug() << "Screen properties changed!!" << screen << formFactor << scale;
+
+    screen->setAdditionalMirDisplayProperties(scale, formFactor, dpi);
+
+    qDebug() << "=======================================";
+    for (auto screen: mScreenList) {
+        qDebug() << screen << "- id:" << screen->outputId()
+                           << "geometry:" << screen->geometry()
+                           << "form factor:" << screen->formFactor()
+                           << "scale:" << screen->scale();
+    }
+    qDebug() << "=======================================";
+
+
+
     // Need to poke the window to be recreated (must be done after Screen updated). Use QWindowPrivate
     // methods to avoid deleting/recreating Screens when using QWindowSystemInterface::handleWindowScreenChanged.
-    bool recreateWindow = false;
-    auto screen = window->screen();
+//    bool recreateWindow = false;
+//    auto screen = window->screen();
 
-    if (QDpi(dpi, dpi) != screen->logicalDpi()) {
-        recreateWindow = true;
-    }
+//    if (QDpi(dpi, dpi) != screen->logicalDpi()) {
+//        recreateWindow = true;
+//    }
 
-    Q_UNUSED(formFactor)
-    Q_UNUSED(scale)
-
-    if (recreateWindow) {
-        const auto w = static_cast<QWindowPrivate *>(QObjectPrivate::get(window->window()));
-        //w->disconnectFromScreen(); // sets window has having no screen
-        w->setTopLevelScreen(screen->screen(), true); // re-sets window's screen, forcing re-creation
-    }
+//    if (recreateWindow) {
+//        const auto w = static_cast<QWindowPrivate *>(QObjectPrivate::get(window->window()));
+//        //w->disconnectFromScreen(); // sets window has having no screen
+//        w->setTopLevelScreen(screen->screen(), true); // re-sets window's screen, forcing re-creation
+//    }
 }
 

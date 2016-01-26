@@ -176,6 +176,8 @@ static const char* nativeEventTypeToStr(MirEventType t)
         return "mir_event_type_close_surface";
     case mir_event_type_input:
         return "mir_event_type_input";
+    case mir_event_type_surface_output:
+        return "mir_event_type_surface_output";
     default:
         return "invalid";
     }
@@ -577,20 +579,14 @@ void UbuntuInput::handleSurfaceOutputEvent(const QPointer<UbuntuWindow> &window,
     const MirFormFactor formFactor = mir_surface_output_event_get_form_factor(event);
     const float scale = mir_surface_output_event_get_scale(event);
 
-    UbuntuScreen *screen = mIntegration->screenObserver()->findScreenWithId(outputId);
+    const auto screenObserver = mIntegration->screenObserver();
+    UbuntuScreen *screen = screenObserver->findScreenWithId(outputId);
     if (!screen) {
         qWarning() << "Mir notified window" << window->window() << "on an unknown screen with id" << outputId;
         return;
     }
 
+    screenObserver->handleScreenPropertiesChange(screen, dpi, formFactor, scale);
+
     QWindowSystemInterface::handleWindowScreenChanged(window->window(), screen->screen());
-    if (screen->scale() != scale) {
-        // do something
-    }
-    if (screen->formFactor() != formFactor) {
-        // do something
-    }
-    if (screen->logicalDpi() != QDpi(dpi, dpi)) {
-        // do something
-    }
 }

@@ -115,7 +115,8 @@ const QEvent::Type OrientationChangeEvent::mType =
 
 
 UbuntuScreen::UbuntuScreen(const MirDisplayOutput &output, MirConnection *connection)
-    : mFormat(QImage::Format_RGB32)
+    : mDevicePixelRatio(1.0)
+    , mFormat(QImage::Format_RGB32)
     , mDepth(32)
     , mDpi{0}
     , mFormFactor{mir_form_factor_unknown}
@@ -163,10 +164,6 @@ UbuntuScreen::UbuntuScreen(const MirDisplayOutput &output, MirConnection *connec
 
     qCDebug(ubuntumirclient, "Setting swap interval to %d", swapInterval);
     eglSwapInterval(mEglDisplay, swapInterval);
-
-    // Get screen resolution and properties.
-    int dpr = qGetEnvIntValue("QT_DEVICE_PIXEL_RATIO", &ok);
-    mDevicePixelRatio = (ok && dpr > 0) ? dpr : 1.0;
 
     setMirDisplayOutput(output);
 }
@@ -272,8 +269,8 @@ void UbuntuScreen::setMirDisplayOutput(const MirDisplayOutput &output)
     mGeometry.setHeight(mNativeGeometry.height() / mDevicePixelRatio);
 
     // Misc
-//    mScale = output.scale; // missing from MirDisplayOutput
-//    mFormFactor = output.form_factor; // missing from MirDisplayOutput
+//    mScale = output.scale; // missing from MirDisplayOutput, wait for later setAdditionalMirDisplayProperties call
+//    mFormFactor = output.form_factor; // ditto
     mOutputId = output.output_id;
 
     // Set the default orientation based on the initial screen dimmensions.
@@ -281,6 +278,26 @@ void UbuntuScreen::setMirDisplayOutput(const MirDisplayOutput &output)
 
     // If it's a landscape device (i.e. some tablets), start in landscape, otherwise portrait
     mCurrentOrientation = (mNativeOrientation == Qt::LandscapeOrientation) ? Qt::LandscapeOrientation : Qt::PortraitOrientation;
+}
+
+void UbuntuScreen::setAdditionalMirDisplayProperties(float scale, MirFormFactor formFactor, float dpi)
+{
+    mScale = scale;
+    mFormFactor = formFactor;
+
+    bool ok;
+    int dpr = qGetEnvIntValue("QT_DEVICE_PIXEL_RATIO", &ok);
+    if (ok && dpr > 0) {
+        qCDebug(ubuntumirclient, "Fixing Device Pixel Ratio to %lf", dpr);
+        mDevicePixelRatio = dpr;
+    } else {
+        mDevicePixelRatio = qCeil(scale);
+    }
+
+    if (mDpi != dpi) {
+        mDpi = dpi;
+        QWindowSystemInterface::handleScreenLogicalDotsPerInchChange(screen(), dpi, dpi);
+    }
 }
 
 QDpi UbuntuScreen::logicalDpi() const

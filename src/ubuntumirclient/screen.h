@@ -61,6 +61,7 @@ public:
 
     // Internally used methods
     void setMirDisplayOutput(const MirDisplayOutput &output);
+    void setAdditionalMirDisplayProperties(float scale, MirFormFactor formFactor, float dpi);
     void handleWindowSurfaceResize(int width, int height);
     uint32_t mirOutputId() const { return mOutputId; }
 
