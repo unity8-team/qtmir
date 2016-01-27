@@ -119,8 +119,6 @@ UbuntuScreen *UbuntuScreenObserver::findScreenWithId(const QList<UbuntuScreen *>
 void UbuntuScreenObserver::handleScreenPropertiesChange(UbuntuScreen *screen, int dpi,
                                                         MirFormFactor formFactor, float scale)
 {
-    qDebug() << "Screen properties changed!!" << screen << formFactor << scale;
-
     screen->setAdditionalMirDisplayProperties(scale, formFactor, dpi);
 
     qDebug() << "=======================================";
@@ -131,22 +129,5 @@ void UbuntuScreenObserver::handleScreenPropertiesChange(UbuntuScreen *screen, in
                            << "scale:" << screen->scale();
     }
     qDebug() << "=======================================";
-
-
-
-    // Need to poke the window to be recreated (must be done after Screen updated). Use QWindowPrivate
-    // methods to avoid deleting/recreating Screens when using QWindowSystemInterface::handleWindowScreenChanged.
-//    bool recreateWindow = false;
-//    auto screen = window->screen();
-
-//    if (QDpi(dpi, dpi) != screen->logicalDpi()) {
-//        recreateWindow = true;
-//    }
-
-//    if (recreateWindow) {
-//        const auto w = static_cast<QWindowPrivate *>(QObjectPrivate::get(window->window()));
-//        //w->disconnectFromScreen(); // sets window has having no screen
-//        w->setTopLevelScreen(screen->screen(), true); // re-sets window's screen, forcing re-creation
-//    }
 }
 
