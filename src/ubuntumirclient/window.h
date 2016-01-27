@@ -21,9 +21,12 @@
 #include <QSharedPointer>
 #include <QMutex>
 
+#include <mir_toolkit/common.h> // needed only for MirFormFactor enum
+
 #include <memory>
 
 class UbuntuClipboard;
+class UbuntuNativeInterface;
 class UbuntuInput;
 class UbuntuScreen;
 class UbuntuSurface;
@@ -35,7 +38,7 @@ class UbuntuWindow : public QObject, public QPlatformWindow
     Q_OBJECT
 public:
     UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &clipboard,
-                 UbuntuInput *input, MirConnection *mirConnection);
+                 UbuntuInput *input, UbuntuNativeInterface* native, MirConnection *mirConnection);
     virtual ~UbuntuWindow();
 
     // QPlatformWindow methods.
@@ -47,6 +50,10 @@ public:
     void propagateSizeHints() override;
     qreal devicePixelRatio() const override;
 
+    // Additional Window properties exposed by NativeInterface
+    MirFormFactor formFactor() const { return mFormFactor; }
+    float scale() const { return mScale; }
+
     // New methods.
     void *eglSurface() const;
     MirSurface *mirSurface() const;
@@ -55,13 +62,17 @@ public:
     void handleSurfaceExposeChange(bool exposed);
     void handleSurfaceFocused();
     void onSwapBuffersDone();
+    void handleScreenPropertiesChange(MirFormFactor formFactor, float scale);
 
 private:
     void enablePanelHeightHack(bool enable);
     mutable QMutex mMutex;
     const WId mId;
     const QSharedPointer<UbuntuClipboard> mClipboard;
+    UbuntuNativeInterface *mNativeInterface;
     std::unique_ptr<UbuntuSurface> mSurface;
+    float mScale;
+    MirFormFactor mFormFactor;
 };
 
 #endif // UBUNTU_WINDOW_H

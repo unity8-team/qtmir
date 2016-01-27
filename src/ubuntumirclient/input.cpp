@@ -587,6 +587,9 @@ void UbuntuInput::handleSurfaceOutputEvent(const QPointer<UbuntuWindow> &window,
     }
 
     screenObserver->handleScreenPropertiesChange(screen, dpi, formFactor, scale);
+    window->handleScreenPropertiesChange(formFactor, scale);
 
-    QWindowSystemInterface::handleWindowScreenChanged(window->window(), screen->screen());
+    if (window->screen() != screen) {
+        QWindowSystemInterface::handleWindowScreenChanged(window->window(), screen->screen());
+    }
 }

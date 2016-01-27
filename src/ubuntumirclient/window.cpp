@@ -17,6 +17,7 @@
 // Local
 #include "window.h"
 #include "clipboard.h"
+#include "nativeinterface.h"
 #include "input.h"
 #include "screen.h"
 #include "utils.h"
@@ -488,11 +489,12 @@ void UbuntuSurface::updateSurface()
 }
 
 UbuntuWindow::UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &clipboard,
-                           UbuntuInput *input, MirConnection *connection)
+                           UbuntuInput *input, UbuntuNativeInterface *native, MirConnection *connection)
     : QObject(nullptr)
     , QPlatformWindow(w)
     , mId(makeId())
     , mClipboard(clipboard)
+    , mNativeInterface(native)
     , mSurface(new UbuntuSurface{this, static_cast<UbuntuScreen*>(w->screen()->handle()), input, connection})
 {
     qCDebug(ubuntumirclient, "UbuntuWindow(window=%p, screen=%p, input=%p, surf=%p) with title '%s', role: '%d'",
@@ -665,4 +667,19 @@ void UbuntuWindow::onSwapBuffersDone()
 {
     QMutexLocker lock(&mMutex);
     mSurface->onSwapBuffersDone();
+}
+
+void UbuntuWindow::handleScreenPropertiesChange(MirFormFactor formFactor, float scale)
+{
+    // Update the scale & form factor native-interface properties for the windows affected
+    // as there is no convenient way to emit signals for those custom properties on a QScreen
+    if (formFactor != mFormFactor) {
+        mFormFactor = formFactor;
+        Q_EMIT mNativeInterface->windowPropertyChanged(this, QStringLiteral("formFactor"));
+    }
+
+    if (qFuzzyCompare(scale, mScale)) {
+        mScale = scale;
+        Q_EMIT mNativeInterface->windowPropertyChanged(this, QStringLiteral("scale"));
+    }
 }

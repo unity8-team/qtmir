@@ -35,6 +35,10 @@ public:
     void* nativeResourceForScreen(const QByteArray& resourceString,
                                   QScreen* screen) override;
 
+    QVariantMap windowProperties(QPlatformWindow *window) const override;
+    QVariant windowProperty(QPlatformWindow *window, const QString &name) const override;
+    QVariant windowProperty(QPlatformWindow *window, const QString &name, const QVariant &defaultValue) const override;
+
     // New methods.
     const QByteArray& genericEventFilterType() const { return mGenericEventFilterType; }
     void setMirConnection(void *mirConnection) { mMirConnection = mirConnection; }

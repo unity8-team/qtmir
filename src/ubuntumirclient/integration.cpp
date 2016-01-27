@@ -167,8 +167,8 @@ QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window) 
 
 QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window)
 {
-    return new UbuntuWindow(window, mClipboard,
-                            mInput, u_application_instance_get_mir_connection(mInstance));
+    return new UbuntuWindow(window, mClipboard, mInput, mNativeInterface,
+                            u_application_instance_get_mir_connection(mInstance));
 }
 
 bool UbuntuClientIntegration::hasCapability(QPlatformIntegration::Capability cap) const
