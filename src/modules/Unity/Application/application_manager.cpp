@@ -103,8 +103,10 @@ void connectToTaskController(ApplicationManager *manager, TaskController *contro
                      manager, &ApplicationManager::onProcessFailed);
     QObject::connect(controller, &TaskController::focusRequested,
                      manager, &ApplicationManager::onFocusRequested);
+    // We interpret this as a focus request for a suspended app.
+    // Shell will have this app resumed if it complies with the focus request
     QObject::connect(controller, &TaskController::resumeRequested,
-                     manager, &ApplicationManager::onResumeRequested);
+                     manager, &ApplicationManager::onFocusRequested);
 }
 
 } // namespace
@@ -407,7 +409,6 @@ Application *ApplicationManager::startApplication(const QString &inputAppId, Exe
 void ApplicationManager::onProcessStarting(const QString &appId)
 {
     tracepoint(qtmir, onProcessStarting);
-    qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessStarting - appId=" << appId;
 
     Application *application = nullptr;
 
@@ -415,7 +416,8 @@ void ApplicationManager::onProcessStarting(const QString &appId)
     if (application) {
         if (!m_queuedStartApplications.contains(appId)) {
             m_queuedStartApplications.append(appId);
-            qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessStarting - User wants to start"
+            qCDebug(QTMIR_APPLICATIONS).nospace()
+                << "ApplicationManager::onProcessStarting(appId="<<appId<<") - User wants to start"
                 " a new instance of an application that is still closing. Queuing its start.";
             connect(application, &QObject::destroyed, this, [this, appId]() {
                     m_queuedStartApplications.removeAll(appId);
@@ -423,12 +425,17 @@ void ApplicationManager::onProcessStarting(const QString &appId)
                 }, Qt::QueuedConnection); // Queued so that we finish the app removal before starting again.
         } else {
             // Just ignore it.
+            qCDebug(QTMIR_APPLICATIONS).nospace()
+                << "ApplicationManager::onProcessStarting(appId="<<appId<<") - User wants to start"
+                " a new instance of an application that is still closing and is already queued to start later.";
         }
         return;
     }
 
     application = findApplication(appId);
     if (!application) { // then shell did not start this application, so ubuntu-app-launch must have - add to list
+        qCDebug(QTMIR_APPLICATIONS).nospace() << "ApplicationManager::onProcessStarting(appId="<<appId<<")";
+
         application = new Application(
                     m_sharedWakelock,
                     m_desktopFileReaderFactory->createInstance(appId, m_taskController->findDesktopFileForAppId(appId)),
@@ -436,7 +443,8 @@ void ApplicationManager::onProcessStarting(const QString &appId)
                     this);
 
         if (!application->isValid()) {
-            qWarning() << "Unable to instantiate application with appId" << appId;
+            qCWarning(QTMIR_APPLICATIONS).nospace() << "ApplicationManager::onProcessStarting(appId="<<appId<<") - "
+                "Unable to instantiate application";
             return;
         }
 
@@ -447,11 +455,12 @@ void ApplicationManager::onProcessStarting(const QString &appId)
         if (application->state() == Application::Stopped) {
             // url-dispatcher can relaunch apps which have been OOM-killed - AppMan must accept the newly spawned
             // application and focus it immediately (as user expects app to still be running).
-            qCDebug(QTMIR_APPLICATIONS) << "Stopped application appId=" << appId << "is being resumed externally";
+            qCDebug(QTMIR_APPLICATIONS).nospace() << "ApplicationManager::onProcessStarting(appId="<<appId<<") - "
+                "Stopped application is being resumed externally";
             Q_EMIT focusRequested(appId);
         } else {
-            qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessStarting application already found with appId"
-                                        << appId;
+            qCDebug(QTMIR_APPLICATIONS).nospace() << "ApplicationManager::onProcessStarting(appId="<<appId<<") - "
+                "application already exists";
         }
     }
     application->setProcessState(Application::ProcessRunning);
@@ -491,9 +500,13 @@ void ApplicationManager::onProcessFailed(const QString &appId, TaskController::E
 
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessFailed - appId=" << appId;
 
-    Application *application = findApplication(appId);
+    Application *application = findClosingApplication(appId);
     if (!application) {
-        qWarning() << "ApplicationManager::onProcessFailed - upstart reports failure of application" << appId
+        application = findApplication(appId);
+    }
+
+    if (!application) {
+        qCWarning(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessFailed - upstart reports failure of application" << appId
                    << "that AppManager is not managing";
         return;
     }
@@ -518,7 +531,8 @@ void ApplicationManager::onProcessStopped(const QString &appId)
     }
 
     if (!application) {
-        qDebug() << "ApplicationManager::onProcessStopped reports stop of appId=" << appId
+        // Might happen if the onProcessFailed() was called for this app and it already got deleted in response.
+        qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessStopped reports stop of appId=" << appId
                  << "which AppMan is not managing, ignoring the event";
         return;
     }
@@ -548,27 +562,16 @@ void ApplicationManager::onProcessSuspended(const QString &appId)
 
 void ApplicationManager::onFocusRequested(const QString& appId)
 {
-    qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onFocusRequested - appId=" << appId;
-
-    Q_EMIT focusRequested(appId);
-}
-
-void ApplicationManager::onResumeRequested(const QString& appId)
-{
     Application *application = findApplication(appId);
 
     if (m_queuedStartApplications.contains(appId) || findClosingApplication(appId) != nullptr) {
-        qCDebug(QTMIR_APPLICATIONS).nospace() << "ApplicationManager::onResumeRequested(appId="<<appId<<") - Ignoring request as "
+        qCDebug(QTMIR_APPLICATIONS).nospace() << "ApplicationManager::onFocusRequested(appId="<<appId<<") - Ignoring request as "
             "the application is closing and/or queued to start";
     } else if (application) {
-        qCDebug(QTMIR_APPLICATIONS).nospace() << "ApplicationManager::onResumeRequested(appId="<<appId<<")";
-        // We interpret this as a focus request for a suspended app.
-        // Shell will have this app resumed if it complies with the focus request
-        if (application->state() == Application::Suspended) {
-            Q_EMIT focusRequested(appId);
-        }
+        qCDebug(QTMIR_APPLICATIONS).nospace() << "ApplicationManager::onFocusRequested(appId="<<appId<<")";
+        Q_EMIT focusRequested(appId);
     } else {
-        qCCritical(QTMIR_APPLICATIONS).nospace() << "ApplicationManager::onResumeRequested(appId="<<appId<<")"
+        qCCritical(QTMIR_APPLICATIONS).nospace() << "ApplicationManager::onFocusRequested(appId="<<appId<<")"
             " - No such running application";
     }
 }
@@ -791,9 +794,9 @@ void ApplicationManager::add(Application* application)
 
     connect(application, &Application::stopProcessRequested, this, [=]() {
         if (!m_taskController->stop(application->longAppId()) && application->pid() > 0) {
-            qWarning() << "FAILED to ask Upstart to stop application with appId" << appId
-                       << "Sending SIGTERM to process:" << appId;
-            kill(application->pid(), SIGTERM);
+            qCWarning(QTMIR_APPLICATIONS).nospace() << "FAILED to ask Upstart to stop application with appId "
+                << appId << ". Killing it with SIGTERM.";
+            m_taskController->kill(application->pid());
             application->setProcessState(Application::ProcessStopped);
         }
     });

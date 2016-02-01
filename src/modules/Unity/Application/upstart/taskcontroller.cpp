@@ -28,6 +28,9 @@ extern "C" {
     #include "ubuntu-app-launch.h"
 }
 
+// std
+#include <csignal>
+
 namespace qtmir
 {
 namespace upstart
@@ -251,6 +254,11 @@ QFileInfo TaskController::findDesktopFileForAppId(const QString &appId) const
     } while (dashPos != -1);
 
     return QFileInfo();
+}
+
+void TaskController::kill(pid_t pid)
+{
+    ::kill(pid, SIGTERM);
 }
 
 } // namespace upstart

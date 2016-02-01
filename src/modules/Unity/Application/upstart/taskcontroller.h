@@ -42,6 +42,8 @@ public:
 
     QFileInfo findDesktopFileForAppId(const QString &appId) const override;
 
+    void kill(pid_t pid) override;
+
 private:
     struct Private;
     QScopedPointer<Private> impl;

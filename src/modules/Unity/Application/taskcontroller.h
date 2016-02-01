@@ -53,6 +53,10 @@ public:
 
     virtual QFileInfo findDesktopFileForAppId(const QString &appId) const = 0;
 
+    // Not a perfect fit for this class but we need the kill(pid_t pid, int sig) function
+    // behind an interface so we can test it (replacing with a mock or fake)
+    virtual void kill(pid_t pid) = 0;
+
 Q_SIGNALS:
     void processStarting(const QString &appId);
     void applicationStarted(const QString &appId);

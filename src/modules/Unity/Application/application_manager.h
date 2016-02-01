@@ -129,7 +129,6 @@ public Q_SLOTS:
     void onProcessSuspended(const QString& appId);
     void onProcessFailed(const QString& appId, TaskController::Error error);
     void onFocusRequested(const QString& appId);
-    void onResumeRequested(const QString& appId);
 
 Q_SIGNALS:
     void focusRequested(const QString &appId);
