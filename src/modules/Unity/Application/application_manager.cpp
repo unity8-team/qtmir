@@ -418,6 +418,8 @@ void ApplicationManager::onProcessStarting(const QString &appId)
 
     application = findClosingApplication(appId);
     if (application) {
+        // TODO: We should create a new Application instance right away in order to give immediate
+        // feedback to the user, even though there's no actual process backing it up yet.
         if (!m_queuedStartApplications.contains(appId)) {
             m_queuedStartApplications.append(appId);
             DEBUG_MSG(appId) << "User wants to start a new instance of an application that is still closing."
