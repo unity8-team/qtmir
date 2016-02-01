@@ -678,7 +678,7 @@ void UbuntuWindow::handleScreenPropertiesChange(MirFormFactor formFactor, float 
         Q_EMIT mNativeInterface->windowPropertyChanged(this, QStringLiteral("formFactor"));
     }
 
-    if (qFuzzyCompare(scale, mScale)) {
+    if (!qFuzzyCompare(scale, mScale)) {
         mScale = scale;
         Q_EMIT mNativeInterface->windowPropertyChanged(this, QStringLiteral("scale"));
     }
