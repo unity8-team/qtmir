@@ -18,6 +18,7 @@
 #define UBUNTU_WINDOW_H
 
 #include <qpa/qplatformwindow.h>
+#include <QLoggingCategory>
 #include <QSharedPointer>
 #include <QMutex>
 

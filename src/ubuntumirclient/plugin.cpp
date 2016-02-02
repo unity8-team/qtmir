@@ -16,6 +16,9 @@
 
 #include "plugin.h"
 #include "integration.h"
+#include "logging.h"
+
+Q_LOGGING_CATEGORY(ubuntumirclient, "ubuntumirclient", QtWarningMsg)
 
 QStringList UbuntuMirClientIntegrationPlugin::keys() const
 {
