@@ -22,6 +22,7 @@
 #include "input.h"
 #include "logging.h"
 #include "nativeinterface.h"
+#include "offscreensurface.h"
 #include "screen.h"
 #include "theme.h"
 #include "window.h"
@@ -254,4 +255,10 @@ QPlatformClipboard* UbuntuClientIntegration::clipboard() const
 QPlatformNativeInterface* UbuntuClientIntegration::nativeInterface() const
 {
     return mNativeInterface;
+}
+
+QPlatformOffscreenSurface *UbuntuClientIntegration::createPlatformOffscreenSurface(
+        QOffscreenSurface *surface) const
+{
+    return new UbuntuOffscreenSurface(surface);
 }
