@@ -288,7 +288,7 @@ void UbuntuScreen::setAdditionalMirDisplayProperties(float scale, MirFormFactor 
     bool ok;
     int dpr = qGetEnvIntValue("QT_DEVICE_PIXEL_RATIO", &ok);
     if (ok && dpr > 0) {
-        qCDebug(ubuntumirclient, "Fixing Device Pixel Ratio to %lf", dpr);
+        qCDebug(ubuntumirclient, "Fixing Device Pixel Ratio to %d", dpr);
         mDevicePixelRatio = dpr;
     } else {
         mDevicePixelRatio = 1.0; //qCeil(scale); // FIXME - unable to announce change in this until can delete/recreate Screen.
