@@ -1,3 +1,9 @@
+qtmir (0.4.7+16.04.20160127.1-0ubuntu2) UNRELEASED; urgency=medium
+
+  * Changes for mir 0.20 
+
+ -- Alberto Aguirre <alberto.aguirre@canonical.com>  Wed, 03 Feb 2016 17:53:47 -0600
+
 qtmir (0.4.7+16.04.20160127.1-0ubuntu1) xenial; urgency=medium
 
   * Changes for mir 0.19.
