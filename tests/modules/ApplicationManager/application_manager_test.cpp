@@ -2291,7 +2291,7 @@ TEST_F(ApplicationManagerTests,CloseWhenSuspendedProcessFailed)
 
     // Process failed
     onSessionStopping(session->session());
-    applicationManager.onProcessFailed(appId, true);
+    applicationManager.onProcessFailed(appId, TaskController::Error::APPLICATION_CRASHED);
     applicationManager.onProcessStopped(appId);
     EXPECT_EQ(Application::InternalState::StoppedResumable, application->internalState());
 
