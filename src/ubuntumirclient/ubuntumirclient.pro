@@ -22,6 +22,7 @@ SOURCES = \
     input.cpp \
     integration.cpp \
     nativeinterface.cpp \
+    offscreensurface.cpp \
     platformservices.cpp \
     plugin.cpp \
     screen.cpp \
@@ -38,6 +39,7 @@ HEADERS = \
     integration.h \
     logging.h \
     nativeinterface.h \
+    offscreensurface.h \
     orientationchangeevent_p.h \
     platformservices.h \
     plugin.h \

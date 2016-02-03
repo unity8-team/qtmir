@@ -58,6 +58,10 @@ public:
 
     void initialize() override;
 
+    QPlatformOffscreenSurface *createPlatformOffscreenSurface(QOffscreenSurface *surface) const override;
+
+    QPlatformOffscreenSurface *createPlatformOffscreenSurface(QOffscreenSurface *surface) const override;
+
 private:
     void setupOptions();
     void setupDescription();
