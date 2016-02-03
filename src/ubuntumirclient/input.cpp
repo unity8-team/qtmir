@@ -555,7 +555,7 @@ void UbuntuInput::handleSurfaceEvent(const QPointer<UbuntuWindow> &window, const
 
             // NB: Since processing of system events is queued, never check qGuiApp->applicationState()
             //     as it might be outdated. Always call handleApplicationStateChanged() with the latest
-            /     state regardless.
+            //     state regardless.
             QWindowSystemInterface::handleApplicationStateChanged(Qt::ApplicationActive);
 
         } else if(!mPendingFocusGainedEvents) {
