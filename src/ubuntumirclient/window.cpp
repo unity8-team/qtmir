@@ -621,7 +621,6 @@ void UbuntuWindow::setVisible(bool visible)
 
     lock.unlock();
     QWindowSystemInterface::handleExposeEvent(window(), exposeRect);
-    QWindowSystemInterface::flushWindowSystemEvents();
 }
 
 void UbuntuWindow::setWindowTitle(const QString &title)
