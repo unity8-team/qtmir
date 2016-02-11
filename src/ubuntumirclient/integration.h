@@ -32,7 +32,10 @@ class UbuntuInput;
 class UbuntuNativeInterface;
 class UbuntuScreen;
 
-class UbuntuClientIntegration : public QPlatformIntegration {
+class UbuntuClientIntegration : public QObject, public QPlatformIntegration
+{
+    Q_OBJECT
+
 public:
     UbuntuClientIntegration();
     virtual ~UbuntuClientIntegration();
@@ -59,6 +62,9 @@ public:
     void initialize() override;
 
     QPlatformOffscreenSurface *createPlatformOffscreenSurface(QOffscreenSurface *surface) const override;
+
+private Q_SLOTS:
+    void destroyScreen(UbuntuScreen *screen);
 
 private:
     void setupOptions();

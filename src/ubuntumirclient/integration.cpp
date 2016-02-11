@@ -96,8 +96,11 @@ void UbuntuClientIntegration::initialize()
 
     // Init the ScreenObserver
     mScreenObserver.reset(new UbuntuScreenObserver(mirConnection));
-    QObject::connect(mScreenObserver.data(), &UbuntuScreenObserver::screenAdded,
+    connect(mScreenObserver.data(), &UbuntuScreenObserver::screenAdded,
             [this](UbuntuScreen *screen) { this->screenAdded(screen); });
+    connect(mScreenObserver.data(), &UbuntuScreenObserver::screenRemoved,
+                     this, &UbuntuClientIntegration::destroyScreen);
+
     Q_FOREACH(auto screen, mScreenObserver->screens()) {
         screenAdded(screen);
     }
@@ -264,4 +267,35 @@ QPlatformOffscreenSurface *UbuntuClientIntegration::createPlatformOffscreenSurfa
         QOffscreenSurface *surface) const
 {
     return new UbuntuOffscreenSurface(surface);
+}
+
+void UbuntuClientIntegration::destroyScreen(UbuntuScreen *screen)
+{
+    // FIXME: on deleting a screen while a Window is on it, Qt will automatically
+    // move the window to the primaryScreen(). This will trigger a screenChanged
+    // signal, causing things like QQuickScreenAttached to re-fetch screen properties
+    // like DPI and physical size. However this is crashing, as Qt is calling virtual
+    // functions on QPlatformScreen, for reasons unclear. As workaround, move window
+    // to primaryScreen() before deleting the screen. Might be QTBUG-38650
+
+    QScreen *primaryScreen = QGuiApplication::primaryScreen();
+    if (screen != primaryScreen->handle()) {
+        uint32_t movedWindowCount = 0;
+        Q_FOREACH (QWindow *w, QGuiApplication::topLevelWindows()) {
+            if (w->screen()->handle() == screen) {
+                QWindowSystemInterface::handleWindowScreenChanged(w, primaryScreen);
+                ++movedWindowCount;
+            }
+        }
+        if (movedWindowCount > 0) {
+            QWindowSystemInterface::flushWindowSystemEvents();
+        }
+    }
+
+    qDebug() << "Removing Screen with id" << screen->outputId() << "and geometry" << screen->geometry();
+#if QT_VERSION < QT_VERSION_CHECK(5, 5, 0)
+    delete screen;
+#else
+    this->destroyScreen(screen);
+#endif
 }

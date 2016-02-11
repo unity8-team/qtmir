@@ -22,7 +22,6 @@
 // Qt
 #include <QMetaObject>
 #include <QPointer>
-#include <private/qwindow_p.h>
 
 // Mir
 #include <mirclient/mir_toolkit/mir_connection.h>
@@ -74,19 +73,18 @@ void UbuntuScreenObserver::update()
         }
     }
 
-    // Delete any old & unused Screens
+    // Announce old & unused Screens, should be deleted by the slot
     Q_FOREACH (const auto screen, oldScreenList) {
-        qDebug() << "Removed Screen with id" << screen->outputId() << "and geometry" << screen->geometry();
-        // The screen is automatically removed from Qt's internal list by the QPlatformScreen destructor.
-        delete screen;
+        Q_EMIT screenRemoved(screen);
     }
 
     /*
      * Mir's MirDisplayOutput does not include formFactor or scale for some reason, but Qt
      * will want that information on creating the QScreen. Only way we get that info is when
-     * Mir positions a Window on that Screen. It's ugly, but will have to re-create the window
-     * again, after that happens. See "handleScreenPropertiesChange" method
+     * Mir positions a Window on that Screen. See "handleScreenPropertiesChange" method
      */
+
+    // Announce new Screens
     Q_FOREACH (const auto screen, newScreenList) {
         Q_EMIT screenAdded(screen);
     }

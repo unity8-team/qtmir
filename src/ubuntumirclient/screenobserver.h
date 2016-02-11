@@ -21,9 +21,7 @@
 
 #include <mir_toolkit/mir_connection.h>
 
-struct MirConnection;
 class UbuntuScreen;
-class UbuntuWindow;
 
 class UbuntuScreenObserver : public QObject
 {
@@ -40,12 +38,14 @@ public:
 
 Q_SIGNALS:
     void screenAdded(UbuntuScreen *screen);
+    void screenRemoved(UbuntuScreen *screen);
 
 private Q_SLOTS:
     void update();
 
 private:
     UbuntuScreen *findScreenWithId(const QList<UbuntuScreen *> &list, uint32_t id);
+    void removeScreen(UbuntuScreen *screen);
 
     MirConnection *mMirConnection;
     QList<UbuntuScreen*> mScreenList;
