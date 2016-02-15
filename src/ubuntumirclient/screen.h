@@ -86,6 +86,8 @@ private:
     EGLNativeDisplayType mEglNativeDisplay;
     QSurfaceFormat mSurfaceFormat;
     UbuntuCursor mCursor; //GERRY try const
+
+    friend class UbuntuNativeInterface;
 };
 
 #endif // UBUNTU_SCREEN_H
