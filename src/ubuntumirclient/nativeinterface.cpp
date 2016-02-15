@@ -134,7 +134,10 @@ void* UbuntuNativeInterface::nativeResourceForScreen(const QByteArray& resourceS
     // Changes to the following properties are emitted via the UbuntuNativeInterface::screenPropertyChanged
     // signal fired by UbuntuScreen. Connect to this signal for these properties updates.
     } else if (kResourceType == UbuntuNativeInterface::Scale) {
-        return (void*)((long) ubuntuScreen->scale() ); // cheeky, forcing a float into a void*
+        float src = ubuntuScreen->scale();
+        void* dst = 0;
+        memcpy(&dst, &src, sizeof(void*)); //forcing a float into a void*
+        return dst;
     } else if (kResourceType == UbuntuNativeInterface::FormFactor) {
         return reinterpret_cast<void*>(ubuntuScreen->formFactor());
     } else
