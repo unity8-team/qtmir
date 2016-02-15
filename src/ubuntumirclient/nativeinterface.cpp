@@ -36,6 +36,8 @@ public:
         insert("nativeorientation", UbuntuNativeInterface::NativeOrientation);
         insert("display", UbuntuNativeInterface::Display);
         insert("mirconnection", UbuntuNativeInterface::MirConnection);
+        insert("scale", UbuntuNativeInterface::Scale);
+        insert("formfactor", UbuntuNativeInterface::FormFactor);
     }
 };
 
@@ -124,10 +126,17 @@ void* UbuntuNativeInterface::nativeResourceForScreen(const QByteArray& resourceS
     if (!ubuntuResourceMap()->contains(kLowerCaseResource))
         return NULL;
     const ResourceType kResourceType = ubuntuResourceMap()->value(kLowerCaseResource);
+    if (!screen)
+        screen = QGuiApplication::primaryScreen();
+    auto ubuntuScreen = static_cast<UbuntuScreen*>(screen->handle());
     if (kResourceType == UbuntuNativeInterface::Display) {
-        if (!screen)
-            screen = QGuiApplication::primaryScreen();
-        return static_cast<UbuntuScreen*>(screen->handle())->eglNativeDisplay();
+        return ubuntuScreen->eglNativeDisplay();
+    // Changes to the following properties are emitted via the UbuntuNativeInterface::screenPropertyChanged
+    // signal fired by UbuntuScreen. Connect to this signal for these properties updates.
+    } else if (kResourceType == UbuntuNativeInterface::Scale) {
+        return (void*)((long) ubuntuScreen->scale() ); // cheeky, forcing a float into a void*
+    } else if (kResourceType == UbuntuNativeInterface::FormFactor) {
+        return reinterpret_cast<void*>(ubuntuScreen->formFactor());
     } else
         return NULL;
 }

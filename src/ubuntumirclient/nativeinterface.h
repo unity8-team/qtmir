@@ -19,9 +19,12 @@
 
 #include <qpa/qplatformnativeinterface.h>
 
+class QPlatformScreen;
+
 class UbuntuNativeInterface : public QPlatformNativeInterface {
+    Q_OBJECT
 public:
-    enum ResourceType { EglDisplay, EglContext, NativeOrientation, Display, MirConnection };
+    enum ResourceType { EglDisplay, EglContext, NativeOrientation, Display, MirConnection, Scale, FormFactor };
 
     UbuntuNativeInterface();
     ~UbuntuNativeInterface();
@@ -42,6 +45,9 @@ public:
     // New methods.
     const QByteArray& genericEventFilterType() const { return mGenericEventFilterType; }
     void setMirConnection(void *mirConnection) { mMirConnection = mirConnection; }
+
+Q_SIGNALS: // New signals
+    void screenPropertyChanged(QPlatformScreen *screen, const QString &propertyName);
 
 private:
     const QByteArray mGenericEventFilterType;

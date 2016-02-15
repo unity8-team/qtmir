@@ -18,12 +18,13 @@
 #include "screen.h"
 #include "logging.h"
 #include "orientationchangeevent_p.h"
+#include "nativeinterface.h"
 #include "utils.h"
 
 #include <mir_toolkit/mir_client_library.h>
 
 // Qt
-#include <QCoreApplication>
+#include <QGuiApplication>
 #include <QtCore/qmath.h>
 #include <QScreen>
 #include <QThread>
@@ -282,8 +283,15 @@ void UbuntuScreen::setMirDisplayOutput(const MirDisplayOutput &output)
 
 void UbuntuScreen::setAdditionalMirDisplayProperties(float scale, MirFormFactor formFactor, float dpi)
 {
-    mScale = scale;
-    mFormFactor = formFactor;
+    auto nativeInterface = static_cast<UbuntuNativeInterface *>(qGuiApp->platformNativeInterface());
+    if (!qFuzzyCompare(mScale, scale)) {
+        mScale = scale;
+        Q_EMIT nativeInterface->screenPropertyChanged(this, QStringLiteral("scale"));
+    }
+    if (mFormFactor != formFactor) {
+        mFormFactor = formFactor;
+        Q_EMIT nativeInterface->screenPropertyChanged(this, QStringLiteral("formFactor"));
+    }
 
     bool ok;
     int dpr = qGetEnvIntValue("QT_DEVICE_PIXEL_RATIO", &ok);
