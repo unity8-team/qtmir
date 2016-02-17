@@ -38,6 +38,9 @@
 
 Q_LOGGING_CATEGORY(ubuntumirclientInput, "ubuntumirclient.input", QtWarningMsg)
 
+namespace
+{
+
 // XKB Keysyms which do not map directly to Qt types (i.e. Unicode points)
 static const uint32_t KeyTable[] = {
     XKB_KEY_Escape,                  Qt::Key_Escape,
@@ -117,6 +120,26 @@ static const uint32_t KeyTable[] = {
 
     0,                          0
 };
+
+Qt::WindowState mirSurfaceStateToWindowState(MirSurfaceState state)
+{
+    switch (state) {
+    case mir_surface_state_fullscreen:
+        return Qt::WindowFullScreen;
+    case mir_surface_state_maximized:
+    case mir_surface_state_vertmaximized:
+    case mir_surface_state_horizmaximized:
+        return Qt::WindowMaximized;
+    case mir_surface_state_hidden:
+    case mir_surface_state_minimized:
+        return Qt::WindowMinimized;
+    default:
+    case mir_surface_state_restored:
+        return Qt::WindowNoState;
+    }
+}
+
+}
 
 class UbuntuEvent : public QEvent
 {
@@ -570,8 +593,11 @@ void UbuntuInput::handleSurfaceEvent(const QPointer<UbuntuWindow> &window, const
                     mir_surface_event_get_attribute_value(event) == mir_surface_visibility_exposed);
         break;
     // Remaining attributes are ones client sets for server, and server should not override them
-    case mir_surface_attrib_type:
     case mir_surface_attrib_state:
+        MirSurfaceState state = static_cast<MirSurfaceState>(mir_surface_event_get_attribute_value(surfaceEvent));
+        ubuntuEvent->window->handleSurfaceStateChanged(mirSurfaceStateToWindowState(state));
+        break;
+    case mir_surface_attrib_type:
     case mir_surface_attrib_swapinterval:
     case mir_surface_attrib_dpi:
     case mir_surface_attrib_preferred_orientation:
