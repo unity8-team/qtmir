@@ -622,7 +622,7 @@ void UbuntuWindow::setWindowState(Qt::WindowState state)
 void UbuntuWindow::setWindowFlags(Qt::WindowFlags flags)
 {
     QMutexLocker lock(&mMutex);
-    qCDebug(ubuntumirclient, "setWindowFlags(window=%p, %d)", this, flags);
+    qCDebug(ubuntumirclient, "setWindowFlags(window=%p, %d)", this, (int)flags);
 
     if (mWindowFlags == flags) return;
     mWindowFlags = flags;
