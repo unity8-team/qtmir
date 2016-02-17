@@ -593,10 +593,11 @@ void UbuntuInput::handleSurfaceEvent(const QPointer<UbuntuWindow> &window, const
                     mir_surface_event_get_attribute_value(event) == mir_surface_visibility_exposed);
         break;
     // Remaining attributes are ones client sets for server, and server should not override them
-    case mir_surface_attrib_state:
-        MirSurfaceState state = static_cast<MirSurfaceState>(mir_surface_event_get_attribute_value(surfaceEvent));
-        ubuntuEvent->window->handleSurfaceStateChanged(mirSurfaceStateToWindowState(state));
+    case mir_surface_attrib_state: {
+        MirSurfaceState state = static_cast<MirSurfaceState>(mir_surface_event_get_attribute_value(event));
+        window->handleSurfaceStateChanged(mirSurfaceStateToWindowState(state));
         break;
+    }
     case mir_surface_attrib_type:
     case mir_surface_attrib_swapinterval:
     case mir_surface_attrib_dpi:

@@ -76,6 +76,7 @@ private:
     Qt::WindowState mWindowState;
     Qt::WindowFlags mWindowFlags;
     bool mWindowVisible;
+    bool mWindowExposed;
     UbuntuNativeInterface *mNativeInterface;
     std::unique_ptr<UbuntuSurface> mSurface;
     float mScale;

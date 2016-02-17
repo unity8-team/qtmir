@@ -285,7 +285,6 @@ public:
         , mEglSurface(eglCreateWindowSurface(mEglDisplay, screen->eglConfig(), nativeWindowFor(mMirSurface), nullptr))
         , mNeedsRepaint(false)
         , mParented(mWindow->transientParent() || mWindow->parent())
-        , mWindowState(mWindow->windowState())
         , mShellChrome(mWindow->flags() & WindowHidesShellDecorations ? mir_shell_chrome_low : mir_shell_chrome_normal)
     {
         // Window manager can give us a final size different from what we asked for
@@ -516,11 +515,14 @@ UbuntuWindow::UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &cl
     , QPlatformWindow(w)
     , mId(makeId())
     , mClipboard(clipboard)
-    , mNativeInterface(native)
     , mWindowState(w->windowState())
     , mWindowFlags(w->flags())
     , mWindowVisible(false)
+    , mWindowExposed(true)
+    , mNativeInterface(native)
     , mSurface(new UbuntuSurface{this, static_cast<UbuntuScreen*>(w->screen()->handle()), input, connection})
+    , mScale(1.0)
+    , mFormFactor(mir_form_factor_unknown)
 {
     qCDebug(ubuntumirclient, "UbuntuWindow(window=%p, screen=%p, input=%p, surf=%p) with title '%s', role: '%d'",
             w, w->screen()->handle(), input, mSurface.get(), qPrintable(window()->title()), roleFor(window()));
@@ -570,13 +572,14 @@ void UbuntuWindow::handleSurfaceResized(int widthPx, int heightPx)
 void UbuntuWindow::handleSurfaceExposeChange(bool exposed)
 {
     QMutexLocker lock(&mMutex);
-    qCDebug(ubuntumirclient, "handleSurfaceExposeChange(exposed=%s)", exposed ? "true" : "false");
+    qCDebug(ubuntumirclient, "handleSurfaceExposeChange(window=%p, exposed=%s)", window(), exposed ? "true" : "false");
 
-    mSurface->setVisible(exposed);
-    const QRect& exposeRect = exposed ? QRect(QPoint(), geometry().size()) : QRect();
+    if (mWindowExposed == exposed) return;
+    mWindowExposed = exposed;
 
     lock.unlock();
-    QWindowSystemInterface::handleExposeEvent(window(), exposeRect);
+    updateSurfaceState();
+    QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(), geometry().size()));
 }
 
 void UbuntuWindow::handleSurfaceFocused()
@@ -678,8 +681,7 @@ void UbuntuWindow::setVisible(bool visible)
 
     lock.unlock();
     updateSurfaceState();
-    const QRect& exposeRect = mWindowVisible ? QRect(QPoint(), geometry().size()) : QRect();
-    QWindowSystemInterface::handleExposeEvent(window(), exposeRect);
+    QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(), geometry().size()));
 }
 
 void UbuntuWindow::setWindowTitle(const QString &title)
@@ -708,7 +710,7 @@ qreal UbuntuWindow::devicePixelRatio() const
 
 bool UbuntuWindow::isExposed() const
 {
-    return mWindowVisible;
+    return mWindowVisible && mWindowExposed;
 }
 
 void* UbuntuWindow::eglSurface() const
@@ -750,7 +752,7 @@ void UbuntuWindow::handleScreenPropertiesChange(MirFormFactor formFactor, float 
 void UbuntuWindow::updateSurfaceState()
 {
     QMutexLocker lock(&mMutex);
-    MirSurfaceState newState = mWindowVisible ? qtWindowStateToMirSurfaceState(mWindowState) :
+    MirSurfaceState newState = mWindowVisible && mWindowExposed ? qtWindowStateToMirSurfaceState(mWindowState) :
                                                 mir_surface_state_minimized;
     qCDebug(ubuntumirclient, "updateSurfaceState (window=%p, surfaceState=%s)", window(), mirSurfaceStateToStr(newState));
     if (newState != mSurface->state()) {
