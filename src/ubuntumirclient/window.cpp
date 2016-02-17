@@ -578,7 +578,6 @@ void UbuntuWindow::handleSurfaceExposeChange(bool exposed)
     mWindowExposed = exposed;
 
     lock.unlock();
-    updateSurfaceState();
     QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(), geometry().size()));
 }
 
@@ -752,7 +751,7 @@ void UbuntuWindow::handleScreenPropertiesChange(MirFormFactor formFactor, float 
 void UbuntuWindow::updateSurfaceState()
 {
     QMutexLocker lock(&mMutex);
-    MirSurfaceState newState = mWindowVisible && mWindowExposed ? qtWindowStateToMirSurfaceState(mWindowState) :
+    MirSurfaceState newState = mWindowVisible ? qtWindowStateToMirSurfaceState(mWindowState) :
                                                 mir_surface_state_minimized;
     qCDebug(ubuntumirclient, "updateSurfaceState (window=%p, surfaceState=%s)", window(), mirSurfaceStateToStr(newState));
     if (newState != mSurface->state()) {
