@@ -38,6 +38,9 @@
 
 Q_LOGGING_CATEGORY(ubuntumirclientInput, "ubuntumirclient.input", QtWarningMsg)
 
+namespace
+{
+
 // XKB Keysyms which do not map directly to Qt types (i.e. Unicode points)
 static const uint32_t KeyTable[] = {
     XKB_KEY_Escape,                  Qt::Key_Escape,
@@ -117,6 +120,26 @@ static const uint32_t KeyTable[] = {
 
     0,                          0
 };
+
+Qt::WindowState mirSurfaceStateToWindowState(MirSurfaceState state)
+{
+    switch (state) {
+    case mir_surface_state_fullscreen:
+        return Qt::WindowFullScreen;
+    case mir_surface_state_maximized:
+    case mir_surface_state_vertmaximized:
+    case mir_surface_state_horizmaximized:
+        return Qt::WindowMaximized;
+    case mir_surface_state_hidden:
+    case mir_surface_state_minimized:
+        return Qt::WindowMinimized;
+    default:
+    case mir_surface_state_restored:
+        return Qt::WindowNoState;
+    }
+}
+
+}
 
 class UbuntuEvent : public QEvent
 {
@@ -226,7 +249,9 @@ void UbuntuInput::customEvent(QEvent* event)
     case mir_event_type_surface:
     {
         auto surfaceEvent = mir_event_get_surface_event(nativeEvent);
-        if (mir_surface_event_get_attribute(surfaceEvent) == mir_surface_attrib_focus) {
+        auto surfaceEventAttribute = mir_surface_event_get_attribute(surfaceEvent);
+        
+        if (surfaceEventAttribute == mir_surface_attrib_focus) {
             const bool focused = mir_surface_event_get_attribute_value(surfaceEvent) == mir_surface_focused;
             // Mir may have sent a pair of focus lost/gained events, so we need to "peek" into the queue
             // so that we don't deactivate windows prematurely.
@@ -245,6 +270,9 @@ void UbuntuInput::customEvent(QEvent* event)
                 QWindowSystemInterface::handleWindowActivated(nullptr, Qt::ActiveWindowFocusReason);
                 QWindowSystemInterface::handleApplicationStateChanged(Qt::ApplicationInactive);
             }
+        } else if (surfaceEventAttribute == mir_surface_attrib_state) {
+            MirSurfaceState state = static_cast<MirSurfaceState>(mir_surface_event_get_attribute_value(surfaceEvent));
+            ubuntuEvent->window->handleSurfaceStateChanged(mirSurfaceStateToWindowState(state));
         }
         break;
     }
