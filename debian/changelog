@@ -1,3 +1,10 @@
+qtmir (0.4.7+16.04.20160218-0ubuntu1) xenial; urgency=medium
+
+  [ CI Train Bot ]
+  * No-change rebuild.
+
+ -- Simon Fels <simon.busch@canonical.com>  Thu, 18 Feb 2016 15:46:39 +0000
+
 qtmir (0.4.7+16.04.20160212-0ubuntu1) xenial; urgency=medium
 
   [ Albert Astals Cid ]
