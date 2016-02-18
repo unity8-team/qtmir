@@ -54,6 +54,7 @@ public:
     MirSurface *mirSurface() const;
     void handleSurfaceResized(int width, int height);
     void handleSurfaceFocused();
+    void handleSurfaceVisibilityChanged(bool visible);
     void handleSurfaceStateChanged(Qt::WindowState state);
     void onSwapBuffersDone();
 

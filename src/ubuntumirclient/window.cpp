@@ -561,16 +561,23 @@ void UbuntuWindow::handleSurfaceFocused()
     mClipboard->requestDBusClipboardContents();
 }
 
+void UbuntuWindow::handleSurfaceVisibilityChanged(bool visible)
+{
+    qCDebug(ubuntumirclient, "handleSurfaceFocused(window=%p)", window());
+
+    if (mWindowVisible == visible) return;
+    mWindowVisible = visible;
+
+    QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(), geometry().size()));
+}
+
 void UbuntuWindow::handleSurfaceStateChanged(Qt::WindowState state)
 {
-    QMutexLocker lock(&mMutex);
     qCDebug(ubuntumirclient, "handleSurfaceStateChanged(window=%p, %s)", window(), qtWindowStateToStr(state));
 
     if (mWindowState == state) return;
     mWindowState = state;
 
-    lock.unlock();
-    updateSurfaceState();
     QWindowSystemInterface::handleWindowStateChanged(window(), state);
 }
 
@@ -700,7 +707,7 @@ void UbuntuWindow::updateSurfaceState()
 {
     QMutexLocker lock(&mMutex);
     MirSurfaceState newState = mWindowVisible ? qtWindowStateToMirSurfaceState(mWindowState) :
-                                                mir_surface_state_minimized;
+                                                mir_surface_state_hidden;
     qCDebug(ubuntumirclient, "updateSurfaceState (window=%p, surfaceState=%s)", window(), mirSurfaceStateToStr(newState));
     if (newState != mSurface->state()) {
         mSurface->setState(newState);
