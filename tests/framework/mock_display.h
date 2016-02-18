@@ -19,6 +19,7 @@
 
 #include <mir/graphics/display.h>
 #include <mir/graphics/gl_context.h>
+#include <mir/graphics/virtual_output.h>
 
 #include <gmock/gmock.h>
 #include "gmock_fixes.h"
@@ -52,6 +53,7 @@ public:
     MOCK_METHOD0(resume, void());
     MOCK_METHOD1(create_hardware_cursor, std::shared_ptr<mir::graphics::Cursor>(std::shared_ptr<mir::graphics::CursorImage> const&));
     MOCK_METHOD0(create_gl_context, std::unique_ptr<mir::graphics::GLContext>());
+    MOCK_METHOD2(create_virtual_output, std::unique_ptr<mir::graphics::VirtualOutput>(int, int));
 };
 
 #endif // MOCKDISPLAY_H
