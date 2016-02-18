@@ -280,13 +280,14 @@ public:
         , mPlatformWindow(platformWindow)
         , mInput(input)
         , mConnection(connection)
-        , mMirSurface(createMirSurface(mWindow, screen, input, connection, surfaceEventCallback, this))
         , mEglDisplay(screen->eglDisplay())
-        , mEglSurface(eglCreateWindowSurface(mEglDisplay, screen->eglConfig(), nativeWindowFor(mMirSurface), nullptr))
         , mNeedsRepaint(false)
         , mParented(mWindow->transientParent() || mWindow->parent())
         , mShellChrome(mWindow->flags() & WindowHidesShellDecorations ? mir_shell_chrome_low : mir_shell_chrome_normal)
     {
+        mMirSurface = createMirSurface(mWindow, screen, input, connection, surfaceEventCallback, this);
+        mEglSurface = eglCreateWindowSurface(mEglDisplay, screen->eglConfig(), nativeWindowFor(mMirSurface), nullptr);
+
         // Window manager can give us a final size different from what we asked for
         // so let's check what we ended up getting
         MirSurfaceParameters parameters;
@@ -341,9 +342,9 @@ private:
     UbuntuInput * const mInput;
     MirConnection * const mConnection;
 
-    MirSurface * const mMirSurface;
+    MirSurface* mMirSurface;
     const EGLDisplay mEglDisplay;
-    const EGLSurface mEglSurface;
+    EGLSurface mEglSurface;
 
     bool mNeedsRepaint;
     bool mParented;
