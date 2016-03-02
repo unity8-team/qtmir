@@ -10,6 +10,12 @@ qtmir-gles (0.4.7+16.04.20160212-0ubuntu1) xenial; urgency=medium
 
  -- Michał Sawicz <michal.sawicz@canonical.com>  Fri, 12 Feb 2016 00:07:37 +0000
 
+qtmir-gles (0.4.7+16.04.20160210-0ubuntu1~smw1) UNRELEASED; urgency=medium
+
+  * version bump for harmonic resonance reasons
+
+ -- Stephen M. Webb <stephen.webb@caqnonicalcom>  Wed, 10 Feb 2016 10:21:08 -0500
+
 qtmir-gles (0.4.7+16.04.20160208-0ubuntu1) xenial; urgency=medium
 
   * New upstream release
