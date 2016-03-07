@@ -3,6 +3,7 @@ qtmir (0.4.7+16.04.20160307.1-0ubuntu1) UNRELEASED; urgency=medium
   [ Gerry Boland ]
   * Allow Mir remove command line arguments it understands, before
     letting Qt process them.
+  * Screen: only enable orientation sensor for internal display.
 
   [ Alan Griffiths ]
   * Copy the Window Management work-in-progress from Mir examples.
@@ -10,7 +11,7 @@ qtmir (0.4.7+16.04.20160307.1-0ubuntu1) UNRELEASED; urgency=medium
   [ Michael Zanetti ]
   * Add a dedicated property for the inputMethodSurface
 
- -- Michael Zanetti <michael.zanetti@canonical.com>  Mon, 07 Mar 2016 22:44:42 +0000
+ -- Gerry Boland <gerry.boland@canonical.com>  Mon, 07 Mar 2016 22:44:49 +0000
 
 qtmir (0.4.7+16.04.20160219-0ubuntu1) xenial; urgency=medium
 
