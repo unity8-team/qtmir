@@ -15,7 +15,6 @@ Build-Depends: debhelper (>= 9),
                libudev-dev,
                libxkbcommon-dev,
                libxrender-dev,
-               qt5-default,
                qtbase5-private-dev,
 # if you don't have have commit access to this branch but would like to upload
 # directly to Ubuntu, don't worry: your changes will be merged back into the
