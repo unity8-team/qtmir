@@ -1,9 +1,13 @@
 qtmir (0.4.7+16.04.20160307.1-0ubuntu1) UNRELEASED; urgency=medium
 
+  [ Gerry Boland ]
   * Allow Mir remove command line arguments it understands, before
     letting Qt process them.
 
- -- Gerry Boland <gerry.boland@canonical.com>  Mon, 07 Mar 2016 22:44:29 +0000
+  [ Alan Griffiths ]
+  * Copy the Window Management work-in-progress from Mir examples.
+
+ -- Alan Griffiths <alan@octopull.co.uk>  Mon, 07 Mar 2016 22:44:36 +0000
 
 qtmir (0.4.7+16.04.20160219-0ubuntu1) xenial; urgency=medium
 
