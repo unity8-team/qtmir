@@ -11,7 +11,10 @@ qtmir (0.4.7+16.04.20160307.1-0ubuntu1) UNRELEASED; urgency=medium
   [ Michael Zanetti ]
   * Add a dedicated property for the inputMethodSurface
 
- -- Gerry Boland <gerry.boland@canonical.com>  Mon, 07 Mar 2016 22:44:49 +0000
+  [ Daniel d'Andrada ]
+  * Ensure QmlEngine doesn't delete our MirSurfaces
+
+ -- Daniel d'Andrada <daniel.dandrada@canonical.com>  Mon, 07 Mar 2016 22:44:55 +0000
 
 qtmir (0.4.7+16.04.20160219-0ubuntu1) xenial; urgency=medium
 
