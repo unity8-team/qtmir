@@ -39,7 +39,7 @@ struct MockTaskController : public qtmir::TaskController
     MOCK_METHOD2(start, bool(const QString&, const QStringList&));
     MOCK_METHOD1(suspend, bool(const QString&));
     MOCK_METHOD1(resume, bool(const QString&));
-    MOCK_METHOD1(kill, void(pid_t pid));
+    MOCK_METHOD1(kill, void(pid_t));
 
     pid_t doPrimaryPidForAppId(const QString& appId);
 

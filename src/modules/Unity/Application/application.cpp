@@ -109,7 +109,7 @@ Application::~Application()
 
 void Application::wipeQMLCache()
 {
-    QString path(QDir::homePath() + QStringLiteral("/.cache/QML/Apps/"));
+    QString path(QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation) + QStringLiteral("/QML/Apps/"));
     QDir dir(path);
     QStringList apps = dir.entryList();
     for (int i = 0; i < apps.size(); i++) {
@@ -428,6 +428,9 @@ void Application::close()
         // already on the way
         break;
     case InternalState::StoppedResumable:
+        // session stopped while suspended. Stop it for good now.
+        setInternalState(InternalState::Stopped);
+        break;
     case InternalState::Stopped:
         // too late
         break;

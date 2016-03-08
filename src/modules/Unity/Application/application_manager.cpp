@@ -491,23 +491,17 @@ bool ApplicationManager::stopApplication(const QString &inputAppId)
         application->deleteLater();
     });
     m_closingApplications.append(application);
-
     return true;
 }
 
 void ApplicationManager::onProcessFailed(const QString &appId, TaskController::Error error)
 {
     // Applications fail if they fail to launch, crash or are killed.
-
     qCDebug(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessFailed - appId=" << appId;
 
-    Application *application = findClosingApplication(appId);
+    Application *application = findApplication(appId);
     if (!application) {
-        application = findApplication(appId);
-    }
-
-    if (!application) {
-        qCWarning(QTMIR_APPLICATIONS) << "ApplicationManager::onProcessFailed - upstart reports failure of application" << appId
+        qWarning() << "ApplicationManager::onProcessFailed - upstart reports failure of application" << appId
                    << "that AppManager is not managing";
         return;
     }

@@ -70,6 +70,14 @@ public:
         applicationManager.onProcessSuspended(application->appId());
         ASSERT_EQ(Application::InternalState::Suspended, application->internalState());
     }
+
+protected:
+    virtual void SetUp() override {
+        if (m_tempDir.isValid()) qputenv("XDG_CACHE_HOME", m_tempDir.path().toUtf8());
+    }
+
+private:
+    const QTemporaryDir m_tempDir;
 };
 
 TEST_F(ApplicationManagerTests,bug_case_1240400_second_dialer_app_fails_to_authorize_and_gets_mixed_up_with_first_one)
@@ -1874,7 +1882,8 @@ TEST_F(ApplicationManagerTests,QMLcacheRetainedOnAppStop)
     onSessionStarting(session);
 
     // Create fake QML cache for this app
-    QString path(QDir::homePath() + QStringLiteral("/.cache/QML/Apps/") + appId);
+    QString path(QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation)
+                 + QStringLiteral("/QML/Apps/") + appId);
     QDir dir(path);
     dir.mkpath(path);
 
@@ -1923,7 +1932,8 @@ TEST_F(ApplicationManagerTests,DISABLED_QMLcacheDeletedOnAppCrash)
     ASSERT_EQ(Application::InternalState::Running, the_app->internalState());
 
     // Create fake QML cache for this app
-    QString path(QDir::homePath() + QStringLiteral("/.cache/QML/Apps/") + appId);
+    QString path(QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation)
+                 + QStringLiteral("/QML/Apps/") + appId);
     QDir dir(path);
     dir.mkpath(path);
 
@@ -1971,7 +1981,8 @@ TEST_F(ApplicationManagerTests,QMLcacheRetainedOnAppShutdown)
     ASSERT_EQ(Application::InternalState::Running, the_app->internalState());
 
     // Create fake QML cache for this app
-    QString path(QDir::homePath() + QStringLiteral("/.cache/QML/Apps/") + appId);
+    QString path(QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation)
+                 + QStringLiteral("/QML/Apps/") + appId);
     QDir dir(path);
     dir.mkpath(path);
 
@@ -2268,186 +2279,36 @@ TEST_F(ApplicationManagerTests,CloseWhenSuspendedAfterSessionStopped)
 }
 
 /*
- * Context:
- *  - we are waiting for an application to quit following a close()
- *
- * Event:
- *  - TaskController requests that application to be resumed.
- *    Most likely because the user tapped the app icon in the Dash. From the user's
- *    perspective the application is already closed and he wants to start a new
- *    instance of it.
- *    But from TaskController's perspective the application is still running and
- *    therefore should just be resumed/focused.
- *
- * Expected outcome:
- *  - ApplicationManager should wait for the closing application to finally end (or
-      be killed) and then finally launch a new instance of it.
- *
- * Regression test for https://bugs.launchpad.net/ubuntu/+source/qtmir/+bug/1527737
- * "Apps do not start if restarted quickly after closing"
- *
- * Two test versions:
- * _appQuits - Application complies and quits
- * _appKilled - Application ignores close request and thus get killed
+ * Test that an application that fails while suspended will stop on close request
  */
-TEST_F(ApplicationManagerTests, focusRequestedForClosingApplication_appQuits)
+TEST_F(ApplicationManagerTests,CloseWhenSuspendedProcessFailed)
 {
     using namespace ::testing;
-
-    int argc = 0;
-    char* argv[0];
-    QCoreApplication qtApp(argc, argv); // app for deleteLater event
 
     const QString appId("testAppId");
     quint64 procId = 5551;
 
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _))
-        .WillByDefault(Invoke(
-            [](const QString &appId, const QFileInfo&) { return new FakeDesktopFileReader(appId); }
-        ));
+    auto application = startApplication(procId, "testAppId");
 
-    EXPECT_CALL(*taskController, start(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
-
-    auto app = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    applicationManager.onProcessStarting(appId);
-    std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
-    bool authed = true;
-    applicationManager.authorizeSession(procId, authed);
-    onSessionStarting(session);
+    qtmir::Session* session(static_cast<qtmir::Session*>(application->session()));
 
     FakeMirSurface *surface = new FakeMirSurface;
-    onSessionCreatedSurface(session.get(), surface);
+    onSessionCreatedSurface(session->session().get(), surface);
     surface->drawFirstFrame();
+    EXPECT_EQ(Application::InternalState::Running, application->internalState());
 
-    EXPECT_EQ(Application::InternalState::Running, app->internalState());
+    // Session is suspended
+    suspend(application);
 
-    QSignalSpy closeRequestedSpy(surface, SIGNAL(closeRequested()));
-
-    // User swipes away the application, visually closing/removing it.
-    applicationManager.stopApplication(appId);
-
-    // But asking ApplicationManager to stop the application just makes it request its
-    // surfaces to be closed
-    EXPECT_EQ(Application::InternalState::Closing, app->internalState());
-    EXPECT_EQ(1, closeRequestedSpy.count());
-
-    QSignalSpy appAddedSpy(&applicationManager, SIGNAL(applicationAdded(const QString&)));
-
-    // User then taps on the app icon
-    applicationManager.onProcessStarting(appId);
-    applicationManager.onFocusRequested(appId);
-
-    // But no application instance should have been created because of that
-    EXPECT_TRUE(applicationManager.findApplication(appId) == nullptr);
-    EXPECT_EQ(0, appAddedSpy.count());
-
-    // ApplicationManager will ask TaskController to start the application again
-    // once the closing instance is gone
-    Mock::VerifyAndClearExpectations(taskController);
-    EXPECT_CALL(*taskController, start(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
-
-    // Simulates that the application complied to the close() request and stopped itself
-    onSessionStopping(session);
+    // Process failed
+    onSessionStopping(session->session());
+    applicationManager.onProcessFailed(appId, TaskController::Error::APPLICATION_FAILED_TO_START);
     applicationManager.onProcessStopped(appId);
+    EXPECT_EQ(Application::InternalState::StoppedResumable, application->internalState());
 
-    // DeferredDelete is special: likes to be called out specifically or it won't come out
-    qtApp.sendPostedEvents(app, QEvent::DeferredDelete);
-    qtApp.sendPostedEvents();
+    QSignalSpy spy(application, SIGNAL(stopped()));
+    application->close();
 
-    EXPECT_TRUE(applicationManager.findApplication(appId) != nullptr);
-    EXPECT_EQ(1, appAddedSpy.count());
-}
-TEST_F(ApplicationManagerTests, focusRequestedForClosingApplication_appKilled)
-{
-    using namespace ::testing;
-
-    int argc = 0;
-    char* argv[0];
-    QCoreApplication qtApp(argc, argv); // app for deleteLater event
-
-    const QString appId("testAppId");
-    quint64 procId = 5551;
-
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _))
-        .WillByDefault(Invoke(
-            [](const QString &appId, const QFileInfo&) { return new FakeDesktopFileReader(appId); }
-        ));
-
-    EXPECT_CALL(*taskController, start(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
-
-    auto app = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    applicationManager.onProcessStarting(appId);
-    std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
-    bool authed = true;
-    applicationManager.authorizeSession(procId, authed);
-    onSessionStarting(session);
-
-    FakeMirSurface *surface = new FakeMirSurface;
-    onSessionCreatedSurface(session.get(), surface);
-    surface->drawFirstFrame();
-
-    EXPECT_EQ(Application::InternalState::Running, app->internalState());
-
-    QSharedPointer<FakeTimeSource> fakeTimeSource(new FakeTimeSource);
-    FakeTimer *fakeCloseTimer = new FakeTimer(fakeTimeSource);
-    app->setCloseTimer(fakeCloseTimer);
-
-    QSignalSpy closeRequestedSpy(surface, SIGNAL(closeRequested()));
-
-    // User swipes away the application, visually closing/removing it.
-    applicationManager.stopApplication(appId);
-
-    // But asking ApplicationManager to stop the application just makes it request its
-    // surfaces to be closed
-    EXPECT_EQ(Application::InternalState::Closing, app->internalState());
-    EXPECT_EQ(1, closeRequestedSpy.count());
-
-    QSignalSpy appAddedSpy(&applicationManager, SIGNAL(applicationAdded(const QString&)));
-
-    // User then taps on the app icon
-    applicationManager.onProcessStarting(appId);
-    applicationManager.onFocusRequested(appId);
-
-    // But no application instance should have been created because of that
-    EXPECT_TRUE(applicationManager.findApplication(appId) == nullptr);
-    EXPECT_EQ(0, appAddedSpy.count());
-
-    // ApplicationManager will ask TaskController to start the application again
-    // once the closing instance is gone
-    Mock::VerifyAndClearExpectations(taskController);
-    EXPECT_CALL(*taskController, start(appId, _))
-        .Times(1)
-        .WillOnce(Return(true));
-
-    EXPECT_CALL(*taskController, stop(appId))
-        .Times(1)
-        .WillOnce(Return(false));
-
-    EXPECT_CALL(*taskController, kill(procId))
-        .Times(1)
-        .WillOnce(Invoke(
-            [this, session](pid_t) {
-                // simulate application dying and thus severing the mir connection
-                onSessionStopping(session);
-            }
-        ));
-
-    if (fakeCloseTimer->isRunning()) {
-        // Simulate that closeTimer has timed out.
-        fakeTimeSource->m_msecsSinceReference = fakeCloseTimer->nextTimeoutTime() + 1;
-        fakeCloseTimer->update();
-    }
-
-    // DeferredDelete is special: likes to be called out specifically or it won't come out
-    qtApp.sendPostedEvents(app, QEvent::DeferredDelete);
-    qtApp.sendPostedEvents();
-
-    EXPECT_TRUE(applicationManager.findApplication(appId) != nullptr);
-    EXPECT_EQ(1, appAddedSpy.count());
+    EXPECT_EQ(Application::Stopped, application->state());
+    EXPECT_EQ(spy.count(), 1);
 }
