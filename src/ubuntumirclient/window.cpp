@@ -657,8 +657,7 @@ void UbuntuWindow::setVisible(bool visible)
 
     lock.unlock();
     updateSurfaceState();
-    const QRect& exposeRect = mWindowVisible ? QRect(QPoint(), geometry().size()) : QRect();
-    QWindowSystemInterface::handleExposeEvent(window(), exposeRect);
+    QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(), geometry().size()));
     QWindowSystemInterface::flushWindowSystemEvents();
 }
 
