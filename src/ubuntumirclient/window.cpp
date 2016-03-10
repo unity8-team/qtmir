@@ -36,7 +36,7 @@
 
 Q_LOGGING_CATEGORY(ubuntumirclientBufferSwap, "ubuntumirclient.bufferSwap", QtWarningMsg)
 
-const Qt::WindowType WindowHidesShellDecorations = (Qt::WindowType)0x00800000;
+const Qt::WindowType LowChromeWindowHint = (Qt::WindowType)0x00800000;
 
 namespace
 {
@@ -228,7 +228,7 @@ MirSurface *createMirSurface(QWindow *window, UbuntuScreen *screen, UbuntuInput 
         mir_surface_spec_set_fullscreen_on_output(spec.get(), screen->mirOutputId());
     }
 
-    if (window->flags() & WindowHidesShellDecorations) {
+    if (window->flags() & LowChromeWindowHint) {
         mir_surface_spec_set_shell_chrome(spec.get(), mir_shell_chrome_low);
     }
 
@@ -269,7 +269,7 @@ public:
         , mEglSurface(eglCreateWindowSurface(mEglDisplay, screen->eglConfig(), nativeWindowFor(mMirSurface), nullptr))
         , mNeedsRepaint(false)
         , mParented(mWindow->transientParent() || mWindow->parent())
-        , mShellChrome(mWindow->flags() & WindowHidesShellDecorations ? mir_shell_chrome_low : mir_shell_chrome_normal)
+        , mShellChrome(mWindow->flags() & LowChromeWindowHint ? mir_shell_chrome_low : mir_shell_chrome_normal)
     {
         mir_surface_set_event_handler(mMirSurface, surfaceEventCallback, this);
 
@@ -601,7 +601,7 @@ void UbuntuWindow::setWindowFlags(Qt::WindowFlags flags)
     if (mWindowFlags == flags) return;
     mWindowFlags = flags;
 
-    mSurface->setShellChrome(mWindowFlags & WindowHidesShellDecorations ? mir_shell_chrome_low : mir_shell_chrome_normal);
+    mSurface->setShellChrome(mWindowFlags & LowChromeWindowHint ? mir_shell_chrome_low : mir_shell_chrome_normal);
 }
 
 /*

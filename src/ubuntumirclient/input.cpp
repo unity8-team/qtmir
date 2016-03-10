@@ -142,7 +142,7 @@ Qt::WindowState mirSurfaceStateToWindowState(MirSurfaceState state)
     }
 }
 
-}
+} // namespace
 
 class UbuntuEvent : public QEvent
 {
