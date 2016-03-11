@@ -413,6 +413,9 @@ Qt::KeyboardModifiers qt_modifiers_from_mir(MirInputEventModifiers modifiers)
     if (modifiers & mir_input_event_modifier_meta) {
         q_modifiers |= Qt::MetaModifier;
     }
+    if (modifiers & mir_input_event_modifier_alt_right) {
+        q_modifiers |= Qt::GroupSwitchModifier;
+    }
     return q_modifiers;
 }
 }
