@@ -1,3 +1,9 @@
+qtmir (0.4.7+16.04.20160311.6-0ubuntu1) UNRELEASED; urgency=medium
+
+  * Inline GLES packaging
+
+ -- Robert Bruce Park <robert.park@canonical.com>  Fri, 11 Mar 2016 21:24:34 +0000
+
 qtmir (0.4.7+16.04.20160219-0ubuntu1) xenial; urgency=medium
 
   * Mir 0.20 Release
