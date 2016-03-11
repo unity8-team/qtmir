@@ -1,3 +1,9 @@
+qtmir-gles (0.4.8) UNRELEASED; urgency=medium
+
+  * New upstream release
+
+ -- Michal Sawicz <michal.sawicz@canonical.com>  Tue, 16 Feb 2016 19:53:56 +0100
+
 qtmir-gles (0.4.7+16.04.20160219-0ubuntu1) xenial; urgency=medium
 
   * No change for Mir 0.20
