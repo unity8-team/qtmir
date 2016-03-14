@@ -715,7 +715,6 @@ void UbuntuWindow::updateSurfaceState()
         mSurface->setState(newState);
 
         lock.unlock();
-        enablePanelHeightHack(newState != mir_surface_state_fullscreen &&
-                              mSurface->type() != mir_surface_type_inputmethod);
+        enablePanelHeightHack(newState != mir_surface_state_fullscreen);
     }
 }
