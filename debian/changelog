@@ -1,3 +1,10 @@
+qtmir-gles (0.4.7+16.04.20160314-0ubuntu1) xenial; urgency=medium
+
+  [ Benjamin Zeller ]
+  * Sync qtmir-gles
+
+ -- Zoltan Balogh <zoltan.balogh@canonical.com>  Mon, 14 Mar 2016 10:31:24 +0000
+
 qtmir-gles (0.4.7+16.04.20160310.1-0ubuntu1) xenial; urgency=medium
 
   [ CI Train Bot ]
