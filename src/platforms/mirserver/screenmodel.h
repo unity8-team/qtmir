@@ -14,8 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SCREENCONTROLLER_H
-#define SCREENCONTROLLER_H
+#ifndef SCREENMODEL_H
+#define SCREENMODEL_H
 
 #include <QObject>
 #include <QPoint>
@@ -34,7 +34,7 @@ class Screen;
 class QWindow;
 
 /*
- * ScreenController monitors the Mir display configuration and compositor status, and updates
+ * ScreenModel monitors the Mir display configuration and compositor status, and updates
  * the relevant QScreen and QWindow states accordingly.
  *
  * Primary purposes are:
@@ -53,11 +53,11 @@ class QWindow;
  * All other methods must be called on the Qt GUI thread.
  */
 
-class ScreenController : public QObject
+class ScreenModel : public QObject
 {
     Q_OBJECT
 public:
-    explicit ScreenController(QObject *parent = 0);
+    explicit ScreenModel(QObject *parent = 0);
 
     QList<Screen*> screens() const { return m_screenList; }
     bool compositing() const { return m_compositing; }
@@ -92,4 +92,4 @@ private:
     bool m_compositing;
 };
 
-#endif // SCREENCONTROLLER_H
+#endif // SCREENMODEL_H

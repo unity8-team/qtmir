@@ -22,7 +22,7 @@
 #include "qtcompositor.h"
 #include "fake_displayconfigurationoutput.h"
 
-#include "testable_screencontroller.h"
+#include "testable_screenmodel.h"
 #include "screen.h"
 #include "screenwindow.h"
 
@@ -33,27 +33,27 @@ using namespace ::testing;
 namespace mg = mir::graphics;
 namespace geom = mir::geometry;
 
-class ScreenControllerTest : public ::testing::Test {
+class ScreenModelTest : public ::testing::Test {
 protected:
     void SetUp() override;
     void TearDown() override;
 
-    ScreenController *screenController;
+    ScreenModel *screenModel;
     std::shared_ptr<StubDisplay> display;
     std::shared_ptr<QtCompositor> compositor;
     QGuiApplication *app;
 };
 
-void ScreenControllerTest::SetUp()
+void ScreenModelTest::SetUp()
 {
     setenv("QT_QPA_PLATFORM", "minimal", 1);
     Screen::skipDBusRegistration = true;
 
-    screenController = new TestableScreenController;
+    screenModel = new TestableScreenModel;
     display = std::make_shared<StubDisplay>();
     compositor = std::make_shared<QtCompositor>();
 
-    static_cast<TestableScreenController*>(screenController)->do_init(display, compositor);
+    static_cast<TestableScreenModel*>(screenModel)->do_init(display, compositor);
 
     int argc = 0;
     char **argv = nullptr;
@@ -61,81 +61,81 @@ void ScreenControllerTest::SetUp()
     app = new QGuiApplication(argc, argv);
 }
 
-void ScreenControllerTest::TearDown()
+void ScreenModelTest::TearDown()
 {
-    delete screenController;
+    delete screenModel;
 }
 
-TEST_F(ScreenControllerTest, SingleScreenFound)
+TEST_F(ScreenModelTest, SingleScreenFound)
 {
     // Set up display state
     std::vector<mg::DisplayConfigurationOutput> config{fakeOutput1};
     std::vector<MockGLDisplayBuffer*> bufferConfig; // only used to match buffer with display, unecessary here
     display->setFakeConfiguration(config, bufferConfig);
 
-    screenController->update();
+    screenModel->update();
 
-    ASSERT_EQ(1, screenController->screens().count());
-    Screen* screen = screenController->screens().first();
+    ASSERT_EQ(1, screenModel->screens().count());
+    Screen* screen = screenModel->screens().first();
     EXPECT_EQ(QRect(0, 0, 150, 200), screen->geometry());
 }
 
-TEST_F(ScreenControllerTest, MultipleScreenFound)
+TEST_F(ScreenModelTest, MultipleScreenFound)
 {
     std::vector<mg::DisplayConfigurationOutput> config{fakeOutput1, fakeOutput2};
     std::vector<MockGLDisplayBuffer*> bufferConfig; // only used to match buffer with display, unecessary here
     display->setFakeConfiguration(config, bufferConfig);
 
-    screenController->update();
+    screenModel->update();
 
-    ASSERT_EQ(2, screenController->screens().count());
-    EXPECT_EQ(QRect(0, 0, 150, 200), screenController->screens().at(0)->geometry());
-    EXPECT_EQ(QRect(500, 600, 1500, 2000), screenController->screens().at(1)->geometry());
+    ASSERT_EQ(2, screenModel->screens().count());
+    EXPECT_EQ(QRect(0, 0, 150, 200), screenModel->screens().at(0)->geometry());
+    EXPECT_EQ(QRect(500, 600, 1500, 2000), screenModel->screens().at(1)->geometry());
 }
 
-TEST_F(ScreenControllerTest, ScreenAdded)
+TEST_F(ScreenModelTest, ScreenAdded)
 {
     std::vector<mg::DisplayConfigurationOutput> config{fakeOutput1};
     std::vector<MockGLDisplayBuffer*> bufferConfig; // only used to match buffer with display, unecessary here
     display->setFakeConfiguration(config, bufferConfig);
 
-    screenController->update();
+    screenModel->update();
 
     config.push_back(fakeOutput2);
     display->setFakeConfiguration(config, bufferConfig);
 
-    ASSERT_EQ(1, screenController->screens().count());
-    EXPECT_EQ(QRect(0, 0, 150, 200), screenController->screens().at(0)->geometry());
+    ASSERT_EQ(1, screenModel->screens().count());
+    EXPECT_EQ(QRect(0, 0, 150, 200), screenModel->screens().at(0)->geometry());
 
-    screenController->update();
+    screenModel->update();
 
-    ASSERT_EQ(2, screenController->screens().count());
-    EXPECT_EQ(QRect(0, 0, 150, 200), screenController->screens().at(0)->geometry());
-    EXPECT_EQ(QRect(500, 600, 1500, 2000), screenController->screens().at(1)->geometry());
+    ASSERT_EQ(2, screenModel->screens().count());
+    EXPECT_EQ(QRect(0, 0, 150, 200), screenModel->screens().at(0)->geometry());
+    EXPECT_EQ(QRect(500, 600, 1500, 2000), screenModel->screens().at(1)->geometry());
 }
 
-TEST_F(ScreenControllerTest, ScreenRemoved)
+TEST_F(ScreenModelTest, ScreenRemoved)
 {
     std::vector<mg::DisplayConfigurationOutput> config{fakeOutput2, fakeOutput1};
     std::vector<MockGLDisplayBuffer*> bufferConfig; // only used to match buffer with display, unecessary here
     display->setFakeConfiguration(config, bufferConfig);
 
-    screenController->update();
+    screenModel->update();
 
     config.pop_back();
     display->setFakeConfiguration(config, bufferConfig);
 
-    ASSERT_EQ(2, screenController->screens().count());
-    EXPECT_EQ(QRect(500, 600, 1500, 2000), screenController->screens().at(0)->geometry());
-    EXPECT_EQ(QRect(0, 0, 150, 200), screenController->screens().at(1)->geometry());
+    ASSERT_EQ(2, screenModel->screens().count());
+    EXPECT_EQ(QRect(500, 600, 1500, 2000), screenModel->screens().at(0)->geometry());
+    EXPECT_EQ(QRect(0, 0, 150, 200), screenModel->screens().at(1)->geometry());
 
-    screenController->update();
+    screenModel->update();
 
-    ASSERT_EQ(1, screenController->screens().count());
-    EXPECT_EQ(QRect(500, 600, 1500, 2000), screenController->screens().at(0)->geometry());
+    ASSERT_EQ(1, screenModel->screens().count());
+    EXPECT_EQ(QRect(500, 600, 1500, 2000), screenModel->screens().at(0)->geometry());
 }
 
-TEST_F(ScreenControllerTest, MatchBufferWithDisplay)
+TEST_F(ScreenModelTest, MatchBufferWithDisplay)
 {
     std::vector<mg::DisplayConfigurationOutput> config{fakeOutput1};
     MockGLDisplayBuffer buffer1;
@@ -146,14 +146,14 @@ TEST_F(ScreenControllerTest, MatchBufferWithDisplay)
             .WillRepeatedly(Return(buffer1Geom));
 
     display->setFakeConfiguration(config, buffers);
-    screenController->update();
+    screenModel->update();
 
-    ASSERT_EQ(1, screenController->screens().count());
+    ASSERT_EQ(1, screenModel->screens().count());
     EXPECT_CALL(buffer1, make_current());
-    static_cast<StubScreen*>(screenController->screens().at(0))->makeCurrent();
+    static_cast<StubScreen*>(screenModel->screens().at(0))->makeCurrent();
 }
 
-TEST_F(ScreenControllerTest, MultipleMatchBuffersWithDisplays)
+TEST_F(ScreenModelTest, MultipleMatchBuffersWithDisplays)
 {
     std::vector<mg::DisplayConfigurationOutput> config{fakeOutput1, fakeOutput2};
     MockGLDisplayBuffer buffer1, buffer2;
@@ -167,11 +167,11 @@ TEST_F(ScreenControllerTest, MultipleMatchBuffersWithDisplays)
             .WillRepeatedly(Return(buffer2Geom));
 
     display->setFakeConfiguration(config, buffers);
-    screenController->update();
+    screenModel->update();
 
-    ASSERT_EQ(2, screenController->screens().count());
+    ASSERT_EQ(2, screenModel->screens().count());
     EXPECT_CALL(buffer1, make_current());
     EXPECT_CALL(buffer2, make_current());
-    static_cast<StubScreen*>(screenController->screens().at(0))->makeCurrent();
-    static_cast<StubScreen*>(screenController->screens().at(1))->makeCurrent();
+    static_cast<StubScreen*>(screenModel->screens().at(0))->makeCurrent();
+    static_cast<StubScreen*>(screenModel->screens().at(1))->makeCurrent();
 }

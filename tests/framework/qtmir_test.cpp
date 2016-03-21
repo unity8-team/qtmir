@@ -105,7 +105,7 @@ class FakeMirServer: private TestMirServerInit, public MirServer
 {
 public:
     FakeMirServer(std::shared_ptr<StubPromptSessionManager> const& promptSessionManager)
-    : TestMirServerInit(promptSessionManager), MirServer(argc, argv, QSharedPointer<ScreenController>())
+    : TestMirServerInit(promptSessionManager), MirServer(argc, argv, QSharedPointer<ScreenModel>())
     {
     }
 

@@ -23,7 +23,7 @@
 
 class QMirServerPrivate;
 class MirServer;
-class ScreenController;
+class ScreenModel;
 
 class QMirServer: public QObject
 {
@@ -39,7 +39,7 @@ public:
 
     QWeakPointer<MirServer> mirServer() const;
 
-    QWeakPointer<ScreenController> screenController() const;
+    QWeakPointer<ScreenModel> screenModel() const;
 
 Q_SIGNALS:
     void started();

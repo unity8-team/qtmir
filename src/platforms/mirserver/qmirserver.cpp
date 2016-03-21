@@ -23,7 +23,7 @@
 #include "mirserver.h"
 #include "qmirserver.h"
 #include "qmirserver_p.h"
-#include "screencontroller.h"
+#include "screenmodel.h"
 #include "screen.h"
 
 QMirServer::QMirServer(int &argc, char **argv, QObject *parent)
@@ -32,9 +32,9 @@ QMirServer::QMirServer(int &argc, char **argv, QObject *parent)
 {
     Q_D(QMirServer);
 
-    d->screenController = QSharedPointer<ScreenController>(new ScreenController());
+    d->screenModel = QSharedPointer<ScreenModel>(new ScreenModel());
 
-    d->server = QSharedPointer<MirServer>(new MirServer(argc, argv, d->screenController));
+    d->server = QSharedPointer<MirServer>(new MirServer(argc, argv, d->screenModel));
 
     d->serverThread = new MirServerThread(d->server);
 
@@ -57,7 +57,7 @@ bool QMirServer::start()
         qCritical() << "ERROR: QMirServer - Mir failed to start";
         return false;
     }
-    d->screenController->update();
+    d->screenModel->update();
 
     Q_EMIT started();
     return true;
@@ -89,8 +89,8 @@ QWeakPointer<MirServer> QMirServer::mirServer() const
     return d->server.toWeakRef();
 }
 
-QWeakPointer<ScreenController> QMirServer::screenController() const
+QWeakPointer<ScreenModel> QMirServer::screenModel() const
 {
     Q_D(const QMirServer);
-    return d->screenController;
+    return d->screenModel;
 }

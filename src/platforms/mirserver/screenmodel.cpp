@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "screencontroller.h"
+#include "screenmodel.h"
 
 #include "screenwindow.h"
 #include "qtcompositor.h"
@@ -40,15 +40,15 @@ Q_LOGGING_CATEGORY(QTMIR_SCREENS, "qtmir.screens")
 namespace mg = mir::graphics;
 
 
-ScreenController::ScreenController(QObject *parent)
+ScreenModel::ScreenModel(QObject *parent)
     : QObject(parent)
     , m_compositing(false)
 {
-    qCDebug(QTMIR_SCREENS) << "ScreenController::ScreenController";
+    qCDebug(QTMIR_SCREENS) << "ScreenModel::ScreenModel";
 }
 
 // init only after MirServer has initialized - runs on MirServerThread!!!
-void ScreenController::init(const std::shared_ptr<mir::graphics::Display> &display,
+void ScreenModel::init(const std::shared_ptr<mir::graphics::Display> &display,
                             const std::shared_ptr<mir::compositor::Compositor> &compositor)
 {
     m_display = display;
@@ -59,22 +59,22 @@ void ScreenController::init(const std::shared_ptr<mir::graphics::Display> &displ
     // Queued connections work because the thread affinity of this class is with the Qt GUI thread.
     auto qtCompositor = static_cast<QtCompositor *>(compositor.get());
     connect(qtCompositor, &QtCompositor::starting,
-            this, &ScreenController::onCompositorStarting);
+            this, &ScreenModel::onCompositorStarting);
     connect(qtCompositor, &QtCompositor::stopping,
-            this, &ScreenController::onCompositorStopping, Qt::BlockingQueuedConnection);
+            this, &ScreenModel::onCompositorStopping, Qt::BlockingQueuedConnection);
 }
 
 // terminate before shutting down the Mir server, or else liable to deadlock with the blocking connection above
 // Runs on MirServerThread!!!
-void ScreenController::terminate()
+void ScreenModel::terminate()
 {
     auto qtCompositor = static_cast<QtCompositor *>(m_compositor.get());
     qtCompositor->disconnect();
 }
 
-void ScreenController::onCompositorStarting()
+void ScreenModel::onCompositorStarting()
 {
-    qCDebug(QTMIR_SCREENS) << "ScreenController::onCompositorStarting";
+    qCDebug(QTMIR_SCREENS) << "ScreenModel::onCompositorStarting";
     m_compositing = true;
 
     update();
@@ -88,9 +88,9 @@ void ScreenController::onCompositorStarting()
     }
 }
 
-void ScreenController::onCompositorStopping()
+void ScreenModel::onCompositorStopping()
 {
-    qCDebug(QTMIR_SCREENS) << "ScreenController::onCompositorStopping";
+    qCDebug(QTMIR_SCREENS) << "ScreenModel::onCompositorStopping";
     m_compositing = false;
 
     // Stop Qt's render threads by setting all its windows it obscured. Must
@@ -105,9 +105,9 @@ void ScreenController::onCompositorStopping()
     update();
 }
 
-void ScreenController::update()
+void ScreenModel::update()
 {
-    qCDebug(QTMIR_SCREENS) << "ScreenController::update";
+    qCDebug(QTMIR_SCREENS) << "ScreenModel::update";
     auto display = m_display.lock();
     if (!display)
         return;
@@ -185,12 +185,12 @@ void ScreenController::update()
     }
 }
 
-Screen* ScreenController::createScreen(const mir::graphics::DisplayConfigurationOutput &output) const
+Screen* ScreenModel::createScreen(const mir::graphics::DisplayConfigurationOutput &output) const
 {
     return new Screen(output);
 }
 
-Screen* ScreenController::findScreenWithId(const QList<Screen *> &list, const mg::DisplayConfigurationOutputId id)
+Screen* ScreenModel::findScreenWithId(const QList<Screen *> &list, const mg::DisplayConfigurationOutputId id)
 {
     for (Screen *screen : list) {
         if (screen->m_outputId == id) {
@@ -200,7 +200,7 @@ Screen* ScreenController::findScreenWithId(const QList<Screen *> &list, const mg
     return nullptr;
 }
 
-QWindow* ScreenController::getWindowForPoint(const QPoint &point) //FIXME - not thread safe & not efficient
+QWindow* ScreenModel::getWindowForPoint(const QPoint &point) //FIXME - not thread safe & not efficient
 {
     // This is a part optimization, and a part work-around for AP generated input events occasionally
     // appearing outside the screen borders: https://bugs.launchpad.net/qtmir/+bug/1508415

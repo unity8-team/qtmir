@@ -1,10 +1,10 @@
 set(
-  SCREENCONTROLLER_TEST_SOURCES
-  screencontroller_test.cpp
+  SCREENMODEL_TEST_SOURCES
+  screenmodel_test.cpp
   ${CMAKE_SOURCE_DIR}/src/common/debughelpers.cpp
   # to be moc-ed
   stub_screen.h
-  testable_screencontroller.h
+  testable_screenmodel.h
 )
 
 include_directories(
@@ -16,10 +16,10 @@ include_directories(
   ${MIRRENDERERGLDEV_INCLUDE_DIRS}
 )
 
-add_executable(ScreenControllerTest ${SCREENCONTROLLER_TEST_SOURCES})
+add_executable(ScreenModelTest ${SCREENMODEL_TEST_SOURCES})
 
 target_link_libraries(
-  ScreenControllerTest
+  ScreenModelTest
   qpa-mirserver
 
   -L${CMAKE_BINARY_DIR}/tests/framework
@@ -29,4 +29,4 @@ target_link_libraries(
   ${GMOCK_LIBRARIES}
 )
 
-add_test(ScreenController, ScreenControllerTest)
+add_test(ScreenModel, ScreenModelTest)
