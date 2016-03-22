@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Canonical, Ltd.
+ * Copyright (C) 2015-2016 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -18,6 +18,7 @@
 #define QTMIR_MIRSURFACE_H
 
 #include "mirsurfaceinterface.h"
+#include "mirsurfacelistmodel.h"
 
 // Qt
 #include <QCursor>
@@ -25,7 +26,6 @@
 #include <QPointer>
 #include <QSharedPointer>
 #include <QSGTextureProvider>
-#include <QTimer>
 #include <QWeakPointer>
 #include <QPair>
 
@@ -43,6 +43,8 @@ namespace mir { namespace shell { class Shell; }}
 class SurfaceObserver;
 
 namespace qtmir {
+
+class AbstractTimer;
 
 class MirSurface : public MirSurfaceInterface
 {
@@ -84,6 +86,14 @@ public:
     int widthIncrement() const override;
     int heightIncrement() const override;
 
+    bool focused() const override;
+
+    unity::shell::application::MirSurfaceListInterface* promptSurfaceList() override;
+
+    Q_INVOKABLE void requestFocus() override;
+    Q_INVOKABLE void close() override;
+    Q_INVOKABLE void raise() override;
+
     ////
     // qtmir::MirSurfaceInterface
 
@@ -110,8 +120,6 @@ public:
 
     void setFocus(bool focus) override;
 
-    void close() override;
-
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
@@ -134,9 +142,16 @@ public:
 
     Mir::ShellChrome shellChrome() const override;
 
-    QString keymapLayout() const override;
-    QString keymapVariant() const override;
-    Q_INVOKABLE void setKeymap(const QString &layout, const QString &variant) override;
+    void setKeymap(const QString &) override;
+    QString keymap() const override;
+
+    bool canChangeFocus() override;
+
+    ////
+    // Own API
+
+    // useful for tests
+    void setCloseTimer(AbstractTimer *timer);
 
 public Q_SLOTS:
     void onCompositorSwappedBuffers() override;
@@ -155,13 +170,14 @@ private Q_SLOTS:
     void onFramesPostedObserved();
     void onSessionDestroyed();
     void emitSizeChanged();
-    void onKeymapChanged(const QString &layout, const QString &variant);
     void setCursor(const QCursor &cursor);
+    void onCloseTimedOut();
 
 private:
     void syncSurfaceSizeWithItemSize();
     bool clientIsRunning() const;
     void updateVisibility();
+    void applyKeymap();
 
     std::shared_ptr<mir::scene::Surface> m_surface;
     QPointer<SessionInterface> m_session;
@@ -189,8 +205,7 @@ private:
     std::shared_ptr<SurfaceObserver> m_surfaceObserver;
 
     QSize m_size;
-    QPair<QString,QString> m_keyMap; // pair of layout+variant
-
+    QString m_keymap;
     QCursor m_cursor;
     Mir::ShellChrome m_shellChrome;
 
@@ -200,6 +215,16 @@ private:
     int m_maximumHeight{0};
     int m_widthIncrement{0};
     int m_heightIncrement{0};
+
+    enum ClosingState {
+        NotClosing = 0,
+        Closing = 1,
+        CloseOverdue = 2
+    };
+    ClosingState m_closingState{NotClosing};
+    AbstractTimer *m_closeTimer{nullptr};
+
+    MirSurfaceListModel m_promptSurfaceList;
 };
 
 } // namespace qtmir

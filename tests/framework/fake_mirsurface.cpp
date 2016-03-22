@@ -180,11 +180,6 @@ void FakeMirSurface::touchEvent(Qt::KeyboardModifiers mods,
 
 QString FakeMirSurface::appId() const { return "foo-app"; }
 
-void FakeMirSurface::setKeymap(const QString &layout, const QString &variant)
-{
-    Q_EMIT keymapChanged(layout, variant);
-}
-
 void FakeMirSurface::onCompositorSwappedBuffers() {}
 
 void FakeMirSurface::drawFirstFrame()
