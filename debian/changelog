@@ -1,3 +1,13 @@
+qtubuntu (0.62+16.04.20160322-0ubuntu1) xenial; urgency=medium
+
+  [ Lukáš Tinkl ]
+  * Support for switching kbd layouts (LP: #1524400, #1491340)
+
+  [ Nick Dedekind ]
+  * Added support for low shell chrome (LP: #1535397)
+
+ -- Michael Zanetti <michael.zanetti@canonical.com>  Tue, 22 Mar 2016 08:49:45 +0000
+
 qtubuntu (0.62+16.04.20160128.1-0ubuntu1) xenial; urgency=medium
 
   [ Daniel d'Andrada ]
