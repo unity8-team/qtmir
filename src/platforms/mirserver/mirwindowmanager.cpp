@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Canonical, Ltd.
+ * Copyright (C) 2015-2016 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -107,7 +107,7 @@ mir::frontend::SurfaceId MirWindowManagerImpl::add_surface(
 {
     tracepoint(qtmirserver, surfacePlacementStart);
 
-    m_sessionListener->surfaceAboutToBeCreated(*session.get(), qtmir::SizeHints(requestParameters));
+    m_sessionListener->surfaceAboutToBeCreated(*session.get(), qtmir::CreationHints(requestParameters));
 
     QSize initialSize;
     // can be connected to via Qt::BlockingQueuedConnection to alter surface initial size
@@ -136,13 +136,21 @@ mir::frontend::SurfaceId MirWindowManagerImpl::add_surface(
 
     tracepoint(qtmirserver, surfacePlacementEnd);
 
-    return build(session, placedParameters);
+    auto const result = build(session, placedParameters);
+    auto const surface = session->surface(result);
+
+    return result;
 }
 
 void MirWindowManagerImpl::remove_surface(
-    std::shared_ptr<ms::Session> const& /*session*/,
-    std::weak_ptr<ms::Surface> const& /*surface*/)
+    std::shared_ptr<ms::Session> const& session,
+    std::weak_ptr<ms::Surface> const& surface)
 {
+    // Called when the client releases the surface, usually is response to a surface->close()
+    // request from us.
+    // Just destroy straight away as we already have code to gracefully handle surfaces being
+    // detroyed out of the blue (set the QML Surface::live to false and so on).
+    session->destroy_surface(surface);
 }
 
 void MirWindowManagerImpl::add_display(mir::geometry::Rectangle const& /*area*/)
@@ -188,14 +196,10 @@ void MirWindowManagerImpl::modify_surface(const std::shared_ptr<mir::scene::Sess
                                           const std::shared_ptr<mir::scene::Surface>& surface,
                                           const mir::shell::SurfaceSpecification& modifications)
 {
-    if (modifications.name.is_set()) {
-        surface->rename(modifications.name.value());
-    }
-
     QMutexLocker(&SurfaceObserver::mutex);
     SurfaceObserver *observer = SurfaceObserver::observerForSurface(surface.get());
     if (observer) {
-        observer->notifySizeHintChanges(modifications);
+        observer->notifySurfaceModifications(modifications);
     }
 }
 

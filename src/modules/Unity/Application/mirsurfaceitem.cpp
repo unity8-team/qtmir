@@ -18,6 +18,7 @@
 #include "application.h"
 #include "session.h"
 #include "mirsurfaceitem.h"
+#include "mirfocuscontroller.h"
 #include "logging.h"
 #include "ubuntukeyboardinfo.h"
 #include "tracepoints.h" // generated from tracepoints.tp
@@ -177,6 +178,11 @@ QString MirSurfaceItem::name() const
 bool MirSurfaceItem::live() const
 {
     return m_surface && m_surface->live();
+}
+
+Mir::ShellChrome MirSurfaceItem::shellChrome() const
+{
+    return m_surface ? m_surface->shellChrome() : Mir::NormalChrome;
 }
 
 // Called from the rendering (scene graph) thread
@@ -554,8 +560,8 @@ void MirSurfaceItem::updateMirSurfaceVisibility()
 
 void MirSurfaceItem::updateMirSurfaceFocus(bool focused)
 {
-    if (m_surface && m_consumesInput && m_surface->live()) {
-        m_surface->setFocus(focused);
+    if (m_surface && m_consumesInput && m_surface->live() && focused) {
+        MirFocusController::instance()->setFocusedSurface(m_surface);
     }
 }
 
@@ -619,6 +625,7 @@ void MirSurfaceItem::setSurface(unity::shell::application::MirSurfaceInterface *
 
     auto surface = static_cast<qtmir::MirSurfaceInterface*>(unitySurface);
     qCDebug(QTMIR_SURFACES).nospace() << "MirSurfaceItem::setSurface surface=" << surface;
+    auto focusController = MirFocusController::instance();
 
     if (surface == m_surface) {
         return;
@@ -627,8 +634,8 @@ void MirSurfaceItem::setSurface(unity::shell::application::MirSurfaceInterface *
     if (m_surface) {
         disconnect(m_surface, nullptr, this, nullptr);
 
-        if (hasActiveFocus() && m_consumesInput && m_surface->live()) {
-            m_surface->setFocus(false);
+        if (hasActiveFocus() && m_consumesInput && m_surface->live() && focusController->focusedSurface() == m_surface) {
+            focusController->setFocusedSurface(nullptr);
         }
 
         m_surface->unregisterView((qintptr)this);
@@ -648,6 +655,7 @@ void MirSurfaceItem::setSurface(unity::shell::application::MirSurfaceInterface *
         connect(m_surface, &MirSurfaceInterface::liveChanged, this, &MirSurfaceItem::liveChanged);
         connect(m_surface, &MirSurfaceInterface::sizeChanged, this, &MirSurfaceItem::onActualSurfaceSizeChanged);
         connect(m_surface, &MirSurfaceInterface::cursorChanged, this, &MirSurfaceItem::setCursor);
+        connect(m_surface, &MirSurfaceInterface::shellChromeChanged, this, &MirSurfaceItem::shellChromeChanged);
 
         Q_EMIT typeChanged(m_surface->type());
         Q_EMIT liveChanged(true);
@@ -672,8 +680,8 @@ void MirSurfaceItem::setSurface(unity::shell::application::MirSurfaceInterface *
             Q_EMIT orientationAngleChanged(m_surface->orientationAngle());
         }
 
-        if (m_consumesInput) {
-            m_surface->setFocus(hasActiveFocus());
+        if (m_consumesInput && hasActiveFocus()) {
+            focusController->setFocusedSurface(m_surface);
         }
     }
 

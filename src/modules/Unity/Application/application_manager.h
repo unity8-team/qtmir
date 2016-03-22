@@ -53,8 +53,6 @@ class SettingsInterface;
 class ApplicationManager : public unity::shell::application::ApplicationManagerInterface
 {
     Q_OBJECT
-    Q_ENUMS(MoreRoles)
-    Q_FLAGS(ExecFlags)
 
     // TODO: Move to unity::shell::application::ApplicationManagerInterface
     Q_PROPERTY(bool empty READ isEmpty NOTIFY emptyChanged)
@@ -65,19 +63,6 @@ public:
     public:
         ApplicationManager* create();
     };
-
-    // FIXME: these roles should be added to unity-api and removed from here
-    enum MoreRoles {
-        RoleSession = RoleExemptFromLifecycle+1,
-        RoleFullscreen,
-    };
-
-    // Mapping enums to Ubuntu Platform API enums.
-    enum Flag {
-        NoFlag = 0x0,
-        ForceMainStage = 0x1,
-    };
-    Q_DECLARE_FLAGS(ExecFlags, Flag)
 
     static ApplicationManager* singleton();
 
@@ -98,15 +83,13 @@ public:
     Q_INVOKABLE bool requestFocusApplication(const QString &appId) override;
     Q_INVOKABLE bool focusApplication(const QString &appId) override;
     Q_INVOKABLE void unfocusCurrentApplication() override;
-    Q_INVOKABLE qtmir::Application* startApplication(const QString &appId, const QStringList &arguments) override;
+    Q_INVOKABLE qtmir::Application* startApplication(const QString &appId, const QStringList &arguments = QStringList()) override;
     Q_INVOKABLE bool stopApplication(const QString &appId) override;
 
     // QAbstractListModel
     int rowCount(const QModelIndex & parent = QModelIndex()) const override;
     QVariant data(const QModelIndex & index, int role) const override;
 
-    Q_INVOKABLE qtmir::Application *startApplication(const QString &appId, ExecFlags flags,
-                                              const QStringList &arguments = QStringList());
     Q_INVOKABLE void move(int from, int to);
 
     bool isEmpty() const { return rowCount() == 0; }
@@ -121,8 +104,6 @@ public Q_SLOTS:
     void onSessionStopping(std::shared_ptr<mir::scene::Session> const& session);
 
     void onSessionCreatedSurface(mir::scene::Session const*, std::shared_ptr<mir::scene::Surface> const&);
-    void onSessionDestroyingSurface(mir::scene::Session const* session,
-                                    std::shared_ptr<mir::scene::Surface> const& surface);
 
     void onProcessStarting(const QString& appId);
     void onProcessStopped(const QString& appId);
@@ -139,6 +120,7 @@ private Q_SLOTS:
     void onAppDataChanged(const int role);
     void onSessionAboutToCreateSurface(const std::shared_ptr<mir::scene::Session> &session,
                                        int type, QSize &size);
+    void onApplicationClosing(Application *application);
 
 private:
     void setFocused(Application *application);
