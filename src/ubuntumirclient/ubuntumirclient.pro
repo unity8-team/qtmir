@@ -12,7 +12,7 @@ QMAKE_CXXFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden -std=c++11 -We
 QMAKE_LFLAGS += -std=c++11 -Wl,-no-undefined
 
 CONFIG += link_pkgconfig
-PKGCONFIG += egl mirclient ubuntu-platform-api
+PKGCONFIG += egl mirclient ubuntu-platform-api xkbcommon
 
 SOURCES = \
     backingstore.cpp \
