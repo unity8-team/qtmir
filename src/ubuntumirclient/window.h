@@ -63,6 +63,7 @@ public:
     void handleSurfaceResized(int widthPx, int heightPx);
     void handleSurfaceExposeChange(bool exposed);
     void handleSurfaceFocused();
+    void handleSurfaceVisibilityChanged(bool visible);
     void handleSurfaceStateChanged(Qt::WindowState state);
     void onSwapBuffersDone();
     void handleScreenPropertiesChange(MirFormFactor formFactor, float scale);

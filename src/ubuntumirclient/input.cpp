@@ -30,6 +30,7 @@
 #include <private/qguiapplication_p.h>
 #include <qpa/qplatforminputcontext.h>
 #include <qpa/qwindowsysteminterface.h>
+#include <QTextCodec>
 
 #include <xkbcommon/xkbcommon.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
@@ -111,6 +112,27 @@ static const uint32_t KeyTable[] = {
     XKB_KEY_MultipleCandidate,       Qt::Key_MultipleCandidate,
     XKB_KEY_PreviousCandidate,       Qt::Key_PreviousCandidate,
 
+    // dead keys
+    XKB_KEY_dead_grave,              Qt::Key_Dead_Grave,
+    XKB_KEY_dead_acute,              Qt::Key_Dead_Acute,
+    XKB_KEY_dead_circumflex,         Qt::Key_Dead_Circumflex,
+    XKB_KEY_dead_tilde,              Qt::Key_Dead_Tilde,
+    XKB_KEY_dead_macron,             Qt::Key_Dead_Macron,
+    XKB_KEY_dead_breve,              Qt::Key_Dead_Breve,
+    XKB_KEY_dead_abovedot,           Qt::Key_Dead_Abovedot,
+    XKB_KEY_dead_diaeresis,          Qt::Key_Dead_Diaeresis,
+    XKB_KEY_dead_abovering,          Qt::Key_Dead_Abovering,
+    XKB_KEY_dead_doubleacute,        Qt::Key_Dead_Doubleacute,
+    XKB_KEY_dead_caron,              Qt::Key_Dead_Caron,
+    XKB_KEY_dead_cedilla,            Qt::Key_Dead_Cedilla,
+    XKB_KEY_dead_ogonek,             Qt::Key_Dead_Ogonek,
+    XKB_KEY_dead_iota,               Qt::Key_Dead_Iota,
+    XKB_KEY_dead_voiced_sound,       Qt::Key_Dead_Voiced_Sound,
+    XKB_KEY_dead_semivoiced_sound,   Qt::Key_Dead_Semivoiced_Sound,
+    XKB_KEY_dead_belowdot,           Qt::Key_Dead_Belowdot,
+    XKB_KEY_dead_hook,               Qt::Key_Dead_Hook,
+    XKB_KEY_dead_horn,               Qt::Key_Dead_Horn,
+
     XKB_KEY_Mode_switch,             Qt::Key_Mode_switch,
     XKB_KEY_script_switch,           Qt::Key_Mode_switch,
     XKB_KEY_XF86AudioRaiseVolume,    Qt::Key_VolumeUp,
@@ -130,16 +152,19 @@ Qt::WindowState mirSurfaceStateToWindowState(MirSurfaceState state)
     case mir_surface_state_vertmaximized:
     case mir_surface_state_horizmaximized:
         return Qt::WindowMaximized;
-    case mir_surface_state_hidden:
     case mir_surface_state_minimized:
         return Qt::WindowMinimized;
-    default:
+    case mir_surface_state_hidden:
+        // We should be handling this state separately.
+        Q_ASSERT(false);
     case mir_surface_state_restored:
+    case mir_surface_state_unknown:
+    default:
         return Qt::WindowNoState;
     }
 }
 
-}
+} // namespace
 
 class UbuntuEvent : public QEvent
 {
@@ -361,27 +386,26 @@ void UbuntuInput::dispatchTouchEvent(UbuntuWindow *window, const MirInputEvent *
             mTouchDevice, touchPoints);
 }
 
-static uint32_t translateKeysym(uint32_t sym, char *string, size_t size)
-{
-    Q_UNUSED(size);
-    string[0] = '\0';
+static uint32_t translateKeysym(uint32_t sym, const QString &text) {
+    int code = 0;
 
-    if (sym >= XKB_KEY_F1 && sym <= XKB_KEY_F35)
+    QTextCodec *systemCodec = QTextCodec::codecForLocale();
+    if (sym < 128 || (sym < 256 && systemCodec->mibEnum() == 4)) {
+        // upper-case key, if known
+        code = isprint((int)sym) ? toupper((int)sym) : 0;
+    } else if (sym >= XKB_KEY_F1 && sym <= XKB_KEY_F35) {
         return Qt::Key_F1 + (int(sym) - XKB_KEY_F1);
-
-    if (sym == XKB_KEY_Return || sym == XKB_KEY_KP_Enter) {
-        string[0] = '\r';
-        string[1] = '\0';
+    } else if (text.length() == 1 && text.unicode()->unicode() > 0x1f
+               && text.unicode()->unicode() != 0x7f
+               && !(sym >= XKB_KEY_dead_grave && sym <= XKB_KEY_dead_currency)) {
+        code = text.unicode()->toUpper().unicode();
+    } else {
+        for (int i = 0; KeyTable[i]; i += 2)
+            if (sym == KeyTable[i])
+                code = KeyTable[i + 1];
     }
 
-    for (int i = 0; KeyTable[i]; i += 2) {
-        if (sym == KeyTable[i])
-            return KeyTable[i + 1];
-    }
-
-    string[0] = sym;
-    string[1] = '\0';
-    return toupper(sym);
+    return code;
 }
 
 namespace
@@ -400,6 +424,9 @@ Qt::KeyboardModifiers qt_modifiers_from_mir(MirInputEventModifiers modifiers)
     }
     if (modifiers & mir_input_event_modifier_meta) {
         q_modifiers |= Qt::MetaModifier;
+    }
+    if (modifiers & mir_input_event_modifier_alt_right) {
+        q_modifiers |= Qt::GroupSwitchModifier;
     }
     return q_modifiers;
 }
@@ -424,9 +451,16 @@ void UbuntuInput::dispatchKeyEvent(UbuntuWindow *window, const MirInputEvent *ev
     if (action == mir_keyboard_action_down)
         mLastFocusedWindow = window;
 
-    char s[2];
-    int sym = translateKeysym(xk_sym, s, sizeof(s));
-    QString text = QString::fromLatin1(s);
+    QString text;
+    QVarLengthArray<char, 32> chars(32);
+    {
+        int result = xkb_keysym_to_utf8(xk_sym, chars.data(), chars.size());
+
+        if (result > 0) {
+            text = QString::fromUtf8(chars.constData());
+        }
+    }
+    int sym = translateKeysym(xk_sym, text);
 
     bool is_auto_rep = action == mir_keyboard_action_repeat;
 
@@ -595,7 +629,14 @@ void UbuntuInput::handleSurfaceEvent(const QPointer<UbuntuWindow> &window, const
     // Remaining attributes are ones client sets for server, and server should not override them
     case mir_surface_attrib_state: {
         MirSurfaceState state = static_cast<MirSurfaceState>(mir_surface_event_get_attribute_value(event));
-        window->handleSurfaceStateChanged(mirSurfaceStateToWindowState(state));
+
+        if (state == mir_surface_state_hidden) {
+            window->handleSurfaceVisibilityChanged(false);
+        } else {
+            // it's visible!
+            window->handleSurfaceVisibilityChanged(true);
+            window->handleSurfaceStateChanged(mirSurfaceStateToWindowState(state));
+        }
         break;
     }
     case mir_surface_attrib_type:
