@@ -1,7 +1,7 @@
-Index: inline-gles-quilt/debian/control
+Index: qtubuntu/debian/control
 ===================================================================
---- inline-gles-quilt.orig/debian/control
-+++ inline-gles-quilt/debian/control
+--- qtubuntu.orig/debian/control
++++ qtubuntu/debian/control
 @@ -1,4 +1,4 @@
 -Source: qtubuntu
 +Source: qtubuntu-gles
@@ -84,10 +84,10 @@ Index: inline-gles-quilt/debian/control
 - transition.
 + This variant of the package is for Android-based phones and tablets (built
 + against the OpenGLES variant of qtbase).
-Index: inline-gles-quilt/debian/rules
+Index: qtubuntu/debian/rules
 ===================================================================
---- inline-gles-quilt.orig/debian/rules
-+++ inline-gles-quilt/debian/rules
+--- qtubuntu.orig/debian/rules
++++ qtubuntu/debian/rules
 @@ -4,47 +4,25 @@
  export DPKG_GENSYMBOLS_CHECK_LEVEL=4
  
