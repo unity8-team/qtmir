@@ -1,3 +1,9 @@
+qtmir-gles (0.4.8+16.04.20160404.1-0ubuntu1) xenial; urgency=medium
+
+  * Surface-based WM
+
+ -- Gerry Boland <ci-train-bot@canonical.com>  Mon, 04 Apr 2016 21:17:59 +0000
+
 qtmir-gles (0.4.8+16.04.20160330-0ubuntu1) xenial; urgency=medium
 
   * Drop leftover Xs-Testsuite header
