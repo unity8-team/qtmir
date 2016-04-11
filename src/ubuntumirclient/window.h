@@ -24,7 +24,7 @@
 
 #include <memory>
 
-class UbuntuClipboard;
+class UbuntuClientIntegration;
 class UbuntuInput;
 class UbuntuScreen;
 class UbuntuSurface;
@@ -35,7 +35,7 @@ class UbuntuWindow : public QObject, public QPlatformWindow
 {
     Q_OBJECT
 public:
-    UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &clipboard, UbuntuScreen *screen,
+    UbuntuWindow(QWindow *w, UbuntuClientIntegration *integration, UbuntuScreen *screen,
                  UbuntuInput *input, MirConnection *mirConnection);
     virtual ~UbuntuWindow();
 
@@ -48,6 +48,8 @@ public:
     void setWindowTitle(const QString &title) override;
     void propagateSizeHints() override;
     bool isExposed() const override;
+
+    QPoint mapToGlobal(const QPoint &pos) const override;
 
     // New methods.
     void *eglSurface() const;
@@ -64,7 +66,7 @@ private:
 
     mutable QMutex mMutex;
     const WId mId;
-    const QSharedPointer<UbuntuClipboard> mClipboard;
+    const UbuntuClientIntegration *mIntegration;
     Qt::WindowState mWindowState;
     Qt::WindowFlags mWindowFlags;
     bool mWindowVisible;

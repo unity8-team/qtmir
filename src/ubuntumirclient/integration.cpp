@@ -18,6 +18,7 @@
 #include "integration.h"
 #include "backingstore.h"
 #include "clipboard.h"
+#include "debugextension.h"
 #include "glcontext.h"
 #include "input.h"
 #include "logging.h"
@@ -68,7 +69,8 @@ static void aboutToStopCallback(UApplicationArchive *archive, void* context)
     QWindowSystemInterface::handleApplicationStateChanged(Qt::ApplicationSuspended);
 }
 
-UbuntuClientIntegration::UbuntuClientIntegration()
+
+UbuntuClientIntegration::UbuntuClientIntegration(int argc, char **argv)
     : QPlatformIntegration()
     , mNativeInterface(new UbuntuNativeInterface)
     , mFontDb(new QGenericUnixFontDatabase)
@@ -100,6 +102,17 @@ UbuntuClientIntegration::UbuntuClientIntegration()
     } else {
         mInput = nullptr;
         mInputContext = nullptr;
+    }
+
+    // Has debug mode been requsted, either with "-testability" switch or QT_LOAD_TESTABILITY env var
+    bool testability = false;
+    for (int i=1; i<argc; i++) {
+        if (strcmp(argv[i], "-testability") == 0) {
+            testability = true;
+        }
+    }
+    if (qEnvironmentVariableIsSet("QT_LOAD_TESTABILITY") || testability) {
+        mDebugExtension.reset(new UbuntuDebugExtension);
     }
 
     // compute the scale factor
@@ -165,7 +178,7 @@ QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window) 
 
 QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window)
 {
-    return new UbuntuWindow(window, mClipboard, static_cast<UbuntuScreen*>(mScreen),
+    return new UbuntuWindow(window, this, static_cast<UbuntuScreen*>(mScreen),
                             mInput, u_application_instance_get_mir_connection(mInstance));
 }
 
