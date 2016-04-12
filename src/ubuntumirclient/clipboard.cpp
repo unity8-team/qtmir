@@ -15,6 +15,7 @@
  */
 
 #include "clipboard.h"
+#include "logging.h"
 
 #include <QtCore/QMimeData>
 #include <QtCore/QStringList>
@@ -66,12 +67,12 @@ void UbuntuClipboard::requestDBusClipboardContents()
     if (!mPendingGetContentsCall.isNull())
         return;
 
-    QDBusPendingCall pendingCall = mDBusClipboard->asyncCall("GetContents");
+    QDBusPendingCall pendingCall = mDBusClipboard->asyncCall(QStringLiteral("GetContents"));
 
     mPendingGetContentsCall = new QDBusPendingCallWatcher(pendingCall, this);
 
-    QObject::connect(mPendingGetContentsCall.data(), SIGNAL(finished(QDBusPendingCallWatcher*)),
-                     this, SLOT(onDBusClipboardGetContentsFinished(QDBusPendingCallWatcher*)));
+    QObject::connect(mPendingGetContentsCall.data(), &QDBusPendingCallWatcher::finished,
+                     this, &UbuntuClipboard::onDBusClipboardGetContentsFinished);
 }
 
 void UbuntuClipboard::onDBusClipboardGetContentsFinished(QDBusPendingCallWatcher* call)
@@ -80,7 +81,7 @@ void UbuntuClipboard::onDBusClipboardGetContentsFinished(QDBusPendingCallWatcher
 
     QDBusPendingReply<QByteArray> reply = *call;
     if (reply.isError()) {
-        qCritical("UbuntuClipboard - Failed to get system clipboard contents via D-Bus. %s, %s",
+        qCCritical(ubuntumirclient, "Failed to get system clipboard contents via D-Bus. %s, %s",
                 qPrintable(reply.error().name()), qPrintable(reply.error().message()));
         // TODO: Might try again later a number of times...
     } else {
@@ -94,7 +95,7 @@ void UbuntuClipboard::onDBusClipboardSetContentsFinished(QDBusPendingCallWatcher
 {
     QDBusPendingReply<void> reply = *call;
     if (reply.isError()) {
-        qCritical("UbuntuClipboard - Failed to set the system clipboard contents via D-Bus. %s, %s",
+        qCCritical(ubuntumirclient, "Failed to set the system clipboard contents via D-Bus. %s, %s",
                 qPrintable(reply.error().name()), qPrintable(reply.error().message()));
         // TODO: Might try again later a number of times...
     }
@@ -113,7 +114,7 @@ void UbuntuClipboard::updateMimeData(const QByteArray &serializedMimeData)
         mIsOutdated = false;
         emitChanged(QClipboard::Clipboard);
     } else {
-        qWarning("UbuntuClipboard - Got invalid serialized mime data. Ignoring it.");
+        qCWarning(ubuntumirclient) << "Got invalid serialized mime data. Ignoring it.";
     }
 }
 
@@ -122,18 +123,18 @@ void UbuntuClipboard::setupDBus()
     QDBusConnection dbusConnection = QDBusConnection::sessionBus();
 
     bool ok = dbusConnection.connect(
-            "com.canonical.QtMir",
-            "/com/canonical/QtMir/Clipboard",
-            "com.canonical.QtMir.Clipboard",
-            "ContentsChanged",
+            QStringLiteral("com.canonical.QtMir"),
+            QStringLiteral("/com/canonical/QtMir/Clipboard"),
+            QStringLiteral("com.canonical.QtMir.Clipboard"),
+            QStringLiteral("ContentsChanged"),
             this, SLOT(updateMimeData(QByteArray)));
     if (!ok) {
-        qCritical("UbuntuClipboard - Failed to connect to ContentsChanged signal form the D-Bus system clipboard.");
+        qCCritical(ubuntumirclient) << "Failed to connect to ContentsChanged signal form the D-Bus system clipboard.";
     }
 
-    mDBusClipboard = new QDBusInterface("com.canonical.QtMir",
-            "/com/canonical/QtMir/Clipboard",
-            "com.canonical.QtMir.Clipboard",
+    mDBusClipboard = new QDBusInterface(QStringLiteral("com.canonical.QtMir"),
+            QStringLiteral("/com/canonical/QtMir/Clipboard"),
+            QStringLiteral("com.canonical.QtMir.Clipboard"),
             dbusConnection);
 
     mDBusSetupDone = true;
@@ -141,6 +142,8 @@ void UbuntuClipboard::setupDBus()
 
 QByteArray UbuntuClipboard::serializeMimeData(QMimeData *mimeData) const
 {
+    Q_ASSERT(mimeData != nullptr);
+
     const QStringList formats = mimeData->formats();
     const int formatCount = qMin(formats.size(), maxFormatsCount);
     const int headerSize = sizeof(int) + (formatCount * 4 * sizeof(int));
@@ -159,12 +162,13 @@ QByteArray UbuntuClipboard::serializeMimeData(QMimeData *mimeData) const
             int offset = headerSize;
             header[0] = formatCount;
             for (int i = 0; i < formatCount; i++) {
+                const QByteArray data = mimeData->data(formats[i]);
                 const int formatOffset = offset;
                 const int formatSize = formats[i].size();
                 const int dataOffset = offset + formatSize;
-                const int dataSize = mimeData->data(formats[i]).size();
+                const int dataSize = data.size();
                 memcpy(&buffer[formatOffset], formats[i].toLatin1().data(), formatSize);
-                memcpy(&buffer[dataOffset], mimeData->data(formats[i]).data(), dataSize);
+                memcpy(&buffer[dataOffset], data.data(), dataSize);
                 header[i*4+1] = formatOffset;
                 header[i*4+2] = formatSize;
                 header[i*4+3] = dataOffset;
@@ -173,7 +177,7 @@ QByteArray UbuntuClipboard::serializeMimeData(QMimeData *mimeData) const
             }
         }
     } else {
-        qWarning("UbuntuClipboard: Not sending contents (%d bytes) to the global clipboard as it's"
+        qCWarning(ubuntumirclient, "Not sending contents (%d bytes) to the global clipboard as it's"
                 " bigger than the maximum allowed size of %d bytes", bufferSize, maxBufferSize);
     }
 
@@ -244,13 +248,15 @@ void UbuntuClipboard::setMimeData(QMimeData* mimeData, QClipboard::Mode mode)
         delete mPendingGetContentsCall.data();
     }
 
-    QByteArray serializedMimeData = serializeMimeData(mimeData);
-    if (!serializedMimeData.isEmpty()) {
-        setDBusClipboardContents(serializedMimeData);
-    }
+    if (mimeData != nullptr) {
+        QByteArray serializedMimeData = serializeMimeData(mimeData);
+        if (!serializedMimeData.isEmpty()) {
+            setDBusClipboardContents(serializedMimeData);
+        }
 
-    mMimeData = mimeData;
-    emitChanged(QClipboard::Clipboard);
+        mMimeData = mimeData;
+        emitChanged(QClipboard::Clipboard);
+    }
 }
 
 bool UbuntuClipboard::supportsMode(QClipboard::Mode mode) const
@@ -279,10 +285,10 @@ void UbuntuClipboard::setDBusClipboardContents(const QByteArray &clipboardConten
         delete mPendingSetContentsCall.data();
     }
 
-    QDBusPendingCall pendingCall = mDBusClipboard->asyncCall("SetContents", clipboardContents);
+    QDBusPendingCall pendingCall = mDBusClipboard->asyncCall(QStringLiteral("SetContents"), clipboardContents);
 
     mPendingSetContentsCall = new QDBusPendingCallWatcher(pendingCall, this);
 
-    QObject::connect(mPendingSetContentsCall.data(), SIGNAL(finished(QDBusPendingCallWatcher*)),
-                     this, SLOT(onDBusClipboardSetContentsFinished(QDBusPendingCallWatcher*)));
+    QObject::connect(mPendingSetContentsCall.data(), &QDBusPendingCallWatcher::finished,
+                     this, &UbuntuClipboard::onDBusClipboardSetContentsFinished);
 }

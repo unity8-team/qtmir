@@ -16,12 +16,15 @@
 
 #include "plugin.h"
 #include "integration.h"
+#include "logging.h"
+
+Q_LOGGING_CATEGORY(ubuntumirclient, "ubuntumirclient", QtWarningMsg)
 
 QPlatformIntegration *UbuntuMirClientIntegrationPlugin::create(const QString &system,
                                                                const QStringList &/*paramList*/,
                                                                int &argc, char **argv)
 {
-    if (system.toLower() == "ubuntumirclient") {
+    if (system.toLower() == QLatin1String("ubuntumirclient")) {
 #ifdef PLATFORM_API_TOUCH
         setenv("UBUNTU_PLATFORM_API_BACKEND", "touch_mirclient", 1);
 #else

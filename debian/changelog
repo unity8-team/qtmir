@@ -1,3 +1,108 @@
+qtubuntu (0.62+16.04.20160322-0ubuntu1) xenial; urgency=medium
+
+  [ Lukáš Tinkl ]
+  * Support for switching kbd layouts (LP: #1524400, #1491340)
+
+  [ Nick Dedekind ]
+  * Added support for low shell chrome (LP: #1535397)
+
+ -- Michael Zanetti <michael.zanetti@canonical.com>  Tue, 22 Mar 2016 08:49:45 +0000
+
+qtubuntu (0.62+16.04.20160128.1-0ubuntu1) xenial; urgency=medium
+
+  [ Daniel d'Andrada ]
+  * Implement QPlatformOffscreenSurface (LP: #1527737)
+
+  [ Olivier Tilloy ]
+  * Instantiate QKeyEvents with the scan code, native modifiers and
+    native virtual key code, and special-case XKB_KEY_Return and
+    XKB_KEY_KP_Enter to emit a carriage return character. (LP: #1433138)
+
+ -- Michał Sawicz <michal.sawicz@canonical.com>  Thu, 28 Jan 2016 18:30:08 +0000
+
+qtubuntu (0.62+16.04.20160111-0ubuntu1) xenial; urgency=medium
+
+  [ Gerry Boland ]
+  * Fix getting MirConnection pointer (LP: #1526684)
+
+ -- Michał Sawicz <michal.sawicz@canonical.com>  Mon, 11 Jan 2016 11:27:32 +0000
+
+qtubuntu (0.62+16.04.20160104-0ubuntu1) xenial; urgency=medium
+
+  [ Daniel d'Andrada ]
+  * Fix QGuiApplication::applicationState() updates (LP: #1528668)
+
+  [ Gerry Boland ]
+  * On geometry change, save new geometry before creating change event
+    (LP: #1526328)
+
+ -- Michał Sawicz <michal.sawicz@canonical.com>  Mon, 04 Jan 2016 09:38:35 +0000
+
+qtubuntu (0.62+16.04.20151207-0ubuntu1) xenial; urgency=medium
+
+  [ Daniel d'Andrada ]
+  * Implement support for application state (LP: #1504776)
+  * Update panel height hack when window enters or leaves fullscreen
+    (LP: #1422523)
+
+  [ Lukáš Tinkl ]
+  * Update the panel height hack, orange line is gone
+
+  [ Michał Sawicz ]
+  * Run wrap-and-sort -at
+
+ -- Gerry Boland <ci-train-bot@canonical.com>  Mon, 07 Dec 2015 16:21:01 +0000
+
+qtubuntu (0.62+16.04.20151124-0ubuntu2) xenial; urgency=medium
+
+  * Rebuild against Qt 5.5.1.
+
+ -- Timo Jyrinki <timo-jyrinki@ubuntu.com>  Mon, 30 Nov 2015 16:16:27 +0200
+
+qtubuntu (0.62+16.04.20151124-0ubuntu1) xenial; urgency=medium
+
+  [ Daniel d'Andrada ]
+  * Implemented cursor support
+
+ -- Michał Sawicz <michal.sawicz@canonical.com>  Tue, 24 Nov 2015 13:26:05 +0000
+
+qtubuntu (0.62+16.04.20151117-0ubuntu1) xenial; urgency=medium
+
+  [ Albert Astals Cid ]
+  * Improvements from running clazy over the code
+
+  [ Alberto Aguirre ]
+  * Add support for Qt popups and dialog windows.
+
+  [ Gerry Boland ]
+  * Fix inconsistent mouse wheel scrolling behavior
+
+  [ Lukáš Tinkl ]
+  * Fix inconsistent mouse wheel scrolling behavior
+
+  [ Nick Dedekind ]
+  * Added check for valid mime data. (LP: #1493530)
+
+ -- Gerry Boland <ci-train-bot@canonical.com>  Tue, 17 Nov 2015 14:49:33 +0000
+
+qtubuntu (0.62+16.04.20151109-0ubuntu1) xenial; urgency=medium
+
+  [ Nick Dedekind ]
+  * Reverted occlusion detection (lp#1514556) (LP: #1514556)
+
+ -- Gerry Boland <ci-train-bot@canonical.com>  Mon, 09 Nov 2015 22:43:18 +0000
+
+qtubuntu (0.62+16.04.20151105-0ubuntu1) xenial; urgency=medium
+
+  [ Nick Dedekind ]
+  * Support server->client visibility change to stop rendering
+    (lp:#1475678) (LP: #1475678)
+
+  [ Olivier Tilloy ]
+  * Re-implement QPlatformScreen::physicalSize(). (LP: #1504293)
+
+ -- Michał Sawicz <michal.sawicz@canonical.com>  Thu, 05 Nov 2015 16:56:48 +0000
+
 qtubuntu (0.62+15.10.20151021-0ubuntu1) wily; urgency=medium
 
   [ CI Train Bot ]

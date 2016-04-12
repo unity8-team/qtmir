@@ -23,6 +23,7 @@
 #include "input.h"
 #include "logging.h"
 #include "nativeinterface.h"
+#include "offscreensurface.h"
 #include "screen.h"
 #include "theme.h"
 #include "window.h"
@@ -46,24 +47,26 @@ static void resumedCallback(const UApplicationOptions *options, void* context)
 {
     Q_UNUSED(options)
     Q_UNUSED(context)
-    DASSERT(context != NULL);
-    QCoreApplication::postEvent(QCoreApplication::instance(),
-                                new QEvent(QEvent::ApplicationActivate));
+    Q_ASSERT(context != NULL);
+    if (qGuiApp->focusWindow()) {
+        QWindowSystemInterface::handleApplicationStateChanged(Qt::ApplicationActive);
+    } else {
+        QWindowSystemInterface::handleApplicationStateChanged(Qt::ApplicationInactive);
+    }
 }
 
 static void aboutToStopCallback(UApplicationArchive *archive, void* context)
 {
     Q_UNUSED(archive)
-    DASSERT(context != NULL);
+    Q_ASSERT(context != NULL);
     UbuntuClientIntegration* integration = static_cast<UbuntuClientIntegration*>(context);
     QPlatformInputContext *inputContext = integration->inputContext();
     if (inputContext) {
         inputContext->hideInputPanel();
     } else {
-        qWarning("UbuntuClientIntegration aboutToStopCallback(): no input context");
+        qCWarning(ubuntumirclient) << "aboutToStopCallback(): no input context";
     }
-    QCoreApplication::postEvent(QCoreApplication::instance(),
-                                new QEvent(QEvent::ApplicationDeactivate));
+    QWindowSystemInterface::handleApplicationStateChanged(Qt::ApplicationSuspended);
 }
 
 
@@ -188,11 +191,14 @@ bool UbuntuClientIntegration::hasCapability(QPlatformIntegration::Capability cap
     case OpenGL:
         return true;
 
+    case ApplicationState:
+        return true;
+
     case ThreadedOpenGL:
         if (qEnvironmentVariableIsEmpty("QTUBUNTU_NO_THREADED_OPENGL")) {
             return true;
         } else {
-            DLOG("ubuntumirclient: disabled threaded OpenGL");
+            qCDebug(ubuntumirclient, "disabled threaded OpenGL");
             return false;
         }
     case MultipleWindows:
@@ -262,4 +268,10 @@ QPlatformClipboard* UbuntuClientIntegration::clipboard() const
 QPlatformNativeInterface* UbuntuClientIntegration::nativeInterface() const
 {
     return mNativeInterface;
+}
+
+QPlatformOffscreenSurface *UbuntuClientIntegration::createPlatformOffscreenSurface(
+        QOffscreenSurface *surface) const
+{
+    return new UbuntuOffscreenSurface(surface);
 }

@@ -34,7 +34,7 @@ public:
         insert("eglcontext", UbuntuNativeInterface::EglContext);
         insert("nativeorientation", UbuntuNativeInterface::NativeOrientation);
         insert("display", UbuntuNativeInterface::Display);
-        insert("mirConnection", UbuntuNativeInterface::MirConnection);
+        insert("mirconnection", UbuntuNativeInterface::MirConnection);
     }
 };
 

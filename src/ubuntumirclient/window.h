@@ -18,6 +18,7 @@
 #define UBUNTU_WINDOW_H
 
 #include <qpa/qplatformwindow.h>
+#include <QLoggingCategory>
 #include <QSharedPointer>
 #include <QMutex>
 
@@ -42,9 +43,11 @@ public:
     WId winId() const override;
     void setGeometry(const QRect&) override;
     void setWindowState(Qt::WindowState state) override;
+    void setWindowFlags(Qt::WindowFlags flags) override;
     void setVisible(bool visible) override;
     void setWindowTitle(const QString &title) override;
     void propagateSizeHints() override;
+    bool isExposed() const override;
 
     QPoint mapToGlobal(const QPoint &pos) const override;
 
@@ -53,12 +56,21 @@ public:
     MirSurface *mirSurface() const;
     void handleSurfaceResized(int width, int height);
     void handleSurfaceFocused();
+    void handleSurfaceVisibilityChanged(bool visible);
+    void handleSurfaceStateChanged(Qt::WindowState state);
     void onSwapBuffersDone();
 
 private:
+    void enablePanelHeightHack(bool enable);
+    void updateSurfaceState();
+
     mutable QMutex mMutex;
     const WId mId;
     const UbuntuClientIntegration *mIntegration;
+    Qt::WindowState mWindowState;
+    Qt::WindowFlags mWindowFlags;
+    bool mWindowVisible;
+
     std::unique_ptr<UbuntuSurface> mSurface;
 };
 

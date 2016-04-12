@@ -57,6 +57,8 @@ public:
     UbuntuScreen* screen() const { return mScreen; }
     UbuntuDebugExtension* debugExtension() const { return mDebugExtension.data(); }
 
+    QPlatformOffscreenSurface *createPlatformOffscreenSurface(QOffscreenSurface *surface) const override;
+
 private:
     void setupOptions();
     void setupDescription();
