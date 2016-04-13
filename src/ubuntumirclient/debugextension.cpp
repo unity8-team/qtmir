@@ -22,7 +22,7 @@
 #include <mir_toolkit/debug/surface.h>
 
 UbuntuDebugExtension::UbuntuDebugExtension()
-    : m_mirclientDebug(QStringLiteral("mirclient-debug-extension"))
+    : m_mirclientDebug(QStringLiteral("mirclient-debug-extension"), 1)
     , m_mapper(nullptr)
 {
     qDebug() << "NOTICE: Loading mirclient-debug-extension";
