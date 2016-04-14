@@ -1,3 +1,9 @@
+qtmir (0.4.8+16.04.20160414-0ubuntu1) UNRELEASED; urgency=medium
+
+  * Inline -gles packaging
+
+ -- Michał Sawicz, Robert Bruce Park <robert.park@canonical.com>  Thu, 14 Apr 2016 22:53:14 +0000
+
 qtmir (0.4.8+16.04.20160330-0ubuntu1) xenial; urgency=medium
 
   * Drop leftover Xs-Testsuite header
