@@ -22,8 +22,6 @@
 
 #include <mircommon/mir_toolkit/common.h> // just for MirFormFactor enum
 
-#include <EGL/egl.h>
-
 #include "cursor.h"
 
 struct MirConnection;
@@ -47,12 +45,6 @@ public:
     Qt::ScreenOrientation nativeOrientation() const override { return mNativeOrientation; }
     Qt::ScreenOrientation orientation() const override { return mNativeOrientation; }
     QPlatformCursor *cursor() const override { return const_cast<UbuntuCursor*>(&mCursor); }
-
-    // New methods.
-    QSurfaceFormat surfaceFormat() const { return mSurfaceFormat; }
-    EGLDisplay eglDisplay() const { return mEglDisplay; }
-    EGLConfig eglConfig() const { return mEglConfig; }
-    EGLNativeDisplayType eglNativeDisplay() const { return mEglNativeDisplay; }
 
     // Additional Screen properties from Mir
     uint32_t outputId() const { return mOutputId; }
@@ -85,10 +77,6 @@ private:
     MirFormFactor mFormFactor;
     float mScale;
     uint32_t mOutputId;
-    EGLDisplay mEglDisplay;
-    EGLConfig mEglConfig;
-    EGLNativeDisplayType mEglNativeDisplay;
-    QSurfaceFormat mSurfaceFormat;
     UbuntuCursor mCursor; //GERRY try const
 
     friend class UbuntuNativeInterface;

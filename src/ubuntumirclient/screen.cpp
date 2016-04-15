@@ -33,7 +33,6 @@
 
 #include <memory>
 
-static const int kSwapInterval = 1;
 static const int overrideDevicePixelRatio = qgetenv("QT_DEVICE_PIXEL_RATIO").toInt();
 
 static const char *orientationToStr(Qt::ScreenOrientation orientation) {
@@ -53,64 +52,6 @@ static const char *orientationToStr(Qt::ScreenOrientation orientation) {
     }
 }
 
-static void printEglConfig(EGLDisplay display, EGLConfig config) {
-    Q_ASSERT(display != EGL_NO_DISPLAY);
-    Q_ASSERT(config != nullptr);
-
-    static const struct { const EGLint attrib; const char* name; } kAttribs[] = {
-        { EGL_BUFFER_SIZE, "EGL_BUFFER_SIZE" },
-        { EGL_ALPHA_SIZE, "EGL_ALPHA_SIZE" },
-        { EGL_BLUE_SIZE, "EGL_BLUE_SIZE" },
-        { EGL_GREEN_SIZE, "EGL_GREEN_SIZE" },
-        { EGL_RED_SIZE, "EGL_RED_SIZE" },
-        { EGL_DEPTH_SIZE, "EGL_DEPTH_SIZE" },
-        { EGL_STENCIL_SIZE, "EGL_STENCIL_SIZE" },
-        { EGL_CONFIG_CAVEAT, "EGL_CONFIG_CAVEAT" },
-        { EGL_CONFIG_ID, "EGL_CONFIG_ID" },
-        { EGL_LEVEL, "EGL_LEVEL" },
-        { EGL_MAX_PBUFFER_HEIGHT, "EGL_MAX_PBUFFER_HEIGHT" },
-        { EGL_MAX_PBUFFER_PIXELS, "EGL_MAX_PBUFFER_PIXELS" },
-        { EGL_MAX_PBUFFER_WIDTH, "EGL_MAX_PBUFFER_WIDTH" },
-        { EGL_NATIVE_RENDERABLE, "EGL_NATIVE_RENDERABLE" },
-        { EGL_NATIVE_VISUAL_ID, "EGL_NATIVE_VISUAL_ID" },
-        { EGL_NATIVE_VISUAL_TYPE, "EGL_NATIVE_VISUAL_TYPE" },
-        { EGL_SAMPLES, "EGL_SAMPLES" },
-        { EGL_SAMPLE_BUFFERS, "EGL_SAMPLE_BUFFERS" },
-        { EGL_SURFACE_TYPE, "EGL_SURFACE_TYPE" },
-        { EGL_TRANSPARENT_TYPE, "EGL_TRANSPARENT_TYPE" },
-        { EGL_TRANSPARENT_BLUE_VALUE, "EGL_TRANSPARENT_BLUE_VALUE" },
-        { EGL_TRANSPARENT_GREEN_VALUE, "EGL_TRANSPARENT_GREEN_VALUE" },
-        { EGL_TRANSPARENT_RED_VALUE, "EGL_TRANSPARENT_RED_VALUE" },
-        { EGL_BIND_TO_TEXTURE_RGB, "EGL_BIND_TO_TEXTURE_RGB" },
-        { EGL_BIND_TO_TEXTURE_RGBA, "EGL_BIND_TO_TEXTURE_RGBA" },
-        { EGL_MIN_SWAP_INTERVAL, "EGL_MIN_SWAP_INTERVAL" },
-        { EGL_MAX_SWAP_INTERVAL, "EGL_MAX_SWAP_INTERVAL" },
-        { -1, NULL }
-    };
-    const char* string = eglQueryString(display, EGL_VENDOR);
-    qCDebug(ubuntumirclient, "EGL vendor: %s", string);
-
-    string = eglQueryString(display, EGL_VERSION);
-    qCDebug(ubuntumirclient, "EGL version: %s", string);
-
-    string = eglQueryString(display, EGL_EXTENSIONS);
-    qCDebug(ubuntumirclient, "EGL extensions: %s", string);
-
-    qCDebug(ubuntumirclient, "EGL configuration attibutes:");
-    for (int index = 0; kAttribs[index].attrib != -1; index++) {
-        EGLint value;
-        if (eglGetConfigAttrib(display, config, kAttribs[index].attrib, &value))
-            qCDebug(ubuntumirclient, "  %s: %d", kAttribs[index].name, static_cast<int>(value));
-    }
-}
-
-namespace {
-    int qGetEnvIntValue(const char *varName, bool *ok)
-    {
-        return qgetenv(varName).toInt(ok);
-    }
-} // anonymous namespace
-
 
 const QEvent::Type OrientationChangeEvent::mType =
         static_cast<QEvent::Type>(QEvent::registerEventType());
@@ -124,55 +65,13 @@ UbuntuScreen::UbuntuScreen(const MirOutput *output, MirConnection *connection)
     , mFormFactor{mir_form_factor_unknown}
     , mScale{1.0}
     , mOutputId(0)
-    , mEglDisplay(EGL_NO_DISPLAY)
-    , mEglConfig(nullptr)
-    , mSurfaceFormat()
     , mCursor(connection)
 {
-    // Initialize EGL.
-    ASSERT(eglBindAPI(EGL_OPENGL_ES_API) == EGL_TRUE);
-
-    mEglNativeDisplay = mir_connection_get_egl_native_display(connection);
-    ASSERT((mEglDisplay = eglGetDisplay(mEglNativeDisplay)) != EGL_NO_DISPLAY);
-    ASSERT(eglInitialize(mEglDisplay, nullptr, nullptr) == EGL_TRUE);
-
-    // Configure EGL buffers format.
-    mSurfaceFormat.setRedBufferSize(8);
-    mSurfaceFormat.setGreenBufferSize(8);
-    mSurfaceFormat.setBlueBufferSize(8);
-    mSurfaceFormat.setAlphaBufferSize(8);
-    mSurfaceFormat.setDepthBufferSize(24);
-    mSurfaceFormat.setStencilBufferSize(8);
-    if (!qEnvironmentVariableIsEmpty("QTUBUNTU_MULTISAMPLE")) {
-        mSurfaceFormat.setSamples(4);
-        qCDebug(ubuntumirclient, "setting MSAA to 4 samples");
-    }
-#ifdef QTUBUNTU_USE_OPENGL
-    mSurfaceFormat.setRenderableType(QSurfaceFormat::OpenGL);
-#else
-    mSurfaceFormat.setRenderableType(QSurfaceFormat::OpenGLES);
-#endif
-    mEglConfig = q_configFromGLFormat(mEglDisplay, mSurfaceFormat, true);
-
-    if (ubuntumirclient().isDebugEnabled()) {
-        printEglConfig(mEglDisplay, mEglConfig);
-    }
-
-    // Set vblank swap interval.
-    bool ok;
-    int swapInterval = qGetEnvIntValue("QTUBUNTU_SWAPINTERVAL", &ok);
-    if (!ok)
-        swapInterval = kSwapInterval;
-
-    qCDebug(ubuntumirclient, "Setting swap interval to %d", swapInterval);
-    eglSwapInterval(mEglDisplay, swapInterval);
-
     setMirOutput(output);
 }
 
 UbuntuScreen::~UbuntuScreen()
 {
-    eglTerminate(mEglDisplay);
 }
 
 void UbuntuScreen::customEvent(QEvent* event)
