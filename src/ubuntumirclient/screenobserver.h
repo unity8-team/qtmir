@@ -39,6 +39,7 @@ public:
 Q_SIGNALS:
     void screenAdded(UbuntuScreen *screen);
     void screenRemoved(UbuntuScreen *screen);
+    void screenReplaced(UbuntuScreen *oldScreen, UbuntuScreen *replacementScreen);
 
 private Q_SLOTS:
     void update();

@@ -65,6 +65,7 @@ public:
 
 private Q_SLOTS:
     void destroyScreen(UbuntuScreen *screen);
+    void replaceScreen(UbuntuScreen *oldScreen, UbuntuScreen *replacementScreen);
 
 private:
     void setupOptions();

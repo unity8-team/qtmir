@@ -25,6 +25,7 @@
 
 // Mir
 #include <mirclient/mir_toolkit/mir_connection.h>
+#include <mirclient/mir_toolkit/mir_display_configuration.h>
 
 #include <memory>
 
@@ -47,46 +48,57 @@ UbuntuScreenObserver::UbuntuScreenObserver(MirConnection *mirConnection)
 void UbuntuScreenObserver::update()
 {
     // Wrap MirDisplayConfiguration to always delete when out of scope
-    auto configDeleter = [](MirDisplayConfiguration *config) { mir_display_config_destroy(config); };
-    using configUp = std::unique_ptr<MirDisplayConfiguration, decltype(configDeleter)>;
-    configUp displayConfig(mir_connection_create_display_config(mMirConnection), configDeleter);
+    auto configDeleter = [](MirDisplayConfig *config) { mir_display_config_release(config); };
+    using configUp = std::unique_ptr<MirDisplayConfig, decltype(configDeleter)>;
+    configUp displayConfig(mir_connection_create_display_configuration(mMirConnection), configDeleter);
 
     // Mir only tells us something changed, it is up to us to figure out what.
     QList<UbuntuScreen*> newScreenList;
     QList<UbuntuScreen*> oldScreenList = mScreenList;
+    typedef QPair<UbuntuScreen*,UbuntuScreen*> ScreenPair;
+    QVector<ScreenPair> replaceScreenList; //for Screens we need to destroy & recreate
     mScreenList.clear();
 
-    for (uint32_t i=0; i<displayConfig->num_outputs; i++) {
-        MirDisplayOutput output = displayConfig->outputs[i];
-        if (output.used && output.connected) {
-            UbuntuScreen *screen = findScreenWithId(oldScreenList, output.output_id);
-            if (screen) { // we've already set up this display before, refresh its internals
-                screen->setMirDisplayOutput(output);
-                oldScreenList.removeAll(screen);
+    for (int i=0; i<mir_display_config_get_num_outputs(displayConfig.get()); i++) {
+        const MirOutput *output = mir_display_config_get_output(displayConfig.get(), i);
+        if (mir_output_is_enabled(output)) {
+            UbuntuScreen *screen = findScreenWithId(oldScreenList, mir_output_get_id(output));
+            if (screen) { // we've already set up this display before
+                if (screen->canUpdateMirOutput(output)) { // can we re-use it?
+                    screen->updateMirOutput(output);
+                    oldScreenList.removeAll(screen);
+                } else { // need to delete & recreate
+                    auto oldScreen = screen;
+                    screen = new UbuntuScreen(output, mMirConnection);
+                    newScreenList.append(screen);
+                    replaceScreenList.append({oldScreen, screen});
+                }
             } else {
                 // new display, so create UbuntuScreen for it
                 screen = new UbuntuScreen(output, mMirConnection);
                 newScreenList.append(screen);
-                qDebug() << "Added Screen with id" << output.output_id << "and geometry" << screen->geometry();
+                qDebug() << "Added Screen with id" << mir_output_get_id(output)
+                         << "and geometry" << screen->geometry();
             }
             mScreenList.append(screen);
         }
     }
 
+    // Announce new Screens first, as some Windows may need to be "moved" to their new Screen before
+    // the old Screen is deleted.
+    Q_FOREACH (const auto screen, newScreenList) {
+        Q_EMIT screenAdded(screen);
+    }
+
+    // Announce that one Screen will be replacing another, so that Windows are "moved" from the old
+    // screen to the new one, before the old one is deleted
+    Q_FOREACH (const auto screens, replaceScreenList) {
+        Q_EMIT screenReplaced(screens.first, screens.second);
+    }
+
     // Announce old & unused Screens, should be deleted by the slot
     Q_FOREACH (const auto screen, oldScreenList) {
         Q_EMIT screenRemoved(screen);
-    }
-
-    /*
-     * Mir's MirDisplayOutput does not include formFactor or scale for some reason, but Qt
-     * will want that information on creating the QScreen. Only way we get that info is when
-     * Mir positions a Window on that Screen. See "handleScreenPropertiesChange" method
-     */
-
-    // Announce new Screens
-    Q_FOREACH (const auto screen, newScreenList) {
-        Q_EMIT screenAdded(screen);
     }
 
     qDebug() << "=======================================";
@@ -118,14 +130,5 @@ void UbuntuScreenObserver::handleScreenPropertiesChange(UbuntuScreen *screen, in
                                                         MirFormFactor formFactor, float scale)
 {
     screen->setAdditionalMirDisplayProperties(scale, formFactor, dpi);
-
-    qDebug() << "=======================================";
-    for (auto screen: mScreenList) {
-        qDebug() << screen << "- id:" << screen->outputId()
-                           << "geometry:" << screen->geometry()
-                           << "form factor:" << screen->formFactor()
-                           << "scale:" << screen->scale();
-    }
-    qDebug() << "=======================================";
 }
 

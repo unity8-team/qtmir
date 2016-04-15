@@ -99,7 +99,9 @@ void UbuntuClientIntegration::initialize()
     connect(mScreenObserver.data(), &UbuntuScreenObserver::screenAdded,
             [this](UbuntuScreen *screen) { this->screenAdded(screen); });
     connect(mScreenObserver.data(), &UbuntuScreenObserver::screenRemoved,
-                     this, &UbuntuClientIntegration::destroyScreen);
+            this, &UbuntuClientIntegration::destroyScreen);
+    connect(mScreenObserver.data(), &UbuntuScreenObserver::screenReplaced,
+            this, &UbuntuClientIntegration::replaceScreen);
 
     Q_FOREACH(auto screen, mScreenObserver->screens()) {
         screenAdded(screen);
@@ -269,6 +271,24 @@ QPlatformOffscreenSurface *UbuntuClientIntegration::createPlatformOffscreenSurfa
     return new UbuntuOffscreenSurface(surface);
 }
 
+void UbuntuClientIntegration::replaceScreen(UbuntuScreen *oldScreen, UbuntuScreen *replacementScreen)
+{
+    uint32_t movedWindowCount = 0;
+
+    // Need to move windows on the old screen to the replacement
+    Q_FOREACH (QWindow *w, QGuiApplication::topLevelWindows()) {
+        if (w->screen()->handle() == oldScreen) { qDebug() << "moving";
+            QWindowSystemInterface::handleWindowScreenChanged(w, replacementScreen->screen());
+            ++movedWindowCount;
+        }
+    }
+    if (movedWindowCount > 0) {
+        QWindowSystemInterface::flushWindowSystemEvents();
+    }
+
+    qDebug() << "Replacing Screen with id" << oldScreen->outputId() << "and geometry" << oldScreen->geometry();
+}
+
 void UbuntuClientIntegration::destroyScreen(UbuntuScreen *screen)
 {
     // FIXME: on deleting a screen while a Window is on it, Qt will automatically
@@ -296,6 +316,6 @@ void UbuntuClientIntegration::destroyScreen(UbuntuScreen *screen)
 #if QT_VERSION < QT_VERSION_CHECK(5, 5, 0)
     delete screen;
 #else
-    this->destroyScreen(screen);
+    QPlatformIntegration::destroyScreen(screen);
 #endif
 }
