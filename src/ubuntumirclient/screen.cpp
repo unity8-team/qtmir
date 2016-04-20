@@ -33,7 +33,7 @@
 
 #include <memory>
 
-static const int overrideDevicePixelRatio = qgetenv("QT_DEVICE_PIXEL_RATIO").toInt();
+static const int kSwapInterval = 1;
 
 static const char *orientationToStr(Qt::ScreenOrientation orientation) {
     switch (orientation) {
@@ -52,12 +52,70 @@ static const char *orientationToStr(Qt::ScreenOrientation orientation) {
     }
 }
 
+static void printEglConfig(EGLDisplay display, EGLConfig config) {
+    Q_ASSERT(display != EGL_NO_DISPLAY);
+    Q_ASSERT(config != nullptr);
+
+    static const struct { const EGLint attrib; const char* name; } kAttribs[] = {
+        { EGL_BUFFER_SIZE, "EGL_BUFFER_SIZE" },
+        { EGL_ALPHA_SIZE, "EGL_ALPHA_SIZE" },
+        { EGL_BLUE_SIZE, "EGL_BLUE_SIZE" },
+        { EGL_GREEN_SIZE, "EGL_GREEN_SIZE" },
+        { EGL_RED_SIZE, "EGL_RED_SIZE" },
+        { EGL_DEPTH_SIZE, "EGL_DEPTH_SIZE" },
+        { EGL_STENCIL_SIZE, "EGL_STENCIL_SIZE" },
+        { EGL_CONFIG_CAVEAT, "EGL_CONFIG_CAVEAT" },
+        { EGL_CONFIG_ID, "EGL_CONFIG_ID" },
+        { EGL_LEVEL, "EGL_LEVEL" },
+        { EGL_MAX_PBUFFER_HEIGHT, "EGL_MAX_PBUFFER_HEIGHT" },
+        { EGL_MAX_PBUFFER_PIXELS, "EGL_MAX_PBUFFER_PIXELS" },
+        { EGL_MAX_PBUFFER_WIDTH, "EGL_MAX_PBUFFER_WIDTH" },
+        { EGL_NATIVE_RENDERABLE, "EGL_NATIVE_RENDERABLE" },
+        { EGL_NATIVE_VISUAL_ID, "EGL_NATIVE_VISUAL_ID" },
+        { EGL_NATIVE_VISUAL_TYPE, "EGL_NATIVE_VISUAL_TYPE" },
+        { EGL_SAMPLES, "EGL_SAMPLES" },
+        { EGL_SAMPLE_BUFFERS, "EGL_SAMPLE_BUFFERS" },
+        { EGL_SURFACE_TYPE, "EGL_SURFACE_TYPE" },
+        { EGL_TRANSPARENT_TYPE, "EGL_TRANSPARENT_TYPE" },
+        { EGL_TRANSPARENT_BLUE_VALUE, "EGL_TRANSPARENT_BLUE_VALUE" },
+        { EGL_TRANSPARENT_GREEN_VALUE, "EGL_TRANSPARENT_GREEN_VALUE" },
+        { EGL_TRANSPARENT_RED_VALUE, "EGL_TRANSPARENT_RED_VALUE" },
+        { EGL_BIND_TO_TEXTURE_RGB, "EGL_BIND_TO_TEXTURE_RGB" },
+        { EGL_BIND_TO_TEXTURE_RGBA, "EGL_BIND_TO_TEXTURE_RGBA" },
+        { EGL_MIN_SWAP_INTERVAL, "EGL_MIN_SWAP_INTERVAL" },
+        { EGL_MAX_SWAP_INTERVAL, "EGL_MAX_SWAP_INTERVAL" },
+        { -1, NULL }
+    };
+    const char* string = eglQueryString(display, EGL_VENDOR);
+    qCDebug(ubuntumirclient, "EGL vendor: %s", string);
+
+    string = eglQueryString(display, EGL_VERSION);
+    qCDebug(ubuntumirclient, "EGL version: %s", string);
+
+    string = eglQueryString(display, EGL_EXTENSIONS);
+    qCDebug(ubuntumirclient, "EGL extensions: %s", string);
+
+    qCDebug(ubuntumirclient, "EGL configuration attibutes:");
+    for (int index = 0; kAttribs[index].attrib != -1; index++) {
+        EGLint value;
+        if (eglGetConfigAttrib(display, config, kAttribs[index].attrib, &value))
+            qCDebug(ubuntumirclient, "  %s: %d", kAttribs[index].name, static_cast<int>(value));
+    }
+}
+
+namespace {
+    int qGetEnvIntValue(const char *varName, bool *ok)
+    {
+        return qgetenv(varName).toInt(ok);
+    }
+} // anonymous namespace
+
 
 const QEvent::Type OrientationChangeEvent::mType =
         static_cast<QEvent::Type>(QEvent::registerEventType());
 
 
-UbuntuScreen::UbuntuScreen(const MirOutput *output, MirConnection *connection)
+UbuntuScreen::UbuntuScreen(const MirDisplayOutput &output, MirConnection *connection)
     : mDevicePixelRatio(1.0)
     , mFormat(QImage::Format_RGB32)
     , mDepth(32)
@@ -65,17 +123,58 @@ UbuntuScreen::UbuntuScreen(const MirOutput *output, MirConnection *connection)
     , mFormFactor{mir_form_factor_unknown}
     , mScale{1.0}
     , mOutputId(0)
+    , mEglDisplay(EGL_NO_DISPLAY)
+    , mEglConfig(nullptr)
+    , mSurfaceFormat()
     , mCursor(connection)
 {
-    setMirOutput(output);
+    // Initialize EGL.
+    ASSERT(eglBindAPI(EGL_OPENGL_ES_API) == EGL_TRUE);
+
+    mEglNativeDisplay = mir_connection_get_egl_native_display(connection);
+    ASSERT((mEglDisplay = eglGetDisplay(mEglNativeDisplay)) != EGL_NO_DISPLAY);
+    ASSERT(eglInitialize(mEglDisplay, nullptr, nullptr) == EGL_TRUE);
+
+    // Configure EGL buffers format.
+    mSurfaceFormat.setRedBufferSize(8);
+    mSurfaceFormat.setGreenBufferSize(8);
+    mSurfaceFormat.setBlueBufferSize(8);
+    mSurfaceFormat.setAlphaBufferSize(8);
+    mSurfaceFormat.setDepthBufferSize(24);
+    mSurfaceFormat.setStencilBufferSize(8);
+    if (!qEnvironmentVariableIsEmpty("QTUBUNTU_MULTISAMPLE")) {
+        mSurfaceFormat.setSamples(4);
+        qCDebug(ubuntumirclient, "setting MSAA to 4 samples");
+    }
+#ifdef QTUBUNTU_USE_OPENGL
+    mSurfaceFormat.setRenderableType(QSurfaceFormat::OpenGL);
+#else
+    mSurfaceFormat.setRenderableType(QSurfaceFormat::OpenGLES);
+#endif
+    mEglConfig = q_configFromGLFormat(mEglDisplay, mSurfaceFormat, true);
+
+    if (ubuntumirclient().isDebugEnabled()) {
+        printEglConfig(mEglDisplay, mEglConfig);
+    }
+
+    // Set vblank swap interval.
+    bool ok;
+    int swapInterval = qGetEnvIntValue("QTUBUNTU_SWAPINTERVAL", &ok);
+    if (!ok)
+        swapInterval = kSwapInterval;
+
+    qCDebug(ubuntumirclient, "Setting swap interval to %d", swapInterval);
+    eglSwapInterval(mEglDisplay, swapInterval);
+
+    setMirDisplayOutput(output);
 }
 
 UbuntuScreen::~UbuntuScreen()
 {
+    eglTerminate(mEglDisplay);
 }
 
-void UbuntuScreen::customEvent(QEvent* event)
-{
+void UbuntuScreen::customEvent(QEvent* event) {
     Q_ASSERT(QThread::currentThread() == thread());
 
     OrientationChangeEvent* oReadingEvent = static_cast<OrientationChangeEvent*>(event);
@@ -144,45 +243,36 @@ void UbuntuScreen::handleWindowSurfaceResize(int windowWidth, int windowHeight)
     }
 }
 
-void UbuntuScreen::setMirOutput(const MirOutput *output)
+void UbuntuScreen::setMirDisplayOutput(const MirDisplayOutput &output)
 {
     // Physical screen size
-    mPhysicalSize.setWidth(mir_output_get_physical_width_mm(output));
-    mPhysicalSize.setHeight(mir_output_get_physical_height_mm(output));
+    mPhysicalSize.setWidth(output.physical_width_mm);
+    mPhysicalSize.setHeight(output.physical_height_mm);
 
     // Pixel Format
-//    mFormat = qImageFormatFromMirPixelFormat(mir_output_get_current_pixel_format(output)); // GERRY: TODO
+//    mFormat = qImageFormatFromMirPixelFormat(output.current_format); // GERRY: TODO
 
     // Pixel depth
-    mDepth = 8 * MIR_BYTES_PER_PIXEL(mir_output_get_current_pixel_format(output));
+    mDepth = 8 * MIR_BYTES_PER_PIXEL(output.current_format);
 
     // Mode = Resolution & refresh rate
-    const MirOutputMode *mode = mir_output_get_current_mode(output);
-    mNativeGeometry.setX(mir_output_get_position_x(output));
-    mNativeGeometry.setY(mir_output_get_position_y(output));
-    mNativeGeometry.setWidth(mir_output_mode_get_width(mode));
-    mNativeGeometry.setHeight(mir_output_mode_get_height(mode));
-
-    mRefreshRate = mir_output_mode_get_refresh_rate(mode);
-
-    // UI scale & DPR - do not emit change signals on construction
-    mScale = mir_output_get_scale_factor(output);
-    if (overrideDevicePixelRatio > 0) {
-        mDevicePixelRatio = overrideDevicePixelRatio;
-    } else {
-        mDevicePixelRatio = devicePixelRatioFromScale(mScale);
-    }
-
-    // Form factor - do not emit change signals on construction
-    mFormFactor = mir_output_get_form_factor(output);
-
-    mOutputId = mir_output_get_id(output);
+    MirDisplayMode mode = output.modes[output.current_mode];
+    mNativeGeometry.setX(output.position_x);
+    mNativeGeometry.setY(output.position_y);
+    mNativeGeometry.setWidth(mode.horizontal_resolution);
+    mNativeGeometry.setHeight(mode.vertical_resolution);
+    mRefreshRate = mode.refresh_rate;
 
     // geometry in device pixels
     mGeometry.setX(mNativeGeometry.x() / mDevicePixelRatio);
     mGeometry.setY(mNativeGeometry.y() / mDevicePixelRatio);
     mGeometry.setWidth(mNativeGeometry.width() / mDevicePixelRatio);
     mGeometry.setHeight(mNativeGeometry.height() / mDevicePixelRatio);
+
+    // Misc
+//    mScale = output.scale; // missing from MirDisplayOutput, wait for later setAdditionalMirDisplayProperties call
+//    mFormFactor = output.form_factor; // ditto
+    mOutputId = output.output_id;
 
     // Set the default orientation based on the initial screen dimmensions.
     mNativeOrientation = (mGeometry.width() >= mGeometry.height()) ? Qt::LandscapeOrientation : Qt::PortraitOrientation;
@@ -191,54 +281,27 @@ void UbuntuScreen::setMirOutput(const MirOutput *output)
     mCurrentOrientation = (mNativeOrientation == Qt::LandscapeOrientation) ? Qt::LandscapeOrientation : Qt::PortraitOrientation;
 }
 
-void UbuntuScreen::updateMirOutput(const MirOutput *output)
+void UbuntuScreen::setAdditionalMirDisplayProperties(float scale, MirFormFactor formFactor, float dpi)
 {
-    auto oldRefreshRate = mRefreshRate;
-    auto oldScale = mScale;
-    auto oldFormFactor = mFormFactor;
-    auto oldGeometry = mGeometry;
-
-    setMirOutput(output);
-
-    // Emit change signals in particular order
-    if (oldGeometry != mGeometry) {
-        QWindowSystemInterface::handleScreenGeometryChange(screen(),
-                                                           mGeometry /* newGeometry */,
-                                                           mGeometry /* newAvailableGeometry */);
-    }
-
-    if (!qFuzzyCompare(mRefreshRate, oldRefreshRate)) {
-        QWindowSystemInterface::handleScreenRefreshRateChange(screen(), mRefreshRate);
-    }
-
     auto nativeInterface = static_cast<UbuntuNativeInterface *>(qGuiApp->platformNativeInterface());
-    if (!qFuzzyCompare(mScale, oldScale)) {
-        nativeInterface->screenPropertyChanged(this, QStringLiteral("scale"));
+    if (!qFuzzyCompare(mScale, scale)) {
+        mScale = scale;
+        Q_EMIT nativeInterface->screenPropertyChanged(this, QStringLiteral("scale"));
     }
-    if (mFormFactor != oldFormFactor) {
-        nativeInterface->screenPropertyChanged(this, QStringLiteral("formFactor"));
-    }
-}
-
-/*
- * Qt does not have handleScreen*Change functions for all properties of the QPlatformScreen. Therefore it is not
- * always possible to update an existing UbuntuScreen to reflect a new MirOutput. This checks if the current
- * UbuntuScreen can be updated to reflect the new MirOutput or not. If not, this instance needs to be destroyed
- * and a new instance created.
- */
-bool UbuntuScreen::canUpdateMirOutput(const MirOutput *output) const
-{
-    // DevicePixelRatio is not a notifyable property, so requires destroy/create
-    if (overrideDevicePixelRatio) {
-        return false;
+    if (mFormFactor != formFactor) {
+        mFormFactor = formFactor;
+        Q_EMIT nativeInterface->screenPropertyChanged(this, QStringLiteral("formFactor"));
     }
 
-    const auto scale = mir_output_get_scale_factor(output);
-    return qFuzzyCompare(mDevicePixelRatio, devicePixelRatioFromScale(scale));
-}
+    bool ok;
+    int dpr = qGetEnvIntValue("QT_DEVICE_PIXEL_RATIO", &ok);
+    if (ok && dpr > 0) {
+        qCDebug(ubuntumirclient, "Fixing Device Pixel Ratio to %d", dpr);
+        mDevicePixelRatio = dpr;
+    } else {
+        mDevicePixelRatio = 1.0; //qCeil(scale); // FIXME - unable to announce change in this until can delete/recreate Screen.
+    }
 
-void UbuntuScreen::setAdditionalMirDisplayProperties(float /*scale*/, MirFormFactor /*formFactor*/, float dpi)
-{
     if (mDpi != dpi) {
         mDpi = dpi;
         QWindowSystemInterface::handleScreenLogicalDotsPerInchChange(screen(), dpi, dpi);
@@ -251,21 +314,5 @@ QDpi UbuntuScreen::logicalDpi() const
         return QDpi(mDpi, mDpi);
     } else {
         return QPlatformScreen::logicalDpi();
-    }
-}
-
-qreal UbuntuScreen::devicePixelRatioFromScale(const float scale) const
-{
-    // This is a rough heuristic to choose the best devicePixelRatio value based on the requested
-    // grid unit value - with the ambition to have DPR as close to the scale as possible.
-    const int gridUnit = static_cast<int>(scale * 8);
-    if (gridUnit < 12) {
-        return 1.0;
-    } else if (gridUnit < 21) {
-        return 2.0;
-    } else if (gridUnit < 28) {
-        return 3.0;
-    } else {
-        return 4.0; // not expecting anything bigger being needed just now
     }
 }

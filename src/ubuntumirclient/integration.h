@@ -23,8 +23,6 @@
 #include "platformservices.h"
 #include "screenobserver.h"
 
-#include <EGL/egl.h>
-
 // platform-api
 #include <ubuntu/application/description.h>
 #include <ubuntu/application/instance.h>
@@ -33,7 +31,6 @@ class UbuntuClipboard;
 class UbuntuInput;
 class UbuntuNativeInterface;
 class UbuntuScreen;
-class MirConnection;
 
 class UbuntuClientIntegration : public QObject, public QPlatformIntegration
 {
@@ -66,16 +63,8 @@ public:
 
     QPlatformOffscreenSurface *createPlatformOffscreenSurface(QOffscreenSurface *surface) const override;
 
-    // New methods.
-    MirConnection *mirConnection() const { return mMirConnection; }
-    QSurfaceFormat surfaceFormat() const { return mSurfaceFormat; }
-    EGLDisplay eglDisplay() const { return mEglDisplay; }
-    EGLConfig eglConfig() const { return mEglConfig; }
-    EGLNativeDisplayType eglNativeDisplay() const { return mEglNativeDisplay; }
-
 private Q_SLOTS:
     void destroyScreen(UbuntuScreen *screen);
-    void replaceScreen(UbuntuScreen *oldScreen, UbuntuScreen *replacementScreen);
 
 private:
     void setupOptions();
@@ -92,18 +81,10 @@ private:
     QScopedPointer<UbuntuScreenObserver> mScreenObserver;
     qreal mScaleFactor;
 
-    MirConnection *mMirConnection;
-
     // Platform API stuff
     UApplicationOptions* mOptions;
     UApplicationDescription* mDesc;
     UApplicationInstance* mInstance;
-
-    // EGL related
-    EGLDisplay mEglDisplay;
-    EGLConfig mEglConfig;
-    EGLNativeDisplayType mEglNativeDisplay;
-    QSurfaceFormat mSurfaceFormat;
 };
 
 #endif // UBUNTU_CLIENT_INTEGRATION_H

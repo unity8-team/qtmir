@@ -224,7 +224,7 @@ void setSizingConstraints(MirSurfaceSpec *spec, const QSize &minSizePx, const QS
     }
 }
 
-MirSurface *createMirSurface(QWindow *window, uint32_t mirOutputId, UbuntuInput *input,
+MirSurface *createMirSurface(QWindow *window, UbuntuScreen *screen, UbuntuInput *input,
                              MirConnection *connection, mir_surface_event_callback inputCallback,
                              void* inputContext)
 {
@@ -235,7 +235,7 @@ MirSurface *createMirSurface(QWindow *window, uint32_t mirOutputId, UbuntuInput 
     setSizingConstraints(spec.get(), window->minimumSize(), window->maximumSize(), window->sizeIncrement());
 
     if (window->windowState() == Qt::WindowFullScreen) {
-        mir_surface_spec_set_fullscreen_on_output(spec.get(), mirOutputId);
+        mir_surface_spec_set_fullscreen_on_output(spec.get(), screen->mirOutputId());
     }
 
     mir_surface_spec_set_event_handler(spec.get(), inputCallback, inputContext);
@@ -275,15 +275,14 @@ int panelHeight()
 class UbuntuSurface
 {
 public:
-    UbuntuSurface(UbuntuWindow *platformWindow, EGLDisplay display, EGLConfig config, uint32_t mirOutputId,
-                  UbuntuInput *input, MirConnection *connection)
+    UbuntuSurface(UbuntuWindow *platformWindow, UbuntuScreen *screen, UbuntuInput *input, MirConnection *connection)
         : mWindow(platformWindow->window())
         , mPlatformWindow(platformWindow)
         , mInput(input)
         , mConnection(connection)
-        , mMirSurface(createMirSurface(mWindow, mirOutputId, input, connection, surfaceEventCallback, this))
-        , mEglDisplay(display)
-        , mEglSurface(eglCreateWindowSurface(mEglDisplay, config, nativeWindowFor(mMirSurface), nullptr))
+        , mMirSurface(createMirSurface(mWindow, screen, input, connection, surfaceEventCallback, this))
+        , mEglDisplay(screen->eglDisplay())
+        , mEglSurface(eglCreateWindowSurface(mEglDisplay, screen->eglConfig(), nativeWindowFor(mMirSurface), nullptr))
         , mNeedsRepaint(false)
         , mParented(mWindow->transientParent() || mWindow->parent())
         , mShellChrome(mWindow->flags() & LowChromeWindowHint ? mir_shell_chrome_low : mir_shell_chrome_normal)
@@ -504,7 +503,7 @@ void UbuntuSurface::setSurfaceParent(MirSurface* parent)
 }
 
 UbuntuWindow::UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &clipboard,
-                           UbuntuInput *input, UbuntuNativeInterface *native, UbuntuClientIntegration *integration)
+                           UbuntuInput *input, UbuntuNativeInterface *native, MirConnection *connection)
     : QObject(nullptr)
     , QPlatformWindow(w)
     , mId(makeId())
@@ -514,8 +513,7 @@ UbuntuWindow::UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &cl
     , mWindowVisible(false)
     , mWindowExposed(true)
     , mNativeInterface(native)
-    , mSurface(new UbuntuSurface{this, integration->eglDisplay(), integration->eglConfig(),
-               static_cast<UbuntuScreen*>(w->screen()->handle())->mirOutputId(), input, integration->mirConnection() })
+    , mSurface(new UbuntuSurface{this, static_cast<UbuntuScreen*>(w->screen()->handle()), input, connection})
     , mScale(1.0)
     , mFormFactor(mir_form_factor_unknown)
 {

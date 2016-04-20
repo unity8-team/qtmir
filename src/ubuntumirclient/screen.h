@@ -22,16 +22,18 @@
 
 #include <mircommon/mir_toolkit/common.h> // just for MirFormFactor enum
 
+#include <EGL/egl.h>
+
 #include "cursor.h"
 
 struct MirConnection;
-struct MirOutput;
+struct MirDisplayOutput;
 
 class UbuntuScreen : public QObject, public QPlatformScreen
 {
     Q_OBJECT
 public:
-    UbuntuScreen(const MirOutput *output, MirConnection *connection);
+    UbuntuScreen(const MirDisplayOutput &output, MirConnection *connection);
     virtual ~UbuntuScreen();
 
     // QPlatformScreen methods.
@@ -46,14 +48,19 @@ public:
     Qt::ScreenOrientation orientation() const override { return mNativeOrientation; }
     QPlatformCursor *cursor() const override { return const_cast<UbuntuCursor*>(&mCursor); }
 
+    // New methods.
+    QSurfaceFormat surfaceFormat() const { return mSurfaceFormat; }
+    EGLDisplay eglDisplay() const { return mEglDisplay; }
+    EGLConfig eglConfig() const { return mEglConfig; }
+    EGLNativeDisplayType eglNativeDisplay() const { return mEglNativeDisplay; }
+
     // Additional Screen properties from Mir
     uint32_t outputId() const { return mOutputId; }
     MirFormFactor formFactor() const { return mFormFactor; }
     float scale() const { return mScale; }
 
     // Internally used methods
-    bool canUpdateMirOutput(const MirOutput *output) const;
-    void updateMirOutput(const MirOutput *output);
+    void setMirDisplayOutput(const MirDisplayOutput &output);
     void setAdditionalMirDisplayProperties(float scale, MirFormFactor formFactor, float dpi);
     void handleWindowSurfaceResize(int width, int height);
     uint32_t mirOutputId() const { return mOutputId; }
@@ -62,9 +69,6 @@ public:
     void customEvent(QEvent* event) override;
 
 private:
-    void setMirOutput(const MirOutput *output);
-    qreal devicePixelRatioFromScale(const float scale) const;
-
     QRect mGeometry, mNativeGeometry;
     QSizeF mPhysicalSize;
     qreal mDevicePixelRatio;
@@ -77,6 +81,10 @@ private:
     MirFormFactor mFormFactor;
     float mScale;
     uint32_t mOutputId;
+    EGLDisplay mEglDisplay;
+    EGLConfig mEglConfig;
+    EGLNativeDisplayType mEglNativeDisplay;
+    QSurfaceFormat mSurfaceFormat;
     UbuntuCursor mCursor; //GERRY try const
 
     friend class UbuntuNativeInterface;
