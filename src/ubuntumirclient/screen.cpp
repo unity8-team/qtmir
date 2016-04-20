@@ -240,7 +240,7 @@ void UbuntuScreen::handleWindowSurfaceResize(int windowWidth, int windowHeight)
 
 void UbuntuScreen::setMirOutput(const MirOutput *output)
 {
-    // Physical screen size
+    // Physical screen size (in mm)
     mPhysicalSize.setWidth(mir_output_get_physical_width_mm(output));
     mPhysicalSize.setHeight(mir_output_get_physical_height_mm(output));
 
@@ -259,7 +259,7 @@ void UbuntuScreen::setMirOutput(const MirOutput *output)
 
     mRefreshRate = mir_output_mode_get_refresh_rate(mode);
 
-    // UI scale & DPR - do not emit change signals on construction
+    // UI scale & DPR
     mScale = mir_output_get_scale_factor(output);
     if (overrideDevicePixelRatio > 0) {
         mDevicePixelRatio = overrideDevicePixelRatio;
@@ -267,18 +267,16 @@ void UbuntuScreen::setMirOutput(const MirOutput *output)
         mDevicePixelRatio = 1.0; // FIXME - need to determine suitable DPR for the specified scale
     }
 
-    // Form factor - do not emit change signals on construction
     mFormFactor = mir_output_get_form_factor(output);
 
     mOutputId = mir_output_get_id(output);
 
-    // geometry in device pixels
     mGeometry.setX(mNativeGeometry.x() / mDevicePixelRatio);
     mGeometry.setY(mNativeGeometry.y() / mDevicePixelRatio);
     mGeometry.setWidth(mNativeGeometry.width() / mDevicePixelRatio);
     mGeometry.setHeight(mNativeGeometry.height() / mDevicePixelRatio);
 
-    // Set the default orientation based on the initial screen dimmensions.
+    // Set the default orientation based on the initial screen dimensions.
     mNativeOrientation = (mGeometry.width() >= mGeometry.height()) ? Qt::LandscapeOrientation : Qt::PortraitOrientation;
 
     // If it's a landscape device (i.e. some tablets), start in landscape, otherwise portrait
