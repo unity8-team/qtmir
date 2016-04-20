@@ -55,15 +55,14 @@ public:
     EGLNativeDisplayType eglNativeDisplay() const { return mEglNativeDisplay; }
 
     // Additional Screen properties from Mir
-    uint32_t outputId() const { return mOutputId; }
+    int outputId() const { return mOutputId; }
     MirFormFactor formFactor() const { return mFormFactor; }
     float scale() const { return mScale; }
 
     // Internally used methods
     void updateMirOutput(const MirOutput *output);
-    void setAdditionalMirDisplayProperties(float scale, MirFormFactor formFactor, float dpi);
+    void setAdditionalMirDisplayProperties(float scale, MirFormFactor formFactor, int dpi);
     void handleWindowSurfaceResize(int width, int height);
-    uint32_t mirOutputId() const { return mOutputId; }
 
     // QObject methods.
     void customEvent(QEvent* event) override;
@@ -82,7 +81,7 @@ private:
     qreal mRefreshRate;
     MirFormFactor mFormFactor;
     float mScale;
-    uint32_t mOutputId;
+    int mOutputId;
     EGLDisplay mEglDisplay;
     EGLConfig mEglConfig;
     EGLNativeDisplayType mEglNativeDisplay;

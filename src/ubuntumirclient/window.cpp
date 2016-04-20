@@ -232,7 +232,7 @@ MirSurface *createMirSurface(QWindow *window, UbuntuScreen *screen, UbuntuInput 
     setSizingConstraints(spec.get(), window->minimumSize(), window->maximumSize(), window->sizeIncrement());
 
     if (window->windowState() == Qt::WindowFullScreen) {
-        mir_surface_spec_set_fullscreen_on_output(spec.get(), screen->mirOutputId());
+        mir_surface_spec_set_fullscreen_on_output(spec.get(), (uint32_t)screen->outputId());
     }
 
     if (window->flags() & LowChromeWindowHint) {

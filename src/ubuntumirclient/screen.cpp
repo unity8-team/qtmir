@@ -312,7 +312,7 @@ void UbuntuScreen::updateMirOutput(const MirOutput *output)
     }
 }
 
-void UbuntuScreen::setAdditionalMirDisplayProperties(float scale, MirFormFactor formFactor, float dpi)
+void UbuntuScreen::setAdditionalMirDisplayProperties(float scale, MirFormFactor formFactor, int dpi)
 {
     if (mDpi != dpi) {
         mDpi = dpi;

@@ -31,7 +31,7 @@ public:
     UbuntuScreenObserver(MirConnection *connection);
 
     QList<UbuntuScreen*> screens() const { return mScreenList; }
-    UbuntuScreen *findScreenWithId(uint32_t id);
+    UbuntuScreen *findScreenWithId(int id);
 
     void handleScreenPropertiesChange(UbuntuScreen *screen, int dpi,
                                       MirFormFactor formFactor, float scale);
@@ -44,7 +44,7 @@ private Q_SLOTS:
     void update();
 
 private:
-    UbuntuScreen *findScreenWithId(const QList<UbuntuScreen *> &list, uint32_t id);
+    UbuntuScreen *findScreenWithId(const QList<UbuntuScreen *> &list, int id);
     void removeScreen(UbuntuScreen *screen);
 
     MirConnection *mMirConnection;

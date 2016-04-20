@@ -114,12 +114,12 @@ void UbuntuScreenObserver::update()
     qDebug() << "=======================================";
 }
 
-UbuntuScreen *UbuntuScreenObserver::findScreenWithId(uint32_t id)
+UbuntuScreen *UbuntuScreenObserver::findScreenWithId(int id)
 {
     return findScreenWithId(mScreenList, id);
 }
 
-UbuntuScreen *UbuntuScreenObserver::findScreenWithId(const QList<UbuntuScreen *> &list, uint32_t id)
+UbuntuScreen *UbuntuScreenObserver::findScreenWithId(const QList<UbuntuScreen *> &list, int id)
 {
     Q_FOREACH (const auto screen, list) {
         if (screen->outputId() == id) {
