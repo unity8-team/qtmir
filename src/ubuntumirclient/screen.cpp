@@ -271,10 +271,10 @@ void UbuntuScreen::setMirOutput(const MirOutput *output)
 
     mOutputId = mir_output_get_id(output);
 
-    mGeometry.setX(mNativeGeometry.x() / mDevicePixelRatio);
-    mGeometry.setY(mNativeGeometry.y() / mDevicePixelRatio);
-    mGeometry.setWidth(mNativeGeometry.width() / mDevicePixelRatio);
-    mGeometry.setHeight(mNativeGeometry.height() / mDevicePixelRatio);
+    mGeometry.setX(mNativeGeometry.x());
+    mGeometry.setY(mNativeGeometry.y());
+    mGeometry.setWidth(mNativeGeometry.width());
+    mGeometry.setHeight(mNativeGeometry.height());
 
     // Set the default orientation based on the initial screen dimensions.
     mNativeOrientation = (mGeometry.width() >= mGeometry.height()) ? Qt::LandscapeOrientation : Qt::PortraitOrientation;
