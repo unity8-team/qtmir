@@ -25,6 +25,7 @@
 
 // Mir
 #include <mirclient/mir_toolkit/mir_connection.h>
+#include <mirclient/mir_toolkit/mir_display_configuration.h>
 
 #include <memory>
 
@@ -34,6 +35,19 @@ namespace {
         ASSERT(context != NULL);
         UbuntuScreenObserver *observer = static_cast<UbuntuScreenObserver *>(context);
         QMetaObject::invokeMethod(observer, "update");
+    }
+
+    const char *mirFormFactorToStr(MirFormFactor formFactor)
+    {
+        switch (formFactor) {
+        case mir_form_factor_unknown: return "unknown";
+        case mir_form_factor_phone: return "phone";
+        case mir_form_factor_tablet: return "tablet";
+        case mir_form_factor_monitor: return "monitor";
+        case mir_form_factor_tv: return "tv";
+        case mir_form_factor_projector: return "projector";
+        }
+        return "";
     }
 } // anonymous namespace
 
@@ -47,27 +61,28 @@ UbuntuScreenObserver::UbuntuScreenObserver(MirConnection *mirConnection)
 void UbuntuScreenObserver::update()
 {
     // Wrap MirDisplayConfiguration to always delete when out of scope
-    auto configDeleter = [](MirDisplayConfiguration *config) { mir_display_config_destroy(config); };
-    using configUp = std::unique_ptr<MirDisplayConfiguration, decltype(configDeleter)>;
-    configUp displayConfig(mir_connection_create_display_config(mMirConnection), configDeleter);
+    auto configDeleter = [](MirDisplayConfig *config) { mir_display_config_release(config); };
+    using configUp = std::unique_ptr<MirDisplayConfig, decltype(configDeleter)>;
+    configUp displayConfig(mir_connection_create_display_configuration(mMirConnection), configDeleter);
 
     // Mir only tells us something changed, it is up to us to figure out what.
     QList<UbuntuScreen*> newScreenList;
     QList<UbuntuScreen*> oldScreenList = mScreenList;
     mScreenList.clear();
 
-    for (uint32_t i=0; i<displayConfig->num_outputs; i++) {
-        MirDisplayOutput output = displayConfig->outputs[i];
-        if (output.used && output.connected) {
-            UbuntuScreen *screen = findScreenWithId(oldScreenList, output.output_id);
-            if (screen) { // we've already set up this display before, refresh its internals
-                screen->setMirDisplayOutput(output);
+    for (int i=0; i<mir_display_config_get_num_outputs(displayConfig.get()); i++) {
+        const MirOutput *output = mir_display_config_get_output(displayConfig.get(), i);
+        if (mir_output_is_enabled(output)) {
+            UbuntuScreen *screen = findScreenWithId(oldScreenList, mir_output_get_id(output));
+            if (screen) { // we've already set up this display before
+                screen->updateMirOutput(output);
                 oldScreenList.removeAll(screen);
             } else {
                 // new display, so create UbuntuScreen for it
                 screen = new UbuntuScreen(output, mMirConnection);
                 newScreenList.append(screen);
-                qDebug() << "Added Screen with id" << output.output_id << "and geometry" << screen->geometry();
+                qDebug() << "Added Screen with id" << mir_output_get_id(output)
+                         << "and geometry" << screen->geometry();
             }
             mScreenList.append(screen);
         }
@@ -93,7 +108,7 @@ void UbuntuScreenObserver::update()
     for (auto screen: mScreenList) {
         qDebug() << screen << "- id:" << screen->outputId()
                            << "geometry:" << screen->geometry()
-                           << "form factor:" << screen->formFactor()
+                           << "form factor:" << mirFormFactorToStr(screen->formFactor())
                            << "scale:" << screen->scale();
     }
     qDebug() << "=======================================";
@@ -118,14 +133,5 @@ void UbuntuScreenObserver::handleScreenPropertiesChange(UbuntuScreen *screen, in
                                                         MirFormFactor formFactor, float scale)
 {
     screen->setAdditionalMirDisplayProperties(scale, formFactor, dpi);
-
-    qDebug() << "=======================================";
-    for (auto screen: mScreenList) {
-        qDebug() << screen << "- id:" << screen->outputId()
-                           << "geometry:" << screen->geometry()
-                           << "form factor:" << screen->formFactor()
-                           << "scale:" << screen->scale();
-    }
-    qDebug() << "=======================================";
 }
 

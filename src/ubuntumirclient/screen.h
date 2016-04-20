@@ -27,13 +27,13 @@
 #include "cursor.h"
 
 struct MirConnection;
-struct MirDisplayOutput;
+struct MirOutput;
 
 class UbuntuScreen : public QObject, public QPlatformScreen
 {
     Q_OBJECT
 public:
-    UbuntuScreen(const MirDisplayOutput &output, MirConnection *connection);
+    UbuntuScreen(const MirOutput *output, MirConnection *connection);
     virtual ~UbuntuScreen();
 
     // QPlatformScreen methods.
@@ -60,7 +60,7 @@ public:
     float scale() const { return mScale; }
 
     // Internally used methods
-    void setMirDisplayOutput(const MirDisplayOutput &output);
+    void updateMirOutput(const MirOutput *output);
     void setAdditionalMirDisplayProperties(float scale, MirFormFactor formFactor, float dpi);
     void handleWindowSurfaceResize(int width, int height);
     uint32_t mirOutputId() const { return mOutputId; }
@@ -69,6 +69,8 @@ public:
     void customEvent(QEvent* event) override;
 
 private:
+    void setMirOutput(const MirOutput *output);
+
     QRect mGeometry, mNativeGeometry;
     QSizeF mPhysicalSize;
     qreal mDevicePixelRatio;
@@ -85,7 +87,7 @@ private:
     EGLConfig mEglConfig;
     EGLNativeDisplayType mEglNativeDisplay;
     QSurfaceFormat mSurfaceFormat;
-    UbuntuCursor mCursor; //GERRY try const
+    UbuntuCursor mCursor;
 
     friend class UbuntuNativeInterface;
 };

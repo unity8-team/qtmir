@@ -50,7 +50,6 @@ public:
     void setWindowTitle(const QString &title) override;
     void propagateSizeHints() override;
     bool isExposed() const override;
-    qreal devicePixelRatio() const override;
 
     // Additional Window properties exposed by NativeInterface
     MirFormFactor formFactor() const { return mFormFactor; }
@@ -59,8 +58,7 @@ public:
     // New methods.
     void *eglSurface() const;
     MirSurface *mirSurface() const;
-    void updateWindowSize(int widthPx, int heightPx);
-    void handleSurfaceResized(int widthPx, int heightPx);
+    void handleSurfaceResized(int width, int height);
     void handleSurfaceExposeChange(bool exposed);
     void handleSurfaceFocused();
     void handleSurfaceVisibilityChanged(bool visible);
@@ -69,7 +67,7 @@ public:
     void handleScreenPropertiesChange(MirFormFactor formFactor, float scale);
 
 private:
-    void enablePanelHeightHack(bool enable);
+    void updatePanelHeightHack(bool enable);
     void updateSurfaceState();
     mutable QMutex mMutex;
     const WId mId;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015 Canonical, Ltd.
+ * Copyright (C) 2014 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -43,10 +43,8 @@ void UbuntuBackingStore::flush(QWindow* window, const QRegion& region, const QPo
 {
     Q_UNUSED(region);
     Q_UNUSED(offset);
-    const int dpr = int(window->devicePixelRatio());
-
     mContext->makeCurrent(window);
-    glViewport(0, 0, window->width() * dpr, window->height() * dpr);
+    glViewport(0, 0, window->width(), window->height());
 
     updateTexture();
 
@@ -77,14 +75,12 @@ void UbuntuBackingStore::updateTexture()
 
     QRegion fixed;
     QRect imageRect = mImage.rect();
-    const int dpr = int(window()->devicePixelRatio());
 
-    /* Following code a modified form of that in QEGLPlatformBackingStore, used under the terms of the Lesser GPL v2.1 licence
+    /* Following code taken from QEGLPlatformBackingStore under the terms of the Lesser GPL v2.1 licence
      * Copyright (C) 2013 Digia Plc and/or its subsidiary(-ies). */
     Q_FOREACH (const QRect &rect, mDirty.rects()) {
-        QRect scaledRect(rect.topLeft() * dpr, rect.size() * dpr);
         // intersect with image rect to be sure
-        QRect r = imageRect & scaledRect;
+        QRect r = imageRect & rect;
 
         // if the rect is wide enough it is cheaper to just extend it instead of doing an image copy
         if (r.width() >= imageRect.width() / 2) {
@@ -119,9 +115,7 @@ void UbuntuBackingStore::beginPaint(const QRegion& region)
 
 void UbuntuBackingStore::resize(const QSize& size, const QRegion& /*staticContents*/)
 {
-    const int dpr = int(window()->devicePixelRatio());
-    mImage = QImage(size * dpr, QImage::Format_RGB32);
-    mImage.setDevicePixelRatio(dpr);
+    mImage = QImage(size, QImage::Format_RGB32);
 
     if (mTexture->isCreated())
         mTexture->destroy();
