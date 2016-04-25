@@ -296,6 +296,6 @@ void UbuntuClientIntegration::destroyScreen(UbuntuScreen *screen)
 #if QT_VERSION < QT_VERSION_CHECK(5, 5, 0)
     delete screen;
 #else
-    this->destroyScreen(screen);
+    QPlatformIntegration::destroyScreen(screen);
 #endif
 }
