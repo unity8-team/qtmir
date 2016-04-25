@@ -70,7 +70,7 @@ void UbuntuScreenObserver::update()
     QList<UbuntuScreen*> oldScreenList = mScreenList;
     mScreenList.clear();
 
-    for (int i=0; i<mir_display_config_get_num_outputs(displayConfig.get()); i++) {
+    for (int i = 0; i < mir_display_config_get_num_outputs(displayConfig.get()); i++) {
         const MirOutput *output = mir_display_config_get_output(displayConfig.get(), i);
         if (mir_output_is_enabled(output)) {
             UbuntuScreen *screen = findScreenWithId(oldScreenList, mir_output_get_id(output));
