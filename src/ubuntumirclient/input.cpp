@@ -264,16 +264,19 @@ void UbuntuInput::customEvent(QEvent* event)
         auto resizeEvent = mir_event_get_resize_event(nativeEvent);
 
         // Enable workaround for Screen rotation
-        auto const screen = static_cast<UbuntuScreen*>(ubuntuEvent->window->screen());
-        if (screen) {
-            screen->handleWindowSurfaceResize(
-                    mir_resize_event_get_width(resizeEvent),
-                    mir_resize_event_get_height(resizeEvent));
-        }
+        auto const targetWindow = ubuntuEvent->window;
+        if (targetWindow) {
+            auto const screen = static_cast<UbuntuScreen*>(targetWindow->screen());
+            if (screen) {
+                screen->handleWindowSurfaceResize(
+                        mir_resize_event_get_width(resizeEvent),
+                        mir_resize_event_get_height(resizeEvent));
+            }
 
-        ubuntuEvent->window->handleSurfaceResized(
-                    mir_resize_event_get_width(resizeEvent),
-                    mir_resize_event_get_height(resizeEvent));
+            targetWindow->handleSurfaceResized(
+                        mir_resize_event_get_width(resizeEvent),
+                        mir_resize_event_get_height(resizeEvent));
+        }
         break;
     }
     case mir_event_type_surface:
