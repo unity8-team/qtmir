@@ -292,7 +292,7 @@ void UbuntuClientIntegration::destroyScreen(UbuntuScreen *screen)
         }
     }
 
-    qDebug() << "Removing Screen with id" << screen->outputId() << "and geometry" << screen->geometry();
+    qCDebug(ubuntumirclient) << "Removing Screen with id" << screen->outputId() << "and geometry" << screen->geometry();
 #if QT_VERSION < QT_VERSION_CHECK(5, 5, 0)
     delete screen;
 #else
