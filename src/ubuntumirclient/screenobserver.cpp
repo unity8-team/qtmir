@@ -81,8 +81,8 @@ void UbuntuScreenObserver::update()
                 // new display, so create UbuntuScreen for it
                 screen = new UbuntuScreen(output, mMirConnection);
                 newScreenList.append(screen);
-                qDebug() << "Added Screen with id" << mir_output_get_id(output)
-                         << "and geometry" << screen->geometry();
+                qCDebug(ubuntumirclient) << "Added Screen with id" << mir_output_get_id(output)
+                                         << "and geometry" << screen->geometry();
             }
             mScreenList.append(screen);
         }
@@ -104,14 +104,14 @@ void UbuntuScreenObserver::update()
         Q_EMIT screenAdded(screen);
     }
 
-    qDebug() << "=======================================";
+    qCDebug(ubuntumirclient) << "=======================================";
     for (auto screen: mScreenList) {
-        qDebug() << screen << "- id:" << screen->outputId()
-                           << "geometry:" << screen->geometry()
-                           << "form factor:" << mirFormFactorToStr(screen->formFactor())
-                           << "scale:" << screen->scale();
+        qCDebug(ubuntumirclient) << screen << "- id:" << screen->outputId()
+                                 << "geometry:" << screen->geometry()
+                                 << "form factor:" << mirFormFactorToStr(screen->formFactor())
+                                 << "scale:" << screen->scale();
     }
-    qDebug() << "=======================================";
+    qCDebug(ubuntumirclient) << "=======================================";
 }
 
 UbuntuScreen *UbuntuScreenObserver::findScreenWithId(int id)
