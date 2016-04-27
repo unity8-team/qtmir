@@ -39,6 +39,33 @@ static void printOpenGLESConfig() {
   }
 }
 
+static QString eglErrorToString(EGLint errorNumber)
+{
+    #define EGL_ERROR_CASE(error) case error: return QString(#error);
+
+    switch (errorNumber) {
+        EGL_ERROR_CASE(EGL_SUCCESS)
+        EGL_ERROR_CASE(EGL_NOT_INITIALIZED)
+        EGL_ERROR_CASE(EGL_BAD_ACCESS)
+        EGL_ERROR_CASE(EGL_BAD_ALLOC)
+        EGL_ERROR_CASE(EGL_BAD_ATTRIBUTE)
+        EGL_ERROR_CASE(EGL_BAD_CONTEXT)
+        EGL_ERROR_CASE(EGL_BAD_CONFIG)
+        EGL_ERROR_CASE(EGL_BAD_CURRENT_SURFACE)
+        EGL_ERROR_CASE(EGL_BAD_DISPLAY)
+        EGL_ERROR_CASE(EGL_BAD_SURFACE)
+        EGL_ERROR_CASE(EGL_BAD_MATCH)
+        EGL_ERROR_CASE(EGL_BAD_PARAMETER)
+        EGL_ERROR_CASE(EGL_BAD_NATIVE_PIXMAP)
+        EGL_ERROR_CASE(EGL_BAD_NATIVE_WINDOW)
+        EGL_ERROR_CASE(EGL_CONTEXT_LOST)
+        default:
+            return QString("?");
+    }
+
+    #undef EGL_ERROR_CASE
+}
+
 static EGLenum api_in_use()
 {
 #ifdef QTUBUNTU_USE_OPENGL
@@ -85,7 +112,14 @@ bool UbuntuOpenGLContext::makeCurrent(QPlatformSurface* surface)
     } else {
         EGLSurface eglSurface = static_cast<UbuntuWindow*>(surface)->eglSurface();
         ASSERT(eglBindAPI(api_in_use()) == EGL_TRUE);
-        ASSERT(eglMakeCurrent(mEglDisplay, eglSurface, eglSurface, mEglContext) == EGL_TRUE);
+
+        EGLBoolean result = eglMakeCurrent(mEglDisplay, eglSurface, eglSurface, mEglContext);
+        if (result == EGL_FALSE) {
+            qCCritical(ubuntumirclient, "eglMakeCurrent() failed with %s",
+                    qPrintable(eglErrorToString(eglGetError())));
+            return false;
+        }
+
         if (ubuntumirclient().isDebugEnabled()) {
             printOpenGLESConfig();
         }
