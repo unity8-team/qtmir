@@ -19,6 +19,7 @@
 
 #include <qpa/qplatformintegration.h>
 #include <QSharedPointer>
+#include <QtPlatformSupport/private/qeglconvenience_p.h>
 
 #include "platformservices.h"
 #include "screenobserver.h"
@@ -85,6 +86,8 @@ private:
     UApplicationOptions* mOptions;
     UApplicationDescription* mDesc;
     UApplicationInstance* mInstance;
+
+    EGLDisplay mEglDisplay{EGL_NO_DISPLAY};
 };
 
 #endif // UBUNTU_CLIENT_INTEGRATION_H

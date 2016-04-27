@@ -94,6 +94,10 @@ void UbuntuClientIntegration::initialize()
 {
     MirConnection *mirConnection = u_application_instance_get_mir_connection(mInstance);
 
+    mEglDisplay = eglGetDisplay(mir_connection_get_egl_native_display(mirConnection));
+    ASSERT(mEglDisplay != EGL_NO_DISPLAY);
+    ASSERT(eglInitialize(mEglDisplay, nullptr, nullptr) == EGL_TRUE);
+
     // Init the ScreenObserver
     mScreenObserver.reset(new UbuntuScreenObserver(mirConnection));
     connect(mScreenObserver.data(), &UbuntuScreenObserver::screenAdded,
@@ -125,6 +129,7 @@ void UbuntuClientIntegration::initialize()
 
 UbuntuClientIntegration::~UbuntuClientIntegration()
 {
+    eglTerminate(mEglDisplay);
     delete mInput;
     delete mInputContext;
     delete mServices;

@@ -125,7 +125,6 @@ UbuntuScreen::UbuntuScreen(const MirOutput *output, MirConnection *connection)
 
     mEglNativeDisplay = mir_connection_get_egl_native_display(connection);
     ASSERT((mEglDisplay = eglGetDisplay(mEglNativeDisplay)) != EGL_NO_DISPLAY);
-    ASSERT(eglInitialize(mEglDisplay, nullptr, nullptr) == EGL_TRUE);
 
     // Configure EGL buffers format.
     mSurfaceFormat.setRedBufferSize(8);
@@ -166,7 +165,6 @@ UbuntuScreen::UbuntuScreen(const MirOutput *output, MirConnection *connection)
 
 UbuntuScreen::~UbuntuScreen()
 {
-    eglTerminate(mEglDisplay);
 }
 
 void UbuntuScreen::customEvent(QEvent* event) {
