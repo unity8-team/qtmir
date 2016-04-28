@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015 Canonical, Ltd.
+ * Copyright (C) 2014-2016 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -28,9 +28,9 @@
 class UbuntuClipboard;
 class UbuntuNativeInterface;
 class UbuntuInput;
+class UbuntuClientIntegration;
 class UbuntuScreen;
 class UbuntuSurface;
-struct MirConnection;
 struct MirSurface;
 
 class UbuntuWindow : public QObject, public QPlatformWindow
@@ -38,7 +38,7 @@ class UbuntuWindow : public QObject, public QPlatformWindow
     Q_OBJECT
 public:
     UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &clipboard,
-                 UbuntuInput *input, UbuntuNativeInterface* native, MirConnection *mirConnection);
+                 UbuntuInput *input, UbuntuNativeInterface* native, UbuntuClientIntegration *integration);
     virtual ~UbuntuWindow();
 
     // QPlatformWindow methods.

@@ -106,7 +106,7 @@ void UbuntuScreenObserver::update()
 
     qCDebug(ubuntumirclient) << "=======================================";
     for (auto screen: mScreenList) {
-        qCDebug(ubuntumirclient) << screen << "- id:" << screen->outputId()
+        qCDebug(ubuntumirclient) << screen << "- id:" << screen->mirOutputId()
                                  << "geometry:" << screen->geometry()
                                  << "form factor:" << mirFormFactorToStr(screen->formFactor())
                                  << "scale:" << screen->scale();
@@ -122,7 +122,7 @@ UbuntuScreen *UbuntuScreenObserver::findScreenWithId(int id)
 UbuntuScreen *UbuntuScreenObserver::findScreenWithId(const QList<UbuntuScreen *> &list, int id)
 {
     Q_FOREACH (const auto screen, list) {
-        if (screen->outputId() == id) {
+        if (screen->mirOutputId() == id) {
             return screen;
         }
     }

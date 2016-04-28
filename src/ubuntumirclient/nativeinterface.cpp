@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Canonical, Ltd.
+ * Copyright (C) 2014,2016 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -43,10 +43,10 @@ public:
 
 Q_GLOBAL_STATIC(UbuntuResourceMap, ubuntuResourceMap)
 
-UbuntuNativeInterface::UbuntuNativeInterface()
-    : mGenericEventFilterType(QByteArrayLiteral("Event"))
+UbuntuNativeInterface::UbuntuNativeInterface(const UbuntuClientIntegration *integration)
+    : mIntegration(integration)
+    , mGenericEventFilterType(QByteArrayLiteral("Event"))
     , mNativeOrientation(nullptr)
-    , mMirConnection(nullptr)
 {
 }
 
@@ -67,7 +67,7 @@ void* UbuntuNativeInterface::nativeResourceForIntegration(const QByteArray &reso
     const ResourceType resourceType = ubuntuResourceMap()->value(lowerCaseResource);
 
     if (resourceType == UbuntuNativeInterface::MirConnection) {
-        return mMirConnection;
+        return mIntegration->mirConnection();
     } else {
         return nullptr;
     }
@@ -99,12 +99,7 @@ void* UbuntuNativeInterface::nativeResourceForWindow(const QByteArray& resourceS
         return NULL;
     const ResourceType kResourceType = ubuntuResourceMap()->value(kLowerCaseResource);
     if (kResourceType == UbuntuNativeInterface::EglDisplay) {
-        if (window) {
-            return static_cast<UbuntuScreen*>(window->screen()->handle())->eglDisplay();
-        } else {
-            return static_cast<UbuntuScreen*>(
-                    QGuiApplication::primaryScreen()->handle())->eglDisplay();
-        }
+        return mIntegration->eglDisplay();
     } else if (kResourceType == UbuntuNativeInterface::NativeOrientation) {
         // Return the device's native screen orientation.
         if (window) {
@@ -130,7 +125,7 @@ void* UbuntuNativeInterface::nativeResourceForScreen(const QByteArray& resourceS
         screen = QGuiApplication::primaryScreen();
     auto ubuntuScreen = static_cast<UbuntuScreen*>(screen->handle());
     if (kResourceType == UbuntuNativeInterface::Display) {
-        return ubuntuScreen->eglNativeDisplay();
+        return mIntegration->eglNativeDisplay();
     // Changes to the following properties are emitted via the UbuntuNativeInterface::screenPropertyChanged
     // signal fired by UbuntuScreen. Connect to this signal for these properties updates.
     // WARNING: code highly thread unsafe!

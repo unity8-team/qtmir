@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015 Canonical, Ltd.
+ * Copyright (C) 2014-2016 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -217,7 +217,7 @@ void setSizingConstraints(MirSurfaceSpec *spec, const QSize& minSize, const QSiz
     }
 }
 
-MirSurface *createMirSurface(QWindow *window, UbuntuScreen *screen, UbuntuInput *input,
+MirSurface *createMirSurface(QWindow *window, int mirOutputId, UbuntuInput *input,
                              MirConnection *connection, mir_surface_event_callback inputCallback,
                              void* inputContext)
 {
@@ -232,7 +232,7 @@ MirSurface *createMirSurface(QWindow *window, UbuntuScreen *screen, UbuntuInput 
     setSizingConstraints(spec.get(), window->minimumSize(), window->maximumSize(), window->sizeIncrement());
 
     if (window->windowState() == Qt::WindowFullScreen) {
-        mir_surface_spec_set_fullscreen_on_output(spec.get(), (uint32_t)screen->outputId());
+        mir_surface_spec_set_fullscreen_on_output(spec.get(), mirOutputId);
     }
 
     if (window->flags() & LowChromeWindowHint) {
@@ -266,18 +266,19 @@ int panelHeight()
 class UbuntuSurface
 {
 public:
-    UbuntuSurface(UbuntuWindow *platformWindow, UbuntuScreen *screen, UbuntuInput *input, MirConnection *connection)
+    UbuntuSurface(UbuntuWindow *platformWindow, EGLDisplay display, EGLConfig config, int mirOutputId,
+                  UbuntuInput *input, MirConnection *connection)
         : mWindow(platformWindow->window())
         , mPlatformWindow(platformWindow)
         , mInput(input)
         , mConnection(connection)
-        , mEglDisplay(screen->eglDisplay())
+        , mEglDisplay(display)
         , mNeedsRepaint(false)
         , mParented(mWindow->transientParent() || mWindow->parent())
         , mShellChrome(mWindow->flags() & LowChromeWindowHint ? mir_shell_chrome_low : mir_shell_chrome_normal)
     {
-        mMirSurface = createMirSurface(mWindow, screen, input, connection, surfaceEventCallback, this);
-        mEglSurface = eglCreateWindowSurface(mEglDisplay, screen->eglConfig(), nativeWindowFor(mMirSurface), nullptr);
+        mMirSurface = createMirSurface(mWindow, mirOutputId, input, connection, surfaceEventCallback, this);
+        mEglSurface = eglCreateWindowSurface(mEglDisplay, config, nativeWindowFor(mMirSurface), nullptr);
 
         // Window manager can give us a final size different from what we asked for
         // so let's check what we ended up getting
@@ -508,7 +509,7 @@ void UbuntuSurface::setSurfaceParent(MirSurface* parent)
 }
 
 UbuntuWindow::UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &clipboard,
-                           UbuntuInput *input, UbuntuNativeInterface *native, MirConnection *connection)
+                           UbuntuInput *input, UbuntuNativeInterface *native, UbuntuClientIntegration *integration)
     : QObject(nullptr)
     , QPlatformWindow(w)
     , mId(makeId())
@@ -518,7 +519,8 @@ UbuntuWindow::UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &cl
     , mWindowVisible(false)
     , mWindowExposed(true)
     , mNativeInterface(native)
-    , mSurface(new UbuntuSurface{this, static_cast<UbuntuScreen*>(w->screen()->handle()), input, connection})
+    , mSurface(new UbuntuSurface{this, integration->eglDisplay(), integration->eglConfig(),
+               static_cast<UbuntuScreen*>(w->screen()->handle())->mirOutputId(), input, integration->mirConnection() })
     , mScale(1.0)
     , mFormFactor(mir_form_factor_unknown)
 {

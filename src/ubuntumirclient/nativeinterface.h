@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Canonical, Ltd.
+ * Copyright (C) 2014,2016 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -19,6 +19,8 @@
 
 #include <qpa/qplatformnativeinterface.h>
 
+#include "integration.h"
+
 class QPlatformScreen;
 
 class UbuntuNativeInterface : public QPlatformNativeInterface {
@@ -26,7 +28,7 @@ class UbuntuNativeInterface : public QPlatformNativeInterface {
 public:
     enum ResourceType { EglDisplay, EglContext, NativeOrientation, Display, MirConnection, Scale, FormFactor };
 
-    UbuntuNativeInterface();
+    UbuntuNativeInterface(const UbuntuClientIntegration *integration);
     ~UbuntuNativeInterface();
 
     // QPlatformNativeInterface methods.
@@ -44,15 +46,14 @@ public:
 
     // New methods.
     const QByteArray& genericEventFilterType() const { return mGenericEventFilterType; }
-    void setMirConnection(void *mirConnection) { mMirConnection = mirConnection; }
 
 Q_SIGNALS: // New signals
     void screenPropertyChanged(QPlatformScreen *screen, const QString &propertyName);
 
 private:
+    const UbuntuClientIntegration *mIntegration;
     const QByteArray mGenericEventFilterType;
     Qt::ScreenOrientation* mNativeOrientation;
-    void *mMirConnection;
 };
 
 #endif // UBUNTU_NATIVE_INTERFACE_H
