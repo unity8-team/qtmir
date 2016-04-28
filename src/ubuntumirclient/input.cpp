@@ -660,7 +660,7 @@ void UbuntuInput::handleSurfaceOutputEvent(const QPointer<UbuntuWindow> &window,
     const auto screenObserver = mIntegration->screenObserver();
     UbuntuScreen *screen = screenObserver->findScreenWithId(outputId);
     if (!screen) {
-        qWarning() << "Mir notified window" << window->window() << "on an unknown screen with id" << outputId;
+        qCWarning(ubuntumirclient) << "Mir notified window" << window->window() << "on an unknown screen with id" << outputId;
         return;
     }
 
