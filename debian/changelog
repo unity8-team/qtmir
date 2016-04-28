@@ -1,3 +1,14 @@
+qtubuntu (0.62+16.04.20160428-0ubuntu1) xenial; urgency=medium
+
+  [ Daniel d'Andrada, Gerry Boland, Michał Sawicz, Nick Dedekind ]
+  * Proper support for multiple screens and dynamic scaling support (LP:
+    #1534682, #1573532)
+
+  [ Robert Bruce Park ]
+  * Inline GLES packaging using a quilt patch.
+
+ -- Michał Sawicz <michal.sawicz@canonical.com>  Thu, 28 Apr 2016 15:36:15 +0000
+
 qtubuntu (0.62+16.04.20160322-0ubuntu1) xenial; urgency=medium
 
   [ Lukáš Tinkl ]
