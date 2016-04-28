@@ -25,20 +25,23 @@
 
 #include <memory>
 
+#include <EGL/egl.h>
+
 class UbuntuClipboard;
 class UbuntuNativeInterface;
 class UbuntuInput;
-class UbuntuClientIntegration;
 class UbuntuScreen;
 class UbuntuSurface;
 struct MirSurface;
+class MirConnection;
 
 class UbuntuWindow : public QObject, public QPlatformWindow
 {
     Q_OBJECT
 public:
     UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &clipboard,
-                 UbuntuInput *input, UbuntuNativeInterface* native, UbuntuClientIntegration *integration);
+                 UbuntuInput *input, UbuntuNativeInterface* native, EGLDisplay eglDisplay, EGLConfig eglConfig,
+                 MirConnection *mirConnection);
     virtual ~UbuntuWindow();
 
     // QPlatformWindow methods.

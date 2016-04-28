@@ -509,7 +509,8 @@ void UbuntuSurface::setSurfaceParent(MirSurface* parent)
 }
 
 UbuntuWindow::UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &clipboard,
-                           UbuntuInput *input, UbuntuNativeInterface *native, UbuntuClientIntegration *integration)
+                           UbuntuInput *input, UbuntuNativeInterface *native, EGLDisplay eglDisplay,
+                           EGLConfig eglConfig, MirConnection *mirConnection)
     : QObject(nullptr)
     , QPlatformWindow(w)
     , mId(makeId())
@@ -519,8 +520,8 @@ UbuntuWindow::UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &cl
     , mWindowVisible(false)
     , mWindowExposed(true)
     , mNativeInterface(native)
-    , mSurface(new UbuntuSurface{this, integration->eglDisplay(), integration->eglConfig(),
-               static_cast<UbuntuScreen*>(w->screen()->handle())->mirOutputId(), input, integration->mirConnection() })
+    , mSurface(new UbuntuSurface{this, eglDisplay, eglConfig,
+               static_cast<UbuntuScreen*>(w->screen()->handle())->mirOutputId(), input, mirConnection})
     , mScale(1.0)
     , mFormFactor(mir_form_factor_unknown)
 {
