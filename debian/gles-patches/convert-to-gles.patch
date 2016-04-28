@@ -1,0 +1,138 @@
+Index: qtubuntu/debian/control
+===================================================================
+--- qtubuntu.orig/debian/control
++++ qtubuntu/debian/control
+@@ -1,4 +1,4 @@
+-Source: qtubuntu
++Source: qtubuntu-gles
+ Priority: optional
+ Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+ Build-Depends: debhelper (>= 9),
+@@ -11,12 +11,20 @@ Build-Depends: debhelper (>= 9),
+                libinput-dev,
+                libmirclient-dev (>= 0.13.0),
+                libmtdev-dev,
++               libqt5gui5-gles,
++               libqt5quick5-gles,
++               libqt5quickparticles5-gles,
++               libqt5quicktest5,
++               libqt5quickwidgets5-gles,
++               libqt5sensors5-dev,
+                libubuntu-application-api-dev (>= 2.9.0),
+                libudev-dev,
+                libxkbcommon-dev,
+                libxrender-dev,
+                qt5-default,
+-               qtbase5-private-dev,
++               qtbase5-gles-dev,
++               qtbase5-private-gles-dev,
++               qtdeclarative5-dev,
+                quilt,
+ # if you don't have have commit access to this branch but would like to upload
+ # directly to Ubuntu, don't worry: your changes will be merged back into the
+@@ -26,7 +34,7 @@ Standards-Version: 3.9.6
+ Section: libs
+ 
+ Package: qtubuntu-android
+-Architecture: armhf
++Architecture: amd64 i386
+ Multi-Arch: same
+ Conflicts: qtubuntu-desktop,
+ Replaces: qthybris (<< 0.37),
+@@ -39,41 +47,12 @@ Provides: qtubuntu,
+ Depends: ubuntu-application-api3-touch,
+          ${misc:Depends},
+          ${shlibs:Depends},
+-Description: Qt plugins for Ubuntu Platform API (mobile)
++Description: Qt plugins for Ubuntu Platform API (mobile) - OpenGLES
+  QtUbuntu is a set of Qt5 components for the Ubuntu Platform API. It contains a
+  QPA (Qt Platform Abstraction) plugin based on the Ubuntu Platform API and a
+  legacy QPA plugin based on the compatibility layers. It also provides Qt
+  bindings for Ubuntu Platform API features that are not exposed through the QPA
+  plugins.
+  .
+- This variant of the package is for Android-based phones and tablets.
+-
+-Package: qtubuntu-desktop
+-Architecture: any
+-Multi-Arch: same
+-Conflicts: qtubuntu-android,
+-Replaces: qtubuntu (<< 0.52),
+-          qtubuntu-android,
+-Breaks: qthybris (<< 0.37),
+-        unity8 (<< 7.85),
+-Provides: qtubuntu,
+-Depends: ubuntu-application-api3-desktop,
+-         ${misc:Depends},
+-         ${shlibs:Depends},
+-Description: Qt plugins for Ubuntu Platform API (desktop)
+- QtUbuntu is a set of Qt5 components for the Ubuntu Platform API. It contains a
+- QPA (Qt Platform Abstraction) plugin based on the Ubuntu Platform API and a
+- legacy QPA plugin based on the compatibility layers. It also provides Qt
+- bindings for Ubuntu Platform API features that are not exposed through the QPA
+- plugins.
+- .
+- This variant of the package is for GNU-based desktops.
+-
+-Package: qthybris
+-Depends: qtubuntu-android,
+-         ${misc:Depends},
+-Architecture: any
+-Section: oldlibs
+-Description: transitional dummy package
+- This is a transitional dummy package for the qthybris -> qtubuntu
+- transition.
++ This variant of the package is for Android-based phones and tablets (built
++ against the OpenGLES variant of qtbase).
+Index: qtubuntu/debian/rules
+===================================================================
+--- qtubuntu.orig/debian/rules
++++ qtubuntu/debian/rules
+@@ -4,47 +4,25 @@
+ export DPKG_GENSYMBOLS_CHECK_LEVEL=4
+ 
+ ANDROID_DIR = build-android
+-DESKTOP_DIR = build-desktop
+ TMP1_DIR = $(CURDIR)/debian/tmp1
+-TMP2_DIR = $(CURDIR)/debian/tmp2
+-
+-# We only want to build qtubuntu-android on arches using Qt built with OpenGL ES2.0
+-DEB_HOST_ARCH ?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
+-gles2_architectures = armhf
+ 
+ %:
+ 	dh $@
+ 
+ override_dh_clean:
+-ifeq ($(DEB_HOST_ARCH),$(findstring $(DEB_HOST_ARCH), $(gles2_architectures)))
+ 	rm -rf $(TMP1_DIR)
+-endif
+-	rm -rf $(TMP2_DIR)
+ 	dh_clean
+ 
+ override_dh_auto_configure:
+-ifeq ($(DEB_HOST_ARCH),$(findstring $(DEB_HOST_ARCH), $(gles2_architectures)))
+ 	mkdir -p $(ANDROID_DIR) && dh_auto_configure -B$(ANDROID_DIR) -- "QMAKE_CXXFLAGS=-DPLATFORM_API_TOUCH" $(CURDIR)
+-endif
+-	mkdir -p $(DESKTOP_DIR) && dh_auto_configure -B$(DESKTOP_DIR) -- "QMAKE_CXXFLAGS=-DQTUBUNTU_USE_OPENGL" $(CURDIR)
+ 
+ override_dh_auto_build:
+-ifeq ($(DEB_HOST_ARCH),$(findstring $(DEB_HOST_ARCH), $(gles2_architectures)))
+ 	dh_auto_build -B$(ANDROID_DIR)
+-endif
+-	dh_auto_build -B$(DESKTOP_DIR)
+ 
+ override_dh_auto_install:
+ 	rm -f debian/*/usr/lib/*/qt5/examples/qtubuntu/qmlscene-ubuntu
+-ifeq ($(DEB_HOST_ARCH),$(findstring $(DEB_HOST_ARCH), $(gles2_architectures)))
+ 	mkdir -p $(TMP1_DIR) && cd $(ANDROID_DIR) && INSTALL_ROOT=$(TMP1_DIR) make install
+ 	cd $(CURDIR)
+-endif
+-	mkdir -p $(TMP2_DIR) && cd $(DESKTOP_DIR) && INSTALL_ROOT=$(TMP2_DIR) make install
+-	cd $(CURDIR)
+ 
+ override_dh_install:
+-ifeq ($(DEB_HOST_ARCH),$(findstring $(DEB_HOST_ARCH), $(gles2_architectures)))
+ 	dh_install --sourcedir=$(TMP1_DIR) -pqtubuntu-android
+-endif
+-	dh_install --sourcedir=$(TMP2_DIR) -pqtubuntu-desktop
