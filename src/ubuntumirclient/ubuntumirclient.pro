@@ -26,6 +26,7 @@ SOURCES = \
     platformservices.cpp \
     plugin.cpp \
     screen.cpp \
+    screenobserver.cpp \
     theme.cpp \
     window.cpp
 
@@ -42,6 +43,7 @@ HEADERS = \
     orientationchangeevent_p.h \
     platformservices.h \
     plugin.h \
+    screenobserver.h \
     screen.h \
     theme.h \
     window.h

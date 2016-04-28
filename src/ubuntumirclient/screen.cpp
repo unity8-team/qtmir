@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015 Canonical, Ltd.
+ * Copyright (C) 2014-2016 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -18,11 +18,12 @@
 #include "screen.h"
 #include "logging.h"
 #include "orientationchangeevent_p.h"
+#include "nativeinterface.h"
 
 #include <mir_toolkit/mir_client_library.h>
 
 // Qt
-#include <QCoreApplication>
+#include <QGuiApplication>
 #include <QtCore/qmath.h>
 #include <QScreen>
 #include <QThread>
@@ -31,7 +32,7 @@
 
 #include <memory>
 
-static const int kSwapInterval = 1;
+static const int overrideDevicePixelRatio = qgetenv("QT_DEVICE_PIXEL_RATIO").toInt();
 
 static const char *orientationToStr(Qt::ScreenOrientation orientation) {
     switch (orientation) {
@@ -50,164 +51,25 @@ static const char *orientationToStr(Qt::ScreenOrientation orientation) {
     }
 }
 
-static void printEglConfig(EGLDisplay display, EGLConfig config) {
-    Q_ASSERT(display != EGL_NO_DISPLAY);
-    Q_ASSERT(config != nullptr);
-
-    static const struct { const EGLint attrib; const char* name; } kAttribs[] = {
-        { EGL_BUFFER_SIZE, "EGL_BUFFER_SIZE" },
-        { EGL_ALPHA_SIZE, "EGL_ALPHA_SIZE" },
-        { EGL_BLUE_SIZE, "EGL_BLUE_SIZE" },
-        { EGL_GREEN_SIZE, "EGL_GREEN_SIZE" },
-        { EGL_RED_SIZE, "EGL_RED_SIZE" },
-        { EGL_DEPTH_SIZE, "EGL_DEPTH_SIZE" },
-        { EGL_STENCIL_SIZE, "EGL_STENCIL_SIZE" },
-        { EGL_CONFIG_CAVEAT, "EGL_CONFIG_CAVEAT" },
-        { EGL_CONFIG_ID, "EGL_CONFIG_ID" },
-        { EGL_LEVEL, "EGL_LEVEL" },
-        { EGL_MAX_PBUFFER_HEIGHT, "EGL_MAX_PBUFFER_HEIGHT" },
-        { EGL_MAX_PBUFFER_PIXELS, "EGL_MAX_PBUFFER_PIXELS" },
-        { EGL_MAX_PBUFFER_WIDTH, "EGL_MAX_PBUFFER_WIDTH" },
-        { EGL_NATIVE_RENDERABLE, "EGL_NATIVE_RENDERABLE" },
-        { EGL_NATIVE_VISUAL_ID, "EGL_NATIVE_VISUAL_ID" },
-        { EGL_NATIVE_VISUAL_TYPE, "EGL_NATIVE_VISUAL_TYPE" },
-        { EGL_SAMPLES, "EGL_SAMPLES" },
-        { EGL_SAMPLE_BUFFERS, "EGL_SAMPLE_BUFFERS" },
-        { EGL_SURFACE_TYPE, "EGL_SURFACE_TYPE" },
-        { EGL_TRANSPARENT_TYPE, "EGL_TRANSPARENT_TYPE" },
-        { EGL_TRANSPARENT_BLUE_VALUE, "EGL_TRANSPARENT_BLUE_VALUE" },
-        { EGL_TRANSPARENT_GREEN_VALUE, "EGL_TRANSPARENT_GREEN_VALUE" },
-        { EGL_TRANSPARENT_RED_VALUE, "EGL_TRANSPARENT_RED_VALUE" },
-        { EGL_BIND_TO_TEXTURE_RGB, "EGL_BIND_TO_TEXTURE_RGB" },
-        { EGL_BIND_TO_TEXTURE_RGBA, "EGL_BIND_TO_TEXTURE_RGBA" },
-        { EGL_MIN_SWAP_INTERVAL, "EGL_MIN_SWAP_INTERVAL" },
-        { EGL_MAX_SWAP_INTERVAL, "EGL_MAX_SWAP_INTERVAL" },
-        { -1, NULL }
-    };
-    const char* string = eglQueryString(display, EGL_VENDOR);
-    qCDebug(ubuntumirclient, "EGL vendor: %s", string);
-
-    string = eglQueryString(display, EGL_VERSION);
-    qCDebug(ubuntumirclient, "EGL version: %s", string);
-
-    string = eglQueryString(display, EGL_EXTENSIONS);
-    qCDebug(ubuntumirclient, "EGL extensions: %s", string);
-
-    qCDebug(ubuntumirclient, "EGL configuration attibutes:");
-    for (int index = 0; kAttribs[index].attrib != -1; index++) {
-        EGLint value;
-        if (eglGetConfigAttrib(display, config, kAttribs[index].attrib, &value))
-            qCDebug(ubuntumirclient, "  %s: %d", kAttribs[index].name, static_cast<int>(value));
-    }
-}
-
 const QEvent::Type OrientationChangeEvent::mType =
         static_cast<QEvent::Type>(QEvent::registerEventType());
 
-static const MirDisplayOutput *find_active_output(
-    const MirDisplayConfiguration *conf)
-{
-    const MirDisplayOutput *output = NULL;
-    for (uint32_t d = 0; d < conf->num_outputs; d++)
-    {
-        const MirDisplayOutput *out = conf->outputs + d;
 
-        if (out->used &&
-            out->connected &&
-            out->num_modes &&
-            out->current_mode < out->num_modes)
-        {
-            output = out;
-            break;
-        }
-    }
-
-    return output;
-}
-
-UbuntuScreen::UbuntuScreen(MirConnection *connection)
-    : mFormat(QImage::Format_RGB32)
+UbuntuScreen::UbuntuScreen(const MirOutput *output, MirConnection *connection)
+    : mDevicePixelRatio(1.0)
+    , mFormat(QImage::Format_RGB32)
     , mDepth(32)
+    , mDpi{0}
+    , mFormFactor{mir_form_factor_unknown}
+    , mScale{1.0}
     , mOutputId(0)
-    , mSurfaceFormat()
-    , mEglDisplay(EGL_NO_DISPLAY)
-    , mEglConfig(nullptr)
     , mCursor(connection)
 {
-    // Initialize EGL.
-    ASSERT(eglBindAPI(EGL_OPENGL_ES_API) == EGL_TRUE);
-
-    mEglNativeDisplay = mir_connection_get_egl_native_display(connection);
-    ASSERT((mEglDisplay = eglGetDisplay(mEglNativeDisplay)) != EGL_NO_DISPLAY);
-    ASSERT(eglInitialize(mEglDisplay, nullptr, nullptr) == EGL_TRUE);
-
-    // Configure EGL buffers format.
-    mSurfaceFormat.setRedBufferSize(8);
-    mSurfaceFormat.setGreenBufferSize(8);
-    mSurfaceFormat.setBlueBufferSize(8);
-    mSurfaceFormat.setAlphaBufferSize(8);
-    mSurfaceFormat.setDepthBufferSize(24);
-    mSurfaceFormat.setStencilBufferSize(8);
-    if (!qEnvironmentVariableIsEmpty("QTUBUNTU_MULTISAMPLE")) {
-        mSurfaceFormat.setSamples(4);
-        qCDebug(ubuntumirclient, "setting MSAA to 4 samples");
-    }
-#ifdef QTUBUNTU_USE_OPENGL
-    mSurfaceFormat.setRenderableType(QSurfaceFormat::OpenGL);
-#else
-    mSurfaceFormat.setRenderableType(QSurfaceFormat::OpenGLES);
-#endif
-    mEglConfig = q_configFromGLFormat(mEglDisplay, mSurfaceFormat, true);
-
-    if (ubuntumirclient().isDebugEnabled()) {
-        printEglConfig(mEglDisplay, mEglConfig);
-    }
-
-    // Set vblank swap interval.
-    int swapInterval = kSwapInterval;
-    QByteArray swapIntervalString = qgetenv("QTUBUNTU_SWAPINTERVAL");
-    if (!swapIntervalString.isEmpty()) {
-        bool ok;
-        swapInterval = swapIntervalString.toInt(&ok);
-        if (!ok)
-            swapInterval = kSwapInterval;
-    }
-    qCDebug(ubuntumirclient, "setting swap interval to %d", swapInterval);
-    eglSwapInterval(mEglDisplay, swapInterval);
-
-    // Get screen resolution.
-    auto configDeleter = [](MirDisplayConfiguration *config) { mir_display_config_destroy(config); };
-    using configUp = std::unique_ptr<MirDisplayConfiguration, decltype(configDeleter)>;
-    configUp displayConfig(mir_connection_create_display_config(connection), configDeleter);
-    ASSERT(displayConfig != nullptr);
-
-    auto const displayOutput = find_active_output(displayConfig.get());
-    ASSERT(displayOutput != nullptr);
-
-    mOutputId = displayOutput->output_id;
-
-    mPhysicalSize = QSizeF(displayOutput->physical_width_mm, displayOutput->physical_height_mm);
-    qCDebug(ubuntumirclient, "screen physical size: %.2fx%.2f", mPhysicalSize.width(), mPhysicalSize.height());
-
-    const MirDisplayMode *mode = &displayOutput->modes[displayOutput->current_mode];
-    const int kScreenWidth = mode->horizontal_resolution;
-    const int kScreenHeight = mode->vertical_resolution;
-    Q_ASSERT(kScreenWidth > 0 && kScreenHeight > 0);
-
-    qCDebug(ubuntumirclient, "screen resolution: %dx%d", kScreenWidth, kScreenHeight);
-
-    mGeometry = QRect(0, 0, kScreenWidth, kScreenHeight);
-
-    // Set the default orientation based on the initial screen dimmensions.
-    mNativeOrientation = (mGeometry.width() >= mGeometry.height()) ? Qt::LandscapeOrientation : Qt::PortraitOrientation;
-
-    // If it's a landscape device (i.e. some tablets), start in landscape, otherwise portrait
-    mCurrentOrientation = (mNativeOrientation == Qt::LandscapeOrientation) ? Qt::LandscapeOrientation : Qt::PortraitOrientation;
+    setMirOutput(output);
 }
 
 UbuntuScreen::~UbuntuScreen()
 {
-    eglTerminate(mEglDisplay);
 }
 
 void UbuntuScreen::customEvent(QEvent* event) {
@@ -276,5 +138,106 @@ void UbuntuScreen::handleWindowSurfaceResize(int windowWidth, int windowHeight)
         }
         qCDebug(ubuntumirclient, "UbuntuScreen::handleWindowSurfaceResize - new orientation %s",orientationToStr(mCurrentOrientation));
         QWindowSystemInterface::handleScreenOrientationChange(screen(), mCurrentOrientation);
+    }
+}
+
+void UbuntuScreen::setMirOutput(const MirOutput *output)
+{
+    // Physical screen size (in mm)
+    mPhysicalSize.setWidth(mir_output_get_physical_width_mm(output));
+    mPhysicalSize.setHeight(mir_output_get_physical_height_mm(output));
+
+    // Pixel Format
+//    mFormat = qImageFormatFromMirPixelFormat(mir_output_get_current_pixel_format(output)); // GERRY: TODO
+
+    // Pixel depth
+    mDepth = 8 * MIR_BYTES_PER_PIXEL(mir_output_get_current_pixel_format(output));
+
+    // Mode = Resolution & refresh rate
+    const MirOutputMode *mode = mir_output_get_current_mode(output);
+    mNativeGeometry.setX(mir_output_get_position_x(output));
+    mNativeGeometry.setY(mir_output_get_position_y(output));
+    mNativeGeometry.setWidth(mir_output_mode_get_width(mode));
+    mNativeGeometry.setHeight(mir_output_mode_get_height(mode));
+
+    mRefreshRate = mir_output_mode_get_refresh_rate(mode);
+
+    // UI scale & DPR
+    mScale = mir_output_get_scale_factor(output);
+    if (overrideDevicePixelRatio > 0) {
+        mDevicePixelRatio = overrideDevicePixelRatio;
+    } else {
+        mDevicePixelRatio = 1.0; // FIXME - need to determine suitable DPR for the specified scale
+    }
+
+    mFormFactor = mir_output_get_form_factor(output);
+
+    mOutputId = mir_output_get_id(output);
+
+    mGeometry.setX(mNativeGeometry.x());
+    mGeometry.setY(mNativeGeometry.y());
+    mGeometry.setWidth(mNativeGeometry.width());
+    mGeometry.setHeight(mNativeGeometry.height());
+
+    // Set the default orientation based on the initial screen dimensions.
+    mNativeOrientation = (mGeometry.width() >= mGeometry.height()) ? Qt::LandscapeOrientation : Qt::PortraitOrientation;
+
+    // If it's a landscape device (i.e. some tablets), start in landscape, otherwise portrait
+    mCurrentOrientation = (mNativeOrientation == Qt::LandscapeOrientation) ? Qt::LandscapeOrientation : Qt::PortraitOrientation;
+}
+
+void UbuntuScreen::updateMirOutput(const MirOutput *output)
+{
+    auto oldRefreshRate = mRefreshRate;
+    auto oldScale = mScale;
+    auto oldFormFactor = mFormFactor;
+    auto oldGeometry = mGeometry;
+
+    setMirOutput(output);
+
+    // Emit change signals in particular order
+    if (oldGeometry != mGeometry) {
+        QWindowSystemInterface::handleScreenGeometryChange(screen(),
+                                                           mGeometry /* newGeometry */,
+                                                           mGeometry /* newAvailableGeometry */);
+    }
+
+    if (!qFuzzyCompare(mRefreshRate, oldRefreshRate)) {
+        QWindowSystemInterface::handleScreenRefreshRateChange(screen(), mRefreshRate);
+    }
+
+    auto nativeInterface = static_cast<UbuntuNativeInterface *>(qGuiApp->platformNativeInterface());
+    if (!qFuzzyCompare(mScale, oldScale)) {
+        nativeInterface->screenPropertyChanged(this, QStringLiteral("scale"));
+    }
+    if (mFormFactor != oldFormFactor) {
+        nativeInterface->screenPropertyChanged(this, QStringLiteral("formFactor"));
+    }
+}
+
+void UbuntuScreen::setAdditionalMirDisplayProperties(float scale, MirFormFactor formFactor, int dpi)
+{
+    if (mDpi != dpi) {
+        mDpi = dpi;
+        QWindowSystemInterface::handleScreenLogicalDotsPerInchChange(screen(), dpi, dpi);
+    }
+
+    auto nativeInterface = static_cast<UbuntuNativeInterface *>(qGuiApp->platformNativeInterface());
+    if (!qFuzzyCompare(mScale, scale)) {
+        mScale = scale;
+        nativeInterface->screenPropertyChanged(this, QStringLiteral("scale"));
+    }
+    if (mFormFactor != formFactor) {
+        mFormFactor = formFactor;
+        nativeInterface->screenPropertyChanged(this, QStringLiteral("formFactor"));
+    }
+}
+
+QDpi UbuntuScreen::logicalDpi() const
+{
+    if (mDpi > 0) {
+        return QDpi(mDpi, mDpi);
+    } else {
+        return QPlatformScreen::logicalDpi();
     }
 }

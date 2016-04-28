@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015 Canonical, Ltd.
+ * Copyright (C) 2014-2016 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -33,6 +33,7 @@
 #include <qpa/qplatformnativeinterface.h>
 #include <qpa/qplatforminputcontextfactory_p.h>
 #include <qpa/qplatforminputcontext.h>
+#include <QtPlatformSupport/private/qeglconvenience_p.h>
 #include <QtPlatformSupport/private/qgenericunixfontdatabase_p.h>
 #include <QtPlatformSupport/private/qgenericunixeventdispatcher_p.h>
 #include <QOpenGLContext>
@@ -70,7 +71,7 @@ static void aboutToStopCallback(UApplicationArchive *archive, void* context)
 
 UbuntuClientIntegration::UbuntuClientIntegration()
     : QPlatformIntegration()
-    , mNativeInterface(new UbuntuNativeInterface)
+    , mNativeInterface(new UbuntuNativeInterface(this))
     , mFontDb(new QGenericUnixFontDatabase)
     , mServices(new UbuntuPlatformServices)
     , mClipboard(new UbuntuClipboard)
@@ -87,20 +88,51 @@ UbuntuClientIntegration::UbuntuClientIntegration()
                "running, and the correct socket is being used and is accessible. The shell may have\n"
                "rejected the incoming connection, so check its log file");
 
-    mNativeInterface->setMirConnection(u_application_instance_get_mir_connection(mInstance));
+    mMirConnection = u_application_instance_get_mir_connection(mInstance);
 
-    // Create default screen.
-    mScreen = new UbuntuScreen(u_application_instance_get_mir_connection(mInstance));
-    screenAdded(mScreen);
+    // Initialize EGL.
+    ASSERT(eglBindAPI(EGL_OPENGL_ES_API) == EGL_TRUE);
+
+    mEglNativeDisplay = mir_connection_get_egl_native_display(mMirConnection);
+    ASSERT((mEglDisplay = eglGetDisplay(mEglNativeDisplay)) != EGL_NO_DISPLAY);
+    ASSERT(eglInitialize(mEglDisplay, nullptr, nullptr) == EGL_TRUE);
+
+    // Configure EGL buffers format for all Windows.
+    mSurfaceFormat.setRedBufferSize(8);
+    mSurfaceFormat.setGreenBufferSize(8);
+    mSurfaceFormat.setBlueBufferSize(8);
+    mSurfaceFormat.setAlphaBufferSize(8);
+    mSurfaceFormat.setDepthBufferSize(24);
+    mSurfaceFormat.setStencilBufferSize(8);
+    if (!qEnvironmentVariableIsEmpty("QTUBUNTU_MULTISAMPLE")) {
+        mSurfaceFormat.setSamples(4);
+        qCDebug(ubuntumirclient, "setting MSAA to 4 samples");
+    }
+#ifdef QTUBUNTU_USE_OPENGL
+    mSurfaceFormat.setRenderableType(QSurfaceFormat::OpenGL);
+#else
+    mSurfaceFormat.setRenderableType(QSurfaceFormat::OpenGLES);
+#endif
+
+    mEglConfig = q_configFromGLFormat(mEglDisplay, mSurfaceFormat, true);
+}
+
+void UbuntuClientIntegration::initialize()
+{
+    // Init the ScreenObserver
+    mScreenObserver.reset(new UbuntuScreenObserver(mMirConnection));
+    connect(mScreenObserver.data(), &UbuntuScreenObserver::screenAdded,
+            [this](UbuntuScreen *screen) { this->screenAdded(screen); });
+    connect(mScreenObserver.data(), &UbuntuScreenObserver::screenRemoved,
+                     this, &UbuntuClientIntegration::destroyScreen);
+
+    Q_FOREACH(auto screen, mScreenObserver->screens()) {
+        screenAdded(screen);
+    }
 
     // Initialize input.
-    if (qEnvironmentVariableIsEmpty("QTUBUNTU_NO_INPUT")) {
-        mInput = new UbuntuInput(this);
-        mInputContext = QPlatformInputContextFactory::create();
-    } else {
-        mInput = nullptr;
-        mInputContext = nullptr;
-    }
+    mInput = new UbuntuInput(this);
+    mInputContext = QPlatformInputContextFactory::create();
 
     // compute the scale factor
     const int defaultGridUnit = 8;
@@ -118,9 +150,9 @@ UbuntuClientIntegration::UbuntuClientIntegration()
 
 UbuntuClientIntegration::~UbuntuClientIntegration()
 {
+    eglTerminate(mEglDisplay);
     delete mInput;
     delete mInputContext;
-    delete mScreen;
     delete mServices;
 }
 
@@ -165,8 +197,7 @@ QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window) 
 
 QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window)
 {
-    return new UbuntuWindow(window, mClipboard, static_cast<UbuntuScreen*>(mScreen),
-                            mInput, u_application_instance_get_mir_connection(mInstance));
+    return new UbuntuWindow(window, mClipboard, mInput, mNativeInterface, mEglDisplay, mEglConfig, mMirConnection);
 }
 
 bool UbuntuClientIntegration::hasCapability(QPlatformIntegration::Capability cap) const
@@ -215,8 +246,8 @@ QPlatformOpenGLContext* UbuntuClientIntegration::createPlatformOpenGLContext(
 QPlatformOpenGLContext* UbuntuClientIntegration::createPlatformOpenGLContext(
         QOpenGLContext* context)
 {
-    return new UbuntuOpenGLContext(static_cast<UbuntuScreen*>(context->screen()->handle()),
-                                   static_cast<UbuntuOpenGLContext*>(context->shareHandle()));
+    return new UbuntuOpenGLContext(mSurfaceFormat, static_cast<UbuntuOpenGLContext*>(context->shareHandle()),
+                                   mEglDisplay, mEglConfig);
 }
 
 QStringList UbuntuClientIntegration::themeNames() const
@@ -261,4 +292,35 @@ QPlatformOffscreenSurface *UbuntuClientIntegration::createPlatformOffscreenSurfa
         QOffscreenSurface *surface) const
 {
     return new UbuntuOffscreenSurface(surface);
+}
+
+void UbuntuClientIntegration::destroyScreen(UbuntuScreen *screen)
+{
+    // FIXME: on deleting a screen while a Window is on it, Qt will automatically
+    // move the window to the primaryScreen(). This will trigger a screenChanged
+    // signal, causing things like QQuickScreenAttached to re-fetch screen properties
+    // like DPI and physical size. However this is crashing, as Qt is calling virtual
+    // functions on QPlatformScreen, for reasons unclear. As workaround, move window
+    // to primaryScreen() before deleting the screen. Might be QTBUG-38650
+
+    QScreen *primaryScreen = QGuiApplication::primaryScreen();
+    if (screen != primaryScreen->handle()) {
+        uint32_t movedWindowCount = 0;
+        Q_FOREACH (QWindow *w, QGuiApplication::topLevelWindows()) {
+            if (w->screen()->handle() == screen) {
+                QWindowSystemInterface::handleWindowScreenChanged(w, primaryScreen);
+                ++movedWindowCount;
+            }
+        }
+        if (movedWindowCount > 0) {
+            QWindowSystemInterface::flushWindowSystemEvents();
+        }
+    }
+
+    qCDebug(ubuntumirclient) << "Removing Screen with id" << screen->mirOutputId() << "and geometry" << screen->geometry();
+#if QT_VERSION < QT_VERSION_CHECK(5, 5, 0)
+    delete screen;
+#else
+    QPlatformIntegration::destroyScreen(screen);
+#endif
 }
