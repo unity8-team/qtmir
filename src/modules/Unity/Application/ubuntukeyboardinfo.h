@@ -31,6 +31,7 @@ class UbuntuKeyboardInfo : public QObject {
     Q_PROPERTY(qreal y READ y NOTIFY yChanged)
     Q_PROPERTY(qreal width READ width NOTIFY widthChanged)
     Q_PROPERTY(qreal height READ height NOTIFY heightChanged)
+    Q_PROPERTY(qreal maxHeight READ maxHeight NOTIFY maxHeightChanged)
 public:
     UbuntuKeyboardInfo(QObject *parent = 0);
     virtual ~UbuntuKeyboardInfo();
@@ -41,12 +42,14 @@ public:
     qreal y() const { return m_lastY; }
     qreal width() const { return m_lastWidth; }
     qreal height() const { return m_lastHeight; }
+    qreal maxHeight() const { return m_lastMaxHeight; }
 
 Q_SIGNALS:
     void xChanged(qreal x);
     void yChanged(qreal y);
     void widthChanged(qreal width);
     void heightChanged(qreal height);
+    void maxHeightChanged(qreal maxHeight);
 
 private Q_SLOTS:
     void tryConnectingToServer();
@@ -62,6 +65,7 @@ private:
         qint32 keyboardY;
         qint32 keyboardWidth;
         qint32 keyboardHeight;
+        qint32 keyboardMaxHeight;
     };
     void readInfoFromSocket();
     void retryConnection();
@@ -74,6 +78,7 @@ private:
     qint32 m_lastY;
     qint32 m_lastWidth;
     qint32 m_lastHeight;
+    qint32 m_lastMaxHeight;
     QTimer m_connectionRetryTimer;
 
     // Path to the socket file created by ubuntu-keyboard

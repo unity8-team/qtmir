@@ -154,6 +154,11 @@ void UbuntuKeyboardInfo::readInfoFromSocket()
             m_lastHeight = sharedInfo->keyboardHeight;
             Q_EMIT heightChanged(m_lastHeight);
         }
+
+        if (m_lastMaxHeight != sharedInfo->keyboardMaxHeight) {
+            m_lastMaxHeight = sharedInfo->keyboardMaxHeight;
+            Q_EMIT maxHeightChanged(m_lastMaxHeight);
+        }
     }
 }
 
