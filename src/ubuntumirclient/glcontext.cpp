@@ -24,23 +24,6 @@
 
 namespace {
 
-void printOpenGLESConfig() {
-    static bool once = true;
-    if (once) {
-        const char* string = (const char*) glGetString(GL_VENDOR);
-        qCDebug(ubuntumirclient, "OpenGL ES vendor: %s", string);
-        string = (const char*) glGetString(GL_RENDERER);
-        qCDebug(ubuntumirclient, "OpenGL ES renderer: %s", string);
-        string = (const char*) glGetString(GL_VERSION);
-        qCDebug(ubuntumirclient, "OpenGL ES version: %s", string);
-        string = (const char*) glGetString(GL_SHADING_LANGUAGE_VERSION);
-        qCDebug(ubuntumirclient, "OpenGL ES Shading Language version: %s", string);
-        string = (const char*) glGetString(GL_EXTENSIONS);
-        qCDebug(ubuntumirclient, "OpenGL ES extensions: %s", string);
-        once = false;
-    }
-}
-
 void printEglConfig(EGLDisplay display, EGLConfig config) {
     Q_ASSERT(display != EGL_NO_DISPLAY);
     Q_ASSERT(config != nullptr);
@@ -82,10 +65,6 @@ bool UbuntuOpenGLContext::makeCurrent(QPlatformSurface* surface)
         return offscreen->buffer()->bind();
     } else {
         QEGLPlatformContext::makeCurrent(surface);
-
-        if (ubuntumirclient().isDebugEnabled()) {
-            printOpenGLESConfig();
-        }
         return true;
     }
 }
