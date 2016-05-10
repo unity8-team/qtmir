@@ -64,8 +64,7 @@ bool UbuntuOpenGLContext::makeCurrent(QPlatformSurface* surface)
         }
         return offscreen->buffer()->bind();
     } else {
-        QEGLPlatformContext::makeCurrent(surface);
-        return true;
+        return QEGLPlatformContext::makeCurrent(surface);
     }
 }
 
