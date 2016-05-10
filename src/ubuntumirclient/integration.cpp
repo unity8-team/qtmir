@@ -247,7 +247,7 @@ QPlatformOpenGLContext* UbuntuClientIntegration::createPlatformOpenGLContext(
         QOpenGLContext* context)
 {
     return new UbuntuOpenGLContext(mSurfaceFormat, static_cast<UbuntuOpenGLContext*>(context->shareHandle()),
-                                   mEglDisplay, mEglConfig);
+                                   mEglDisplay, &mEglConfig);
 }
 
 QStringList UbuntuClientIntegration::themeNames() const
