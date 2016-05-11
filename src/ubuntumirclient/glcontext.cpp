@@ -68,7 +68,7 @@ bool UbuntuOpenGLContext::makeCurrent(QPlatformSurface* surface)
     }
 }
 
-// Following method used internally in the base class QEGLPlatformContext to map access
+// Following method used internally in the base class QEGLPlatformContext to access
 // the egl surface of a QPlatformSurface/UbuntuWindow
 EGLSurface UbuntuOpenGLContext::eglSurfaceForPlatformSurface(QPlatformSurface *surface)
 {
