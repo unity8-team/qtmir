@@ -303,10 +303,11 @@ public:
         EGLConfig config = q_configFromGLFormat(display, mFormat, true);
         mFormat = q_glFormatFromConfig(display, config, mFormat);
 
-        // Have Mir decide the pixel format most suited to the chosen EGLConfig
+        // Have Mir decide the pixel format most suited to the chosen EGLConfig. This is the only way
+        // Mir will know what EGLConfig has been chosen - it cannot deduce it from the buffers.
         auto pixelFormat = mir_connection_get_egl_pixel_format(connection, display, config);
         // But the chosen EGLConfig might have an alpha buffer enabled, even if not requested by the client.
-        // If that's the case, try to edit the chosen pixel format to a matching one without alpha.
+        // If that's the case, try to edit the chosen pixel format which disables the alpha buffer.
         if (mWindow->requestedFormat().alphaBufferSize() < 0) {
             pixelFormat = disableAlphaBufferIfPossible(pixelFormat);
         }
