@@ -43,7 +43,7 @@ public:
     }
 };
 
-TEST_F(SessionTests, FromStartingToRunningOnceSurfaceDrawsFirstFrame)
+TEST_F(SessionTests, FromStartingToRunningOnceFirstSurfaceAppears)
 {
     using namespace testing;
 
@@ -60,10 +60,6 @@ TEST_F(SessionTests, FromStartingToRunningOnceSurfaceDrawsFirstFrame)
     FakeMirSurface *surface = new FakeMirSurface;
     session->prependSurface(surface);
 
-    // Still on Starting as the surface hasn't drawn its first frame yet
-    EXPECT_EQ(Session::Starting, session->state());
-
-    surface->drawFirstFrame();
     EXPECT_EQ(Session::Running, session->state());
 }
 
