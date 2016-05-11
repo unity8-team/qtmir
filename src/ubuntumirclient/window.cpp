@@ -254,6 +254,18 @@ MirSurface *createMirSurface(QWindow *window, int mirOutputId, UbuntuInput *inpu
     return surface;
 }
 
+MirPixelFormat disableAlphaBufferIfPossible(MirPixelFormat pixelFormat)
+{
+    switch(pixelFormat) {
+    case mir_pixel_format_abgr_8888:
+        return mir_pixel_format_xbgr_8888;
+    case mir_pixel_format_argb_8888:
+        return mir_pixel_format_xrgb_8888;
+    default:
+        return pixelFormat;
+    }
+}
+
 // FIXME - in order to work around https://bugs.launchpad.net/mir/+bug/1346633
 // we need to guess the panel height (3GU)
 int panelHeight()
@@ -287,12 +299,17 @@ public:
         , mFormat(mWindow->requestedFormat())
         , mShellChrome(mWindow->flags() & LowChromeWindowHint ? mir_shell_chrome_low : mir_shell_chrome_normal)
     {
-        // Choose most suitable EGLConfig for the requested surface format, and update format to suit
+        // Have Qt choose most suitable EGLConfig for the requested surface format, and update format to reflect it
         EGLConfig config = q_configFromGLFormat(display, mFormat, true);
         mFormat = q_glFormatFromConfig(display, config, mFormat);
 
         // Have Mir decide the pixel format most suited to the chosen EGLConfig
-        const auto pixelFormat = mir_connection_get_egl_pixel_format(connection, display, config);
+        auto pixelFormat = mir_connection_get_egl_pixel_format(connection, display, config);
+        // But the chosen EGLConfig might have an alpha buffer enabled, even if not requested by the client.
+        // If that's the case, try to edit the chosen pixel format to a matching one without alpha.
+        if (mWindow->requestedFormat().alphaBufferSize() < 0) {
+            pixelFormat = disableAlphaBufferIfPossible(pixelFormat);
+        }
 
         const auto outputId = static_cast<UbuntuScreen*>(mWindow->screen()->handle())->mirOutputId();
 
