@@ -263,7 +263,7 @@ void MirSurface::onFramesPostedObserved()
 {
     if (!m_firstFrameDrawn) {
         m_firstFrameDrawn = true;
-        Q_EMIT firstFrameDrawn();
+        Q_EMIT drawnChanged(true);
     }
 
     // restart the frame dropper so that items have enough time to render the next frame.

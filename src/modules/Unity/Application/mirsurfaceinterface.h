@@ -44,8 +44,6 @@ public:
 
     virtual void setLive(bool value) = 0;
 
-    virtual bool isFirstFrameDrawn() const = 0;
-
     virtual void stopFrameDropper() = 0;
     virtual void startFrameDropper() = 0;
 
@@ -116,7 +114,6 @@ Q_SIGNALS:
     void cursorChanged(const QCursor &cursor);
     void raiseRequested();
     void closeRequested();
-    void firstFrameDrawn();
     void framesPosted();
     void isBeingDisplayedChanged();
     void frameDropped();

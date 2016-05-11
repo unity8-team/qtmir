@@ -90,6 +90,8 @@ public:
 
     unity::shell::application::MirSurfaceListInterface* promptSurfaceList() override;
 
+    bool drawn() const override { return m_firstFrameDrawn; }
+
     Q_INVOKABLE void requestFocus() override;
     Q_INVOKABLE void close() override;
     Q_INVOKABLE void raise() override;
@@ -98,8 +100,6 @@ public:
     // qtmir::MirSurfaceInterface
 
     void setLive(bool value) override;
-
-    bool isFirstFrameDrawn() const override { return m_firstFrameDrawn; }
 
     void stopFrameDropper() override;
     void startFrameDropper() override;

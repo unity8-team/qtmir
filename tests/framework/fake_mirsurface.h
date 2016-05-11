@@ -79,6 +79,8 @@ public:
 
     unity::shell::application::MirSurfaceListInterface* promptSurfaceList() override { return &m_promptSurfaceList;}
 
+    bool drawn() const override;
+
     void requestFocus() override {
         Q_EMIT focusRequested();
     }
@@ -94,7 +96,6 @@ public:
     ////
     // qtmir.MirSurfaceInterface
 
-    bool isFirstFrameDrawn() const override;
     void stopFrameDropper() override;
     void startFrameDropper() override;
     void setLive(bool value) override;

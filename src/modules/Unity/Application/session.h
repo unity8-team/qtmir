@@ -57,7 +57,7 @@ public:
 
     void setApplication(unity::shell::application::ApplicationInfoInterface* item) override;
 
-    void registerSurface(MirSurfaceInterface* surface) override;
+    void prependSurface(MirSurfaceInterface* surface) override;
 
     void suspend() override;
     void resume() override;
@@ -101,8 +101,6 @@ protected:
     void removeSurface(MirSurfaceInterface* surface);
 
     void stopPromptSessions();
-
-    void prependSurface(MirSurfaceInterface* surface);
 
     std::shared_ptr<mir::scene::Session> m_session;
     Application* m_application;

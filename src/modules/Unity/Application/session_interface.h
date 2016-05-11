@@ -77,7 +77,7 @@ public:
 
     // For MirSurface and MirSurfaceManager use
 
-    virtual void registerSurface(MirSurfaceInterface* surface) = 0;
+    virtual void prependSurface(MirSurfaceInterface* surface) = 0;
 
     // For Application use
 

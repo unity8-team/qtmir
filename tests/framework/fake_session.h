@@ -43,7 +43,7 @@ public:
 
     // For MirSurfaceItem and MirSurfaceManager use
 
-    void registerSurface(MirSurfaceInterface*) override;
+    void prependSurface(MirSurfaceInterface*) override;
 
     // For Application use
 

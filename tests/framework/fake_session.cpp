@@ -49,7 +49,7 @@ std::shared_ptr<mir::scene::Session> FakeSession::session() const
     return m_session;
 }
 
-void FakeSession::registerSurface(MirSurfaceInterface *) {}
+void FakeSession::prependSurface(MirSurfaceInterface *) {}
 
 void FakeSession::setApplication(unity::shell::application::ApplicationInfoInterface *app)
 {

@@ -91,7 +91,7 @@ void FakeMirSurface::setOrientationAngle(Mir::OrientationAngle angle)
     }
 }
 
-bool FakeMirSurface::isFirstFrameDrawn() const
+bool FakeMirSurface::drawn() const
 {
     return m_isFirstFrameDrawn;
 }
@@ -188,7 +188,7 @@ void FakeMirSurface::drawFirstFrame()
 {
     if (!m_isFirstFrameDrawn) {
         m_isFirstFrameDrawn = true;
-        Q_EMIT firstFrameDrawn();
+        Q_EMIT drawnChanged(true);
     }
 }
 

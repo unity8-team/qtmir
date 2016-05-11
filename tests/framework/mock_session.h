@@ -42,7 +42,7 @@ public:
 
     MOCK_CONST_METHOD0(session, std::shared_ptr<mir::scene::Session>());
 
-    MOCK_METHOD1(registerSurface, void(MirSurfaceInterface* surface));
+    MOCK_METHOD1(prependSurface, void(MirSurfaceInterface* surface));
     MOCK_METHOD1(removeSurface, void(MirSurfaceInterface* surface));
 
     MOCK_METHOD1(setApplication, void(unity::shell::application::ApplicationInfoInterface* item));

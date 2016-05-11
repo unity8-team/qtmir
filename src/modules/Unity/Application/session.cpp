@@ -191,19 +191,6 @@ void Session::setApplication(ApplicationInfoInterface* application)
     Q_EMIT applicationChanged(application);
 }
 
-void Session::registerSurface(MirSurfaceInterface *newSurface)
-{
-    qCDebug(QTMIR_SESSIONS) << "Session::resgisterSurface - session=" << name() << "surface=" << newSurface;
-
-    // Only notify QML of surface creation once it has drawn its first frame.
-    if (newSurface->isFirstFrameDrawn()) {
-        prependSurface(newSurface);
-    } else {
-        connect(newSurface, &MirSurfaceInterface::firstFrameDrawn,
-                this, [this, newSurface]() { this->prependSurface(newSurface); });
-    }
-}
-
 void Session::prependSurface(MirSurfaceInterface *newSurface)
 {
     qCDebug(QTMIR_SESSIONS) << "Session::prependSurface - session=" << name() << "surface=" << newSurface;
