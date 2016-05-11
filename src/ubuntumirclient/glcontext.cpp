@@ -44,11 +44,11 @@ void printEglConfig(EGLDisplay display, EGLConfig config) {
 } // anonymous namespace
 
 UbuntuOpenGLContext::UbuntuOpenGLContext(const QSurfaceFormat &format, QPlatformOpenGLContext *share,
-                                         EGLDisplay display, EGLConfig *config)
-    : QEGLPlatformContext(format, share, display, config)
+                                         EGLDisplay display)
+    : QEGLPlatformContext(format, share, display, 0)
 {
     if (ubuntumirclient().isDebugEnabled()) {
-        printEglConfig(display, config);
+        printEglConfig(display, eglConfig());
     }
 }
 

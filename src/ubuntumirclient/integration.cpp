@@ -96,25 +96,6 @@ UbuntuClientIntegration::UbuntuClientIntegration()
     mEglNativeDisplay = mir_connection_get_egl_native_display(mMirConnection);
     ASSERT((mEglDisplay = eglGetDisplay(mEglNativeDisplay)) != EGL_NO_DISPLAY);
     ASSERT(eglInitialize(mEglDisplay, nullptr, nullptr) == EGL_TRUE);
-
-    // Configure EGL buffers format for all Windows.
-    mSurfaceFormat.setRedBufferSize(8);
-    mSurfaceFormat.setGreenBufferSize(8);
-    mSurfaceFormat.setBlueBufferSize(8);
-    mSurfaceFormat.setAlphaBufferSize(8);
-    mSurfaceFormat.setDepthBufferSize(24);
-    mSurfaceFormat.setStencilBufferSize(8);
-    if (!qEnvironmentVariableIsEmpty("QTUBUNTU_MULTISAMPLE")) {
-        mSurfaceFormat.setSamples(4);
-        qCDebug(ubuntumirclient, "setting MSAA to 4 samples");
-    }
-#ifdef QTUBUNTU_USE_OPENGL
-    mSurfaceFormat.setRenderableType(QSurfaceFormat::OpenGL);
-#else
-    mSurfaceFormat.setRenderableType(QSurfaceFormat::OpenGLES);
-#endif
-
-    mEglConfig = q_configFromGLFormat(mEglDisplay, mSurfaceFormat, true);
 }
 
 void UbuntuClientIntegration::initialize()
@@ -197,7 +178,7 @@ QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window) 
 
 QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window)
 {
-    return new UbuntuWindow(window, mClipboard, mInput, mNativeInterface, mEglDisplay, mEglConfig, mMirConnection);
+    return new UbuntuWindow(window, mClipboard, mInput, mNativeInterface, mEglDisplay, mMirConnection);
 }
 
 bool UbuntuClientIntegration::hasCapability(QPlatformIntegration::Capability cap) const
@@ -246,8 +227,9 @@ QPlatformOpenGLContext* UbuntuClientIntegration::createPlatformOpenGLContext(
 QPlatformOpenGLContext* UbuntuClientIntegration::createPlatformOpenGLContext(
         QOpenGLContext* context)
 {
-    return new UbuntuOpenGLContext(mSurfaceFormat, static_cast<UbuntuOpenGLContext*>(context->shareHandle()),
-                                   mEglDisplay, &mEglConfig);
+    return new UbuntuOpenGLContext(context->format(),
+                                   context->shareHandle(),
+                                   mEglDisplay);
 }
 
 QStringList UbuntuClientIntegration::themeNames() const

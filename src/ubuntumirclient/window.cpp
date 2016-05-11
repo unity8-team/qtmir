@@ -29,6 +29,7 @@
 #include <QMutexLocker>
 #include <QSize>
 #include <QtMath>
+#include <private/qeglconvenience_p.h>
 
 // Platform API
 #include <ubuntu/application/instance.h>
@@ -101,6 +102,24 @@ const char *mirSurfaceStateToStr(MirSurfaceState surfaceState)
     }
 }
 
+const char *mirPixelFormatToStr(MirPixelFormat pixelFormat)
+{
+    switch (pixelFormat) {
+    case mir_pixel_format_invalid:   return "invalid";
+    case mir_pixel_format_abgr_8888: return "ABGR8888";
+    case mir_pixel_format_xbgr_8888: return "XBGR8888";
+    case mir_pixel_format_argb_8888: return "ARGB8888";
+    case mir_pixel_format_xrgb_8888: return "XRGB8888";
+    case mir_pixel_format_bgr_888:   return "BGR888";
+    case mir_pixel_format_rgb_888:   return "RGB888";
+    case mir_pixel_format_rgb_565:   return "RGB888";
+    case mir_pixel_format_rgba_5551: return "RGBA5551";
+    case mir_pixel_format_rgba_4444: return "RGBA4444";
+    case mir_pixel_formats:
+    default:                         return "???";
+    }
+}
+
 MirSurfaceState qtWindowStateToMirSurfaceState(Qt::WindowState state)
 {
     switch (state) {
@@ -124,14 +143,6 @@ WId makeId()
     return id++;
 }
 
-MirPixelFormat defaultPixelFormatFor(MirConnection *connection)
-{
-    MirPixelFormat format;
-    unsigned int nformats;
-    mir_connection_get_available_surface_formats(connection, &format, 1, &nformats);
-    return format;
-}
-
 UAUiWindowRole roleFor(QWindow *window)
 {
     QVariant roleVariant = window->property("role");
@@ -151,12 +162,11 @@ UbuntuWindow *transientParentFor(QWindow *window)
     return parent ? static_cast<UbuntuWindow *>(parent->handle()) : nullptr;
 }
 
-Spec makeSurfaceSpec(QWindow *window, UbuntuInput *input, MirConnection *connection)
+Spec makeSurfaceSpec(QWindow *window, UbuntuInput *input, MirPixelFormat pixelFormat, MirConnection *connection)
 {
     const auto geom = window->geometry();
     const int width = geom.width() > 0 ? geom.width() : 1;
     const int height = geom.height() > 0 ? geom.height() : 1;
-    const auto pixelFormat = defaultPixelFormatFor(connection);
 
     if (U_ON_SCREEN_KEYBOARD_ROLE == roleFor(window)) {
         qCDebug(ubuntumirclient, "makeSurfaceSpec(window=%p) - creating input method surface (width=%d, height=%d", window, width, height);
@@ -217,11 +227,11 @@ void setSizingConstraints(MirSurfaceSpec *spec, const QSize& minSize, const QSiz
     }
 }
 
-MirSurface *createMirSurface(QWindow *window, int mirOutputId, UbuntuInput *input,
+MirSurface *createMirSurface(QWindow *window, int mirOutputId, UbuntuInput *input, MirPixelFormat pixelFormat,
                              MirConnection *connection, mir_surface_event_callback inputCallback,
                              void* inputContext)
 {
-    auto spec = makeSurfaceSpec(window, input, connection);
+    auto spec = makeSurfaceSpec(window, input, pixelFormat, connection);
 
     // Install event handler as early as possible
     mir_surface_spec_set_event_handler(spec.get(), inputCallback, inputContext);
@@ -266,8 +276,7 @@ int panelHeight()
 class UbuntuSurface
 {
 public:
-    UbuntuSurface(UbuntuWindow *platformWindow, EGLDisplay display, EGLConfig config, int mirOutputId,
-                  UbuntuInput *input, MirConnection *connection)
+    UbuntuSurface(UbuntuWindow *platformWindow, EGLDisplay display, UbuntuInput *input, MirConnection *connection)
         : mWindow(platformWindow->window())
         , mPlatformWindow(platformWindow)
         , mInput(input)
@@ -275,9 +284,19 @@ public:
         , mEglDisplay(display)
         , mNeedsRepaint(false)
         , mParented(mWindow->transientParent() || mWindow->parent())
+        , mFormat(mWindow->requestedFormat())
         , mShellChrome(mWindow->flags() & LowChromeWindowHint ? mir_shell_chrome_low : mir_shell_chrome_normal)
     {
-        mMirSurface = createMirSurface(mWindow, mirOutputId, input, connection, surfaceEventCallback, this);
+        // Choose most suitable EGLConfig for the requested surface format, and update format to suit
+        EGLConfig config = q_configFromGLFormat(display, mFormat, true);
+        mFormat = q_glFormatFromConfig(display, config, mFormat);
+
+        // Have Mir decide the pixel format most suited to the chosen EGLConfig
+        const auto pixelFormat = mir_connection_get_egl_pixel_format(connection, display, config);
+
+        const auto outputId = static_cast<UbuntuScreen*>(mWindow->screen()->handle())->mirOutputId();
+
+        mMirSurface = createMirSurface(mWindow, outputId, input, pixelFormat, connection, surfaceEventCallback, this);
         mEglSurface = eglCreateWindowSurface(mEglDisplay, config, nativeWindowFor(mMirSurface), nullptr);
 
         // Window manager can give us a final size different from what we asked for
@@ -299,8 +318,11 @@ public:
         platformWindow->QPlatformWindow::setGeometry(geom);
         QWindowSystemInterface::handleGeometryChange(mWindow, geom);
 
-        qCDebug(ubuntumirclient, "created surface at (%d, %d) with size (%d, %d), title '%s', role: '%d'\n",
-             geom.x(), geom.y(), geom.width(), geom.height(), mWindow->title().toUtf8().constData(), roleFor(mWindow));
+        qCDebug(ubuntumirclient) << "Created surface with geometry" << geom << "title" << mWindow->title()
+                                 << "role" << roleFor(mWindow) << '\n'
+                                 << "Requested format" << mWindow->requestedFormat() << '\n'
+                                 << "Actual format" << mFormat << '\n'
+                                 << "with Mir pixel format" << mirPixelFormatToStr(pixelFormat);
     }
 
     ~UbuntuSurface()
@@ -335,6 +357,8 @@ public:
     void setSurfaceParent(MirSurface*);
     bool hasParent() const { return mParented; }
 
+    QSurfaceFormat format() const { return mFormat; }
+
 private:
     static void surfaceEventCallback(MirSurface* surface, const MirEvent *event, void* context);
     void postEvent(const MirEvent *event);
@@ -351,6 +375,7 @@ private:
     bool mNeedsRepaint;
     bool mParented;
     QSize mBufferSize;
+    QSurfaceFormat mFormat;
 
     QMutex mTargetSizeMutex;
     QSize mTargetSize;
@@ -509,8 +534,7 @@ void UbuntuSurface::setSurfaceParent(MirSurface* parent)
 }
 
 UbuntuWindow::UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &clipboard,
-                           UbuntuInput *input, UbuntuNativeInterface *native, EGLDisplay eglDisplay,
-                           EGLConfig eglConfig, MirConnection *mirConnection)
+                           UbuntuInput *input, UbuntuNativeInterface *native, EGLDisplay eglDisplay, MirConnection *mirConnection)
     : QObject(nullptr)
     , QPlatformWindow(w)
     , mId(makeId())
@@ -520,8 +544,7 @@ UbuntuWindow::UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &cl
     , mWindowVisible(false)
     , mWindowExposed(true)
     , mNativeInterface(native)
-    , mSurface(new UbuntuSurface{this, eglDisplay, eglConfig,
-               static_cast<UbuntuScreen*>(w->screen()->handle())->mirOutputId(), input, mirConnection})
+    , mSurface(new UbuntuSurface{this, eglDisplay, input, mirConnection})
     , mScale(1.0)
     , mFormFactor(mir_form_factor_unknown)
 {
@@ -707,6 +730,11 @@ void UbuntuWindow::propagateSizeHints()
 bool UbuntuWindow::isExposed() const
 {
     return mWindowVisible && mWindowExposed;
+}
+
+QSurfaceFormat UbuntuWindow::format() const
+{
+    return mSurface->format();
 }
 
 void* UbuntuWindow::eglSurface() const

@@ -26,7 +26,7 @@ class UbuntuOpenGLContext : public QEGLPlatformContext
 {
 public:
     UbuntuOpenGLContext(const QSurfaceFormat &format, QPlatformOpenGLContext *share,
-                        EGLDisplay display, EGLConfig *config = 0);
+                        EGLDisplay display);
 
     // QEGLPlatformContext methods.
     void swapBuffers(QPlatformSurface *surface) override;
