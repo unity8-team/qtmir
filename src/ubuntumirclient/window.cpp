@@ -261,7 +261,7 @@ MirPixelFormat disableAlphaBufferIfPossible(MirPixelFormat pixelFormat)
         return mir_pixel_format_xbgr_8888;
     case mir_pixel_format_argb_8888:
         return mir_pixel_format_xrgb_8888;
-    default:
+    default: // can do nothing, leave it alone
         return pixelFormat;
     }
 }
@@ -299,8 +299,24 @@ public:
         , mFormat(mWindow->requestedFormat())
         , mShellChrome(mWindow->flags() & LowChromeWindowHint ? mir_shell_chrome_low : mir_shell_chrome_normal)
     {
+        // If client has not explicitly requested a color depth, default to RGB888. If not, Qt
+        // on mobile devices tends to choose a lower color format: RGB565
+        if (mFormat.redBufferSize() < 0) {
+            mFormat.setRedBufferSize(8);
+        }
+        if (mFormat.greenBufferSize() < 0) {
+            mFormat.setGreenBufferSize(8);
+        }
+        if (mFormat.blueBufferSize() < 0) {
+            mFormat.setBlueBufferSize(8);
+        }
+
         // Have Qt choose most suitable EGLConfig for the requested surface format, and update format to reflect it
         EGLConfig config = q_configFromGLFormat(display, mFormat, true);
+        if (config == 0) {
+            // (unsure if necessary) if no suitable config could be found, relax the RGB888 restriction and try again
+            config = q_configFromGLFormat(display, mWindow->requestedFormat(), true);
+        }
         mFormat = q_glFormatFromConfig(display, config, mFormat);
 
         // Have Mir decide the pixel format most suited to the chosen EGLConfig. This is the only way
@@ -336,11 +352,11 @@ public:
         platformWindow->QPlatformWindow::setGeometry(geom);
         QWindowSystemInterface::handleGeometryChange(mWindow, geom);
 
-        qCDebug(ubuntumirclient) << "Created surface with geometry" << geom << "title" << mWindow->title()
-                                 << "role" << roleFor(mWindow) << '\n'
-                                 << "Requested format" << mWindow->requestedFormat() << '\n'
-                                 << "Actual format" << mFormat << '\n'
-                                 << "with Mir pixel format" << mirPixelFormatToStr(pixelFormat);
+        qCDebug(ubuntumirclient) << "Created surface with geometry:" << geom << "title:" << mWindow->title()
+                                 << "role:" << roleFor(mWindow)
+                                 << "\nRequested format:" << mWindow->requestedFormat()
+                                 << "\nActual format:" << mFormat
+                                 << "with associated Mir pixel format:" << mirPixelFormatToStr(pixelFormat);
     }
 
     ~UbuntuSurface()

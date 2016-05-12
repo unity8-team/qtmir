@@ -91,8 +91,6 @@ UbuntuClientIntegration::UbuntuClientIntegration()
     mMirConnection = u_application_instance_get_mir_connection(mInstance);
 
     // Initialize EGL.
-    ASSERT(eglBindAPI(EGL_OPENGL_ES_API) == EGL_TRUE);
-
     mEglNativeDisplay = mir_connection_get_egl_native_display(mMirConnection);
     ASSERT((mEglDisplay = eglGetDisplay(mEglNativeDisplay)) != EGL_NO_DISPLAY);
     ASSERT(eglInitialize(mEglDisplay, nullptr, nullptr) == EGL_TRUE);
@@ -227,9 +225,26 @@ QPlatformOpenGLContext* UbuntuClientIntegration::createPlatformOpenGLContext(
 QPlatformOpenGLContext* UbuntuClientIntegration::createPlatformOpenGLContext(
         QOpenGLContext* context)
 {
-    return new UbuntuOpenGLContext(context->format(),
-                                   context->shareHandle(),
-                                   mEglDisplay);
+    QSurfaceFormat format(context->format());
+    // If client has not explicitly requested a color depth, default to RGB888. If not, Qt
+    // on mobile devices tends to choose a lower color format: RGB565
+    if (format.redBufferSize() < 0) {
+        format.setRedBufferSize(8);
+    }
+    if (format.greenBufferSize() < 0) {
+        format.setGreenBufferSize(8);
+    }
+    if (format.blueBufferSize() < 0) {
+        format.setBlueBufferSize(8);
+    }
+    auto platformContext = new UbuntuOpenGLContext(format, context->shareHandle(), mEglDisplay);
+
+    if (!platformContext->isValid()) {
+        // (unsure if necessary) if context failed, relax the RGB888 restriction and try again
+        delete platformContext;
+        platformContext = new UbuntuOpenGLContext(context->format(), context->shareHandle(), mEglDisplay);
+    }
+    return platformContext;
 }
 
 QStringList UbuntuClientIntegration::themeNames() const
