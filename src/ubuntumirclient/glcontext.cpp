@@ -211,8 +211,9 @@ bool UbuntuOpenGLContext::makeCurrent(QPlatformSurface* surface)
         }
 
         QOpenGLContextPrivate *ctx_d = QOpenGLContextPrivate::get(context());
-        if (!ctx_d->workaround_brokenFBOReadBack && needsFBOReadBackWorkaround())
+        if (!ctx_d->workaround_brokenFBOReadBack && needsFBOReadBackWorkaround()) {
             ctx_d->workaround_brokenFBOReadBack = true;
+        }
 
         if (ubuntumirclient().isDebugEnabled()) {
             printOpenGLESConfig();
