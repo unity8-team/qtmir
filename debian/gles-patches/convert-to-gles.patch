@@ -1,7 +1,7 @@
-Index: inline-gles-quilt/debian/control
+Index: surfaceDrawn/debian/control
 ===================================================================
---- inline-gles-quilt.orig/debian/control
-+++ inline-gles-quilt/debian/control
+--- surfaceDrawn.orig/debian/control
++++ surfaceDrawn/debian/control
 @@ -1,4 +1,4 @@
 -Source: qtmir
 +Source: qtmir-gles
@@ -9,7 +9,7 @@ Index: inline-gles-quilt/debian/control
  Priority: optional
  Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
 @@ -16,7 +16,13 @@ Build-Depends: cmake,
-                libmirserver-dev (>= 0.19.0),
+                libmirserver-dev (>= 0.22.0),
                 libmtdev-dev,
                 libprocess-cpp-dev,
 +               libqt5gui5-gles,
@@ -21,7 +21,7 @@ Index: inline-gles-quilt/debian/control
 +               libqt5test5,
                 libqtdbusmock1-dev (>= 0.2),
                 libqtdbustest1-dev (>= 0.2),
-                libubuntu-app-launch2-dev,
+                libubuntu-app-launch2-dev (>= 0.9),
 @@ -31,8 +37,8 @@ Build-Depends: cmake,
  # lttng-gen-ts needs python3, but doesn't depend on it itself: bug 1359147
                 python3:any,
@@ -84,7 +84,7 @@ Index: inline-gles-quilt/debian/control
 -Conflicts: libqtmir,
 -           libunity-mir1,
 -Provides: unity-application-impl,
--          unity-application-impl-15,
+-          unity-application-impl-16,
 -Description: Qt plugin for Unity specific Mir APIs
 - QtMir provides Qt/QML bindings for Mir features that are exposed through the
 - qtmir-desktop or qtmir-android QPA plugin such as Application management
@@ -111,10 +111,10 @@ Index: inline-gles-quilt/debian/control
 - QtMir QPA.
 + This variant of the package is for Android-based phones and tablets (built
 + against the OpenGLES variant of qtbase).
-Index: inline-gles-quilt/debian/rules
+Index: surfaceDrawn/debian/rules
 ===================================================================
---- inline-gles-quilt.orig/debian/rules
-+++ inline-gles-quilt/debian/rules
+--- surfaceDrawn.orig/debian/rules
++++ surfaceDrawn/debian/rules
 @@ -3,60 +3,28 @@
  
  export DPKG_GENSYMBOLS_CHECK_LEVEL=4
