@@ -299,8 +299,8 @@ public:
         , mFormat(mWindow->requestedFormat())
         , mShellChrome(mWindow->flags() & LowChromeWindowHint ? mir_shell_chrome_low : mir_shell_chrome_normal)
     {
-        // If client has not explicitly requested a color depth, default to RGB888. If not, Qt
-        // on mobile devices tends to choose a lower color format: RGB565
+        // If client has not explicitly requested a color depth, try default to ARGB8888.
+        // Otherwise Qt on mobile devices tends to choose a lower color format like RGB565 or without alpha.
         if (mFormat.redBufferSize() < 0) {
             mFormat.setRedBufferSize(8);
         }
@@ -309,6 +309,9 @@ public:
         }
         if (mFormat.blueBufferSize() < 0) {
             mFormat.setBlueBufferSize(8);
+        }
+        if (mFormat.alphaBufferSize() < 0) {
+            mFormat.setAlphaBufferSize(8);
         }
 
         // Have Qt choose most suitable EGLConfig for the requested surface format, and update format to reflect it
