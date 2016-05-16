@@ -347,6 +347,11 @@ Application* ApplicationManager::startApplication(const QString &inputAppId,
         }
     }
 
+    if (!m_taskController->start(appId, arguments)) {
+        qCWarning(QTMIR_APPLICATIONS) << "ApplicationManager::startApplication - Unable to start application with appId" << appId;
+        return nullptr;
+    }
+
     auto appInfo = m_taskController->getInfoForApp(appId);
     if (!appInfo) {
         qCWarning(QTMIR_APPLICATIONS) << "ApplicationManager::startApplication - Unable to instantiate application with appId" << appId;
@@ -360,8 +365,6 @@ Application* ApplicationManager::startApplication(const QString &inputAppId,
                 this);
 
     add(application);
-
-    m_taskController->start(appId, arguments);
 
     return application;
 }
