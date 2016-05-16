@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Canonical, Ltd.
+ * Copyright (C) 2015-2016 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -18,6 +18,7 @@
 #define QTMIR_MIRSURFACE_H
 
 #include "mirsurfaceinterface.h"
+#include "mirsurfacelistmodel.h"
 
 // Qt
 #include <QCursor>
@@ -25,21 +26,25 @@
 #include <QPointer>
 #include <QSharedPointer>
 #include <QSGTextureProvider>
-#include <QTimer>
 #include <QWeakPointer>
+#include <QPair>
 
 #include "mirbuffersgtexture.h"
 #include "session.h"
 
+// mirserver
+#include "creationhints.h"
+
 // mir
 #include <mir/scene/surface.h>
-#include <mir_toolkit/common.h>
 
 namespace mir { namespace shell { class Shell; }}
 
 class SurfaceObserver;
 
 namespace qtmir {
+
+class AbstractTimer;
 
 class MirSurface : public MirSurfaceInterface
 {
@@ -49,7 +54,8 @@ public:
     MirSurface(std::shared_ptr<mir::scene::Surface> surface,
             SessionInterface* session,
             mir::shell::Shell *shell,
-            std::shared_ptr<SurfaceObserver> observer);
+            std::shared_ptr<SurfaceObserver> observer,
+            const CreationHints &);
     virtual ~MirSurface();
 
     ////
@@ -72,6 +78,21 @@ public:
 
     Mir::OrientationAngle orientationAngle() const override;
     void setOrientationAngle(Mir::OrientationAngle angle) override;
+
+    int minimumWidth() const override;
+    int minimumHeight() const override;
+    int maximumWidth() const override;
+    int maximumHeight() const override;
+    int widthIncrement() const override;
+    int heightIncrement() const override;
+
+    bool focused() const override;
+
+    unity::shell::application::MirSurfaceListInterface* promptSurfaceList() override;
+
+    Q_INVOKABLE void requestFocus() override;
+    Q_INVOKABLE void close() override;
+    Q_INVOKABLE void raise() override;
 
     ////
     // qtmir::MirSurfaceInterface
@@ -97,7 +118,8 @@ public:
     bool numBuffersReadyForCompositor() override;
     // end of methods called from the rendering (scene graph) thread
 
-    void setFocus(bool focus) override;
+    void setFocused(bool focus) override;
+    void setActiveFocus(bool focus) override;
 
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
@@ -119,8 +141,31 @@ public:
 
     QCursor cursor() const override;
 
+    void setKeymap(const QString &) override;
+    QString keymap() const override;
+
+    Mir::ShellChrome shellChrome() const override;
+
+    SessionInterface* session() override { return m_session.data(); }
+
+    void setScreen(QScreen *screen) override;
+
+    ////
+    // Own API
+
+    // useful for tests
+    void setCloseTimer(AbstractTimer *timer);
+
 public Q_SLOTS:
     void onCompositorSwappedBuffers() override;
+
+    void setMinimumWidth(int) override;
+    void setMinimumHeight(int) override;
+    void setMaximumWidth(int) override;
+    void setMaximumHeight(int) override;
+    void setWidthIncrement(int) override;
+    void setHeightIncrement(int) override;
+    void setShellChrome(Mir::ShellChrome shellChrome) override;
 
 private Q_SLOTS:
     void dropPendingBuffer();
@@ -129,11 +174,13 @@ private Q_SLOTS:
     void onSessionDestroyed();
     void emitSizeChanged();
     void setCursor(const QCursor &cursor);
+    void onCloseTimedOut();
 
 private:
     void syncSurfaceSizeWithItemSize();
     bool clientIsRunning() const;
     void updateVisibility();
+    void applyKeymap();
 
     std::shared_ptr<mir::scene::Surface> m_surface;
     QPointer<SessionInterface> m_session;
@@ -161,8 +208,29 @@ private:
     std::shared_ptr<SurfaceObserver> m_surfaceObserver;
 
     QSize m_size;
+    QString m_keymap;
 
     QCursor m_cursor;
+    Mir::ShellChrome m_shellChrome;
+
+    int m_minimumWidth{0};
+    int m_minimumHeight{0};
+    int m_maximumWidth{0};
+    int m_maximumHeight{0};
+    int m_widthIncrement{0};
+    int m_heightIncrement{0};
+
+    bool m_focused{false};
+
+    enum ClosingState {
+        NotClosing = 0,
+        Closing = 1,
+        CloseOverdue = 2
+    };
+    ClosingState m_closingState{NotClosing};
+    AbstractTimer *m_closeTimer{nullptr};
+
+    MirSurfaceListModel m_promptSurfaceList;
 };
 
 } // namespace qtmir

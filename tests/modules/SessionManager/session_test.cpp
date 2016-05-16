@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015 Canonical, Ltd.
+ * Copyright (C) 2014-2016 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -58,7 +58,7 @@ TEST_F(SessionTests, FromStartingToRunningOnceSurfaceDrawsFirstFrame)
     EXPECT_EQ(Session::Starting, session->state());
 
     FakeMirSurface *surface = new FakeMirSurface;
-    session->setSurface(surface);
+    session->registerSurface(surface);
 
     // Still on Starting as the surface hasn't drawn its first frame yet
     EXPECT_EQ(Session::Starting, session->state());
@@ -83,15 +83,12 @@ TEST_F(SessionTests, AddChildSession)
 
     // add surfaces
     session.addChildSession(&session1);
-    EXPECT_EQ(session1.parentSession(), &session);
     EXPECT_THAT(listChildSessions(&session), ElementsAre(&session1));
 
     session.addChildSession(&session2);
-    EXPECT_EQ(session2.parentSession(), &session);
     EXPECT_THAT(listChildSessions(&session), ElementsAre(&session1, &session2));
 
     session.addChildSession(&session3);
-    EXPECT_EQ(session3.parentSession(), &session);
     EXPECT_THAT(listChildSessions(&session), ElementsAre(&session1, &session2, &session3));
 }
 
@@ -111,15 +108,12 @@ TEST_F(SessionTests, InsertChildSession)
 
     // add surfaces
     session.insertChildSession(100, &session1); // test overflow
-    EXPECT_EQ(session1.parentSession(), &session);
     EXPECT_THAT(listChildSessions(&session), ElementsAre(&session1));
 
     session.insertChildSession(0, &session2); // test insert before
-    EXPECT_EQ(session2.parentSession(), &session);
     EXPECT_THAT(listChildSessions(&session), ElementsAre(&session2, &session1));
 
     session.insertChildSession(1, &session3); // test before end
-    EXPECT_EQ(session3.parentSession(), &session);
     EXPECT_THAT(listChildSessions(&session), ElementsAre(&session2, &session3, &session1));
 }
 
@@ -144,15 +138,12 @@ TEST_F(SessionTests, RemoveChildSession)
 
     // remove surfaces
     session.removeChildSession(&session2);
-    EXPECT_EQ(session2.parentSession(), nullptr);
     EXPECT_THAT(listChildSessions(&session), ElementsAre(&session1, &session3));
 
     session.removeChildSession(&session3);
-    EXPECT_EQ(session3.parentSession(), nullptr);
     EXPECT_THAT(listChildSessions(&session), ElementsAre(&session1));
 
     session.removeChildSession(&session1);
-    EXPECT_EQ(session1.parentSession(), nullptr);
     EXPECT_THAT(listChildSessions(&session), IsEmpty());
 }
 
@@ -202,7 +193,7 @@ TEST_F(SessionTests, DeleteSessionDeletesChildSessions)
     Session* session2 = new Session(mirSession, mirServer->the_prompt_session_manager());
     Session* session3 = new Session(mirSession, mirServer->the_prompt_session_manager());
 
-    // add surfaces
+    // add children
     session->addChildSession(session1);
     session->addChildSession(session2);
     session->addChildSession(session3);
@@ -213,7 +204,9 @@ TEST_F(SessionTests, DeleteSessionDeletesChildSessions)
     QObject::connect(session3, &QObject::destroyed, [&](QObject*) { destroyed << session3; });
 
     delete session;
-    EXPECT_THAT(destroyed, UnorderedElementsAre(session1, session2, session3));
+    EXPECT_TRUE(destroyed.contains(session1));
+    EXPECT_TRUE(destroyed.contains(session2));
+    EXPECT_TRUE(destroyed.contains(session3));
 }
 
 TEST_F(SessionTests, SuspendPromptSessionWhenSessionSuspends)
@@ -228,7 +221,7 @@ TEST_F(SessionTests, SuspendPromptSessionWhenSessionSuspends)
     auto session = std::make_shared<qtmir::Session>(mirSession, mirServer->the_prompt_session_manager());
     {
         FakeMirSurface *surface = new FakeMirSurface;
-        session->setSurface(surface);
+        session->registerSurface(surface);
         surface->drawFirstFrame();
     }
     EXPECT_EQ(Session::Running, session->state());
@@ -236,7 +229,7 @@ TEST_F(SessionTests, SuspendPromptSessionWhenSessionSuspends)
     auto mirPromptSession = std::make_shared<ms::MockPromptSession>();
     session->appendPromptSession(mirPromptSession);
 
-    EXPECT_CALL(*mirServer->the_mock_prompt_session_manager(), suspend_prompt_session(_)).Times(1);
+    EXPECT_CALL(*promptSessionManager, suspend_prompt_session(_)).Times(1);
 
     EXPECT_CALL(*mirSession, set_lifecycle_state(mir_lifecycle_state_will_suspend));
     session->suspend();
@@ -244,7 +237,7 @@ TEST_F(SessionTests, SuspendPromptSessionWhenSessionSuspends)
     session->doSuspend();
     EXPECT_EQ(Session::Suspended, session->state());
 
-    Mock::VerifyAndClear(mirServer->the_mock_prompt_session_manager().get());
+    Mock::VerifyAndClear(promptSessionManager.get());
 }
 
 TEST_F(SessionTests, ResumePromptSessionWhenSessionResumes)
@@ -256,10 +249,10 @@ TEST_F(SessionTests, ResumePromptSessionWhenSessionResumes)
 
     auto mirSession = std::make_shared<MockSession>(appId.toStdString(), procId);
 
-    auto session = std::make_shared<qtmir::Session>(mirSession, mirServer->the_prompt_session_manager());
+    auto session = std::make_shared<qtmir::Session>(mirSession, promptSessionManager);
     {
         FakeMirSurface *surface = new FakeMirSurface;
-        session->setSurface(surface);
+        session->registerSurface(surface);
         surface->drawFirstFrame();
     }
     EXPECT_EQ(Session::Running, session->state());
@@ -273,11 +266,91 @@ TEST_F(SessionTests, ResumePromptSessionWhenSessionResumes)
     auto mirPromptSession = std::make_shared<ms::MockPromptSession>();
     session->appendPromptSession(mirPromptSession);
 
-    EXPECT_CALL(*mirServer->the_mock_prompt_session_manager(), resume_prompt_session(_)).Times(1);
+    EXPECT_CALL(*promptSessionManager, resume_prompt_session(_)).Times(1);
 
     EXPECT_CALL(*mirSession, set_lifecycle_state(mir_lifecycle_state_resumed));
     session->resume();
     EXPECT_EQ(Session::Running, session->state());
 
-    Mock::VerifyAndClear(mirServer->the_mock_prompt_session_manager().get());
+    Mock::VerifyAndClear(promptSessionManager.get());
+}
+
+TEST_F(SessionTests, SessionStopsWhileSuspendingDoesntSuspend)
+{
+    using namespace testing;
+
+    class SessionTestClass : public qtmir::Session
+    {
+    public:
+        SessionTestClass(const std::shared_ptr<mir::scene::Session>& session,
+                         const std::shared_ptr<mir::scene::PromptSessionManager>& promptSessionManager)
+            : Session(session, promptSessionManager) {}
+
+        using Session::m_suspendTimer;
+    };
+
+    const QString appId("test-app");
+    const pid_t procId = 5551;
+
+    auto mirSession = std::make_shared<MockSession>(appId.toStdString(), procId);
+
+    auto session = std::make_shared<SessionTestClass>(mirSession, mirServer->the_prompt_session_manager());
+    {
+        FakeMirSurface *surface = new FakeMirSurface;
+        session->registerSurface(surface);
+        surface->drawFirstFrame();
+    }
+    EXPECT_EQ(Session::Running, session->state());
+
+    EXPECT_CALL(*mirSession, set_lifecycle_state(mir_lifecycle_state_will_suspend));
+    session->suspend();
+    EXPECT_EQ(Session::Suspending, session->state());
+    EXPECT_TRUE(session->m_suspendTimer->isRunning());
+
+    session->setLive(false);
+    EXPECT_EQ(Session::Stopped, session->state());
+    EXPECT_FALSE(session->m_suspendTimer->isRunning());
+}
+
+/*
+    Regression test for https://bugs.launchpad.net/ubuntu/+source/qtmir/+bug/1578665
+
+    A child prompt session was arriving before the application surface got a chance to draw
+    its first frame. And on top of that, the application was blocked from drawing anything
+    until that prompt session gone away.
+ */
+TEST_F(SessionTests, ChildSessionArrivesBeforeSurfaceDrawnFirstFrame)
+{
+    using namespace testing;
+
+    const QString appId("test-app");
+    const pid_t procId = 5551;
+
+    auto mirSession = std::make_shared<MockSession>(appId.toStdString(), procId);
+
+    auto session = std::make_shared<qtmir::Session>(mirSession, promptSessionManager);
+
+    FakeMirSurface *blankSurface = new FakeMirSurface;
+    session->registerSurface(blankSurface);
+
+    // Surface doesn't appear in this list as it has not drawn its first frame yet
+    EXPECT_EQ(0, session->surfaceList()->count());
+
+    Session* childSession = new Session(mirSession, promptSessionManager);
+    session->addChildSession(childSession);
+
+    FakeMirSurface *promptSurface = new FakeMirSurface;
+    childSession->registerSurface(promptSurface);
+    promptSurface->drawFirstFrame();
+
+    // Even though blankSurface still hasn't drawn its first frame (ie, it's still blank),
+    // it should now appear in this list as it now has a child prompt surface, which the
+    // user must interact with.
+    auto sessionSurfaceList = static_cast<MirSurfaceListModel*>(session->surfaceList());
+    EXPECT_EQ(1, sessionSurfaceList->count());
+    EXPECT_TRUE(sessionSurfaceList->contains(blankSurface));
+
+    auto promptSurfaceList = static_cast<MirSurfaceListModel*>(blankSurface->promptSurfaceList());
+    EXPECT_EQ(1, promptSurfaceList->count());
+    EXPECT_TRUE(promptSurfaceList->contains(promptSurface));
 }

@@ -18,11 +18,17 @@
 
 #include "namedcursor.h"
 
-#include <QMetaObject>
 #include <QImage>
+#include <QMetaObject>
+#include <QMutableMapIterator>
+#include <QMutexLocker>
 #include <QPixmap>
 
 #include <mir/geometry/size.h>
+#include <mir/shell/surface_specification.h>
+
+QMap<const mir::scene::Surface*, SurfaceObserver*> SurfaceObserver::m_surfaceToObserverMap;
+QMutex SurfaceObserver::mutex;
 
 SurfaceObserver::SurfaceObserver()
     : m_listener(nullptr)
@@ -50,6 +56,21 @@ SurfaceObserver::SurfaceObserver()
     m_cursorNameToShape["dnd-copy"] = Qt::DragCopyCursor;
     m_cursorNameToShape["dnd-move"] = Qt::DragMoveCursor;
     m_cursorNameToShape["dnd-link"] = Qt::DragLinkCursor;
+
+    qRegisterMetaType<MirShellChrome>("MirShellChrome");
+}
+
+SurfaceObserver::~SurfaceObserver()
+{
+    QMutexLocker locker(&mutex);
+    QMutableMapIterator<const mir::scene::Surface*, SurfaceObserver*> i(m_surfaceToObserverMap);
+    while (i.hasNext()) {
+        i.next();
+        if (i.value() == this) {
+            i.remove();
+            return;
+        }
+    }
 }
 
 void SurfaceObserver::setListener(QObject *listener)
@@ -60,7 +81,7 @@ void SurfaceObserver::setListener(QObject *listener)
     }
 }
 
-void SurfaceObserver::frame_posted(int /*frames_available*/)
+void SurfaceObserver::frame_posted(int /*frames_available*/, mir::geometry::Size const& /*size*/)
 {
     m_framesPosted = true;
     if (m_listener) {
@@ -71,6 +92,11 @@ void SurfaceObserver::frame_posted(int /*frames_available*/)
 void SurfaceObserver::renamed(char const * name)
 {
     Q_EMIT nameChanged(QString::fromUtf8(name));
+}
+
+void SurfaceObserver::cursor_image_removed()
+{
+    Q_EMIT cursorChanged(QCursor());
 }
 
 void SurfaceObserver::attrib_changed(MirSurfaceAttrib attribute, int value)
@@ -85,10 +111,56 @@ void SurfaceObserver::resized_to(mir::geometry::Size const&size)
     Q_EMIT resized(QSize(size.width.as_int(), size.height.as_int()));
 }
 
+void SurfaceObserver::notifySurfaceModifications(const mir::shell::SurfaceSpecification &modifications)
+{
+    if (modifications.min_width.is_set()) {
+        Q_EMIT minimumWidthChanged(modifications.min_width.value().as_int());
+    }
+    if (modifications.min_height.is_set()) {
+        Q_EMIT minimumHeightChanged(modifications.min_height.value().as_int());
+    }
+    if (modifications.max_width.is_set()) {
+        Q_EMIT maximumWidthChanged(modifications.max_width.value().as_int());
+    }
+    if (modifications.max_height.is_set()) {
+        Q_EMIT maximumHeightChanged(modifications.max_height.value().as_int());
+    }
+    if (modifications.width_inc.is_set()) {
+        Q_EMIT widthIncrementChanged(modifications.width_inc.value().as_int());
+    }
+    if (modifications.height_inc.is_set()) {
+        Q_EMIT heightIncrementChanged(modifications.height_inc.value().as_int());
+    }
+    if (modifications.shell_chrome.is_set()) {
+        Q_EMIT shellChromeChanged(modifications.shell_chrome.value());
+    }
+}
+
+SurfaceObserver *SurfaceObserver::observerForSurface(const mir::scene::Surface *surface)
+{
+    if (m_surfaceToObserverMap.contains(surface)) {
+        return m_surfaceToObserverMap.value(surface);
+    } else {
+        return nullptr;
+    }
+}
+
+void SurfaceObserver::registerObserverForSurface(SurfaceObserver *observer, const mir::scene::Surface *surface)
+{
+    QMutexLocker locker(&mutex);
+    m_surfaceToObserverMap[surface] = observer;
+}
+
 void SurfaceObserver::cursor_image_set_to(const mir::graphics::CursorImage &cursorImage)
 {
     QCursor qcursor = createQCursorFromMirCursorImage(cursorImage);
     Q_EMIT cursorChanged(qcursor);
+}
+
+void SurfaceObserver::keymap_changed(MirInputDeviceId, const std::string &, const std::string &layout,
+                                     const std::string &variant, const std::string &)
+{
+    Q_EMIT keymapChanged(QString::fromStdString(layout), QString::fromStdString(variant));
 }
 
 QCursor SurfaceObserver::createQCursorFromMirCursorImage(const mir::graphics::CursorImage &cursorImage) {

@@ -24,7 +24,11 @@
 #include <unity/shell/application/ApplicationInfoInterface.h>
 
 // local
+#include "objectlistmodel.h"
 #include "sessionmodel.h"
+
+// Qt
+#include <QQmlListProperty>
 
 namespace mir {
     namespace scene {
@@ -36,12 +40,12 @@ namespace mir {
 namespace qtmir {
 
 class MirSurfaceInterface;
+class MirSurfaceListModel;
 
 class SessionInterface : public QObject {
     Q_OBJECT
-    Q_PROPERTY(MirSurfaceInterface* surface READ surface NOTIFY surfaceChanged)
+
     Q_PROPERTY(unity::shell::application::ApplicationInfoInterface* application READ application NOTIFY applicationChanged DESIGNABLE false)
-    Q_PROPERTY(SessionInterface* parentSession READ parentSession NOTIFY parentSessionChanged DESIGNABLE false)
     Q_PROPERTY(SessionModel* childSessions READ childSessions DESIGNABLE false CONSTANT)
     Q_PROPERTY(bool fullscreen READ fullscreen NOTIFY fullscreenChanged)
     Q_PROPERTY(bool live READ live NOTIFY liveChanged)
@@ -57,13 +61,13 @@ public:
         Stopped
     };
 
-    Q_INVOKABLE virtual void release() = 0;
-
     //getters
     virtual QString name() const = 0;
     virtual unity::shell::application::ApplicationInfoInterface* application() const = 0;
-    virtual MirSurfaceInterface* surface() const = 0;
-    virtual SessionInterface* parentSession() const = 0;
+
+    // List of surfaces in this session. Surfaces that are being forcibly closed are not present in this list
+    virtual MirSurfaceListModel* surfaceList() = 0;
+
     virtual SessionModel* childSessions() const = 0;
     virtual State state() const = 0;
     virtual bool fullscreen() const = 0;
@@ -73,14 +77,17 @@ public:
 
     // For MirSurface and MirSurfaceManager use
 
-    virtual void setSurface(MirSurfaceInterface* surface) = 0;
+    virtual void registerSurface(MirSurfaceInterface* surface) = 0;
 
     // For Application use
 
     virtual void setApplication(unity::shell::application::ApplicationInfoInterface* item) = 0;
     virtual void suspend() = 0;
     virtual void resume() = 0;
+    virtual void close() = 0;
     virtual void stop() = 0;
+    virtual bool hadSurface() const = 0; // whether this session ever had any surface (currently or in the past)
+    virtual bool hasClosingSurfaces() const = 0; // whether it has surfaces being forcibly closed
 
     // For SessionManager use
 
@@ -98,16 +105,21 @@ public:
     virtual void removePromptSession(const std::shared_ptr<mir::scene::PromptSession>& session) = 0;
 
 Q_SIGNALS:
-    void surfaceChanged(MirSurfaceInterface*);
-    void parentSessionChanged(SessionInterface*);
     void applicationChanged(unity::shell::application::ApplicationInfoInterface* application);
     void stateChanged(State state);
     void fullscreenChanged(bool fullscreen);
     void liveChanged(bool live);
+
+    // Emitted when any surface in this session emits focusRequested()
+    void focusRequested();
+
+    // For Application use
+    void hasClosingSurfacesChanged();
 };
 
 } // namespace qtmir
 
 Q_DECLARE_METATYPE(qtmir::SessionInterface*)
+Q_DECLARE_METATYPE(qtmir::ObjectListModel<qtmir::MirSurfaceInterface>*)
 
 #endif // SESSION_INTERFACE_H

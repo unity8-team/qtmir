@@ -19,12 +19,13 @@
 
 #include <qpa/qplatformopenglcontext.h>
 
-#ifndef QT_NO_DEBUG
+#ifdef QGL_DEBUG
 #include <QOpenGLDebugLogger>
 #endif
 
 
 class MirServer;
+class ScreenWindow;
 
 class MirOpenGLContext : public QObject, public QPlatformOpenGLContext
 {
@@ -43,13 +44,14 @@ public:
 
     QFunctionPointer getProcAddress(const QByteArray &procName) override;
 
-#ifndef QT_NO_DEBUG
+#ifdef QGL_DEBUG
     Q_SLOT void onGlDebugMessageLogged(QOpenGLDebugMessage m) { qDebug() << m; }
 #endif
 
 private:
     QSurfaceFormat m_format;
-#ifndef QT_NO_DEBUG
+    ScreenWindow *m_currentWindow;
+#ifdef QGL_DEBUG
     QOpenGLDebugLogger *m_logger;
 #endif
 };

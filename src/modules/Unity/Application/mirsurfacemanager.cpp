@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2015 Canonical, Ltd.
+ * Copyright (C) 2013-2016 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -34,6 +34,7 @@
 #include "mirserver.h"
 #include "sessionlistener.h"
 #include "logging.h"
+#include "creationhints.h"
 
 Q_LOGGING_CATEGORY(QTMIR_SURFACES, "qtmir.surfaces")
 
@@ -67,7 +68,7 @@ MirSurfaceManager* MirSurfaceManager::singleton()
         SessionListener *sessionListener = static_cast<SessionListener*>(nativeInterface->nativeResourceForIntegration("SessionListener"));
         MirShell *shell = static_cast<MirShell*>(nativeInterface->nativeResourceForIntegration("Shell"));
 
-        instance = new MirSurfaceManager(nativeInterface->m_mirServer, shell, SessionManager::singleton());
+        instance = new MirSurfaceManager(nativeInterface->mirServer(), shell, SessionManager::singleton());
 
         connectToSessionListener(instance, sessionListener);
     }
@@ -97,20 +98,27 @@ MirSurfaceManager::~MirSurfaceManager()
 
 void MirSurfaceManager::onSessionCreatedSurface(const mir::scene::Session *mirSession,
                                                 const std::shared_ptr<mir::scene::Surface> &surface,
-                                                const std::shared_ptr<SurfaceObserver> &observer)
+                                                const std::shared_ptr<SurfaceObserver> &observer,
+                                                qtmir::CreationHints creationHints)
 {
     qCDebug(QTMIR_SURFACES) << "MirSurfaceManager::onSessionCreatedSurface - mirSession=" << mirSession
-                            << "surface=" << surface.get() << "surface.name=" << surface->name().c_str();
+                            << "surface=" << surface.get() << "surface.name=" << surface->name().c_str()
+                            << "creationHints=" << creationHints.toString();
 
     SessionInterface* session = m_sessionManager->findSession(mirSession);
-    auto qmlSurface = new MirSurface(surface, session, m_shell, observer);
+    auto qmlSurface = new MirSurface(surface, session, m_shell, observer, creationHints);
     {
         QMutexLocker lock(&m_mutex);
         m_mirSurfaceToQmlSurfaceHash.insert(surface.get(), qmlSurface);
     }
 
     if (session)
-        session->setSurface(qmlSurface);
+        session->registerSurface(qmlSurface);
+
+    if (qmlSurface->type() == Mir::InputMethodType) {
+        m_inputMethodSurface = qmlSurface;
+        Q_EMIT inputMethodSurfaceChanged();
+    }
 
     // Only notify QML of surface creation once it has drawn its first frame.
     connect(qmlSurface, &MirSurfaceInterface::firstFrameDrawn, this, [=]() {
@@ -142,9 +150,7 @@ void MirSurfaceManager::onSessionDestroyingSurface(const mir::scene::Session *se
         QMutexLocker lock(&m_mutex);
         auto it = m_mirSurfaceToQmlSurfaceHash.find(surface.get());
         if (it != m_mirSurfaceToQmlSurfaceHash.end()) {
-
             qmlSurface = it.value();
-
             m_mirSurfaceToQmlSurfaceHash.erase(it);
         } else {
             qCritical() << "MirSurfaceManager::onSessionDestroyingSurface: unable to find MirSurface corresponding"
@@ -153,8 +159,18 @@ void MirSurfaceManager::onSessionDestroyingSurface(const mir::scene::Session *se
         }
     }
 
+    if (qmlSurface->type() == Mir::InputMethodType) {
+        m_inputMethodSurface = nullptr;
+        Q_EMIT inputMethodSurfaceChanged();
+    }
+
     qmlSurface->setLive(false);
     Q_EMIT surfaceDestroyed(qmlSurface);
+}
+
+MirSurfaceInterface* MirSurfaceManager::inputMethodSurface() const
+{
+    return m_inputMethodSurface;
 }
 
 } // namespace qtmir

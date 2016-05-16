@@ -16,26 +16,31 @@
 
 #define MIR_INCLUDE_DEPRECATED_EVENT_HEADER
 
-#include <thread>
 #include <condition_variable>
 #include <QSignalSpy>
 
-#include <Unity/Application/applicationscreenshotprovider.h>
+#include <Unity/Application/mirfocuscontroller.h>
+#include <Unity/Application/timer.h>
 
- #include <fake_mirsurface.h>
- #include <mock_surface.h>
- #include <qtmir_test.h>
+#include <fake_mirsurface.h>
+#include <mock_application_info.h>
+#include <mock_surface.h>
+#include <qtmir_test.h>
 
 using namespace qtmir;
 using mir::scene::MockSession;
 
 namespace ms = mir::scene;
+namespace unityapi = unity::shell::application;
 
 class ApplicationManagerTests : public ::testing::QtMirTest
 {
 public:
     ApplicationManagerTests()
     {}
+
+    ~ApplicationManagerTests() {
+    }
 
     inline void onSessionStarting(const std::shared_ptr<mir::scene::Session> &session) {
         applicationManager.onSessionStarting(session);
@@ -54,7 +59,7 @@ public:
 
         SessionInterface* qmlSession = sessionManager.findSession(mirSession);
         if (qmlSession) {
-            qmlSession->setSurface(qmlSurface);
+            qmlSession->registerSurface(qmlSurface);
         }
 
         // I assume that applicationManager ignores the mirSurface parameter, so sending
@@ -72,13 +77,13 @@ public:
         ASSERT_EQ(Application::InternalState::Suspended, application->internalState());
     }
 
-    static inline qtmir::DesktopFileReader* createMockDesktopFileReader(const QString &appId, const QFileInfo &fi) {
-        using namespace ::testing;
-        auto mockDesktopFileReader = new NiceMock<MockDesktopFileReader>(appId, fi);
-        ON_CALL(*mockDesktopFileReader, loaded()).WillByDefault(Return(true));
-        ON_CALL(*mockDesktopFileReader, appId()).WillByDefault(Return(appId));
-        return mockDesktopFileReader;
+protected:
+    virtual void SetUp() override {
+        if (m_tempDir.isValid()) qputenv("XDG_CACHE_HOME", m_tempDir.path().toUtf8());
     }
+
+private:
+    const QTemporaryDir m_tempDir;
 };
 
 TEST_F(ApplicationManagerTests,bug_case_1240400_second_dialer_app_fails_to_authorize_and_gets_mixed_up_with_first_one)
@@ -139,7 +144,7 @@ TEST_F(ApplicationManagerTests,application_dies_while_starting)
     Application * beforeFailure = applicationManager.findApplication(app_id);
     onProcessStarting(app_id);
     onSessionStopping(mirSession);
-    applicationManager.onProcessFailed(app_id, true);
+    applicationManager.onProcessFailed(app_id, TaskController::Error::APPLICATION_FAILED_TO_START);
     Application * afterFailure = applicationManager.findApplication(app_id);
 
     EXPECT_EQ(true, authed);
@@ -153,14 +158,11 @@ TEST_F(ApplicationManagerTests,startApplicationSupportsShortAppId)
 
     const QString shortAppId("com.canonical.test_test");
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(_, _)).Times(1);
-    EXPECT_CALL(appController, findDesktopFileForAppId(shortAppId)).Times(1);
-
-    EXPECT_CALL(desktopFileReaderFactory, createInstance(_, _)).Times(1);
+    EXPECT_CALL(*taskController, start(_, _)).Times(1);
+    EXPECT_CALL(*taskController, getInfoForApp(shortAppId)).Times(1);
 
     auto application = applicationManager.startApplication(
                 shortAppId,
-                ApplicationManager::NoFlag,
                 QStringList());
 
     EXPECT_EQ(shortAppId, application->appId());
@@ -173,14 +175,11 @@ TEST_F(ApplicationManagerTests,startApplicationSupportsLongAppId)
     const QString longAppId("com.canonical.test_test_0.1.235");
     const QString shortAppId("com.canonical.test_test");
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(_, _)).Times(1);
-    EXPECT_CALL(appController, findDesktopFileForAppId(shortAppId)).Times(1);
-
-    EXPECT_CALL(desktopFileReaderFactory, createInstance(_, _)).Times(1);
+    EXPECT_CALL(*taskController, start(_, _)).Times(1);
+    EXPECT_CALL(*taskController, getInfoForApp(shortAppId)).Times(1);
 
     auto application = applicationManager.startApplication(
                 longAppId,
-                ApplicationManager::NoFlag,
                 QStringList());
 
     EXPECT_EQ(shortAppId, application->appId());
@@ -244,7 +243,7 @@ TEST_F(ApplicationManagerTests,bug_case_1281075_session_ptrs_always_distributed_
         .Times(1)
         .WillOnce(Return(first_cmdLine));
 
-    ON_CALL(appController,appIdHasProcessId(_,_)).WillByDefault(Return(false));
+    ON_CALL(*taskController,appIdHasProcessId(_,_)).WillByDefault(Return(false));
 
     EXPECT_CALL(procInfo,command_line(second_procId))
         .Times(1)
@@ -284,7 +283,7 @@ TEST_F(ApplicationManagerTests,two_session_on_one_application)
 
     ON_CALL(procInfo,command_line(_)).WillByDefault(Return(a_cmd));
 
-    ON_CALL(appController,appIdHasProcessId(_,_)).WillByDefault(Return(false));
+    ON_CALL(*taskController,appIdHasProcessId(_,_)).WillByDefault(Return(false));
 
     bool authed = true;
 
@@ -301,28 +300,6 @@ TEST_F(ApplicationManagerTests,two_session_on_one_application)
     EXPECT_EQ(second_session, the_app->session()->session());
 }
 
-TEST_F(ApplicationManagerTests,DISABLED_upstart_launching_sidestage_app_on_phone_forced_into_mainstage)
-{
-    using namespace ::testing;
-    QString appId("sideStage");
-
-    EXPECT_CALL(appController, findDesktopFileForAppId(appId)).Times(1);
-
-    auto mockDesktopFileReader = new NiceMock<MockDesktopFileReader>(appId, QFileInfo());
-    ON_CALL(*mockDesktopFileReader, loaded()).WillByDefault(Return(true));
-    ON_CALL(*mockDesktopFileReader, stageHint()).WillByDefault(Return("SideStage"));
-
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Return(mockDesktopFileReader));
-
-    // mock upstart launching an app which reports itself as sidestage, but we're on phone
-    onProcessStarting(appId);
-
-    // ensure the app stage is overridden to be main stage
-    Application* theApp = applicationManager.findApplication(appId);
-    ASSERT_NE(theApp, nullptr);
-    EXPECT_EQ(Application::MainStage, theApp->stage());
-}
-
 TEST_F(ApplicationManagerTests,two_session_on_one_application_after_starting)
 {
     using namespace ::testing;
@@ -333,7 +310,7 @@ TEST_F(ApplicationManagerTests,two_session_on_one_application_after_starting)
 
     ON_CALL(procInfo,command_line(_)).WillByDefault(Return(a_cmd));
 
-    ON_CALL(appController,appIdHasProcessId(_,_)).WillByDefault(Return(false));
+    ON_CALL(*taskController,appIdHasProcessId(_,_)).WillByDefault(Return(false));
 
     bool authed = true;
 
@@ -353,36 +330,6 @@ TEST_F(ApplicationManagerTests,two_session_on_one_application_after_starting)
     EXPECT_EQ(first_session, the_app->session()->session());
 }
 
-TEST_F(ApplicationManagerTests, focused_app_can_rerequest_focus)
-{
-    using namespace ::testing;
-    const pid_t a_procId = 5921;
-    const char an_app_id[] = "some_app";
-    QByteArray a_cmd("/usr/bin/app1 --desktop_file_hint=some_app");
-    FakeMirSurface *aSurface = new FakeMirSurface;
-
-    ON_CALL(procInfo, command_line(_)).WillByDefault(Return(a_cmd));
-    ON_CALL(appController, appIdHasProcessId(_,_)).WillByDefault(Return(false));
-
-    bool authed = true;
-
-    std::shared_ptr<mir::scene::Session> a_session = std::make_shared<MockSession>("Oo", a_procId);
-
-    applicationManager.authorizeSession(a_procId, authed);
-    onSessionStarting(a_session);
-    onSessionCreatedSurface(a_session.get(), aSurface);
-    aSurface->drawFirstFrame();
-
-    Application * the_app = applicationManager.findApplication(an_app_id);
-    applicationManager.focusApplication(an_app_id);
-
-    EXPECT_EQ(Application::Running, the_app->state());
-    EXPECT_EQ(true, the_app->focused());
-
-    applicationManager.focusApplication(an_app_id);
-    EXPECT_EQ(true, the_app->focused());
-}
-
 TEST_F(ApplicationManagerTests,starting_app_is_suspended_when_it_gets_ready_if_requested)
 {
     using namespace ::testing;
@@ -394,7 +341,7 @@ TEST_F(ApplicationManagerTests,starting_app_is_suspended_when_it_gets_ready_if_r
         .Times(1)
         .WillOnce(Return(cmdLine));
 
-    ON_CALL(appController,appIdHasProcessId(_,_)).WillByDefault(Return(false));
+    ON_CALL(*taskController,appIdHasProcessId(_,_)).WillByDefault(Return(false));
 
     bool authed = true;
 
@@ -432,7 +379,7 @@ TEST_F(ApplicationManagerTests,requestFocusApplication)
         .Times(1)
         .WillOnce(Return(first_cmdLine));
 
-    ON_CALL(appController,appIdHasProcessId(_,_)).WillByDefault(Return(false));
+    ON_CALL(*taskController,appIdHasProcessId(_,_)).WillByDefault(Return(false));
 
     EXPECT_CALL(procInfo,command_line(second_procId))
         .Times(1)
@@ -475,20 +422,21 @@ TEST_F(ApplicationManagerTests,appStartedByShell)
     const QString name("Test App");
 
     // Set up Mocks & signal watcher
-    auto mockDesktopFileReader = new NiceMock<MockDesktopFileReader>(appId, QFileInfo());
-    ON_CALL(*mockDesktopFileReader, loaded()).WillByDefault(Return(true));
-    ON_CALL(*mockDesktopFileReader, appId()).WillByDefault(Return(appId));
-    ON_CALL(*mockDesktopFileReader, name()).WillByDefault(Return(name));
+    auto mockApplicationInfo = QSharedPointer<MockApplicationInfo>(new NiceMock<MockApplicationInfo>(appId));
+    ON_CALL(*mockApplicationInfo, name()).WillByDefault(Return(name));
 
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Return(mockDesktopFileReader));
+    EXPECT_CALL(*taskController, getInfoForApp(appId))
+        .Times(1)
+        .WillOnce(Return(mockApplicationInfo));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
-    QSignalSpy addedSpy(&applicationManager, SIGNAL(applicationAdded(const QString &)));
 
     // start the application
-    Application *theApp = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    Application *theApp = applicationManager.startApplication(appId);
 
     // check application data
     EXPECT_EQ(Application::Starting, theApp->state());
@@ -499,8 +447,6 @@ TEST_F(ApplicationManagerTests,appStartedByShell)
     // check signals were emitted
     EXPECT_EQ(2, countSpy.count()); //FIXME(greyback)
     EXPECT_EQ(1, applicationManager.count());
-    EXPECT_EQ(1, addedSpy.count());
-    EXPECT_EQ(appId, addedSpy.takeFirst().at(0).toString());
 
     // check application in list of apps
     Application *theAppAgain = applicationManager.findApplication(appId);
@@ -518,15 +464,14 @@ TEST_F(ApplicationManagerTests,appStartedByUpstart)
     const QString name("Test App");
 
     // Set up Mocks & signal watcher
-    auto mockDesktopFileReader = new NiceMock<MockDesktopFileReader>(appId, QFileInfo());
-    ON_CALL(*mockDesktopFileReader, loaded()).WillByDefault(Return(true));
-    ON_CALL(*mockDesktopFileReader, appId()).WillByDefault(Return(appId));
-    ON_CALL(*mockDesktopFileReader, name()).WillByDefault(Return(name));
+    auto mockApplicationInfo = QSharedPointer<MockApplicationInfo>(new NiceMock<MockApplicationInfo>(appId));
+    ON_CALL(*mockApplicationInfo, name()).WillByDefault(Return(name));
 
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Return(mockDesktopFileReader));
+    EXPECT_CALL(*taskController, getInfoForApp(appId))
+        .Times(1)
+        .WillOnce(Return(mockApplicationInfo));
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
-    QSignalSpy addedSpy(&applicationManager, SIGNAL(applicationAdded(const QString &)));
     QSignalSpy focusSpy(&applicationManager, SIGNAL(focusRequested(const QString &)));
 
     // upstart sends notification that the application was started
@@ -543,9 +488,7 @@ TEST_F(ApplicationManagerTests,appStartedByUpstart)
     // check signals were emitted
     EXPECT_EQ(2, countSpy.count()); //FIXME(greyback)
     EXPECT_EQ(1, applicationManager.count());
-    EXPECT_EQ(1, addedSpy.count());
-    EXPECT_EQ(appId, addedSpy.takeFirst().at(0).toString());
-    EXPECT_EQ(1, focusSpy.count())  ;
+    EXPECT_EQ(1, focusSpy.count());
     EXPECT_EQ(appId, focusSpy.takeFirst().at(0).toString());
 }
 
@@ -567,15 +510,14 @@ TEST_F(ApplicationManagerTests,appStartedUsingCorrectDesktopFileHintSwitch)
         .Times(1)
         .WillOnce(Return(cmdLine));
 
-    auto mockDesktopFileReader = new NiceMock<MockDesktopFileReader>(appId, QFileInfo());
-    ON_CALL(*mockDesktopFileReader, loaded()).WillByDefault(Return(true));
-    ON_CALL(*mockDesktopFileReader, appId()).WillByDefault(Return(appId));
-    ON_CALL(*mockDesktopFileReader, name()).WillByDefault(Return(name));
+    auto mockApplicationInfo = QSharedPointer<MockApplicationInfo>(new NiceMock<MockApplicationInfo>(appId));
+    ON_CALL(*mockApplicationInfo, name()).WillByDefault(Return(name));
 
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Return(mockDesktopFileReader));
+    EXPECT_CALL(*taskController, getInfoForApp(appId))
+        .Times(1)
+        .WillOnce(Return(mockApplicationInfo));
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
-    QSignalSpy addedSpy(&applicationManager, SIGNAL(applicationAdded(const QString &)));
 
     // Mir requests authentication for an application that was started
     bool authed = false;
@@ -593,8 +535,6 @@ TEST_F(ApplicationManagerTests,appStartedUsingCorrectDesktopFileHintSwitch)
     // check signals were emitted
     EXPECT_EQ(countSpy.count(), 2); //FIXME(greyback)
     EXPECT_EQ(applicationManager.count(), 1);
-    EXPECT_EQ(addedSpy.count(), 1);
-    EXPECT_EQ(addedSpy.takeFirst().at(0).toString(), appId);
 }
 
 /*
@@ -614,7 +554,6 @@ TEST_F(ApplicationManagerTests,appDoesNotStartWhenUsingBadDesktopFileHintSwitch)
         .WillOnce(Return(cmdLine));
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
-    QSignalSpy addedSpy(&applicationManager, SIGNAL(applicationAdded(const QString &)));
 
     // Mir requests authentication for an application that was started
     bool authed = true;
@@ -628,36 +567,6 @@ TEST_F(ApplicationManagerTests,appDoesNotStartWhenUsingBadDesktopFileHintSwitch)
     // check no new signals were emitted
     EXPECT_EQ(countSpy.count(), 0);
     EXPECT_EQ(applicationManager.count(), 0);
-    EXPECT_EQ(addedSpy.count(), 0);
-}
-
-/*
- * Test that an application launched via the command line with the --desktop_file_hint but an incorrect
- * desktop file specified is rejected
- */
-TEST_F(ApplicationManagerTests,appDoesNotStartWhenUsingBadDesktopFileHintFile)
-{
-    using namespace ::testing;
-    const QString appId("testAppId");
-    const QString badDesktopFile = QString("%1.desktop").arg(appId);
-    const pid_t procId = 5551;
-    QByteArray cmdLine("/usr/bin/testApp --desktop_file_hint=");
-    cmdLine = cmdLine.append(badDesktopFile);
-
-    // Set up Mocks & signal watcher
-    EXPECT_CALL(procInfo,command_line(procId))
-        .Times(1)
-        .WillOnce(Return(cmdLine));
-
-    auto mockDesktopFileReader = new NiceMock<MockDesktopFileReader>(appId, QFileInfo());
-    ON_CALL(*mockDesktopFileReader, loaded()).WillByDefault(Return(false));
-
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Return(mockDesktopFileReader));
-
-    // Mir requests authentication for an application that was started, should fail
-    bool authed = true;
-    applicationManager.authorizeSession(procId, authed);
-    EXPECT_EQ(authed, false);
 }
 
 /*
@@ -671,22 +580,23 @@ TEST_F(ApplicationManagerTests,synchronousProcessStartedCallDoesNotDuplicateEntr
     const QString name("Test App");
 
     // Set up Mocks & signal watcher
-    auto mockDesktopFileReader = new NiceMock<MockDesktopFileReader>(appId, QFileInfo());
-    ON_CALL(*mockDesktopFileReader, loaded()).WillByDefault(Return(true));
-    ON_CALL(*mockDesktopFileReader, appId()).WillByDefault(Return(appId));
-    ON_CALL(*mockDesktopFileReader, name()).WillByDefault(Return(name));
+    auto mockApplicationInfo = QSharedPointer<MockApplicationInfo>(new NiceMock<MockApplicationInfo>(appId));
+    ON_CALL(*mockApplicationInfo, name()).WillByDefault(Return(name));
 
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Return(mockDesktopFileReader));
+    EXPECT_CALL(*taskController, getInfoForApp(appId))
+        .Times(1)
+        .WillOnce(Return(mockApplicationInfo));
 
-    ON_CALL(appController, startApplicationWithAppIdAndArgs(appId, _))
+    ON_CALL(*taskController, start(appId, _))
         .WillByDefault(Invoke(
                         [&](const QString &appId, Unused) {
                             onProcessStarting(appId);
+                            return true;
                         }
                       ));
 
     // start the application
-    Application *theApp = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    Application *theApp = applicationManager.startApplication(appId);
 
     // check application data
     EXPECT_EQ(theApp->state(), Application::Starting);
@@ -710,13 +620,10 @@ TEST_F(ApplicationManagerTests, appStartingIsBlockedUntilApproval)
     using namespace ::testing;
     const QString appId("testAppId");
 
-    // Set up general mock responses
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
-
     // Now test that asking the app manager to start an app gets down to the app controller
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
-    auto application = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    ASSERT_TRUE(Mock::VerifyAndClearExpectations(&appController));
+    EXPECT_CALL(*taskController, start(appId, _)).Times(1);
+    auto application = applicationManager.startApplication(appId);
+    ASSERT_TRUE(Mock::VerifyAndClearExpectations(taskController));
     ASSERT_EQ(Application::Starting, application->state());
     ASSERT_EQ(Application::ProcessUnknown, application->processState());
 
@@ -729,9 +636,9 @@ TEST_F(ApplicationManagerTests, appStartingIsBlockedUntilApproval)
 
     // Now pretend that unity or whatever handled the approval request
     QSignalSpy focusRequestSpy(&applicationManager, SIGNAL(focusRequested(const QString &)));
-    EXPECT_CALL(appController, approveApplicationStartForAppId(appId, true)).Times(1);
+    EXPECT_CALL(*taskController, approveStart(appId, true)).Times(1);
     ASSERT_TRUE(applicationManager.approveApplicationStart(appId, true));
-    ASSERT_TRUE(Mock::VerifyAndClearExpectations(&appController));
+    ASSERT_TRUE(Mock::VerifyAndClearExpectations(taskController));
     ASSERT_EQ(1, focusRequestSpy.count());
     ASSERT_EQ(Application::Starting, application->state());
     ASSERT_EQ(Application::ProcessRunning, application->processState());
@@ -745,13 +652,12 @@ TEST_F(ApplicationManagerTests, appStartingDenialClosesApplication)
     using namespace ::testing;
     const QString appId("testAppId");
 
-    // Set up general mock responses
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
-    EXPECT_CALL(appController, approveApplicationStartForAppId(appId, false)).Times(1);
+    // Set up Mocks & signal watcher
+    EXPECT_CALL(*taskController, approveStart(appId, false)).Times(1);
     QSignalSpy focusRequestSpy(&applicationManager, SIGNAL(focusRequested(const QString &)));
 
     // Start app
-    applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    applicationManager.startApplication(appId);
     applicationManager.onProcessStarting(appId);
 
     // Deny app
@@ -809,14 +715,13 @@ TEST_F(ApplicationManagerTests,onceAppAddedToApplicationLists_upstartStartingEve
     const QString appId("testAppId");
 
     // Set up Mocks & signal watcher
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
-
-    applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    applicationManager.startApplication(appId);
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
-    QSignalSpy addedSpy(&applicationManager, SIGNAL(applicationAdded(const QString &)));
 
     // upstart sends notification that the application was started
     onProcessStarting(appId);
@@ -824,7 +729,6 @@ TEST_F(ApplicationManagerTests,onceAppAddedToApplicationLists_upstartStartingEve
     // check no new signals were emitted and application state unchanged
     EXPECT_EQ(countSpy.count(), 0);
     EXPECT_EQ(applicationManager.count(), 1);
-    EXPECT_EQ(addedSpy.count(), 0);
 
     Application *theApp = applicationManager.findApplication(appId);
     EXPECT_EQ(Application::Starting, theApp->state());
@@ -843,16 +747,16 @@ TEST_F(ApplicationManagerTests,onceAppAddedToApplicationLists_mirSessionStarting
     cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
-    EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
+    ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
 
-    applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    applicationManager.startApplication(appId);
     onProcessStarting(appId);
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
-    QSignalSpy addedSpy(&applicationManager, SIGNAL(applicationAdded(const QString &)));
 
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
 
@@ -863,7 +767,6 @@ TEST_F(ApplicationManagerTests,onceAppAddedToApplicationLists_mirSessionStarting
 
     EXPECT_EQ(countSpy.count(), 0);
     EXPECT_EQ(applicationManager.count(), 1);
-    EXPECT_EQ(addedSpy.count(), 0);
 
     // Check application state and session are correctly set
     Application *theApp = applicationManager.findApplication(appId);
@@ -884,12 +787,13 @@ TEST_F(ApplicationManagerTests,onceAppAddedToApplicationLists_mirSurfaceCreatedE
     cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
-    EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
+    ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
 
-    applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    applicationManager.startApplication(appId);
     onProcessStarting(appId);
 
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
@@ -920,12 +824,13 @@ TEST_F(ApplicationManagerTests,shellStopsAppCorrectlyBeforeSurfaceCreated)
     cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
-    EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
+    ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
 
-    applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    applicationManager.startApplication(appId);
     onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
@@ -933,15 +838,23 @@ TEST_F(ApplicationManagerTests,shellStopsAppCorrectlyBeforeSurfaceCreated)
     onSessionStarting(session);
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
-    QSignalSpy removedSpy(&applicationManager, SIGNAL(applicationRemoved(const QString &)));
+
+    EXPECT_CALL(*taskController, stop(appId))
+        .Times(1)
+        .WillOnce(Return(true));
 
     // Stop app
     applicationManager.stopApplication(appId);
 
+    Mock::VerifyAndClearExpectations(taskController);
+
+    // emulate mir session dying and taskController emitting processStopped(appId) in response
+    // to the taskController->stop(appId) call from applicationManager
+    onSessionStopping(session);
+    applicationManager.onProcessStopped(appId);
+
     EXPECT_EQ(countSpy.count(), 2); //FIXME(greyback)
     EXPECT_EQ(applicationManager.count(), 0);
-    EXPECT_EQ(removedSpy.count(), 1);
-    EXPECT_EQ(removedSpy.takeFirst().at(0).toString(), appId);
 }
 
 /*
@@ -956,14 +869,15 @@ TEST_F(ApplicationManagerTests,shellStopsForegroundAppCorrectly)
     cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
-    EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
+    ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
 
-    applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    Application *app = applicationManager.startApplication(appId);
     onProcessStarting(appId);
-    std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
+    std::shared_ptr<mir::scene::Session> session = std::make_shared<NiceMock<MockSession>>("", procId);
     bool authed = true;
     applicationManager.authorizeSession(procId, authed);
     onSessionStarting(session);
@@ -973,58 +887,29 @@ TEST_F(ApplicationManagerTests,shellStopsForegroundAppCorrectly)
     surface->drawFirstFrame();
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
-    QSignalSpy removedSpy(&applicationManager, SIGNAL(applicationRemoved(const QString &)));
+
+    QSignalSpy closeRequestedSpy(surface, SIGNAL(closeRequested()));
 
     // Stop app
     applicationManager.stopApplication(appId);
 
-    EXPECT_EQ(countSpy.count(), 2); //FIXME(greyback)
-    EXPECT_EQ(applicationManager.count(), 0);
-    EXPECT_EQ(removedSpy.count(), 1);
-    EXPECT_EQ(removedSpy.takeFirst().at(0).toString(), appId);
-}
+    // Asking ApplicationManager to stop the application just makes it request its surfaces to be
+    // closed
+    EXPECT_EQ(1, closeRequestedSpy.count());
 
-/*
- * Test that a suspended application is stopped correctly
- */
-TEST_F(ApplicationManagerTests,shellStopsSuspendedAppCorrectly)
-{
-    using namespace ::testing;
-    const QString appId("testAppId");
-    const pid_t procId = 5551;
-    QByteArray cmdLine("/usr/bin/testApp --desktop_file_hint=");
-    cmdLine = cmdLine.append(appId);
+    // comply
+    delete surface;
+    surface = nullptr;
 
-    // Set up Mocks & signal watcher
-    EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
+    // now it's the turn of the application process itself to go away, since its last surface has gone
+    EXPECT_EQ(Application::InternalState::Closing, app->internalState());
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
-
-    Application *application = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    onProcessStarting(appId);
-    std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
-    bool authed = true;
-    applicationManager.authorizeSession(procId, authed);
-    onSessionStarting(session);
-    onProcessStarting(appId);
-
-    FakeMirSurface *surface = new FakeMirSurface;
-    onSessionCreatedSurface(session.get(), surface);
-    surface->drawFirstFrame();
-
-    suspend(application);
-
-    QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
-    QSignalSpy removedSpy(&applicationManager, SIGNAL(applicationRemoved(const QString &)));
-
-    // Stop app
-    applicationManager.stopApplication(appId);
+    // Simulates that the application complied to the close() request and stopped itself
+    onSessionStopping(session);
+    applicationManager.onProcessStopped(appId);
 
     EXPECT_EQ(countSpy.count(), 2); //FIXME(greyback)
     EXPECT_EQ(applicationManager.count(), 0);
-    EXPECT_EQ(removedSpy.count(), 1);
-    EXPECT_EQ(removedSpy.takeFirst().at(0).toString(), appId);
 }
 
 /*
@@ -1039,12 +924,13 @@ TEST_F(ApplicationManagerTests,upstartNotifiesOfStoppingForegroundApp)
     cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
-    EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
+    ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
 
-    applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    applicationManager.startApplication(appId);
     onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
@@ -1056,7 +942,6 @@ TEST_F(ApplicationManagerTests,upstartNotifiesOfStoppingForegroundApp)
     surface->drawFirstFrame();
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
-    QSignalSpy removedSpy(&applicationManager, SIGNAL(applicationRemoved(const QString &)));
 
     onSessionStopping(session);
     // Upstart notifies of stopping app
@@ -1064,8 +949,6 @@ TEST_F(ApplicationManagerTests,upstartNotifiesOfStoppingForegroundApp)
 
     EXPECT_EQ(2, countSpy.count()); //FIXME(greyback)
     EXPECT_EQ(0, applicationManager.count());
-    EXPECT_EQ(1, removedSpy.count());
-    EXPECT_EQ(appId, removedSpy.takeFirst().at(0).toString());
 }
 
 /*
@@ -1081,12 +964,13 @@ TEST_F(ApplicationManagerTests,upstartNotifiesOfUnexpectedStopOfRunningApp)
     cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
-    EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
+    ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
 
-    applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    applicationManager.startApplication(appId);
     onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
@@ -1098,20 +982,17 @@ TEST_F(ApplicationManagerTests,upstartNotifiesOfUnexpectedStopOfRunningApp)
     surface->drawFirstFrame();
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
-    QSignalSpy removedSpy(&applicationManager, SIGNAL(applicationRemoved(const QString &)));
 
     onSessionStopping(session);
 
     // Upstart notifies of crashing / OOM killed app
-    applicationManager.onProcessFailed(appId, false);
+    applicationManager.onProcessFailed(appId, TaskController::Error::APPLICATION_CRASHED);
 
     // Upstart finally notifies the app stopped
     applicationManager.onProcessStopped(appId);
 
     EXPECT_EQ(countSpy.count(), 2); //FIXME(greyback)
     EXPECT_EQ(applicationManager.count(), 0);
-    EXPECT_EQ(removedSpy.count(), 1);
-    EXPECT_EQ(removedSpy.takeFirst().at(0).toString(), appId);
 }
 
 /*
@@ -1129,12 +1010,13 @@ TEST_F(ApplicationManagerTests,unexpectedStopOfBackgroundApp)
     cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
-    EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
+    ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
 
-    Application *app = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    Application *app = applicationManager.startApplication(appId);
     onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
@@ -1149,13 +1031,12 @@ TEST_F(ApplicationManagerTests,unexpectedStopOfBackgroundApp)
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
     QSignalSpy focusSpy(&applicationManager, SIGNAL(focusedApplicationIdChanged()));
-    QSignalSpy removedSpy(&applicationManager, SIGNAL(applicationRemoved(const QString &)));
 
     // Mir reports disconnection
     onSessionStopping(session);
 
     // Upstart notifies of crashing / OOM-killed app
-    applicationManager.onProcessFailed(appId, false);
+    applicationManager.onProcessFailed(appId, TaskController::Error::APPLICATION_CRASHED);
 
     EXPECT_EQ(0, focusSpy.count());
 
@@ -1164,7 +1045,6 @@ TEST_F(ApplicationManagerTests,unexpectedStopOfBackgroundApp)
 
     EXPECT_EQ(0, countSpy.count());
     EXPECT_EQ(1, applicationManager.count());
-    EXPECT_EQ(0, removedSpy.count());
 }
 
 /*
@@ -1184,12 +1064,13 @@ TEST_F(ApplicationManagerTests,unexpectedStopOfBackgroundAppCheckingUpstartBug)
     cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
-    EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
+    ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
 
-    Application *app = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    Application *app = applicationManager.startApplication(appId);
     onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
@@ -1204,13 +1085,12 @@ TEST_F(ApplicationManagerTests,unexpectedStopOfBackgroundAppCheckingUpstartBug)
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
     QSignalSpy focusSpy(&applicationManager, SIGNAL(focusedApplicationIdChanged()));
-    QSignalSpy removedSpy(&applicationManager, SIGNAL(applicationRemoved(const QString &)));
 
     // Mir reports disconnection
     onSessionStopping(session);
 
     // Upstart notifies of crashing app
-    applicationManager.onProcessFailed(appId, true);
+    applicationManager.onProcessFailed(appId, TaskController::Error::APPLICATION_FAILED_TO_START);
 
     EXPECT_EQ(focusSpy.count(), 0);
 
@@ -1219,7 +1099,6 @@ TEST_F(ApplicationManagerTests,unexpectedStopOfBackgroundAppCheckingUpstartBug)
 
     EXPECT_EQ(countSpy.count(), 0);
     EXPECT_EQ(applicationManager.count(), 1);
-    EXPECT_EQ(removedSpy.count(), 0);
 }
 
 /*
@@ -1234,12 +1113,13 @@ TEST_F(ApplicationManagerTests,mirNotifiesStartingAppIsNowStopping)
     cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
-    EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
+    ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
 
-    applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    applicationManager.startApplication(appId);
     onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
@@ -1247,15 +1127,12 @@ TEST_F(ApplicationManagerTests,mirNotifiesStartingAppIsNowStopping)
     onSessionStarting(session);
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
-    QSignalSpy removedSpy(&applicationManager, SIGNAL(applicationRemoved(const QString &)));
 
     // Mir notifies of stopping app
     onSessionStopping(session);
 
     EXPECT_EQ(countSpy.count(), 2); //FIXME(greyback)
     EXPECT_EQ(applicationManager.count(), 0);
-    EXPECT_EQ(removedSpy.count(), 1);
-    EXPECT_EQ(removedSpy.takeFirst().at(0).toString(), appId);
 }
 
 /*
@@ -1270,12 +1147,13 @@ TEST_F(ApplicationManagerTests,mirNotifiesOfStoppingForegroundApp)
     cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
-    EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
+    ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
 
-    applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    applicationManager.startApplication(appId);
     onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
@@ -1288,15 +1166,12 @@ TEST_F(ApplicationManagerTests,mirNotifiesOfStoppingForegroundApp)
     surface->drawFirstFrame();
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
-    QSignalSpy removedSpy(&applicationManager, SIGNAL(applicationRemoved(const QString &)));
 
     // Mir notifies of stopping app
     onSessionStopping(session);
 
     EXPECT_EQ(countSpy.count(), 2); //FIXME(greyback)
     EXPECT_EQ(applicationManager.count(), 0);
-    EXPECT_EQ(removedSpy.count(), 1);
-    EXPECT_EQ(removedSpy.takeFirst().at(0).toString(), appId);
 }
 
 /*
@@ -1307,7 +1182,6 @@ TEST_F(ApplicationManagerTests,mirNotifiesOfStoppingAppLaunchedWithDesktopFileHi
 {
     using namespace ::testing;
     const QString appId("testAppId");
-    const QString name("Test App");
     const pid_t procId = 5551;
     QByteArray cmdLine("/usr/bin/testApp --desktop_file_hint=");
     cmdLine = cmdLine.append(appId);
@@ -1316,13 +1190,6 @@ TEST_F(ApplicationManagerTests,mirNotifiesOfStoppingAppLaunchedWithDesktopFileHi
     EXPECT_CALL(procInfo,command_line(procId))
         .Times(1)
         .WillOnce(Return(cmdLine));
-
-    auto mockDesktopFileReader = new NiceMock<MockDesktopFileReader>(appId, QFileInfo());
-    ON_CALL(*mockDesktopFileReader, loaded()).WillByDefault(Return(true));
-    ON_CALL(*mockDesktopFileReader, appId()).WillByDefault(Return(appId));
-    ON_CALL(*mockDesktopFileReader, name()).WillByDefault(Return(name));
-
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Return(mockDesktopFileReader));
 
     // Mir requests authentication for an application that was started
     bool authed = true;
@@ -1337,14 +1204,12 @@ TEST_F(ApplicationManagerTests,mirNotifiesOfStoppingAppLaunchedWithDesktopFileHi
     surface->drawFirstFrame();
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
-    QSignalSpy removedSpy(&applicationManager, SIGNAL(applicationRemoved(const QString &)));
 
     // Mir notifies of stopping app
     onSessionStopping(session);
 
     EXPECT_EQ(countSpy.count(), 2); //FIXME(greyback)
     EXPECT_EQ(applicationManager.count(), 0);
-    EXPECT_EQ(removedSpy.count(), 1);
 
     Application *app = applicationManager.findApplication(appId);
     EXPECT_EQ(nullptr, app);
@@ -1363,12 +1228,13 @@ TEST_F(ApplicationManagerTests,mirNotifiesOfStoppingBackgroundApp)
     cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
-    EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
+    ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
 
-    Application *app = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    Application *app = applicationManager.startApplication(appId);
     onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
@@ -1395,14 +1261,12 @@ TEST_F(ApplicationManagerTests,mirNotifiesOfStoppingBackgroundApp)
     ASSERT_EQ(Application::InternalState::Suspended, app->internalState());
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
-    QSignalSpy removedSpy(&applicationManager, SIGNAL(applicationRemoved(const QString &)));
 
     // Mir notifies of stopping app
     onSessionStopping(session);
 
     EXPECT_EQ(0, countSpy.count());
     EXPECT_EQ(1, applicationManager.count());
-    EXPECT_EQ(0, removedSpy.count());
 
     EXPECT_EQ(Application::Stopped, app->state());
 }
@@ -1419,64 +1283,35 @@ TEST_F(ApplicationManagerTests,shellStoppedApp_upstartStoppingEventIgnored)
     cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
-    EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
+    ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
 
-    applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    applicationManager.startApplication(appId);
     onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
     applicationManager.authorizeSession(procId, authed);
     onSessionStarting(session);
 
+    Mock::VerifyAndClearExpectations(taskController);
+    EXPECT_CALL(*taskController, stop(appId))
+        .Times(1)
+        .WillOnce(Return(true));
+
     applicationManager.stopApplication(appId);
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
-    QSignalSpy removedSpy(&applicationManager, SIGNAL(applicationRemoved(const QString &)));
+
+    // the mir session always ends before upstart notifies the process has stopped
+    onSessionStopping(session);
 
     // Upstart notifies of stopping app
     applicationManager.onProcessStopped(appId);
 
-    EXPECT_EQ(countSpy.count(), 0);
-    EXPECT_EQ(removedSpy.count(), 0);
-}
-
-/*
- * Test that when an application is stopped correctly by shell, the Mir Session stopped event is ignored
- */
-TEST_F(ApplicationManagerTests,shellStoppedApp_mirSessionStoppingEventIgnored)
-{
-    using namespace ::testing;
-    const QString appId("testAppId");
-    const pid_t procId = 5551;
-    QByteArray cmdLine("/usr/bin/testApp --desktop_file_hint=");
-    cmdLine = cmdLine.append(appId);
-
-    // Set up Mocks & signal watcher
-    EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
-
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
-
-    applicationManager.startApplication(appId, ApplicationManager::NoFlag);
-    onProcessStarting(appId);
-    std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
-    bool authed = true;
-    applicationManager.authorizeSession(procId, authed);
-    onSessionStarting(session);
-
-    applicationManager.stopApplication(appId);
-
-    QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
-    QSignalSpy removedSpy(&applicationManager, SIGNAL(applicationRemoved(const QString &)));
-
-    // Mir notifies of stopping app/Session
-    onSessionStopping(session);
-
-    EXPECT_EQ(countSpy.count(), 0);
-    EXPECT_EQ(removedSpy.count(), 0);
+    EXPECT_EQ(0, countSpy.count());
 }
 
 /*
@@ -1496,15 +1331,15 @@ TEST_F(ApplicationManagerTests,unexpectedStopOfForegroundWebapp)
         .Times(1)
         .WillOnce(Return(cmdLine));
 
-    ON_CALL(appController,appIdHasProcessId(procId1, appId)).WillByDefault(Return(true));
-    ON_CALL(appController,appIdHasProcessId(procId2, _)).WillByDefault(Return(false));
+    ON_CALL(*taskController,appIdHasProcessId(appId, procId1)).WillByDefault(Return(true));
+    ON_CALL(*taskController,appIdHasProcessId(_, procId2)).WillByDefault(Return(false));
 
     // Set up Mocks & signal watcher
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
-
-    applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    applicationManager.startApplication(appId);
     onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session1 = std::make_shared<MockSession>("", procId1);
     std::shared_ptr<mir::scene::Session> session2 = std::make_shared<MockSession>("", procId2);
@@ -1521,7 +1356,6 @@ TEST_F(ApplicationManagerTests,unexpectedStopOfForegroundWebapp)
     surface->drawFirstFrame();
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
-    QSignalSpy removedSpy(&applicationManager, SIGNAL(applicationRemoved(const QString &)));
 
     // Mir notifies of stopping app/Session
     onSessionStopping(session2);
@@ -1529,8 +1363,6 @@ TEST_F(ApplicationManagerTests,unexpectedStopOfForegroundWebapp)
 
     EXPECT_EQ(countSpy.count(), 2); //FIXME(greyback)
     EXPECT_EQ(applicationManager.count(), 0);
-    EXPECT_EQ(removedSpy.count(), 1);
-    EXPECT_EQ(removedSpy.takeFirst().at(0).toString(), appId);
 }
 
 /*
@@ -1550,15 +1382,15 @@ TEST_F(ApplicationManagerTests,unexpectedStopOfBackgroundWebapp)
         .Times(1)
         .WillOnce(Return(cmdLine));
 
-    ON_CALL(appController,appIdHasProcessId(procId1, appId)).WillByDefault(Return(true));
-    ON_CALL(appController,appIdHasProcessId(procId2, _)).WillByDefault(Return(false));
+    ON_CALL(*taskController,appIdHasProcessId(appId, procId1)).WillByDefault(Return(true));
+    ON_CALL(*taskController,appIdHasProcessId(_, procId2)).WillByDefault(Return(false));
 
     // Set up Mocks & signal watcher
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
-
-    Application *app = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    Application *app = applicationManager.startApplication(appId);
     onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session1 = std::make_shared<MockSession>("", procId1);
     std::shared_ptr<mir::scene::Session> session2 = std::make_shared<MockSession>("", procId2);
@@ -1582,14 +1414,12 @@ TEST_F(ApplicationManagerTests,unexpectedStopOfBackgroundWebapp)
     EXPECT_EQ(Application::Suspended, app->state());
 
     QSignalSpy countSpy(&applicationManager, SIGNAL(countChanged()));
-    QSignalSpy removedSpy(&applicationManager, SIGNAL(applicationRemoved(const QString &)));
 
     // Mir notifies of stopping app/Session
     onSessionStopping(session2);
     onSessionStopping(session1);
 
     EXPECT_EQ(0, countSpy.count());
-    EXPECT_EQ(0, removedSpy.count());
 }
 
 /*
@@ -1607,13 +1437,18 @@ TEST_F(ApplicationManagerTests,stoppedBackgroundAppRelaunchedByUpstart)
     QByteArray cmdLine("/usr/bin/testApp --desktop_file_hint=");
     cmdLine = cmdLine.append(appId);
 
+    int argc = 0;
+    char* argv[0];
+    QCoreApplication qtApp(argc, argv); // app for deleteLater event
+
     // Set up Mocks & signal watcher
-    EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
+    ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
 
-    Application *app = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    Application *app = applicationManager.startApplication(appId);
     onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
@@ -1626,11 +1461,21 @@ TEST_F(ApplicationManagerTests,stoppedBackgroundAppRelaunchedByUpstart)
     surface->drawFirstFrame();
     suspend(app);
 
+    surface->setLive(false);
     onSessionStopping(session);
-    applicationManager.onProcessFailed(appId, false);
+    applicationManager.onProcessFailed(appId, TaskController::Error::APPLICATION_CRASHED);
     applicationManager.onProcessStopped(appId);
 
     EXPECT_EQ(Application::Stopped, app->state());
+
+    delete surface; surface = nullptr;
+
+    // Session should have called deleteLater() on itself, as it's zombie and doesn't hold any surface
+    // But DeferredDelete is special: likes to be called out specifically or it won't come out
+    qtApp.sendPostedEvents(app->session(), QEvent::DeferredDelete);
+    qtApp.sendPostedEvents();
+
+    ASSERT_EQ(app->session(), nullptr);
 
     QSignalSpy focusRequestSpy(&applicationManager, SIGNAL(focusRequested(const QString &)));
 
@@ -1642,105 +1487,104 @@ TEST_F(ApplicationManagerTests,stoppedBackgroundAppRelaunchedByUpstart)
     EXPECT_EQ(1, applicationManager.count());
 }
 
-/*
- * Test that screenshotting callback works cross thread.
- */
-TEST_F(ApplicationManagerTests, threadedScreenshot)
+TEST_F(ApplicationManagerTests, lifecycleExemptAppIsNotSuspended)
 {
-    using namespace testing;
-    const pid_t procId1 = 5551;
+    using namespace ::testing;
 
-    std::mutex mutex;
-    std::condition_variable cv;
-    bool done = false;
+    const QString appId("testAppId");
+    const quint64 procId = 12345;
 
-    auto application = startApplication(procId1, "webapp");
-    auto session = std::dynamic_pointer_cast<MockSession>(application->session()->session());
-    ON_CALL(*session, take_snapshot(_)).WillByDefault(Invoke(
-        [&](mir::scene::SnapshotCallback const& callback)
-        {
-            std::thread ([&, callback]() {
-                std::unique_lock<std::mutex> lk(mutex);
+    // Set up Mocks & signal watcher
+    ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
 
-                mir::scene::Snapshot snapshot{mir::geometry::Size{0,0},
-                                              mir::geometry::Stride{0},
-                                              nullptr};
+    EXPECT_CALL(*taskController, start(appId, _))
+            .Times(1)
+            .WillOnce(Return(true));
 
-                callback(snapshot);
+    auto the_app = applicationManager.startApplication(appId);
+    onProcessStarting(appId);
+    std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
+    bool authed = true;
+    applicationManager.authorizeSession(procId, authed);
+    onSessionStarting(session);
 
-                done = true;
-                lk.unlock();
-                cv.notify_one();
-            }).detach();
-        }));
+    // App creates surface, focuses it so state is running
+    FakeMirSurface *surface = new FakeMirSurface;
+    onSessionCreatedSurface(session.get(), surface);
+    surface->drawFirstFrame();
 
-    auto mockSurface = std::make_shared<ms::MockSurface>();
-    EXPECT_CALL(*session, default_surface()).WillRepeatedly(Return(mockSurface));
+    // Test normal lifecycle management as a control group
+    ASSERT_EQ(Application::InternalState::Running, the_app->internalState());
+    ASSERT_EQ(Application::ProcessState::ProcessRunning, the_app->processState());
 
-    {
-        ApplicationScreenshotProvider screenshotProvider(&applicationManager);
-        QSize actualSize;
-        QSize requestedSize;
-        QString imageId("webapp/123456");
-        screenshotProvider.requestImage(imageId, &actualSize, requestedSize);
-    }
+    EXPECT_CALL(*(mir::scene::MockSession*)session.get(), set_lifecycle_state(mir_lifecycle_state_will_suspend));
+    the_app->setRequestedState(Application::RequestedSuspended);
+    ASSERT_EQ(Application::InternalState::SuspendingWaitSession, the_app->internalState());
 
-    {
-        std::unique_lock<decltype(mutex)> lk(mutex);
-        cv.wait(lk, [&] { return done; } );
-        EXPECT_TRUE(done);
-    }
+    static_cast<qtmir::Session*>(the_app->session())->doSuspend();
+    ASSERT_EQ(Application::InternalState::SuspendingWaitProcess, the_app->internalState());
+    applicationManager.onProcessSuspended(the_app->appId());
+    ASSERT_EQ(Application::InternalState::Suspended, the_app->internalState());
 
-    applicationManager.stopApplication(application->appId());
+    EXPECT_CALL(*(mir::scene::MockSession*)session.get(), set_lifecycle_state(mir_lifecycle_state_resumed));
+    the_app->setRequestedState(Application::RequestedRunning);
+
+    EXPECT_EQ(Application::Running, the_app->state());
+
+    // Now mark the app as exempt from lifecycle management and retest
+    the_app->setExemptFromLifecycle(true);
+
+    EXPECT_EQ(Application::Running, the_app->state());
+
+    EXPECT_CALL(*(mir::scene::MockSession*)session.get(), set_lifecycle_state(_)).Times(0);
+    the_app->setRequestedState(Application::RequestedSuspended);
+
+    // And expect it to be running still
+    ASSERT_EQ(Application::InternalState::RunningInBackground, the_app->internalState());
+
+    the_app->setRequestedState(Application::RequestedRunning);
+
+    EXPECT_EQ(Application::Running, the_app->state());
+    ASSERT_EQ(Application::InternalState::Running, the_app->internalState());
 }
 
 /*
- * Test that screenshotting callback works when application has been deleted
+ * Test lifecycle exempt applications have their wakelocks released when shell tries to suspend them
  */
-TEST_F(ApplicationManagerTests, threadedScreenshotAfterAppDelete)
+TEST_F(ApplicationManagerTests, lifecycleExemptAppHasWakelockReleasedOnAttemptedSuspend)
 {
-    using namespace testing;
-    const pid_t procId1 = 5551;
+    using namespace ::testing;
 
-    std::mutex mutex;
-    std::condition_variable cv;
-    bool done = false;
+    const QString appId("testAppId");
+    const quint64 procId = 12345;
 
-    auto application = startApplication(procId1, "webapp");
-    auto session = std::dynamic_pointer_cast<MockSession>(application->session()->session());
-    ON_CALL(*session, take_snapshot(_)).WillByDefault(Invoke(
-        [&](mir::scene::SnapshotCallback const& callback)
-        {
-            std::thread ([&, callback]() {
-                mir::scene::Snapshot snapshot{mir::geometry::Size{0,0},
-                                              mir::geometry::Stride{0},
-                                              nullptr};
+    // Set up Mocks & signal watcher
+    ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
 
-                // stop the application before calling the callback
-                applicationManager.stopApplication(application->appId());
+    EXPECT_CALL(*taskController, start(appId, _))
+            .Times(1)
+            .WillOnce(Return(true));
 
-                callback(snapshot);
+    auto application = applicationManager.startApplication(appId);
+    onProcessStarting(appId);
+    std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
+    bool authed = true;
+    applicationManager.authorizeSession(procId, authed);
+    onSessionStarting(session);
 
-                done = true;
-                cv.notify_one();
-            }).detach();
-        }));
+    // App creates surface, focuses it so state is running
+    FakeMirSurface *surface = new FakeMirSurface;
+    onSessionCreatedSurface(session.get(), surface);
+    surface->drawFirstFrame();
 
-    auto mockSurface = std::make_shared<ms::MockSurface>();
-    EXPECT_CALL(*session, default_surface()).WillRepeatedly(Return(mockSurface));
+    // Mark app as exempt
+    application->setExemptFromLifecycle(true);
 
-    {
-        ApplicationScreenshotProvider screenshotProvider(&applicationManager);
-        QSize actualSize;
-        QSize requestedSize;
-        QString imageId("webapp/123456");
-        screenshotProvider.requestImage(imageId, &actualSize, requestedSize);
-    }
+    application->setRequestedState(Application::RequestedSuspended);
 
-    {
-        std::unique_lock<decltype(mutex)> lk(mutex);
-        cv.wait(lk, [&] { return done; } );
-    }
+    EXPECT_FALSE(sharedWakelock.enabled());
+    ASSERT_EQ(Application::InternalState::RunningInBackground, application->internalState());
+    EXPECT_EQ(Application::Running, application->state());
 }
 
 /*
@@ -1755,12 +1599,13 @@ TEST_F(ApplicationManagerTests,QMLcacheRetainedOnAppStop)
     cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
-    EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
+    ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
 
-    applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    applicationManager.startApplication(appId);
     onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
@@ -1768,9 +1613,14 @@ TEST_F(ApplicationManagerTests,QMLcacheRetainedOnAppStop)
     onSessionStarting(session);
 
     // Create fake QML cache for this app
-    QString path(QDir::homePath() + QStringLiteral("/.cache/QML/Apps/") + appId);
+    QString path(QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation)
+                 + QStringLiteral("/QML/Apps/") + appId);
     QDir dir(path);
     dir.mkpath(path);
+
+    EXPECT_CALL(*taskController, stop(appId))
+        .Times(1)
+        .WillOnce(Return(true));
 
     // Stop app
     applicationManager.stopApplication(appId);
@@ -1791,12 +1641,13 @@ TEST_F(ApplicationManagerTests,DISABLED_QMLcacheDeletedOnAppCrash)
     cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
-    EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
+    ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
 
-    Application *the_app = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    Application *the_app = applicationManager.startApplication(appId);
     onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
@@ -1810,14 +1661,15 @@ TEST_F(ApplicationManagerTests,DISABLED_QMLcacheDeletedOnAppCrash)
     ASSERT_EQ(Application::InternalState::Running, the_app->internalState());
 
     // Create fake QML cache for this app
-    QString path(QDir::homePath() + QStringLiteral("/.cache/QML/Apps/") + appId);
+    QString path(QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation)
+                 + QStringLiteral("/QML/Apps/") + appId);
     QDir dir(path);
     dir.mkpath(path);
 
     // Report app crash
     onSessionStopping(session);
     // Upstart notifies of **crashing** app
-    applicationManager.onProcessFailed(appId, true);
+    applicationManager.onProcessFailed(appId, TaskController::Error::APPLICATION_FAILED_TO_START);
     applicationManager.onProcessStopped(appId);
 
     EXPECT_EQ(0, applicationManager.count());
@@ -1836,12 +1688,13 @@ TEST_F(ApplicationManagerTests,QMLcacheRetainedOnAppShutdown)
     cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
-    EXPECT_CALL(procInfo, command_line(procId)).WillOnce(Return(cmdLine));
-    ON_CALL(desktopFileReaderFactory, createInstance(appId, _)).WillByDefault(Invoke(createMockDesktopFileReader));
+    ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
 
-    EXPECT_CALL(appController, startApplicationWithAppIdAndArgs(appId, _)).Times(1);
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
 
-    Application *the_app = applicationManager.startApplication(appId, ApplicationManager::NoFlag);
+    Application *the_app = applicationManager.startApplication(appId);
     onProcessStarting(appId);
     std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
     bool authed = true;
@@ -1855,7 +1708,8 @@ TEST_F(ApplicationManagerTests,QMLcacheRetainedOnAppShutdown)
     ASSERT_EQ(Application::InternalState::Running, the_app->internalState());
 
     // Create fake QML cache for this app
-    QString path(QDir::homePath() + QStringLiteral("/.cache/QML/Apps/") + appId);
+    QString path(QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation)
+                 + QStringLiteral("/QML/Apps/") + appId);
     QDir dir(path);
     dir.mkpath(path);
 
@@ -1866,4 +1720,275 @@ TEST_F(ApplicationManagerTests,QMLcacheRetainedOnAppShutdown)
 
     EXPECT_EQ(0, applicationManager.count());
     EXPECT_TRUE(dir.exists());
+}
+
+/*
+ * Test that there is an attempt at polite exiting of the app by requesting closure of the surface.
+ */
+TEST_F(ApplicationManagerTests,requestSurfaceCloseOnStop)
+{
+    using namespace ::testing;
+
+    const QString appId("testAppId");
+    quint64 procId = 5551;
+    Application* app = startApplication(procId, appId);
+    std::shared_ptr<mir::scene::Session> session = app->session()->session();
+
+    FakeMirSurface *surface = new FakeMirSurface;
+    onSessionCreatedSurface(session.get(), surface);
+    surface->drawFirstFrame();
+
+    QSignalSpy spy(surface, SIGNAL(closeRequested()));
+
+    // Stop app
+    applicationManager.stopApplication(appId);
+
+    EXPECT_EQ(1, spy.count());
+}
+
+
+//  * Test that if there is no surface available to the app when it is stopped, that it is forced to close.
+TEST_F(ApplicationManagerTests,forceAppDeleteWhenRemovedWithMissingSurface)
+{
+    using namespace ::testing;
+
+    int argc = 0;
+    char* argv[0];
+    QCoreApplication qtApp(argc, argv); // app for deleteLater event
+
+    const QString appId("testAppId");
+    quint64 procId = 5551;
+
+    ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
+
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
+
+    auto app = applicationManager.startApplication(appId);
+    onProcessStarting(appId);
+    std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
+    bool authed = true;
+    applicationManager.authorizeSession(procId, authed);
+    onSessionStarting(session);
+
+    Mock::VerifyAndClearExpectations(taskController);
+
+    // Stop app
+
+    QSignalSpy appDestroyedSpy(app, SIGNAL(destroyed(QObject*)));
+
+    EXPECT_CALL(*taskController, stop(appId))
+        .Times(1)
+        .WillOnce(Return(true));
+
+    applicationManager.stopApplication(appId);
+
+    // the mir session always ends before upstart notifies the process has stopped
+    onSessionStopping(session);
+
+    // Upstart notifies of stopping app
+    applicationManager.onProcessStopped(appId);
+
+    // DeferredDelete is special: likes to be called out specifically or it won't come out
+    qtApp.sendPostedEvents(app, QEvent::DeferredDelete);
+    qtApp.sendPostedEvents();
+
+    EXPECT_EQ(1, appDestroyedSpy.count());
+}
+
+/*
+ * Test that if an application is started while it is still attempting to close, it is queued to start again.
+ */
+TEST_F(ApplicationManagerTests,applicationStartQueuedOnStartStopStart)
+{
+    using namespace ::testing;
+
+    int argc = 0;
+    char* argv[0];
+    QCoreApplication qtApp(argc, argv); // app for deleteLater event
+
+    const QString appId("testAppId");
+    quint64 procId = 5551;
+
+    ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
+
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
+
+    auto app = applicationManager.startApplication(appId);
+    onProcessStarting(appId);
+    std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
+    bool authed = true;
+    applicationManager.authorizeSession(procId, authed);
+    onSessionStarting(session);
+
+    FakeMirSurface *surface = new FakeMirSurface;
+    onSessionCreatedSurface(session.get(), surface);
+    surface->drawFirstFrame();
+
+    EXPECT_EQ(Application::InternalState::Running, app->internalState());
+
+    // Stop app
+
+    Mock::VerifyAndClearExpectations(taskController);
+
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
+
+    QSignalSpy closeRequestedSpy(surface, SIGNAL(closeRequested()));
+
+    applicationManager.stopApplication(appId);
+
+    // Asking ApplicationManager to stop the application just makes it request its surfaces to be
+    // closed
+    EXPECT_EQ(1, closeRequestedSpy.count());
+
+    // comply
+    delete surface;
+    surface = nullptr;
+
+    // now it's the turn of the application process itself to go away, since its last surface has gone
+    EXPECT_EQ(Application::InternalState::Closing, app->internalState());
+
+    // Trying to start a new instance of this app while we are still waiting for its current
+    // instance to end yields no immediate result. This command gets queued instead.
+    EXPECT_EQ(nullptr, applicationManager.startApplication(appId));
+
+    QSignalSpy appAddedSpy(&applicationManager, &QAbstractItemModel::rowsInserted);
+
+    // Simulates that the application complied to the close() request and stopped itself
+    onSessionStopping(session);
+    applicationManager.onProcessStopped(appId);
+
+    // DeferredDelete is special: likes to be called out specifically or it won't come out
+    qtApp.sendPostedEvents(app, QEvent::DeferredDelete);
+    qtApp.sendPostedEvents();
+
+    EXPECT_EQ(1, appAddedSpy.count());
+}
+
+/*
+  Change focus between surfaces of different applications and check that
+  ApplicationManager::focusedApplicationId changes accordingly
+ */
+TEST_F(ApplicationManagerTests,focusedApplicationId)
+{
+    using namespace ::testing;
+
+    int argc = 0;
+    char* argv[0];
+    QCoreApplication qtApp(argc, argv);
+
+    const QString appId1("testAppId1");
+    quint64 procId1 = 5551;
+    const QString appId2("testAppId2");
+    quint64 procId2 = 5552;
+
+    ON_CALL(*taskController, appIdHasProcessId(appId1, procId1)).WillByDefault(Return(true));
+    ON_CALL(*taskController, appIdHasProcessId(appId2, procId2)).WillByDefault(Return(true));
+
+    EXPECT_CALL(*taskController, start(appId1, _))
+        .Times(1)
+        .WillOnce(Return(true));
+
+    auto app1 = applicationManager.startApplication(appId1);
+    applicationManager.onProcessStarting(appId1);
+    std::shared_ptr<mir::scene::Session> session1 = std::make_shared<MockSession>("", procId1);
+    bool authed = true;
+    applicationManager.authorizeSession(procId1, authed);
+    onSessionStarting(session1);
+
+    FakeMirSurface *surface1 = new FakeMirSurface;
+    surface1->setSession(app1->session());
+    onSessionCreatedSurface(session1.get(), surface1);
+    surface1->drawFirstFrame();
+
+    EXPECT_EQ(Application::InternalState::Running, app1->internalState());
+
+    QSignalSpy focusedApplicationIdChangedSpy(&applicationManager,
+            &unityapi::ApplicationManagerInterface::focusedApplicationIdChanged);
+
+    MirFocusController::instance()->setFocusedSurface(surface1);
+    qtApp.processEvents(); // process queued signal-slot connections
+
+    EXPECT_EQ(1, focusedApplicationIdChangedSpy.count());
+    EXPECT_EQ(appId1, applicationManager.focusedApplicationId());
+
+    EXPECT_CALL(*taskController, start(appId2, _))
+        .Times(1)
+        .WillOnce(Return(true));
+
+    auto app2 = applicationManager.startApplication(appId2);
+    applicationManager.onProcessStarting(appId2);
+    std::shared_ptr<mir::scene::Session> session2 = std::make_shared<MockSession>("", procId2);
+    authed = true;
+    applicationManager.authorizeSession(procId2, authed);
+    onSessionStarting(session2);
+
+    FakeMirSurface *surface2 = new FakeMirSurface;
+    surface2->setSession(app2->session());
+    onSessionCreatedSurface(session2.get(), surface2);
+    surface2->drawFirstFrame();
+
+    EXPECT_EQ(Application::InternalState::Running, app2->internalState());
+
+    MirFocusController::instance()->setFocusedSurface(surface2);
+    qtApp.processEvents(); // process queued signal-slot connections
+
+    EXPECT_EQ(2, focusedApplicationIdChangedSpy.count());
+    EXPECT_EQ(appId2, applicationManager.focusedApplicationId());
+
+    MirFocusController::instance()->setFocusedSurface(surface1);
+    qtApp.processEvents(); // process queued signal-slot connections
+
+    EXPECT_EQ(3, focusedApplicationIdChangedSpy.count());
+    EXPECT_EQ(appId1, applicationManager.focusedApplicationId());
+
+    // clean up
+    delete surface1;
+    delete surface2;
+}
+
+/*
+ This is the compatibility mode between application-centric window management
+ and the new (proper) surface-based window management
+
+ Whenever a surface request focus, its corresponding application should do likewise,
+ causing ApplicationManager::focusRequested(appId) to be emitted as well.
+ */
+TEST_F(ApplicationManagerTests,surfaceFocusRequestGeneratesApplicationFocusRequest)
+{
+    using namespace ::testing;
+
+    const QString appId("testAppId");
+    quint64 procId = 5551;
+
+    ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
+
+    EXPECT_CALL(*taskController, start(appId, _))
+        .Times(1)
+        .WillOnce(Return(true));
+
+    auto app = applicationManager.startApplication(appId);
+    onProcessStarting(appId);
+    std::shared_ptr<mir::scene::Session> session = std::make_shared<MockSession>("", procId);
+    bool authed = true;
+    applicationManager.authorizeSession(procId, authed);
+    onSessionStarting(session);
+
+    FakeMirSurface *surface = new FakeMirSurface;
+    onSessionCreatedSurface(session.get(), surface);
+    surface->drawFirstFrame();
+
+    EXPECT_EQ(Application::InternalState::Running, app->internalState());
+
+    QSignalSpy focusRequestedSpy(&applicationManager,
+            &unityapi::ApplicationManagerInterface::focusRequested);
+
+    surface->requestFocus();
+
+    EXPECT_EQ(1, focusRequestedSpy.count());
 }
