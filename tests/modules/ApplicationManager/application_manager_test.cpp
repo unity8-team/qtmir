@@ -743,8 +743,6 @@ TEST_F(ApplicationManagerTests,onceAppAddedToApplicationLists_mirSessionStarting
     using namespace ::testing;
     const QString appId("testAppId");
     const pid_t procId = 5551;
-    QByteArray cmdLine("/usr/bin/testApp --desktop_file_hint=");
-    cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
     ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
@@ -783,8 +781,6 @@ TEST_F(ApplicationManagerTests,onceAppAddedToApplicationLists_mirSurfaceCreatedE
     using namespace ::testing;
     const QString appId("testAppId");
     const pid_t procId = 5551;
-    QByteArray cmdLine("/usr/bin/testApp --desktop_file_hint=");
-    cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
     ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
@@ -820,8 +816,6 @@ TEST_F(ApplicationManagerTests,shellStopsAppCorrectlyBeforeSurfaceCreated)
     using namespace ::testing;
     const QString appId("testAppId");
     const pid_t procId = 5551;
-    QByteArray cmdLine("/usr/bin/testApp --desktop_file_hint=");
-    cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
     ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
@@ -865,8 +859,6 @@ TEST_F(ApplicationManagerTests,shellStopsForegroundAppCorrectly)
     using namespace ::testing;
     const QString appId("testAppId");
     const pid_t procId = 5551;
-    QByteArray cmdLine("/usr/bin/testApp --desktop_file_hint=");
-    cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
     ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
@@ -920,8 +912,6 @@ TEST_F(ApplicationManagerTests,upstartNotifiesOfStoppingForegroundApp)
     using namespace ::testing;
     const QString appId("testAppId");
     const pid_t procId = 5551;
-    QByteArray cmdLine("/usr/bin/testApp --desktop_file_hint=");
-    cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
     ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
@@ -960,8 +950,6 @@ TEST_F(ApplicationManagerTests,upstartNotifiesOfUnexpectedStopOfRunningApp)
     using namespace ::testing;
     const QString appId("testAppId");
     const pid_t procId = 5551;
-    QByteArray cmdLine("/usr/bin/testApp --desktop_file_hint=");
-    cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
     ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
@@ -1006,8 +994,6 @@ TEST_F(ApplicationManagerTests,unexpectedStopOfBackgroundApp)
     using namespace ::testing;
     const QString appId("testAppId");
     const pid_t procId = 5551;
-    QByteArray cmdLine("/usr/bin/testApp --desktop_file_hint=");
-    cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
     ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
@@ -1060,8 +1046,6 @@ TEST_F(ApplicationManagerTests,unexpectedStopOfBackgroundAppCheckingUpstartBug)
     using namespace ::testing;
     const QString appId("testAppId");
     const pid_t procId = 5551;
-    QByteArray cmdLine("/usr/bin/testApp --desktop_file_hint=");
-    cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
     ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
@@ -1109,8 +1093,6 @@ TEST_F(ApplicationManagerTests,mirNotifiesStartingAppIsNowStopping)
     using namespace ::testing;
     const QString appId("testAppId");
     const pid_t procId = 5551;
-    QByteArray cmdLine("/usr/bin/testApp --desktop_file_hint=");
-    cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
     ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
@@ -1143,8 +1125,6 @@ TEST_F(ApplicationManagerTests,mirNotifiesOfStoppingForegroundApp)
     using namespace ::testing;
     const QString appId("testAppId");
     const pid_t procId = 5551;
-    QByteArray cmdLine("/usr/bin/testApp --desktop_file_hint=");
-    cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
     ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
@@ -1224,8 +1204,6 @@ TEST_F(ApplicationManagerTests,mirNotifiesOfStoppingBackgroundApp)
     using namespace ::testing;
     const QString appId("testAppId");
     const pid_t procId = 5551;
-    QByteArray cmdLine("/usr/bin/testApp --desktop_file_hint=");
-    cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
     ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
@@ -1279,8 +1257,6 @@ TEST_F(ApplicationManagerTests,shellStoppedApp_upstartStoppingEventIgnored)
     using namespace ::testing;
     const QString appId("testAppId");
     const pid_t procId = 5551;
-    QByteArray cmdLine("/usr/bin/testApp --desktop_file_hint=");
-    cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
     ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
@@ -1434,8 +1410,6 @@ TEST_F(ApplicationManagerTests,stoppedBackgroundAppRelaunchedByUpstart)
     using namespace ::testing;
     const QString appId("testAppId");
     const pid_t procId = 5551;
-    QByteArray cmdLine("/usr/bin/testApp --desktop_file_hint=");
-    cmdLine = cmdLine.append(appId);
 
     int argc = 0;
     char* argv[0];
@@ -1595,8 +1569,6 @@ TEST_F(ApplicationManagerTests,QMLcacheRetainedOnAppStop)
     using namespace ::testing;
     const QString appId("testAppId1234");
     const pid_t procId = 5551;
-    QByteArray cmdLine("/usr/bin/testApp --desktop_file_hint=");
-    cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
     ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
@@ -1637,8 +1609,6 @@ TEST_F(ApplicationManagerTests,DISABLED_QMLcacheDeletedOnAppCrash)
     using namespace ::testing;
     const QString appId("testAppId12345");
     const pid_t procId = 5551;
-    QByteArray cmdLine("/usr/bin/testApp --desktop_file_hint=");
-    cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
     ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
@@ -1684,8 +1654,6 @@ TEST_F(ApplicationManagerTests,QMLcacheRetainedOnAppShutdown)
     using namespace ::testing;
     const QString appId("testAppId123456");
     const pid_t procId = 5551;
-    QByteArray cmdLine("/usr/bin/testApp --desktop_file_hint=");
-    cmdLine = cmdLine.append(appId);
 
     // Set up Mocks & signal watcher
     ON_CALL(*taskController, appIdHasProcessId(appId, procId)).WillByDefault(Return(true));
