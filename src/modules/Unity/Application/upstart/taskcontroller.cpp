@@ -24,10 +24,7 @@
 // Qt
 #include <QStandardPaths>
 
-// upstart
-extern "C" {
-    #include "ubuntu-app-launch.h"
-}
+// UAL
 #include <ubuntu-app-launch/registry.h>
 
 namespace ual = ubuntu::app_launch;
@@ -37,34 +34,18 @@ namespace qtmir
 namespace upstart
 {
 
-struct TaskController::Private
-{
-    std::shared_ptr<ual::Registry> registry;
-    UbuntuAppLaunchAppObserver preStartCallback = nullptr;
-    UbuntuAppLaunchAppObserver startedCallback = nullptr;
-    UbuntuAppLaunchAppObserver stopCallback = nullptr;
-    UbuntuAppLaunchAppObserver focusCallback = nullptr;
-    UbuntuAppLaunchAppObserver resumeCallback = nullptr;
-    UbuntuAppLaunchAppPausedResumedObserver pausedCallback = nullptr;
-    UbuntuAppLaunchAppFailedObserver failureCallback = nullptr;
-};
-
 namespace {
 /**
  * @brief toShortAppIdIfPossible
  * @param appId - any string that you think is an appId
  * @return if a valid appId was input, a shortened appId is returned, else returns the input string unaltered
  */
-QString toShortAppIdIfPossible(const QString &appId) {
-    gchar *package, *application;
-    if (ubuntu_app_launch_app_id_parse(appId.toLatin1().constData(), &package, &application, nullptr)) {
-        // is long appId, so assemble its short appId
-        QString shortAppId = QString("%1_%2").arg(package).arg(application);
-        g_free(package);
-        g_free(application);
-        return shortAppId;
+QString toShortAppIdIfPossible(const std::shared_ptr<ual::Application> &app) {
+    const ual::AppID &appId = app->appId();
+    if (ual::AppID::valid(std::string(appId))) {
+        return QString::fromStdString(appId.package) + "_" + QString::fromStdString(appId.appname);
     } else {
-        return appId;
+        return QString::fromStdString(std::string(appId));
     }
 }
 
@@ -80,72 +61,89 @@ std::shared_ptr<ual::Application> createApp(const QString &inputAppId, std::shar
 
 } // namespace
 
+class TaskController::Private : public ual::Registry::Manager
+{
+public:
+    Private() : ual::Registry::Manager() {};
+
+    TaskController *parent = nullptr;
+    std::shared_ptr<ual::Registry> registry;
+    std::shared_ptr<core::ScopedConnection> startedCallback;
+    std::shared_ptr<core::ScopedConnection> stopCallback;
+    std::shared_ptr<core::ScopedConnection> resumeCallback;
+    std::shared_ptr<core::ScopedConnection> pausedCallback;
+    std::shared_ptr<core::ScopedConnection> failureCallback;
+
+    bool focusRequest(std::shared_ptr<ual::Application> app,
+                      std::shared_ptr<ual::Application::Instance>) override
+    {
+        Q_EMIT parent->focusRequested(toShortAppIdIfPossible(app));
+        return true;
+    }
+
+    bool startingRequest(std::shared_ptr<ual::Application> app,
+                         std::shared_ptr<ual::Application::Instance>) override
+    {
+        Q_EMIT parent->processStarting(toShortAppIdIfPossible(app));
+        return true;
+    }
+};
+
 TaskController::TaskController()
     : qtmir::TaskController(),
       impl(new Private())
 {
+    impl->parent = this;
     impl->registry = std::make_shared<ual::Registry>();
 
-    impl->preStartCallback = [](const gchar * appId, gpointer userData) {
-        auto thiz = static_cast<TaskController*>(userData);
-        Q_EMIT(thiz->processStarting(toShortAppIdIfPossible(appId)));
-    };
+    impl->registry->setManager(impl.data());
 
-    impl->startedCallback = [](const gchar * appId, gpointer userData) {
-        auto thiz = static_cast<TaskController*>(userData);
-        Q_EMIT(thiz->applicationStarted(toShortAppIdIfPossible(appId)));
-    };
+    impl->startedCallback = std::make_shared<core::ScopedConnection>(
+        impl->registry->appStarted().connect(
+            [this](std::shared_ptr<ual::Application> app,
+                   std::shared_ptr<ual::Application::Instance>) {
+        Q_EMIT applicationStarted(toShortAppIdIfPossible(app));
+    }));
 
-    impl->stopCallback = [](const gchar * appId, gpointer userData) {
-        auto thiz = static_cast<TaskController*>(userData);
-        Q_EMIT(thiz->processStopped(toShortAppIdIfPossible(appId)));
-    };
+    impl->stopCallback = std::make_shared<core::ScopedConnection>(
+        impl->registry->appStopped().connect(
+            [this](std::shared_ptr<ual::Application> app,
+                   std::shared_ptr<ual::Application::Instance>) {
+        Q_EMIT processStopped(toShortAppIdIfPossible(app));
+    }));
 
-    impl->focusCallback = [](const gchar * appId, gpointer userData) {
-        auto thiz = static_cast<TaskController*>(userData);
-        Q_EMIT(thiz->focusRequested(toShortAppIdIfPossible(appId)));
-    };
+    impl->resumeCallback = std::make_shared<core::ScopedConnection>(
+        impl->registry->appResumed().connect(
+            [this](std::shared_ptr<ual::Application> app,
+                   std::shared_ptr<ual::Application::Instance>) {
+        Q_EMIT resumeRequested(toShortAppIdIfPossible(app));
+    }));
 
-    impl->resumeCallback = [](const gchar * appId, gpointer userData) {
-        auto thiz = static_cast<TaskController*>(userData);
-        Q_EMIT(thiz->resumeRequested(toShortAppIdIfPossible(appId)));
-    };
+    impl->pausedCallback = std::make_shared<core::ScopedConnection>(
+        impl->registry->appPaused().connect(
+            [this](std::shared_ptr<ual::Application> app,
+                   std::shared_ptr<ual::Application::Instance>) {
+        Q_EMIT processSuspended(toShortAppIdIfPossible(app));
+    }));
 
-    impl->pausedCallback = [](const gchar * appId, GPid *, gpointer userData) {
-        auto thiz = static_cast<TaskController*>(userData);
-        Q_EMIT(thiz->processSuspended(toShortAppIdIfPossible(appId)));
-    };
-
-    impl->failureCallback = [](const gchar * appId, UbuntuAppLaunchAppFailed failureType, gpointer userData) {
+    impl->failureCallback = std::make_shared<core::ScopedConnection>(
+        impl->registry->appFailed().connect(
+            [this](std::shared_ptr<ual::Application> app,
+                   std::shared_ptr<ual::Application::Instance>,
+                   ual::Registry::FailureType failureType) {
         TaskController::Error error;
         switch(failureType)
         {
-        case UBUNTU_APP_LAUNCH_APP_FAILED_CRASH: error = TaskController::Error::APPLICATION_CRASHED;
-        case UBUNTU_APP_LAUNCH_APP_FAILED_START_FAILURE: error = TaskController::Error::APPLICATION_FAILED_TO_START;
+        case ual::Registry::FailureType::CRASH: error = TaskController::Error::APPLICATION_CRASHED;
+        case ual::Registry::FailureType::START_FAILURE: error = TaskController::Error::APPLICATION_FAILED_TO_START;
         }
 
-        auto thiz = static_cast<TaskController*>(userData);
-        Q_EMIT(thiz->processFailed(toShortAppIdIfPossible(appId), error));
-    };
-
-    ubuntu_app_launch_observer_add_app_starting(impl->preStartCallback, this);
-    ubuntu_app_launch_observer_add_app_started(impl->startedCallback, this);
-    ubuntu_app_launch_observer_add_app_stop(impl->stopCallback, this);
-    ubuntu_app_launch_observer_add_app_focus(impl->focusCallback, this);
-    ubuntu_app_launch_observer_add_app_resume(impl->resumeCallback, this);
-    ubuntu_app_launch_observer_add_app_paused(impl->pausedCallback, this);
-    ubuntu_app_launch_observer_add_app_failed(impl->failureCallback, this);
+        Q_EMIT processFailed(toShortAppIdIfPossible(app), error);
+    }));
 }
 
 TaskController::~TaskController()
 {
-    ubuntu_app_launch_observer_delete_app_starting(impl->preStartCallback, this);
-    ubuntu_app_launch_observer_delete_app_started(impl->startedCallback, this);
-    ubuntu_app_launch_observer_delete_app_stop(impl->stopCallback, this);
-    ubuntu_app_launch_observer_delete_app_focus(impl->focusCallback, this);
-    ubuntu_app_launch_observer_delete_app_resume(impl->resumeCallback, this);
-    ubuntu_app_launch_observer_delete_app_paused(impl->pausedCallback, this);
-    ubuntu_app_launch_observer_delete_app_failed(impl->failureCallback, this);
 }
 
 bool TaskController::appIdHasProcessId(const QString& appId, pid_t pid)
@@ -242,7 +240,7 @@ QSharedPointer<qtmir::ApplicationInfo> TaskController::getInfoForApp(const QStri
         return QSharedPointer<qtmir::ApplicationInfo>();
     }
 
-    QString shortAppId = toShortAppIdIfPossible(QString::fromStdString(std::string(app->appId())));
+    QString shortAppId = toShortAppIdIfPossible(app);
     auto appInfo = new qtmir::upstart::ApplicationInfo(shortAppId, app->info());
     return QSharedPointer<qtmir::ApplicationInfo>(appInfo);
 }
