@@ -1,3 +1,9 @@
+qtmir (0.4.8+16.04.20160519-0ubuntu1) xenial; urgency=medium
+
+  * rebuild for mir 0.23
+
+ -- Kevin DuBois <kevin.dubois@canonical.com>  Thu, 19 May 2016 11:12:37 +0000
+
 qtmir (0.4.8+16.04.20160518.1-0ubuntu1) xenial; urgency=medium
 
   [ Daniel d'Andrada ]
