@@ -60,10 +60,6 @@ public:
     void initialize() override;
     QPlatformOffscreenSurface *createPlatformOffscreenSurface(QOffscreenSurface *surface) const override;
 
-    // non-const versions of some QPlatformIntegration methods
-    QPlatformOpenGLContext* createPlatformOpenGLContext(QOpenGLContext* context);
-    QPlatformWindow* createPlatformWindow(QWindow* window);
-
     // New methods.
     MirConnection *mirConnection() const { return mMirConnection; }
     EGLDisplay eglDisplay() const { return mEglDisplay; }

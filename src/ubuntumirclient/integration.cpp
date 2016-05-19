@@ -177,11 +177,6 @@ void UbuntuClientIntegration::setupDescription()
 
 QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window) const
 {
-    return const_cast<UbuntuClientIntegration*>(this)->createPlatformWindow(window);
-}
-
-QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window)
-{
     return new UbuntuWindow(window, mClipboard, mInput, mNativeInterface, mEglDisplay, mMirConnection);
 }
 
@@ -224,12 +219,6 @@ QPlatformBackingStore* UbuntuClientIntegration::createPlatformBackingStore(QWind
 
 QPlatformOpenGLContext* UbuntuClientIntegration::createPlatformOpenGLContext(
         QOpenGLContext* context) const
-{
-    return const_cast<UbuntuClientIntegration*>(this)->createPlatformOpenGLContext(context);
-}
-
-QPlatformOpenGLContext* UbuntuClientIntegration::createPlatformOpenGLContext(
-        QOpenGLContext* context)
 {
     QSurfaceFormat format(context->format());
 
