@@ -45,6 +45,7 @@ HEADERS = \
     plugin.h \
     screenobserver.h \
     screen.h \
+    surfaceformatchooser.h \
     theme.h \
     window.h
 

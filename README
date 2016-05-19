@@ -28,9 +28,6 @@
     QT_QPA_EGLFS_SWAPINTERVAL: Specifies the required swap interval as an
                                integer. 1 by default.
 
-    QTUBUNTU_MULTISAMPLE: Enables multisampling with using 4 samples
-                          per fragment.
-
     QTUBUNTU_NO_THREADED_OPENGL: Disables QtQuick threaded OpenGL
                                  rendering.
 

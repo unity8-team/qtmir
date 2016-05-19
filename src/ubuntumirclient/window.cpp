@@ -20,6 +20,7 @@
 #include "nativeinterface.h"
 #include "input.h"
 #include "screen.h"
+#include "surfaceformatchooser.h"
 #include "logging.h"
 
 #include <mir_toolkit/mir_client_library.h>
@@ -301,24 +302,12 @@ public:
     {
         // If client has not explicitly requested a color depth, try default to ARGB8888.
         // Otherwise Qt on mobile devices tends to choose a lower color format like RGB565 or without alpha.
-        if (mFormat.redBufferSize() < 0) {
-            mFormat.setRedBufferSize(8);
-        }
-        if (mFormat.greenBufferSize() < 0) {
-            mFormat.setGreenBufferSize(8);
-        }
-        if (mFormat.blueBufferSize() < 0) {
-            mFormat.setBlueBufferSize(8);
-        }
-        if (mFormat.alphaBufferSize() < 0) {
-            mFormat.setAlphaBufferSize(8);
-        }
+        UbuntuSurfaceFormatChooser::update(mFormat);
 
         // Have Qt choose most suitable EGLConfig for the requested surface format, and update format to reflect it
         EGLConfig config = q_configFromGLFormat(display, mFormat, true);
         if (config == 0) {
-            // (unsure if necessary) if no suitable config could be found, relax the RGB888 restriction and try again
-            config = q_configFromGLFormat(display, mWindow->requestedFormat(), true);
+            qDebug() << "Qt failed to choose a suitable EGLConfig to suit the surface format" << mFormat;
         }
         mFormat = q_glFormatFromConfig(display, config, mFormat);
 

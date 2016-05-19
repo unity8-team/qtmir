@@ -24,6 +24,7 @@
 #include "nativeinterface.h"
 #include "offscreensurface.h"
 #include "screen.h"
+#include "surfaceformatchooser.h"
 #include "theme.h"
 #include "window.h"
 
@@ -228,26 +229,9 @@ QPlatformOpenGLContext* UbuntuClientIntegration::createPlatformOpenGLContext(
     QSurfaceFormat format(context->format());
     // If client has not explicitly requested a color depth, try default to ARGB8888.
     // Otherwise Qt on mobile devices tends to choose a lower color format like RGB565 or without alpha.
-    if (format.redBufferSize() < 0) {
-        format.setRedBufferSize(8);
-    }
-    if (format.greenBufferSize() < 0) {
-        format.setGreenBufferSize(8);
-    }
-    if (format.blueBufferSize() < 0) {
-        format.setBlueBufferSize(8);
-    }
-    if (format.alphaBufferSize() < 0) {
-        format.setAlphaBufferSize(8);
-    }
-    auto platformContext = new UbuntuOpenGLContext(format, context->shareHandle(), mEglDisplay);
+    UbuntuSurfaceFormatChooser::update(format);
 
-    if (!platformContext->isValid()) {
-        // (unsure if necessary) if context failed, relax the RGB888 restriction and try again
-        delete platformContext;
-        platformContext = new UbuntuOpenGLContext(context->format(), context->shareHandle(), mEglDisplay);
-    }
-    return platformContext;
+    return new UbuntuOpenGLContext(format, context->shareHandle(), mEglDisplay);
 }
 
 QStringList UbuntuClientIntegration::themeNames() const
