@@ -29,11 +29,11 @@ public:
                         EGLDisplay display);
 
     // QEGLPlatformContext methods.
-    void swapBuffers(QPlatformSurface *surface) override;
-    bool makeCurrent(QPlatformSurface *surface) override;
+    void swapBuffers(QPlatformSurface *surface) final;
+    bool makeCurrent(QPlatformSurface *surface) final;
 
 protected:
-    EGLSurface eglSurfaceForPlatformSurface(QPlatformSurface *surface) override;
+    EGLSurface eglSurfaceForPlatformSurface(QPlatformSurface *surface) final;
 };
 
 #endif // UBUNTU_OPENGL_CONTEXT_H
