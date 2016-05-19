@@ -37,7 +37,7 @@ void printEglConfig(EGLDisplay display, EGLConfig config) {
     string = eglQueryString(display, EGL_EXTENSIONS);
     qCDebug(ubuntumirclient, "EGL extensions: %s", string);
 
-    qCDebug(ubuntumirclient, "EGL configuration attibutes:");
+    qCDebug(ubuntumirclient, "EGL configuration attributes:");
     q_printEglConfig(display, config);
 }
 
