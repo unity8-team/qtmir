@@ -31,6 +31,9 @@
     QTUBUNTU_NO_THREADED_OPENGL: Disables QtQuick threaded OpenGL
                                  rendering.
 
+    QTUBUNTU_NO_FORMAT_FILTER: Disable QSurfaceFormat filtering which can override
+                               client requests.
+
     QTUBUNTU_NO_INPUT: Disables touchscreen and buttons.
 
     QTUBUNTU_ICON_THEME: Specifies the default icon theme name.

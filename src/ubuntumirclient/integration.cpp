@@ -24,13 +24,12 @@
 #include "nativeinterface.h"
 #include "offscreensurface.h"
 #include "screen.h"
-#include "surfaceformatchooser.h"
+#include "surfaceformatfilter.h"
 #include "theme.h"
 #include "window.h"
 
 // Qt
 #include <QGuiApplication>
-#include <private/qguiapplication_p.h>
 #include <qpa/qplatformnativeinterface.h>
 #include <qpa/qplatforminputcontextfactory_p.h>
 #include <qpa/qplatforminputcontext.h>
@@ -229,7 +228,7 @@ QPlatformOpenGLContext* UbuntuClientIntegration::createPlatformOpenGLContext(
     QSurfaceFormat format(context->format());
     // If client has not explicitly requested a color depth, try default to ARGB8888.
     // Otherwise Qt on mobile devices tends to choose a lower color format like RGB565 or without alpha.
-    UbuntuSurfaceFormatChooser::update(format);
+    UbuntuSurfaceFormatFilter::filter(format);
 
     return new UbuntuOpenGLContext(format, context->shareHandle(), mEglDisplay);
 }

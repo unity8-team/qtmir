@@ -1,12 +1,21 @@
-#ifndef SURFACEFORMATCHOOSER_H
-#define SURFACEFORMATCHOOSER_H
+#ifndef SURFACEFORMATFILTER_H
+#define SURFACEFORMATFILTER_H
 
 #include <QSurfaceFormat>
 
-class UbuntuSurfaceFormatChooser {
+class UbuntuSurfaceFormatFilter {
 public:
-    static void update(QSurfaceFormat &format)
+    static void filter(QSurfaceFormat &format)
     {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 5, 0)
+        static const bool doNotFilter = qEnvironmentVariableIntValue("QTUBUNTU_NO_FORMAT_FILTER");
+#else
+        static const bool doNotFilter = qgetenv("QTUBUNTU_NO_FORMAT_FILTER").toInt();
+#endif
+        if (doNotFilter) {
+            return;
+        }
+
         // If client has not explicitly requested a color depth, try default to ARGB8888. Otherwise
         // Qt on mobile devices tends to choose a lower color format like RGB565 or without alpha.
         if (format.redBufferSize() < 0
@@ -31,4 +40,4 @@ public:
     }
 };
 
-#endif // SURFACEFORMATCHOOSER_H
+#endif // SURFACEFORMATFILTER_H
