@@ -26,7 +26,7 @@ Standards-Version: 3.9.6
 Section: libs
 
 Package: qtubuntu-android
-Architecture: armhf arm64
+Architecture: arm64 armhf
 Multi-Arch: same
 Conflicts: qtubuntu-desktop,
 Replaces: qtubuntu (<< 0.52),
