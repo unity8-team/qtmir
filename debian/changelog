@@ -1,3 +1,16 @@
+qtubuntu (0.62+16.10.20160527.1-0ubuntu1) yakkety; urgency=medium
+
+  [ Albert Astals Cid ]
+  * Enable workaround_brokenFBOReadBack on the Mali 400
+  * Enable workaround_brokenFBOReadBack on the Mali-T760
+  * Enable workaround_brokenFBOReadBack on the PowerVR Rogue G6200
+
+  [ Michael Terry ]
+  * Build qtubuntu for arm64, and drop ancient qthybris transition
+    package.
+
+ -- Michael Terry <michael.terry@canonical.com>  Fri, 27 May 2016 13:05:27 +0000
+
 qtubuntu (0.62+16.04.20160428-0ubuntu1) xenial; urgency=medium
 
   [ Daniel d'Andrada, Gerry Boland, Michał Sawicz, Nick Dedekind ]
