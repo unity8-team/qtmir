@@ -21,6 +21,7 @@
 
 #include <QOpenGLFramebufferObject>
 #include <QtPlatformSupport/private/qeglconvenience_p.h>
+#include <QtGui/private/qopenglcontext_p.h>
 
 namespace {
 
@@ -173,6 +174,20 @@ UbuntuOpenGLContext::~UbuntuOpenGLContext()
     ASSERT(eglDestroyContext(mEglDisplay, mEglContext) == EGL_TRUE);
 }
 
+static bool needsFBOReadBackWorkaround()
+{
+    static bool set = false;
+    static bool needsWorkaround = false;
+
+    if (!set) {
+        const char *rendererString = reinterpret_cast<const char *>(glGetString(GL_RENDERER));
+        needsWorkaround = qstrncmp(rendererString, "Mali-400", 8) == 0;
+        set = true;
+    }
+
+    return needsWorkaround;
+}
+
 bool UbuntuOpenGLContext::makeCurrent(QPlatformSurface* surface)
 {
     Q_ASSERT(surface->surface()->surfaceType() == QSurface::OpenGLSurface);
@@ -193,6 +208,11 @@ bool UbuntuOpenGLContext::makeCurrent(QPlatformSurface* surface)
             qCCritical(ubuntumirclient, "eglMakeCurrent() failed with %s",
                     qPrintable(eglErrorToString(eglGetError())));
             return false;
+        }
+
+        QOpenGLContextPrivate *ctx_d = QOpenGLContextPrivate::get(context());
+        if (!ctx_d->workaround_brokenFBOReadBack && needsFBOReadBackWorkaround()) {
+            ctx_d->workaround_brokenFBOReadBack = true;
         }
 
         if (ubuntumirclient().isDebugEnabled()) {
