@@ -16,16 +16,14 @@ public:
             return;
         }
 
-        // If client has not explicitly requested a color depth, try default to ARGB8888. Otherwise
-        // Qt on mobile devices tends to choose a lower color format like RGB565 or without alpha.
+        // If client has not explicitly requested any color depth, try default to RGB888. Otherwise
+        // Qt on mobile devices tends to choose a lower color format like RGB565.
         if (format.redBufferSize() < 0
                 && format.greenBufferSize() < 0
-                && format.blueBufferSize() < 0
-                && format.alphaBufferSize() < 0) {
+                && format.blueBufferSize() < 0) {
             format.setRedBufferSize(8);
             format.setGreenBufferSize(8);
             format.setBlueBufferSize(8);
-            format.setAlphaBufferSize(8);
         }
 
         // Older Intel Atom-based devices only support OpenGL 1.4 compatibility profile but by default
