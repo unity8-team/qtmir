@@ -182,6 +182,7 @@ static bool needsFBOReadBackWorkaround()
     if (!set) {
         const char *rendererString = reinterpret_cast<const char *>(glGetString(GL_RENDERER));
         needsWorkaround = qstrncmp(rendererString, "Mali-400", 8) == 0
+                          || qstrncmp(rendererString, "Mali-T7", 7) == 0
                           || qstrncmp(rendererString, "PowerVR Rogue G6200", 19) == 0;
         set = true;
     }
