@@ -88,7 +88,7 @@ Index: arm64/debian/rules
 -
 -# We only want to build qtubuntu-android on arches using Qt built with OpenGL ES2.0
 -DEB_HOST_ARCH ?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
--gles2_architectures = armhf
+-gles2_architectures = arm64 armhf
  
  %:
  	dh $@
