@@ -300,8 +300,7 @@ public:
         , mFormat(mWindow->requestedFormat())
         , mShellChrome(mWindow->flags() & LowChromeWindowHint ? mir_shell_chrome_low : mir_shell_chrome_normal)
     {
-        // If client has not explicitly requested a color depth, try default to RGB888.
-        // Otherwise Qt on mobile devices tends to choose a lower color format like RGB565.
+        // Hook for driver-specific workarounds
         UbuntuSurfaceFormatFilter::filter(mFormat, display);
 
         // Have Qt choose most suitable EGLConfig for the requested surface format, and update format to reflect it

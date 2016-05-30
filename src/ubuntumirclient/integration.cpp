@@ -90,6 +90,13 @@ UbuntuClientIntegration::UbuntuClientIntegration()
 
     mMirConnection = u_application_instance_get_mir_connection(mInstance);
 
+    // Choose the default surface format suited to the Mir platform
+    QSurfaceFormat defaultFormat;
+    defaultFormat.setRedBufferSize(8);
+    defaultFormat.setGreenBufferSize(8);
+    defaultFormat.setBlueBufferSize(8);
+    QSurfaceFormat::setDefaultFormat(defaultFormat);
+
     // Initialize EGL.
     mEglNativeDisplay = mir_connection_get_egl_native_display(mMirConnection);
     ASSERT((mEglDisplay = eglGetDisplay(mEglNativeDisplay)) != EGL_NO_DISPLAY);
@@ -226,8 +233,7 @@ QPlatformOpenGLContext* UbuntuClientIntegration::createPlatformOpenGLContext(
         QOpenGLContext* context)
 {
     QSurfaceFormat format(context->format());
-    // If client has not explicitly requested a color depth, try default to RGB888.
-    // Otherwise Qt on mobile devices tends to choose a lower color format like RGB565.
+    // Hook for driver-specific workarounds
     UbuntuSurfaceFormatFilter::filter(format, mEglDisplay);
 
     return new UbuntuOpenGLContext(format, context->shareHandle(), mEglDisplay);
