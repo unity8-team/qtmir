@@ -1,11 +1,13 @@
 #ifndef SURFACEFORMATFILTER_H
 #define SURFACEFORMATFILTER_H
 
+#include <QString>
 #include <QSurfaceFormat>
+#include <EGL/egl.h>
 
 class UbuntuSurfaceFormatFilter {
 public:
-    static void filter(QSurfaceFormat &format)
+    static void filter(QSurfaceFormat &format, EGLDisplay display)
     {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 5, 0)
         static const bool doNotFilter = qEnvironmentVariableIntValue("QTUBUNTU_NO_FORMAT_FILTER");
@@ -15,6 +17,8 @@ public:
         if (doNotFilter) {
             return;
         }
+
+        static const bool isMesa = QString(eglQueryString(display, EGL_VENDOR)).toLower().contains("mesa");
 
         // If client has not explicitly requested any color depth, try default to RGB888. Otherwise
         // Qt on mobile devices tends to choose a lower color format like RGB565.
@@ -31,7 +35,7 @@ public:
         // 1.4 context, but the XCB EGL backend tries to honour it, and fails. The 1.4 context appears to
         // have sufficient capabilities on MESA (i915) to render correctly however. So reduce the default
         // requested OpenGL version to 1.0 to ensure EGL will give us a working context (lp:1549455).
-        if (format.majorVersion() == 2 && format.minorVersion() == 0) {
+        if (isMesa) {
             format.setMajorVersion(1);
             format.setMinorVersion(0);
         }

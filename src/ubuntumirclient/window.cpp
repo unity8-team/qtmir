@@ -302,7 +302,7 @@ public:
     {
         // If client has not explicitly requested a color depth, try default to RGB888.
         // Otherwise Qt on mobile devices tends to choose a lower color format like RGB565.
-        UbuntuSurfaceFormatFilter::filter(mFormat);
+        UbuntuSurfaceFormatFilter::filter(mFormat, display);
 
         // Have Qt choose most suitable EGLConfig for the requested surface format, and update format to reflect it
         EGLConfig config = q_configFromGLFormat(display, mFormat, true);
