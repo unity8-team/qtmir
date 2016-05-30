@@ -226,8 +226,8 @@ QPlatformOpenGLContext* UbuntuClientIntegration::createPlatformOpenGLContext(
         QOpenGLContext* context)
 {
     QSurfaceFormat format(context->format());
-    // If client has not explicitly requested a color depth, try default to ARGB8888.
-    // Otherwise Qt on mobile devices tends to choose a lower color format like RGB565 or without alpha.
+    // If client has not explicitly requested a color depth, try default to RGB888.
+    // Otherwise Qt on mobile devices tends to choose a lower color format like RGB565.
     UbuntuSurfaceFormatFilter::filter(format);
 
     return new UbuntuOpenGLContext(format, context->shareHandle(), mEglDisplay);

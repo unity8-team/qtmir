@@ -300,8 +300,8 @@ public:
         , mFormat(mWindow->requestedFormat())
         , mShellChrome(mWindow->flags() & LowChromeWindowHint ? mir_shell_chrome_low : mir_shell_chrome_normal)
     {
-        // If client has not explicitly requested a color depth, try default to ARGB8888.
-        // Otherwise Qt on mobile devices tends to choose a lower color format like RGB565 or without alpha.
+        // If client has not explicitly requested a color depth, try default to RGB888.
+        // Otherwise Qt on mobile devices tends to choose a lower color format like RGB565.
         UbuntuSurfaceFormatFilter::filter(mFormat);
 
         // Have Qt choose most suitable EGLConfig for the requested surface format, and update format to reflect it
@@ -315,7 +315,8 @@ public:
         // Mir will know what EGLConfig has been chosen - it cannot deduce it from the buffers.
         auto pixelFormat = mir_connection_get_egl_pixel_format(connection, display, config);
         // But the chosen EGLConfig might have an alpha buffer enabled, even if not requested by the client.
-        // If that's the case, try to edit the chosen pixel format which disables the alpha buffer.
+        // If that's the case, try to edit the chosen pixel format in order to disable the alpha buffer.
+        // This is an optimisation for the compositor, as it can avoid blending this surface.
         if (mWindow->requestedFormat().alphaBufferSize() < 0) {
             pixelFormat = disableAlphaBufferIfPossible(pixelFormat);
         }
