@@ -20,7 +20,6 @@
 #include "nativeinterface.h"
 #include "input.h"
 #include "screen.h"
-#include "surfaceformatfilter.h"
 #include "logging.h"
 
 #include <mir_toolkit/mir_client_library.h>
@@ -300,14 +299,26 @@ public:
         , mFormat(mWindow->requestedFormat())
         , mShellChrome(mWindow->flags() & LowChromeWindowHint ? mir_shell_chrome_low : mir_shell_chrome_normal)
     {
-        // Hook for driver-specific workarounds
-        UbuntuSurfaceFormatFilter::filter(mFormat, display);
-
         // Have Qt choose most suitable EGLConfig for the requested surface format, and update format to reflect it
         EGLConfig config = q_configFromGLFormat(display, mFormat, true);
         if (config == 0) {
-            qDebug() << "Qt failed to choose a suitable EGLConfig to suit the surface format" << mFormat;
+            // Older Intel Atom-based devices only support OpenGL 1.4 compatibility profile but by default
+            // QML asks for at least OpenGL 2.0. The XCB GLX backend ignores this request and returns a
+            // 1.4 context, but the XCB EGL backend tries to honour it, and fails. The 1.4 context appears to
+            // have sufficient capabilities on MESA (i915) to render correctly however. So reduce the default
+            // requested OpenGL version to 1.0 to ensure EGL will give us a working context (lp:1549455).
+            static const bool isMesa = QString(eglQueryString(display, EGL_VENDOR)).contains(QStringLiteral("Mesa"));
+            if (isMesa) {
+                qCDebug(ubuntumirclient, "Attempting to choose OpenGL 1.4 context which may suit Mesa");
+                mFormat.setMajorVersion(1);
+                mFormat.setMinorVersion(4);
+                config = q_configFromGLFormat(display, mFormat, true);
+            }
         }
+        if (config == 0) {
+            qCritical() << "Qt failed to choose a suitable EGLConfig to suit the surface format" << mFormat;
+        }
+
         mFormat = q_glFormatFromConfig(display, config, mFormat);
 
         // Have Mir decide the pixel format most suited to the chosen EGLConfig. This is the only way

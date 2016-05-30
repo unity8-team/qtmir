@@ -24,7 +24,6 @@
 #include "nativeinterface.h"
 #include "offscreensurface.h"
 #include "screen.h"
-#include "surfaceformatfilter.h"
 #include "theme.h"
 #include "window.h"
 
@@ -233,10 +232,24 @@ QPlatformOpenGLContext* UbuntuClientIntegration::createPlatformOpenGLContext(
         QOpenGLContext* context)
 {
     QSurfaceFormat format(context->format());
-    // Hook for driver-specific workarounds
-    UbuntuSurfaceFormatFilter::filter(format, mEglDisplay);
 
-    return new UbuntuOpenGLContext(format, context->shareHandle(), mEglDisplay);
+    auto platformContext = new UbuntuOpenGLContext(format, context->shareHandle(), mEglDisplay);
+    if (!platformContext->isValid()) {
+        // Older Intel Atom-based devices only support OpenGL 1.4 compatibility profile but by default
+        // QML asks for at least OpenGL 2.0. The XCB GLX backend ignores this request and returns a
+        // 1.4 context, but the XCB EGL backend tries to honour it, and fails. The 1.4 context appears to
+        // have sufficient capabilities on MESA (i915) to render correctly however. So reduce the default
+        // requested OpenGL version to 1.0 to ensure EGL will give us a working context (lp:1549455).
+        static const bool isMesa = QString(eglQueryString(mEglDisplay, EGL_VENDOR)).contains(QStringLiteral("Mesa"));
+        if (isMesa) {
+            qCDebug(ubuntumirclient, "Attempting to choose OpenGL 1.4 context which may suit Mesa");
+            format.setMajorVersion(1);
+            format.setMinorVersion(4);
+            delete platformContext;
+            platformContext = new UbuntuOpenGLContext(format, context->shareHandle(), mEglDisplay);
+        }
+    }
+    return platformContext;
 }
 
 QStringList UbuntuClientIntegration::themeNames() const
