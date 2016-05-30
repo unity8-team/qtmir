@@ -24,11 +24,12 @@
 
 namespace {
 
-void printEglConfig(EGLDisplay display, EGLConfig config) {
+void printEglConfig(EGLDisplay display, EGLConfig config)
+{
     Q_ASSERT(display != EGL_NO_DISPLAY);
     Q_ASSERT(config != nullptr);
 
-    const char* string = eglQueryString(display, EGL_VENDOR);
+    const char *string = eglQueryString(display, EGL_VENDOR);
     qCDebug(ubuntumirclient, "EGL vendor: %s", string);
 
     string = eglQueryString(display, EGL_VERSION);
@@ -52,7 +53,7 @@ UbuntuOpenGLContext::UbuntuOpenGLContext(const QSurfaceFormat &format, QPlatform
     }
 }
 
-bool UbuntuOpenGLContext::makeCurrent(QPlatformSurface* surface)
+bool UbuntuOpenGLContext::makeCurrent(QPlatformSurface *surface)
 {
     Q_ASSERT(surface->surface()->surfaceType() == QSurface::OpenGLSurface);
 
@@ -72,15 +73,15 @@ bool UbuntuOpenGLContext::makeCurrent(QPlatformSurface* surface)
 // the egl surface of a QPlatformSurface/UbuntuWindow
 EGLSurface UbuntuOpenGLContext::eglSurfaceForPlatformSurface(QPlatformSurface *surface)
 {
-    auto ubuntuWindow = static_cast<UbuntuWindow*>(surface);
+    auto ubuntuWindow = static_cast<UbuntuWindow *>(surface);
     return ubuntuWindow->eglSurface();
 }
 
-void UbuntuOpenGLContext::swapBuffers(QPlatformSurface* surface)
+void UbuntuOpenGLContext::swapBuffers(QPlatformSurface *surface)
 {
     QEGLPlatformContext::swapBuffers(surface);
 
     // notify window on swap completion
-    auto ubuntuWindow = static_cast<UbuntuWindow*>(surface);
+    auto ubuntuWindow = static_cast<UbuntuWindow *>(surface);
     ubuntuWindow->onSwapBuffersDone();
 }
