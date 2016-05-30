@@ -116,7 +116,8 @@ const char *mirPixelFormatToStr(MirPixelFormat pixelFormat)
     case mir_pixel_format_rgb_565:   return "RGB565";
     case mir_pixel_format_rgba_5551: return "RGBA5551";
     case mir_pixel_format_rgba_4444: return "RGBA4444";
-    case mir_pixel_formats:          return "???";
+    case mir_pixel_formats:
+    default:                         return "???";
     }
 }
 
