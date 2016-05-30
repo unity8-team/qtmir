@@ -18,7 +18,7 @@ public:
             return;
         }
 
-        static const bool isMesa = QString(eglQueryString(display, EGL_VENDOR)).toLower().contains("mesa");
+        static const bool isMesa = QString(eglQueryString(display, EGL_VENDOR)).toLower().contains(QStringLiteral("mesa"));
 
         // If client has not explicitly requested any color depth, try default to RGB888. Otherwise
         // Qt on mobile devices tends to choose a lower color format like RGB565.
