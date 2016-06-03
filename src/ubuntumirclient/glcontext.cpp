@@ -21,6 +21,7 @@
 
 #include <QOpenGLFramebufferObject>
 #include <QtPlatformSupport/private/qeglconvenience_p.h>
+#include <QtGui/private/qopenglcontext_p.h>
 
 namespace {
 
@@ -53,7 +54,23 @@ UbuntuOpenGLContext::UbuntuOpenGLContext(const QSurfaceFormat &format, QPlatform
     }
 }
 
-bool UbuntuOpenGLContext::makeCurrent(QPlatformSurface *surface)
+static bool needsFBOReadBackWorkaround()
+{
+    static bool set = false;
+    static bool needsWorkaround = false;
+
+    if (Q_UNLIKELY(!set)) {
+        const char *rendererString = reinterpret_cast<const char *>(glGetString(GL_RENDERER));
+        needsWorkaround = qstrncmp(rendererString, "Mali-400", 8) == 0
+                          || qstrncmp(rendererString, "Mali-T7", 7) == 0
+                          || qstrncmp(rendererString, "PowerVR Rogue G6200", 19) == 0;
+        set = true;
+    }
+
+    return needsWorkaround;
+}
+
+bool UbuntuOpenGLContext::makeCurrent(QPlatformSurface* surface)
 {
     Q_ASSERT(surface->surface()->surfaceType() == QSurface::OpenGLSurface);
 
@@ -65,7 +82,16 @@ bool UbuntuOpenGLContext::makeCurrent(QPlatformSurface *surface)
         }
         return offscreen->buffer()->bind();
     } else {
-        return QEGLPlatformContext::makeCurrent(surface);
+        const bool ret = QEGLPlatformContext::makeCurrent(surface);
+
+        if (Q_LIKELY(ret)) {
+            QOpenGLContextPrivate *ctx_d = QOpenGLContextPrivate::get(context());
+            if (!ctx_d->workaround_brokenFBOReadBack && needsFBOReadBackWorkaround()) {
+                ctx_d->workaround_brokenFBOReadBack = true;
+            }
+        }
+
+        return ret;
     }
 }
 
