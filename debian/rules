@@ -16,7 +16,7 @@ DEB_BUILD_ARCH ?= $(shell dpkg-architecture -qDEB_BUILD_ARCH)
 
 export PKG_CONFIG_PATH=/usr/lib/$(DEB_HOST_MULTIARCH)/pkgconfig
 
-gles2_architectures = armhf
+gles2_architectures = arm64 armhf
 
 %:
 	dh $@

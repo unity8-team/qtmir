@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015 Canonical, Ltd.
+ * Copyright (C) 2014-2016 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -19,17 +19,19 @@
 
 #include <qpa/qplatformscreen.h>
 #include <QSurfaceFormat>
-#include <EGL/egl.h>
+
+#include <mircommon/mir_toolkit/common.h> // just for MirFormFactor enum
 
 #include "cursor.h"
 
 struct MirConnection;
+struct MirOutput;
 
 class UbuntuScreen : public QObject, public QPlatformScreen
 {
     Q_OBJECT
 public:
-    UbuntuScreen(MirConnection *connection);
+    UbuntuScreen(const MirOutput *output, MirConnection *connection);
     virtual ~UbuntuScreen();
 
     // QPlatformScreen methods.
@@ -38,34 +40,43 @@ public:
     QRect geometry() const override { return mGeometry; }
     QRect availableGeometry() const override { return mGeometry; }
     QSizeF physicalSize() const override { return mPhysicalSize; }
+    qreal devicePixelRatio() const override { return mDevicePixelRatio; }
+    QDpi logicalDpi() const override;
     Qt::ScreenOrientation nativeOrientation() const override { return mNativeOrientation; }
     Qt::ScreenOrientation orientation() const override { return mNativeOrientation; }
     QPlatformCursor *cursor() const override { return const_cast<UbuntuCursor*>(&mCursor); }
 
-    // New methods.
-    QSurfaceFormat surfaceFormat() const { return mSurfaceFormat; }
-    EGLDisplay eglDisplay() const { return mEglDisplay; }
-    EGLConfig eglConfig() const { return mEglConfig; }
-    EGLNativeDisplayType eglNativeDisplay() const { return mEglNativeDisplay; }
+    // Additional Screen properties from Mir
+    int mirOutputId() const { return mOutputId; }
+    MirFormFactor formFactor() const { return mFormFactor; }
+    float scale() const { return mScale; }
+
+    // Internally used methods
+    void updateMirOutput(const MirOutput *output);
+    void setAdditionalMirDisplayProperties(float scale, MirFormFactor formFactor, int dpi);
     void handleWindowSurfaceResize(int width, int height);
-    uint32_t mirOutputId() const { return mOutputId; }
 
     // QObject methods.
     void customEvent(QEvent* event) override;
 
 private:
-    QRect mGeometry;
+    void setMirOutput(const MirOutput *output);
+
+    QRect mGeometry, mNativeGeometry;
     QSizeF mPhysicalSize;
+    qreal mDevicePixelRatio;
     Qt::ScreenOrientation mNativeOrientation;
     Qt::ScreenOrientation mCurrentOrientation;
     QImage::Format mFormat;
     int mDepth;
-    uint32_t mOutputId;
-    QSurfaceFormat mSurfaceFormat;
-    EGLDisplay mEglDisplay;
-    EGLConfig mEglConfig;
-    EGLNativeDisplayType mEglNativeDisplay;
+    int mDpi;
+    qreal mRefreshRate;
+    MirFormFactor mFormFactor;
+    float mScale;
+    int mOutputId;
     UbuntuCursor mCursor;
+
+    friend class UbuntuNativeInterface;
 };
 
 #endif // UBUNTU_SCREEN_H

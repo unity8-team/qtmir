@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Canonical, Ltd.
+ * Copyright (C) 2014,2016 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -18,18 +18,20 @@
 #define UBUNTU_OPENGL_CONTEXT_H
 
 #include <qpa/qplatformopenglcontext.h>
-#include "screen.h"
+
+#include <EGL/egl.h>
 
 class UbuntuOpenGLContext : public QPlatformOpenGLContext
 {
 public:
-    UbuntuOpenGLContext(UbuntuScreen* screen, UbuntuOpenGLContext* share);
+    UbuntuOpenGLContext(const QSurfaceFormat &surfaceFormat, UbuntuOpenGLContext *share,
+                        EGLDisplay display, EGLConfig config);
     virtual ~UbuntuOpenGLContext();
 
     // QPlatformOpenGLContext methods.
-    QSurfaceFormat format() const override { return mScreen->surfaceFormat(); }
-    void swapBuffers(QPlatformSurface* surface) override;
-    bool makeCurrent(QPlatformSurface* surface) override;
+    QSurfaceFormat format() const override { return mSurfaceFormat; }
+    void swapBuffers(QPlatformSurface *surface) override;
+    bool makeCurrent(QPlatformSurface *surface) override;
     void doneCurrent() override;
     bool isValid() const override { return mEglContext != EGL_NO_CONTEXT; }
     void (*getProcAddress(const QByteArray& procName)) () override;
@@ -37,7 +39,7 @@ public:
     EGLContext eglContext() const { return mEglContext; }
 
 private:
-    UbuntuScreen* mScreen;
+    const QSurfaceFormat mSurfaceFormat;
     EGLContext mEglContext;
     EGLDisplay mEglDisplay;
 };

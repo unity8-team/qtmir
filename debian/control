@@ -16,22 +16,21 @@ Build-Depends: debhelper (>= 9),
                libxkbcommon-dev,
                libxrender-dev,
                qtbase5-private-dev,
+               quilt,
 # if you don't have have commit access to this branch but would like to upload
 # directly to Ubuntu, don't worry: your changes will be merged back into the
 # upstream branch
 Vcs-Bzr: lp:qtubuntu
-Standards-Version: 3.9.4
+Standards-Version: 3.9.6
 Section: libs
 
 Package: qtubuntu-android
-Architecture: armhf
+Architecture: arm64 armhf
 Multi-Arch: same
 Conflicts: qtubuntu-desktop,
-Replaces: qthybris (<< 0.37),
-          qtubuntu (<< 0.52),
+Replaces: qtubuntu (<< 0.52),
           qtubuntu-desktop,
-Breaks: qthybris (<< 0.37),
-        ubuntu-touch-session (<< 0.107),
+Breaks: ubuntu-touch-session (<< 0.107),
         unity8 (<< 7.85),
 Provides: qtubuntu,
 Depends: ubuntu-application-api3-touch,
@@ -52,8 +51,7 @@ Multi-Arch: same
 Conflicts: qtubuntu-android,
 Replaces: qtubuntu (<< 0.52),
           qtubuntu-android,
-Breaks: qthybris (<< 0.37),
-        unity8 (<< 7.85),
+Breaks: unity8 (<< 7.85),
 Provides: qtubuntu,
 Depends: ubuntu-application-api3-desktop,
          ${misc:Depends},
@@ -66,12 +64,3 @@ Description: Qt plugins for Ubuntu Platform API (desktop)
  plugins.
  .
  This variant of the package is for GNU-based desktops.
-
-Package: qthybris
-Depends: qtubuntu-android,
-         ${misc:Depends},
-Architecture: any
-Section: oldlibs
-Description: transitional dummy package
- This is a transitional dummy package for the qthybris -> qtubuntu
- transition.

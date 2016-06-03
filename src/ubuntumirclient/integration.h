@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Canonical, Ltd.
+ * Copyright (C) 2014,2016 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -21,17 +21,24 @@
 #include <QSharedPointer>
 
 #include "platformservices.h"
+#include "screenobserver.h"
 
 // platform-api
 #include <ubuntu/application/description.h>
 #include <ubuntu/application/instance.h>
 
+#include <EGL/egl.h>
+
 class UbuntuClipboard;
 class UbuntuInput;
 class UbuntuNativeInterface;
 class UbuntuScreen;
+class MirConnection;
 
-class UbuntuClientIntegration : public QPlatformIntegration {
+class UbuntuClientIntegration : public QObject, public QPlatformIntegration
+{
+    Q_OBJECT
+
 public:
     UbuntuClientIntegration();
     virtual ~UbuntuClientIntegration();
@@ -50,12 +57,23 @@ public:
     QPlatformWindow* createPlatformWindow(QWindow* window) const override;
     QPlatformInputContext* inputContext() const override { return mInputContext; }
     QPlatformClipboard* clipboard() const override;
+    void initialize() override;
+    QPlatformOffscreenSurface *createPlatformOffscreenSurface(QOffscreenSurface *surface) const override;
 
+    // non-const versions of some QPlatformIntegration methods
     QPlatformOpenGLContext* createPlatformOpenGLContext(QOpenGLContext* context);
     QPlatformWindow* createPlatformWindow(QWindow* window);
-    UbuntuScreen* screen() const { return mScreen; }
 
-    QPlatformOffscreenSurface *createPlatformOffscreenSurface(QOffscreenSurface *surface) const override;
+    // New methods.
+    MirConnection *mirConnection() const { return mMirConnection; }
+    QSurfaceFormat surfaceFormat() const { return mSurfaceFormat; }
+    EGLDisplay eglDisplay() const { return mEglDisplay; }
+    EGLConfig eglConfig() const { return mEglConfig; }
+    EGLNativeDisplayType eglNativeDisplay() const { return mEglNativeDisplay; }
+    UbuntuScreenObserver *screenObserver() const { return mScreenObserver.data(); }
+
+private Q_SLOTS:
+    void destroyScreen(UbuntuScreen *screen);
 
 private:
     void setupOptions();
@@ -66,16 +84,24 @@ private:
 
     UbuntuPlatformServices* mServices;
 
-    UbuntuScreen* mScreen;
     UbuntuInput* mInput;
     QPlatformInputContext* mInputContext;
     QSharedPointer<UbuntuClipboard> mClipboard;
+    QScopedPointer<UbuntuScreenObserver> mScreenObserver;
     qreal mScaleFactor;
+
+    MirConnection *mMirConnection;
 
     // Platform API stuff
     UApplicationOptions* mOptions;
     UApplicationDescription* mDesc;
     UApplicationInstance* mInstance;
+
+    // EGL related
+    EGLDisplay mEglDisplay{EGL_NO_DISPLAY};
+    EGLConfig mEglConfig{nullptr};
+    EGLNativeDisplayType mEglNativeDisplay;
+    QSurfaceFormat mSurfaceFormat;
 };
 
 #endif // UBUNTU_CLIENT_INTEGRATION_H

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015 Canonical, Ltd.
+ * Copyright (C) 2014-2016 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -17,6 +17,7 @@
 // Local
 #include "window.h"
 #include "clipboard.h"
+#include "nativeinterface.h"
 #include "input.h"
 #include "screen.h"
 #include "logging.h"
@@ -35,6 +36,8 @@
 #include <EGL/egl.h>
 
 Q_LOGGING_CATEGORY(ubuntumirclientBufferSwap, "ubuntumirclient.bufferSwap", QtWarningMsg)
+
+const Qt::WindowType LowChromeWindowHint = (Qt::WindowType)0x00800000;
 
 namespace
 {
@@ -65,6 +68,39 @@ EGLNativeWindowType nativeWindowFor(MirSurface *surf)
     return reinterpret_cast<EGLNativeWindowType>(mir_buffer_stream_get_egl_native_window(stream));
 }
 
+const char *qtWindowStateToStr(Qt::WindowState state)
+{
+    switch (state) {
+    case Qt::WindowNoState:
+        return "NoState";
+    case Qt::WindowFullScreen:
+        return "FullScreen";
+    case Qt::WindowMaximized:
+        return "Maximized";
+    case Qt::WindowMinimized:
+        return "Minimized";
+    case Qt::WindowActive:
+        return "Active";
+    default:
+        return "!?";
+    }
+}
+
+const char *mirSurfaceStateToStr(MirSurfaceState surfaceState)
+{
+    switch (surfaceState) {
+    case mir_surface_state_unknown: return "unknown";
+    case mir_surface_state_restored: return "restored";
+    case mir_surface_state_minimized: return "minimized";
+    case mir_surface_state_maximized: return "vertmaximized";
+    case mir_surface_state_vertmaximized: return "vertmaximized";
+    case mir_surface_state_fullscreen: return "fullscreen";
+    case mir_surface_state_horizmaximized: return "horizmaximized";
+    case mir_surface_state_hidden: return "hidden";
+    default: return "!?";
+    }
+}
+
 MirSurfaceState qtWindowStateToMirSurfaceState(Qt::WindowState state)
 {
     switch (state) {
@@ -79,22 +115,6 @@ MirSurfaceState qtWindowStateToMirSurfaceState(Qt::WindowState state)
     default:
         qCWarning(ubuntumirclient, "Unexpected Qt::WindowState: %d", state);
         return mir_surface_state_restored;
-    }
-}
-
-const char *qtWindowStateToStr(Qt::WindowState state)
-{
-    switch (state) {
-    case Qt::WindowNoState:
-        return "NoState";
-    case Qt::WindowFullScreen:
-        return "FullScreen";
-    case Qt::WindowMaximized:
-        return "Maximized";
-    case Qt::WindowMinimized:
-        return "Minimized";
-    default:
-        return "!?";
     }
 }
 
@@ -197,16 +217,26 @@ void setSizingConstraints(MirSurfaceSpec *spec, const QSize& minSize, const QSiz
     }
 }
 
-MirSurface *createMirSurface(QWindow *window, UbuntuScreen *screen, UbuntuInput *input, MirConnection *connection)
+MirSurface *createMirSurface(QWindow *window, int mirOutputId, UbuntuInput *input,
+                             MirConnection *connection, mir_surface_event_callback inputCallback,
+                             void* inputContext)
 {
     auto spec = makeSurfaceSpec(window, input, connection);
+
+    // Install event handler as early as possible
+    mir_surface_spec_set_event_handler(spec.get(), inputCallback, inputContext);
+
     const auto title = window->title().toUtf8();
     mir_surface_spec_set_name(spec.get(), title.constData());
 
     setSizingConstraints(spec.get(), window->minimumSize(), window->maximumSize(), window->sizeIncrement());
 
     if (window->windowState() == Qt::WindowFullScreen) {
-        mir_surface_spec_set_fullscreen_on_output(spec.get(), screen->mirOutputId());
+        mir_surface_spec_set_fullscreen_on_output(spec.get(), mirOutputId);
+    }
+
+    if (window->flags() & LowChromeWindowHint) {
+        mir_surface_spec_set_shell_chrome(spec.get(), mir_shell_chrome_low);
     }
 
     auto surface = mir_surface_create_sync(spec.get());
@@ -236,21 +266,19 @@ int panelHeight()
 class UbuntuSurface
 {
 public:
-    UbuntuSurface(UbuntuWindow *platformWindow, UbuntuScreen *screen, UbuntuInput *input, MirConnection *connection)
+    UbuntuSurface(UbuntuWindow *platformWindow, EGLDisplay display, EGLConfig config, int mirOutputId,
+                  UbuntuInput *input, MirConnection *connection)
         : mWindow(platformWindow->window())
         , mPlatformWindow(platformWindow)
         , mInput(input)
         , mConnection(connection)
-        , mMirSurface(createMirSurface(mWindow, screen, input, connection))
-        , mEglDisplay(screen->eglDisplay())
-        , mEglSurface(eglCreateWindowSurface(mEglDisplay, screen->eglConfig(), nativeWindowFor(mMirSurface), nullptr))
-        , mVisible(false)
+        , mEglDisplay(display)
         , mNeedsRepaint(false)
         , mParented(mWindow->transientParent() || mWindow->parent())
-        , mWindowState(mWindow->windowState())
-
+        , mShellChrome(mWindow->flags() & LowChromeWindowHint ? mir_shell_chrome_low : mir_shell_chrome_normal)
     {
-        mir_surface_set_event_handler(mMirSurface, surfaceEventCallback, this);
+        mMirSurface = createMirSurface(mWindow, mirOutputId, input, connection, surfaceEventCallback, this);
+        mEglSurface = eglCreateWindowSurface(mEglDisplay, config, nativeWindowFor(mMirSurface), nullptr);
 
         // Window manager can give us a final size different from what we asked for
         // so let's check what we ended up getting
@@ -260,7 +288,7 @@ public:
         auto geom = mWindow->geometry();
         geom.setWidth(parameters.width);
         geom.setHeight(parameters.height);
-        if (mWindowState == Qt::WindowFullScreen) {
+        if (mWindow->windowState() == Qt::WindowFullScreen) {
             geom.setY(0);
         } else {
             geom.setY(panelHeight());
@@ -283,12 +311,10 @@ public:
             mir_surface_release_sync(mMirSurface);
     }
 
-    UbuntuSurface(UbuntuSurface const&) = delete;
-    UbuntuSurface& operator=(UbuntuSurface const&) = delete;
+    UbuntuSurface(const UbuntuSurface &) = delete;
+    UbuntuSurface& operator=(const UbuntuSurface &) = delete;
 
     void resize(const QSize& newSize);
-    void setState(Qt::WindowState newState);
-    void setVisible(bool state);
     void updateTitle(const QString& title);
     void setSizingConstraints(const QSize& minSize, const QSize& maxSize, const QSize& increment);
 
@@ -296,38 +322,46 @@ public:
     void handleSurfaceResized(int width, int height);
     int needsRepaint() const;
 
+    MirSurfaceState state() const { return mir_surface_get_state(mMirSurface); }
+    void setState(MirSurfaceState state);
+
+    MirSurfaceType type() const { return mir_surface_get_type(mMirSurface); }
+
+    void setShellChrome(MirShellChrome shellChrome);
+
     EGLSurface eglSurface() const { return mEglSurface; }
     MirSurface *mirSurface() const { return mMirSurface; }
+
+    void setSurfaceParent(MirSurface*);
+    bool hasParent() const { return mParented; }
 
 private:
     static void surfaceEventCallback(MirSurface* surface, const MirEvent *event, void* context);
     void postEvent(const MirEvent *event);
-    void updateSurface();
 
     QWindow * const mWindow;
     UbuntuWindow * const mPlatformWindow;
     UbuntuInput * const mInput;
     MirConnection * const mConnection;
 
-    MirSurface * const mMirSurface;
+    MirSurface* mMirSurface;
     const EGLDisplay mEglDisplay;
-    const EGLSurface mEglSurface;
+    EGLSurface mEglSurface;
 
-    bool mVisible;
     bool mNeedsRepaint;
     bool mParented;
-    Qt::WindowState mWindowState;
     QSize mBufferSize;
 
     QMutex mTargetSizeMutex;
     QSize mTargetSize;
+    MirShellChrome mShellChrome;
 };
 
 void UbuntuSurface::resize(const QSize& size)
 {
     qCDebug(ubuntumirclient,"resize(window=%p, width=%d, height=%d)", mWindow, size.width(), size.height());
 
-    if (mWindowState == Qt::WindowFullScreen || mWindowState == Qt::WindowMaximized) {
+    if (mWindow->windowState() == Qt::WindowFullScreen || mWindow->windowState() == Qt::WindowMaximized) {
         qCDebug(ubuntumirclient, "resize(window=%p) - not resizing, window is maximized or fullscreen", mWindow);
         return;
     }
@@ -341,28 +375,6 @@ void UbuntuSurface::resize(const QSize& size)
     mir_surface_spec_set_width(spec.get(), size.width());
     mir_surface_spec_set_height(spec.get(), size.height());
     mir_surface_apply_spec(mMirSurface, spec.get());
-}
-
-void UbuntuSurface::setState(Qt::WindowState newState)
-{
-    mir_wait_for(mir_surface_set_state(mMirSurface, qtWindowStateToMirSurfaceState(newState)));
-    mWindowState = newState;
-}
-
-void UbuntuSurface::setVisible(bool visible)
-{
-    if (mVisible == visible)
-        return;
-
-    mVisible = visible;
-
-    if (mVisible)
-        updateSurface();
-
-    // TODO: Use the new mir_surface_state_hidden state instead of mir_surface_state_minimized.
-    //       Will have to change qtmir and unity8 for that.
-    const auto newState = visible ? qtWindowStateToMirSurfaceState(mWindowState) : mir_surface_state_minimized;
-    mir_wait_for(mir_surface_set_state(mMirSurface, newState));
 }
 
 void UbuntuSurface::updateTitle(const QString& newTitle)
@@ -408,6 +420,22 @@ int UbuntuSurface::needsRepaint() const
         }
     }
     return 0;
+}
+
+void UbuntuSurface::setState(MirSurfaceState state)
+{
+    mir_wait_for(mir_surface_set_state(mMirSurface, state));
+}
+
+void UbuntuSurface::setShellChrome(MirShellChrome chrome)
+{
+    if (chrome != mShellChrome) {
+        auto spec = Spec{mir_connection_create_spec_for_changes(mConnection)};
+        mir_surface_spec_set_shell_chrome(spec.get(), chrome);
+        mir_surface_apply_spec(mMirSurface, spec.get());
+
+        mShellChrome = chrome;
+    }
 }
 
 void UbuntuSurface::onSwapBuffersDone()
@@ -470,33 +498,37 @@ void UbuntuSurface::postEvent(const MirEvent *event)
     mInput->postEvent(mPlatformWindow, event);
 }
 
-void UbuntuSurface::updateSurface()
+void UbuntuSurface::setSurfaceParent(MirSurface* parent)
 {
-    qCDebug(ubuntumirclient, "updateSurface(window=%p)", mWindow);
+    qCDebug(ubuntumirclient, "setSurfaceParent(window=%p)", mWindow);
 
-    if (!mParented && mWindow->type() == Qt::Dialog) {
-        // The dialog may have been parented after creation time
-        // so morph it into a modal dialog
-        auto parent = transientParentFor(mWindow);
-        if (parent) {
-            qCDebug(ubuntumirclient, "updateSurface(window=%p) dialog now parented", mWindow);
-            mParented = true;
-            Spec spec{mir_connection_create_spec_for_changes(mConnection)};
-            mir_surface_spec_set_parent(spec.get(), parent->mirSurface());
-            mir_surface_apply_spec(mMirSurface, spec.get());
-        }
-    }
+    mParented = true;
+    Spec spec{mir_connection_create_spec_for_changes(mConnection)};
+    mir_surface_spec_set_parent(spec.get(), parent);
+    mir_surface_apply_spec(mMirSurface, spec.get());
 }
 
-UbuntuWindow::UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &clipboard, UbuntuScreen *screen,
-                           UbuntuInput *input, MirConnection *connection)
+UbuntuWindow::UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &clipboard,
+                           UbuntuInput *input, UbuntuNativeInterface *native, EGLDisplay eglDisplay,
+                           EGLConfig eglConfig, MirConnection *mirConnection)
     : QObject(nullptr)
     , QPlatformWindow(w)
     , mId(makeId())
     , mClipboard(clipboard)
-    , mSurface(new UbuntuSurface{this, screen, input, connection})
+    , mWindowState(w->windowState())
+    , mWindowFlags(w->flags())
+    , mWindowVisible(false)
+    , mWindowExposed(true)
+    , mNativeInterface(native)
+    , mSurface(new UbuntuSurface{this, eglDisplay, eglConfig,
+               static_cast<UbuntuScreen*>(w->screen()->handle())->mirOutputId(), input, mirConnection})
+    , mScale(1.0)
+    , mFormFactor(mir_form_factor_unknown)
 {
-    qCDebug(ubuntumirclient, "UbuntuWindow(window=%p, screen=%p, input=%p, surf=%p)", w, screen, input, mSurface.get());
+    qCDebug(ubuntumirclient, "UbuntuWindow(window=%p, screen=%p, input=%p, surf=%p) with title '%s', role: '%d'",
+            w, w->screen()->handle(), input, mSurface.get(), qPrintable(window()->title()), roleFor(window()));
+
+    updatePanelHeightHack(w->windowState() != Qt::WindowFullScreen);
 }
 
 UbuntuWindow::~UbuntuWindow()
@@ -507,7 +539,7 @@ UbuntuWindow::~UbuntuWindow()
 void UbuntuWindow::handleSurfaceResized(int width, int height)
 {
     QMutexLocker lock(&mMutex);
-    qCDebug(ubuntumirclient, "handleSurfaceResize(window=%p, width=%d, height=%d)", window(), width, height);
+    qCDebug(ubuntumirclient, "handleSurfaceResize(window=%p, size=(%dx%d)px", window(), width, height);
 
     mSurface->handleSurfaceResized(width, height);
 
@@ -517,11 +549,24 @@ void UbuntuWindow::handleSurfaceResized(int width, int height)
     // updated size but it still needs re-rendering so another redraw may be needed.
     // A mir API to drop the currently held buffer would help here, so that we wouldn't have to redraw twice
     auto const numRepaints = mSurface->needsRepaint();
+    lock.unlock();
     qCDebug(ubuntumirclient, "handleSurfaceResize(window=%p) redraw %d times", window(), numRepaints);
     for (int i = 0; i < numRepaints; i++) {
-        qCDebug(ubuntumirclient, "handleSurfaceResize(window=%p) repainting width=%d, height=%d", window(), geometry().size().width(), geometry().size().height());
+        qCDebug(ubuntumirclient, "handleSurfaceResize(window=%p) repainting size=(%dx%d)dp", window(), geometry().size().width(), geometry().size().height());
         QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(), geometry().size()));
     }
+}
+
+void UbuntuWindow::handleSurfaceExposeChange(bool exposed)
+{
+    QMutexLocker lock(&mMutex);
+    qCDebug(ubuntumirclient, "handleSurfaceExposeChange(window=%p, exposed=%s)", window(), exposed ? "true" : "false");
+
+    if (mWindowExposed == exposed) return;
+    mWindowExposed = exposed;
+
+    lock.unlock();
+    QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(), geometry().size()));
 }
 
 void UbuntuWindow::handleSurfaceFocused()
@@ -537,13 +582,47 @@ void UbuntuWindow::handleSurfaceFocused()
     mClipboard->requestDBusClipboardContents();
 }
 
+void UbuntuWindow::handleSurfaceVisibilityChanged(bool visible)
+{
+    qCDebug(ubuntumirclient, "handleSurfaceFocused(window=%p)", window());
+
+    if (mWindowVisible == visible) return;
+    mWindowVisible = visible;
+
+    QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(), geometry().size()));
+}
+
+void UbuntuWindow::handleSurfaceStateChanged(Qt::WindowState state)
+{
+    qCDebug(ubuntumirclient, "handleSurfaceStateChanged(window=%p, %s)", window(), qtWindowStateToStr(state));
+
+    if (mWindowState == state) return;
+    mWindowState = state;
+
+    QWindowSystemInterface::handleWindowStateChanged(window(), state);
+}
+
 void UbuntuWindow::setWindowState(Qt::WindowState state)
 {
     QMutexLocker lock(&mMutex);
     qCDebug(ubuntumirclient, "setWindowState(window=%p, %s)", this, qtWindowStateToStr(state));
-    mSurface->setState(state);
 
-    updatePanelHeightHack(state);
+    if (mWindowState == state) return;
+    mWindowState = state;
+
+    lock.unlock();
+    updateSurfaceState();
+}
+
+void UbuntuWindow::setWindowFlags(Qt::WindowFlags flags)
+{
+    QMutexLocker lock(&mMutex);
+    qCDebug(ubuntumirclient, "setWindowFlags(window=%p, 0x%x)", this, (int)flags);
+
+    if (mWindowFlags == flags) return;
+    mWindowFlags = flags;
+
+    mSurface->setShellChrome(mWindowFlags & LowChromeWindowHint ? mir_shell_chrome_low : mir_shell_chrome_normal);
 }
 
 /*
@@ -552,34 +631,35 @@ void UbuntuWindow::setWindowState(Qt::WindowState state)
     window is always on the top-left corner, right below the indicators panel if not
     in fullscreen.
  */
-void UbuntuWindow::updatePanelHeightHack(Qt::WindowState state)
+void UbuntuWindow::updatePanelHeightHack(bool enable)
 {
-    if (state == Qt::WindowFullScreen && geometry().y() != 0) {
-        QRect newGeometry = geometry();
-        newGeometry.setY(0);
-        QPlatformWindow::setGeometry(newGeometry);
-        QWindowSystemInterface::handleGeometryChange(window(), newGeometry);
-    } else if (geometry().y() == 0) {
-        QRect newGeometry = geometry();
+    QMutexLocker lock(&mMutex);
+
+    QRect newGeometry = geometry();
+    if (enable) {
         newGeometry.setY(panelHeight());
+    } else {
+        newGeometry.setY(0);
+    }
+
+    if (newGeometry != geometry()) {
+        lock.unlock();
         QPlatformWindow::setGeometry(newGeometry);
         QWindowSystemInterface::handleGeometryChange(window(), newGeometry);
     }
 }
 
-void UbuntuWindow::setGeometry(const QRect& rect)
+void UbuntuWindow::setGeometry(const QRect &rect)
 {
     QMutexLocker lock(&mMutex);
-    qCDebug(ubuntumirclient, "setGeometry (window=%p, x=%d, y=%d, width=%d, height=%d)",
-           window(), rect.x(), rect.y(), rect.width(), rect.height());
+    qCDebug(ubuntumirclient, "setGeometry (window=%p, position=(%d, %d)dp, size=(%dx%d)dp)",
+            window(), rect.x(), rect.y(), rect.width(), rect.height());
 
     //NOTE: mir surfaces cannot be moved by the client so ignore the topLeft coordinates
     const auto newSize = rect.size();
-    auto newGeometry = geometry();
-    newGeometry.setSize(newSize);
-    QPlatformWindow::setGeometry(newGeometry);
 
     mSurface->resize(newSize);
+    // Note: don't call handleGeometryChange here, wait to see what Mir replies with.
 }
 
 void UbuntuWindow::setVisible(bool visible)
@@ -587,12 +667,23 @@ void UbuntuWindow::setVisible(bool visible)
     QMutexLocker lock(&mMutex);
     qCDebug(ubuntumirclient, "setVisible (window=%p, visible=%s)", window(), visible ? "true" : "false");
 
-    mSurface->setVisible(visible);
-    const QRect& exposeRect = visible ? QRect(QPoint(), geometry().size()) : QRect();
+    if (mWindowVisible == visible) return;
+    mWindowVisible = visible;
+
+    if (visible) {
+        if (!mSurface->hasParent() && window()->type() == Qt::Dialog) {
+            // The dialog may have been parented after creation time
+            // so morph it into a modal dialog
+            auto parent = transientParentFor(window());
+            if (parent) {
+                mSurface->setSurfaceParent(parent->mirSurface());
+            }
+        }
+    }
 
     lock.unlock();
-    QWindowSystemInterface::handleExposeEvent(window(), exposeRect);
-    QWindowSystemInterface::flushWindowSystemEvents();
+    updateSurfaceState();
+    QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(), geometry().size()));
 }
 
 void UbuntuWindow::setWindowTitle(const QString& title)
@@ -607,10 +698,15 @@ void UbuntuWindow::propagateSizeHints()
     QMutexLocker lock(&mMutex);
     const auto win = window();
     qCDebug(ubuntumirclient, "propagateSizeHints(window=%p) min(%d,%d), max(%d,%d) increment(%d, %d)",
-           win, win->minimumSize().width(), win->minimumSize().height(),
-           win->maximumSize().width(), win->maximumSize().height(),
-           win->sizeIncrement().width(), win->sizeIncrement().height());
+            win, win->minimumSize().width(), win->minimumSize().height(),
+            win->maximumSize().width(), win->maximumSize().height(),
+            win->sizeIncrement().width(), win->sizeIncrement().height());
     mSurface->setSizingConstraints(win->minimumSize(), win->maximumSize(), win->sizeIncrement());
+}
+
+bool UbuntuWindow::isExposed() const
+{
+    return mWindowVisible && mWindowExposed;
 }
 
 void* UbuntuWindow::eglSurface() const
@@ -632,4 +728,36 @@ void UbuntuWindow::onSwapBuffersDone()
 {
     QMutexLocker lock(&mMutex);
     mSurface->onSwapBuffersDone();
+}
+
+void UbuntuWindow::handleScreenPropertiesChange(MirFormFactor formFactor, float scale)
+{
+    // Update the scale & form factor native-interface properties for the windows affected
+    // as there is no convenient way to emit signals for those custom properties on a QScreen
+    if (formFactor != mFormFactor) {
+        mFormFactor = formFactor;
+        Q_EMIT mNativeInterface->windowPropertyChanged(this, QStringLiteral("formFactor"));
+    }
+
+    if (!qFuzzyCompare(scale, mScale)) {
+        mScale = scale;
+        // update the panelHeight hack since it depends on GU
+        updatePanelHeightHack(mSurface->state() != mir_surface_state_fullscreen);
+
+        Q_EMIT mNativeInterface->windowPropertyChanged(this, QStringLiteral("scale"));
+    }
+}
+
+void UbuntuWindow::updateSurfaceState()
+{
+    QMutexLocker lock(&mMutex);
+    MirSurfaceState newState = mWindowVisible ? qtWindowStateToMirSurfaceState(mWindowState) :
+                                                mir_surface_state_hidden;
+    qCDebug(ubuntumirclient, "updateSurfaceState (window=%p, surfaceState=%s)", window(), mirSurfaceStateToStr(newState));
+    if (newState != mSurface->state()) {
+        mSurface->setState(newState);
+
+        lock.unlock();
+        updatePanelHeightHack(newState != mir_surface_state_fullscreen);
+    }
 }
