@@ -76,8 +76,10 @@ private Q_SLOTS:
     void destroyScreen(UbuntuScreen *screen);
 
 private:
-    void setupOptions();
-    void setupDescription();
+    void setupOptions(QStringList &args);
+    void setupDescription(QByteArray &sessionName);
+    static QByteArray generateSessionName(QStringList &args);
+    static QByteArray generateSessionNameFromQmlFile(QStringList &args);
 
     UbuntuNativeInterface* mNativeInterface;
     QPlatformFontDatabase* mFontDb;

@@ -28,6 +28,7 @@
 #include "window.h"
 
 // Qt
+#include <QFileInfo>
 #include <QGuiApplication>
 #include <private/qguiapplication_p.h>
 #include <qpa/qplatformnativeinterface.h>
@@ -77,8 +78,12 @@ UbuntuClientIntegration::UbuntuClientIntegration()
     , mClipboard(new UbuntuClipboard)
     , mScaleFactor(1.0)
 {
-    setupOptions();
-    setupDescription();
+    {
+        QStringList args = QCoreApplication::arguments();
+        setupOptions(args);
+        QByteArray sessionName = generateSessionName(args);
+        setupDescription(sessionName);
+    }
 
     // Create new application instance
     mInstance = u_application_instance_new_from_description_with_options(mDesc, mOptions);
@@ -161,9 +166,8 @@ QPlatformServices *UbuntuClientIntegration::services() const
     return mServices;
 }
 
-void UbuntuClientIntegration::setupOptions()
+void UbuntuClientIntegration::setupOptions(QStringList &args)
 {
-    QStringList args = QCoreApplication::arguments();
     int argc = args.size() + 1;
     char **argv = new char*[argc];
     for (int i = 0; i < argc - 1; i++)
@@ -177,10 +181,11 @@ void UbuntuClientIntegration::setupOptions()
     delete [] argv;
 }
 
-void UbuntuClientIntegration::setupDescription()
+void UbuntuClientIntegration::setupDescription(QByteArray &sessionName)
 {
     mDesc = u_application_description_new();
-    UApplicationId* id = u_application_id_new_from_stringn("QtUbuntu", 8);
+
+    UApplicationId* id = u_application_id_new_from_stringn(sessionName.data(), sessionName.count());
     u_application_description_set_application_id(mDesc, id);
 
     UApplicationLifecycleDelegate* delegate = u_application_lifecycle_delegate_new();
@@ -188,6 +193,35 @@ void UbuntuClientIntegration::setupDescription()
     u_application_lifecycle_delegate_set_application_about_to_stop_cb(delegate, &aboutToStopCallback);
     u_application_lifecycle_delegate_set_context(delegate, this);
     u_application_description_set_application_lifecycle_delegate(mDesc, delegate);
+}
+
+QByteArray UbuntuClientIntegration::generateSessionName(QStringList &args)
+{
+    // Try to come up with some meaningful session name to uniquely identify this session,
+    // helping with shell debugging
+
+    if (args.count() == 0) {
+        return QByteArray("QtUbuntu");
+    } if (args[0].contains("qmlscene")) {
+        return generateSessionNameFromQmlFile(args);
+    } else {
+        // use the executable name
+        QFileInfo fileInfo(args[0]);
+        return fileInfo.fileName().toLocal8Bit();
+    }
+}
+
+QByteArray UbuntuClientIntegration::generateSessionNameFromQmlFile(QStringList &args)
+{
+    Q_FOREACH (QString arg, args) {
+        if (arg.endsWith(".qml")) {
+            QFileInfo fileInfo(arg);
+            return fileInfo.fileName().toLocal8Bit();
+        }
+    }
+
+    // give up
+    return "qmlscene";
 }
 
 QPlatformWindow* UbuntuClientIntegration::createPlatformWindow(QWindow* window) const
