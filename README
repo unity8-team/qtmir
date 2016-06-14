@@ -23,13 +23,10 @@
     $ qmlscene -platform ubuntumirclient Foo.qml
     $ QT_QPA_PLATFORM=ubuntumirclient qmlscene Foo.qml
 
-  The QPA plugins expose the following environment variables:
+  This QPA plugin exposes the following environment variables:
 
-    QTUBUNTU_SWAPINTERVAL: Specifies the required swap interval as an
-                           integer. 1 by default.
-
-    QTUBUNTU_MULTISAMPLE: Enables multisampling with using 4 samples
-                          per fragment.
+    QT_QPA_EGLFS_SWAPINTERVAL: Specifies the required swap interval as an
+                               integer. 1 by default.
 
     QTUBUNTU_NO_THREADED_OPENGL: Disables QtQuick threaded OpenGL
                                  rendering.
@@ -51,6 +48,8 @@
   * ubuntumirclient.swapBuffers - Messages related to surface buffer swapping.
   * ubuntumirclient             - For all other messages.
 
+  The QT_QPA_EGLFS_DEBUG environment variable prints a little more information
+  from Qt's internals.
 
 4. Building
 -----------
