@@ -1,3 +1,19 @@
+qtubuntu (0.62+16.10.20160614-0ubuntu1) yakkety; urgency=medium
+
+  [ Daniel d'Andrada ]
+  * Generate better mir session names
+
+  [ Gerry Boland ]
+  * Convert UbuntuOpenGLContext to use QEGLPlatformContext, and allow
+    clients to customize chosen GLConfig (LP: #1507817, #1549455)
+  * Integration: no need for the non-const versions of createWindow and
+    createGLContext
+
+  [ Nick Dedekind ]
+  * Support for cross building
+
+ -- Albert Astals Cid <albert.astals@canonical.com>  Tue, 14 Jun 2016 08:34:32 +0000
+
 qtubuntu (0.62+16.10.20160527.1-0ubuntu1) yakkety; urgency=medium
 
   [ Albert Astals Cid ]
