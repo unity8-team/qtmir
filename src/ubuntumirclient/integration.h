@@ -62,7 +62,9 @@ public:
 
     // New methods.
     MirConnection *mirConnection() const { return mMirConnection; }
+    QSurfaceFormat surfaceFormat() const { return mSurfaceFormat; }
     EGLDisplay eglDisplay() const { return mEglDisplay; }
+    EGLConfig eglConfig() const { return mEglConfig; }
     EGLNativeDisplayType eglNativeDisplay() const { return mEglNativeDisplay; }
     UbuntuScreenObserver *screenObserver() const { return mScreenObserver.data(); }
 
@@ -95,7 +97,9 @@ private:
 
     // EGL related
     EGLDisplay mEglDisplay{EGL_NO_DISPLAY};
+    EGLConfig mEglConfig{nullptr};
     EGLNativeDisplayType mEglNativeDisplay;
+    QSurfaceFormat mSurfaceFormat;
 };
 
 #endif // UBUNTU_CLIENT_INTEGRATION_H
