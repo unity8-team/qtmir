@@ -40,7 +40,7 @@ class UbuntuWindow : public QObject, public QPlatformWindow
     Q_OBJECT
 public:
     UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &clipboard,
-                 UbuntuInput *input, UbuntuNativeInterface* native, EGLDisplay eglDisplay,
+                 UbuntuInput *input, UbuntuNativeInterface* native, EGLDisplay eglDisplay, EGLConfig eglConfig,
                  MirConnection *mirConnection);
     virtual ~UbuntuWindow();
 
@@ -53,8 +53,6 @@ public:
     void setWindowTitle(const QString &title) override;
     void propagateSizeHints() override;
     bool isExposed() const override;
-
-    QSurfaceFormat format() const override;
 
     // Additional Window properties exposed by NativeInterface
     MirFormFactor formFactor() const { return mFormFactor; }

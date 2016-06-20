@@ -18,22 +18,30 @@
 #define UBUNTU_OPENGL_CONTEXT_H
 
 #include <qpa/qplatformopenglcontext.h>
-#include <private/qeglplatformcontext_p.h>
 
 #include <EGL/egl.h>
 
-class UbuntuOpenGLContext : public QEGLPlatformContext
+class UbuntuOpenGLContext : public QPlatformOpenGLContext
 {
 public:
-    UbuntuOpenGLContext(const QSurfaceFormat &format, QPlatformOpenGLContext *share,
-                        EGLDisplay display);
+    UbuntuOpenGLContext(const QSurfaceFormat &surfaceFormat, UbuntuOpenGLContext *share,
+                        EGLDisplay display, EGLConfig config);
+    virtual ~UbuntuOpenGLContext();
 
-    // QEGLPlatformContext methods.
-    void swapBuffers(QPlatformSurface *surface) final;
-    bool makeCurrent(QPlatformSurface *surface) final;
+    // QPlatformOpenGLContext methods.
+    QSurfaceFormat format() const override { return mSurfaceFormat; }
+    void swapBuffers(QPlatformSurface *surface) override;
+    bool makeCurrent(QPlatformSurface *surface) override;
+    void doneCurrent() override;
+    bool isValid() const override { return mEglContext != EGL_NO_CONTEXT; }
+    void (*getProcAddress(const QByteArray& procName)) () override;
 
-protected:
-    EGLSurface eglSurfaceForPlatformSurface(QPlatformSurface *surface) final;
+    EGLContext eglContext() const { return mEglContext; }
+
+private:
+    const QSurfaceFormat mSurfaceFormat;
+    EGLContext mEglContext;
+    EGLDisplay mEglDisplay;
 };
 
 #endif // UBUNTU_OPENGL_CONTEXT_H
