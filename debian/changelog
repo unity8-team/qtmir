@@ -1,3 +1,9 @@
+qtubuntu (0.62+16.10.20160620-0ubuntu1) yakkety; urgency=medium
+
+  * Revert r324 "EGL convenience" (LP: #1594198)
+
+ -- Michał Sawicz <michal.sawicz@canonical.com>  Mon, 20 Jun 2016 08:49:40 +0000
+
 qtubuntu (0.62+16.10.20160614-0ubuntu1) yakkety; urgency=medium
 
   [ Daniel d'Andrada ]
