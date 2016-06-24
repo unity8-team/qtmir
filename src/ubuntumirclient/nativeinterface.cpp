@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Canonical, Ltd.
+ * Copyright (C) 2014,2016 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -18,6 +18,7 @@
 #include "nativeinterface.h"
 #include "screen.h"
 #include "glcontext.h"
+#include "window.h"
 
 // Qt
 #include <private/qguiapplication_p.h>
@@ -35,15 +36,17 @@ public:
         insert("nativeorientation", UbuntuNativeInterface::NativeOrientation);
         insert("display", UbuntuNativeInterface::Display);
         insert("mirconnection", UbuntuNativeInterface::MirConnection);
+        insert("scale", UbuntuNativeInterface::Scale);
+        insert("formfactor", UbuntuNativeInterface::FormFactor);
     }
 };
 
 Q_GLOBAL_STATIC(UbuntuResourceMap, ubuntuResourceMap)
 
-UbuntuNativeInterface::UbuntuNativeInterface()
-    : mGenericEventFilterType(QByteArrayLiteral("Event"))
+UbuntuNativeInterface::UbuntuNativeInterface(const UbuntuClientIntegration *integration)
+    : mIntegration(integration)
+    , mGenericEventFilterType(QByteArrayLiteral("Event"))
     , mNativeOrientation(nullptr)
-    , mMirConnection(nullptr)
 {
 }
 
@@ -64,7 +67,7 @@ void* UbuntuNativeInterface::nativeResourceForIntegration(const QByteArray &reso
     const ResourceType resourceType = ubuntuResourceMap()->value(lowerCaseResource);
 
     if (resourceType == UbuntuNativeInterface::MirConnection) {
-        return mMirConnection;
+        return mIntegration->mirConnection();
     } else {
         return nullptr;
     }
@@ -96,12 +99,7 @@ void* UbuntuNativeInterface::nativeResourceForWindow(const QByteArray& resourceS
         return NULL;
     const ResourceType kResourceType = ubuntuResourceMap()->value(kLowerCaseResource);
     if (kResourceType == UbuntuNativeInterface::EglDisplay) {
-        if (window) {
-            return static_cast<UbuntuScreen*>(window->screen()->handle())->eglDisplay();
-        } else {
-            return static_cast<UbuntuScreen*>(
-                    QGuiApplication::primaryScreen()->handle())->eglDisplay();
-        }
+        return mIntegration->eglDisplay();
     } else if (kResourceType == UbuntuNativeInterface::NativeOrientation) {
         // Return the device's native screen orientation.
         if (window) {
@@ -123,10 +121,59 @@ void* UbuntuNativeInterface::nativeResourceForScreen(const QByteArray& resourceS
     if (!ubuntuResourceMap()->contains(kLowerCaseResource))
         return NULL;
     const ResourceType kResourceType = ubuntuResourceMap()->value(kLowerCaseResource);
+    if (!screen)
+        screen = QGuiApplication::primaryScreen();
+    auto ubuntuScreen = static_cast<UbuntuScreen*>(screen->handle());
     if (kResourceType == UbuntuNativeInterface::Display) {
-        if (!screen)
-            screen = QGuiApplication::primaryScreen();
-        return static_cast<UbuntuScreen*>(screen->handle())->eglNativeDisplay();
+        return mIntegration->eglNativeDisplay();
+    // Changes to the following properties are emitted via the UbuntuNativeInterface::screenPropertyChanged
+    // signal fired by UbuntuScreen. Connect to this signal for these properties updates.
+    // WARNING: code highly thread unsafe!
+    } else if (kResourceType == UbuntuNativeInterface::Scale) {
+        // In application code, read with:
+        //    float scale = *reinterpret_cast<float*>(nativeResourceForScreen("scale", screen()));
+        return &ubuntuScreen->mScale;
+    } else if (kResourceType == UbuntuNativeInterface::FormFactor) {
+        return &ubuntuScreen->mFormFactor;
     } else
         return NULL;
+}
+
+// Changes to these properties are emitted via the UbuntuNativeInterface::windowPropertyChanged
+// signal fired by UbuntuWindow. Connect to this signal for these properties updates.
+QVariantMap UbuntuNativeInterface::windowProperties(QPlatformWindow *window) const
+{
+    QVariantMap propertyMap;
+    auto w = static_cast<UbuntuWindow*>(window);
+    if (w) {
+        propertyMap.insert("scale", w->scale());
+        propertyMap.insert("formFactor", w->formFactor());
+    }
+    return propertyMap;
+}
+
+QVariant UbuntuNativeInterface::windowProperty(QPlatformWindow *window, const QString &name) const
+{
+    auto w = static_cast<UbuntuWindow*>(window);
+    if (!w) {
+        return QVariant();
+    }
+
+    if (name == QStringLiteral("scale")) {
+        return w->scale();
+    } else if (name == QStringLiteral("formFactor")) {
+        return w->formFactor();
+    } else {
+        return QVariant();
+    }
+}
+
+QVariant UbuntuNativeInterface::windowProperty(QPlatformWindow *window, const QString &name, const QVariant &defaultValue) const
+{
+    QVariant returnVal = windowProperty(window, name);
+    if (!returnVal.isValid()) {
+        return defaultValue;
+    } else {
+        return returnVal;
+    }
 }

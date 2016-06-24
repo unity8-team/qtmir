@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015 Canonical, Ltd.
+ * Copyright (C) 2014-2016 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -224,6 +224,8 @@ static const char* nativeEventTypeToStr(MirEventType t)
         return "mir_event_type_close_surface";
     case mir_event_type_input:
         return "mir_event_type_input";
+    case mir_event_type_surface_output:
+        return "mir_event_type_surface_output";
     default:
         return "invalid";
     }
@@ -259,55 +261,30 @@ void UbuntuInput::customEvent(QEvent* event)
         break;
     case mir_event_type_resize:
     {
-        Q_ASSERT(ubuntuEvent->window->screen() == mIntegration->screen());
-
         auto resizeEvent = mir_event_get_resize_event(nativeEvent);
 
-        mIntegration->screen()->handleWindowSurfaceResize(
-                mir_resize_event_get_width(resizeEvent),
-                mir_resize_event_get_height(resizeEvent));
-
-        ubuntuEvent->window->handleSurfaceResized(mir_resize_event_get_width(resizeEvent),
-            mir_resize_event_get_height(resizeEvent));
-        break;
-    }
-    case mir_event_type_surface:
-    {
-        auto surfaceEvent = mir_event_get_surface_event(nativeEvent);
-        auto surfaceEventAttribute = mir_surface_event_get_attribute(surfaceEvent);
-        
-        if (surfaceEventAttribute == mir_surface_attrib_focus) {
-            const bool focused = mir_surface_event_get_attribute_value(surfaceEvent) == mir_surface_focused;
-            // Mir may have sent a pair of focus lost/gained events, so we need to "peek" into the queue
-            // so that we don't deactivate windows prematurely.
-            if (focused) {
-                mPendingFocusGainedEvents--;
-                ubuntuEvent->window->handleSurfaceFocused();
-                QWindowSystemInterface::handleWindowActivated(ubuntuEvent->window->window(), Qt::ActiveWindowFocusReason);
-
-                // NB: Since processing of system events is queued, never check qGuiApp->applicationState()
-                //     as it might be outdated. Always call handleApplicationStateChanged() with the latest
-                //     state regardless.
-                QWindowSystemInterface::handleApplicationStateChanged(Qt::ApplicationActive);
-
-            } else if(!mPendingFocusGainedEvents) {
-                qCDebug(ubuntumirclient, "No windows have focus");
-                QWindowSystemInterface::handleWindowActivated(nullptr, Qt::ActiveWindowFocusReason);
-                QWindowSystemInterface::handleApplicationStateChanged(Qt::ApplicationInactive);
+        // Enable workaround for Screen rotation
+        auto const targetWindow = ubuntuEvent->window;
+        if (targetWindow) {
+            auto const screen = static_cast<UbuntuScreen*>(targetWindow->screen());
+            if (screen) {
+                screen->handleWindowSurfaceResize(
+                        mir_resize_event_get_width(resizeEvent),
+                        mir_resize_event_get_height(resizeEvent));
             }
-        } else if (surfaceEventAttribute == mir_surface_attrib_state) {
-            MirSurfaceState state = static_cast<MirSurfaceState>(mir_surface_event_get_attribute_value(surfaceEvent));
 
-            if (state == mir_surface_state_hidden) {
-                ubuntuEvent->window->handleSurfaceVisibilityChanged(false);
-            } else {
-                // it's visible!
-                ubuntuEvent->window->handleSurfaceVisibilityChanged(true);
-                ubuntuEvent->window->handleSurfaceStateChanged(mirSurfaceStateToWindowState(state));
-            }
+            targetWindow->handleSurfaceResized(
+                        mir_resize_event_get_width(resizeEvent),
+                        mir_resize_event_get_height(resizeEvent));
         }
         break;
     }
+    case mir_event_type_surface:
+        handleSurfaceEvent(ubuntuEvent->window, mir_event_get_surface_event(nativeEvent));
+        break;
+    case mir_event_type_surface_output:
+        handleSurfaceOutputEvent(ubuntuEvent->window, mir_event_get_surface_output_event(nativeEvent));
+        break;
     case mir_event_type_orientation:
         dispatchOrientationEvent(ubuntuEvent->window->window(), mir_event_get_orientation_event(nativeEvent));
         break;
@@ -525,14 +502,15 @@ Qt::MouseButtons extract_buttons(const MirPointerEvent *pev)
 
 void UbuntuInput::dispatchPointerEvent(UbuntuWindow *platformWindow, const MirInputEvent *ev)
 {
-    auto window = platformWindow->window();
-    auto timestamp = mir_input_event_get_event_time(ev) / 1000000;
+    const auto window = platformWindow->window();
+    const auto timestamp = mir_input_event_get_event_time(ev) / 1000000;
 
-    auto pev = mir_input_event_get_pointer_event(ev);
-    auto action = mir_pointer_event_action(pev);
-    auto localPoint = QPointF(mir_pointer_event_axis_value(pev, mir_pointer_axis_x),
-                              mir_pointer_event_axis_value(pev, mir_pointer_axis_y));
-    auto modifiers = qt_modifiers_from_mir(mir_pointer_event_modifiers(pev));
+    const auto pev = mir_input_event_get_pointer_event(ev);
+    const auto action = mir_pointer_event_action(pev);
+
+    const auto modifiers = qt_modifiers_from_mir(mir_pointer_event_modifiers(pev));
+    const auto localPoint = QPointF(mir_pointer_event_axis_value(pev, mir_pointer_axis_x),
+                                    mir_pointer_event_axis_value(pev, mir_pointer_axis_y));
 
     switch (action) {
     case mir_pointer_action_button_up:
@@ -620,3 +598,76 @@ void UbuntuInput::dispatchOrientationEvent(QWindow *window, const MirOrientation
                                 new OrientationChangeEvent(OrientationChangeEvent::mType, orientation));
 }
 
+void UbuntuInput::handleSurfaceEvent(const QPointer<UbuntuWindow> &window, const MirSurfaceEvent *event)
+{
+    auto surfaceEventAttribute = mir_surface_event_get_attribute(event);
+
+    switch (surfaceEventAttribute) {
+    case mir_surface_attrib_focus: {
+        const bool focused = mir_surface_event_get_attribute_value(event) == mir_surface_focused;
+        // Mir may have sent a pair of focus lost/gained events, so we need to "peek" into the queue
+        // so that we don't deactivate windows prematurely.
+        if (focused) {
+            mPendingFocusGainedEvents--;
+            window->handleSurfaceFocused();
+            QWindowSystemInterface::handleWindowActivated(window->window(), Qt::ActiveWindowFocusReason);
+
+            // NB: Since processing of system events is queued, never check qGuiApp->applicationState()
+            //     as it might be outdated. Always call handleApplicationStateChanged() with the latest
+            //     state regardless.
+            QWindowSystemInterface::handleApplicationStateChanged(Qt::ApplicationActive);
+
+        } else if(!mPendingFocusGainedEvents) {
+            qCDebug(ubuntumirclient, "No windows have focus");
+            QWindowSystemInterface::handleWindowActivated(nullptr, Qt::ActiveWindowFocusReason);
+            QWindowSystemInterface::handleApplicationStateChanged(Qt::ApplicationInactive);
+        }
+        break;
+    }
+    case mir_surface_attrib_visibility:
+        window->handleSurfaceExposeChange(
+                    mir_surface_event_get_attribute_value(event) == mir_surface_visibility_exposed);
+        break;
+    // Remaining attributes are ones client sets for server, and server should not override them
+    case mir_surface_attrib_state: {
+        MirSurfaceState state = static_cast<MirSurfaceState>(mir_surface_event_get_attribute_value(event));
+
+        if (state == mir_surface_state_hidden) {
+            window->handleSurfaceVisibilityChanged(false);
+        } else {
+            // it's visible!
+            window->handleSurfaceVisibilityChanged(true);
+            window->handleSurfaceStateChanged(mirSurfaceStateToWindowState(state));
+        }
+        break;
+    }
+    case mir_surface_attrib_type:
+    case mir_surface_attrib_swapinterval:
+    case mir_surface_attrib_dpi:
+    case mir_surface_attrib_preferred_orientation:
+    case mir_surface_attribs:
+        break;
+    }
+}
+
+void UbuntuInput::handleSurfaceOutputEvent(const QPointer<UbuntuWindow> &window, const MirSurfaceOutputEvent *event)
+{
+    const uint32_t outputId = mir_surface_output_event_get_output_id(event);
+    const int dpi = mir_surface_output_event_get_dpi(event);
+    const MirFormFactor formFactor = mir_surface_output_event_get_form_factor(event);
+    const float scale = mir_surface_output_event_get_scale(event);
+
+    const auto screenObserver = mIntegration->screenObserver();
+    UbuntuScreen *screen = screenObserver->findScreenWithId(outputId);
+    if (!screen) {
+        qCWarning(ubuntumirclient) << "Mir notified window" << window->window() << "on an unknown screen with id" << outputId;
+        return;
+    }
+
+    screenObserver->handleScreenPropertiesChange(screen, dpi, formFactor, scale);
+    window->handleScreenPropertiesChange(formFactor, scale);
+
+    if (window->screen() != screen) {
+        QWindowSystemInterface::handleWindowScreenChanged(window->window(), screen->screen());
+    }
+}

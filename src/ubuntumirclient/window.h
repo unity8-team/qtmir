@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015 Canonical, Ltd.
+ * Copyright (C) 2014-2016 Canonical, Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3, as published by
@@ -18,25 +18,31 @@
 #define UBUNTU_WINDOW_H
 
 #include <qpa/qplatformwindow.h>
-#include <QLoggingCategory>
 #include <QSharedPointer>
 #include <QMutex>
 
+#include <mir_toolkit/common.h> // needed only for MirFormFactor enum
+
 #include <memory>
 
+#include <EGL/egl.h>
+
+class UbuntuClipboard;
 class UbuntuClientIntegration;
+class UbuntuNativeInterface;
 class UbuntuInput;
 class UbuntuScreen;
 class UbuntuSurface;
-struct MirConnection;
 struct MirSurface;
+class MirConnection;
 
 class UbuntuWindow : public QObject, public QPlatformWindow
 {
     Q_OBJECT
 public:
-    UbuntuWindow(QWindow *w, UbuntuClientIntegration *integration, UbuntuScreen *screen,
-                 UbuntuInput *input, MirConnection *mirConnection);
+    UbuntuWindow(QWindow *w, const QSharedPointer<UbuntuClipboard> &clipboard,
+                 UbuntuInput *input, UbuntuNativeInterface* native, EGLDisplay eglDisplay, EGLConfig eglConfig,
+                 MirConnection *mirConnection);
     virtual ~UbuntuWindow();
 
     // QPlatformWindow methods.
@@ -51,27 +57,36 @@ public:
 
     QPoint mapToGlobal(const QPoint &pos) const override;
 
+    // Additional Window properties exposed by NativeInterface
+    MirFormFactor formFactor() const { return mFormFactor; }
+    float scale() const { return mScale; }
+
     // New methods.
     void *eglSurface() const;
     MirSurface *mirSurface() const;
     void handleSurfaceResized(int width, int height);
+    void handleSurfaceExposeChange(bool exposed);
     void handleSurfaceFocused();
     void handleSurfaceVisibilityChanged(bool visible);
     void handleSurfaceStateChanged(Qt::WindowState state);
     void onSwapBuffersDone();
+    void handleScreenPropertiesChange(MirFormFactor formFactor, float scale);
 
 private:
-    void enablePanelHeightHack(bool enable);
+    void updatePanelHeightHack(bool enable);
     void updateSurfaceState();
-
     mutable QMutex mMutex;
     const WId mId;
+    const QSharedPointer<UbuntuClipboard> mClipboard;
     const UbuntuClientIntegration *mIntegration;
     Qt::WindowState mWindowState;
     Qt::WindowFlags mWindowFlags;
     bool mWindowVisible;
-
+    bool mWindowExposed;
+    UbuntuNativeInterface *mNativeInterface;
     std::unique_ptr<UbuntuSurface> mSurface;
+    float mScale;
+    MirFormFactor mFormFactor;
 };
 
 #endif // UBUNTU_WINDOW_H

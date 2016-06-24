@@ -1,3 +1,49 @@
+qtubuntu (0.62+16.10.20160620-0ubuntu1) yakkety; urgency=medium
+
+  * Revert r324 "EGL convenience" (LP: #1594198)
+
+ -- Michał Sawicz <michal.sawicz@canonical.com>  Mon, 20 Jun 2016 08:49:40 +0000
+
+qtubuntu (0.62+16.10.20160614-0ubuntu1) yakkety; urgency=medium
+
+  [ Daniel d'Andrada ]
+  * Generate better mir session names
+
+  [ Gerry Boland ]
+  * Convert UbuntuOpenGLContext to use QEGLPlatformContext, and allow
+    clients to customize chosen GLConfig (LP: #1507817, #1549455)
+  * Integration: no need for the non-const versions of createWindow and
+    createGLContext
+
+  [ Nick Dedekind ]
+  * Support for cross building
+
+ -- Albert Astals Cid <albert.astals@canonical.com>  Tue, 14 Jun 2016 08:34:32 +0000
+
+qtubuntu (0.62+16.10.20160527.1-0ubuntu1) yakkety; urgency=medium
+
+  [ Albert Astals Cid ]
+  * Enable workaround_brokenFBOReadBack on the Mali 400
+  * Enable workaround_brokenFBOReadBack on the Mali-T760
+  * Enable workaround_brokenFBOReadBack on the PowerVR Rogue G6200
+
+  [ Michael Terry ]
+  * Build qtubuntu for arm64, and drop ancient qthybris transition
+    package.
+
+ -- Michael Terry <michael.terry@canonical.com>  Fri, 27 May 2016 13:05:27 +0000
+
+qtubuntu (0.62+16.04.20160428-0ubuntu1) xenial; urgency=medium
+
+  [ Daniel d'Andrada, Gerry Boland, Michał Sawicz, Nick Dedekind ]
+  * Proper support for multiple screens and dynamic scaling support (LP:
+    #1534682, #1573532)
+
+  [ Robert Bruce Park ]
+  * Inline GLES packaging using a quilt patch.
+
+ -- Michał Sawicz <michal.sawicz@canonical.com>  Thu, 28 Apr 2016 15:36:15 +0000
+
 qtubuntu (0.62+16.04.20160322-0ubuntu1) xenial; urgency=medium
 
   [ Lukáš Tinkl ]
