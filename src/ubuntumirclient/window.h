@@ -28,7 +28,6 @@
 #include <EGL/egl.h>
 
 class UbuntuClipboard;
-class UbuntuClientIntegration;
 class UbuntuNativeInterface;
 class UbuntuInput;
 class UbuntuScreen;
@@ -78,7 +77,6 @@ private:
     mutable QMutex mMutex;
     const WId mId;
     const QSharedPointer<UbuntuClipboard> mClipboard;
-    const UbuntuClientIntegration *mIntegration;
     Qt::WindowState mWindowState;
     Qt::WindowFlags mWindowFlags;
     bool mWindowVisible;
