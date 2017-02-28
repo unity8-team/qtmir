@@ -27,9 +27,6 @@
 #include <debughelpers.h>
 #include <mirqtconversion.h>
 
-// Mir
-#include <mir/scene/surface.h>
-
 // Qt
 #include <QGuiApplication>
 
@@ -37,6 +34,14 @@ Q_LOGGING_CATEGORY(QTMIR_SURFACEMANAGER, "qtmir.surfacemanager", QtInfoMsg)
 
 #define DEBUG_MSG qCDebug(QTMIR_SURFACEMANAGER).nospace().noquote() << __func__
 #define WARNING_MSG qCWarning(QTMIR_SURFACEMANAGER).nospace().noquote() << __func__
+
+namespace {
+    void *miralWindowToPointer(const miral::Window &window)
+    {
+        return static_cast<std::shared_ptr<mir::scene::Surface>>(window).get();
+    }
+} // namespace
+
 
 using namespace qtmir;
 namespace unityapi = unity::shell::application;
@@ -90,22 +95,21 @@ void SurfaceManager::forgetMirSurface(const miral::Window &window)
 
 void SurfaceManager::onWindowAdded(const NewWindow &window)
 {
-    {
-        std::shared_ptr<mir::scene::Surface> surface = window.surface;
-        DEBUG_MSG << " mir::scene::Surface[type=" << mirSurfaceTypeToStr(surface->type())
-            << ",parent=" << (void*)(surface->parent().get())
-            << ",state=" << mirSurfaceStateToStr(surface->state())
-            << ",top_left=" << toQPoint(surface->top_left())
-            << "]";
-    }
+    const auto &windowInfo = window.windowInfo;
 
-    auto mirSession = window.windowInfo.window().application();
-    SessionInterface* session = m_sessionManager->findSession(mirSession.get());
+    DEBUG_MSG << " miral::Window[" << miralWindowToPointer(windowInfo.window())
+              << ",type=" << mirSurfaceTypeToStr(windowInfo.type())
+              << ",parent=" << miralWindowToPointer(windowInfo.parent())
+              << ",state=" << mirSurfaceStateToStr(windowInfo.state())
+              << ",top_left=" << toQPoint(windowInfo.window().top_left())
+              << "]";
 
-    MirSurface *parentSurface;
-    {
-        std::shared_ptr<mir::scene::Surface> surface = window.windowInfo.window();
-        parentSurface = find(surface->parent());
+    const auto &application = windowInfo.window().application();
+    SessionInterface* session = m_sessionManager->findSession(application.get());
+
+    MirSurface *parentSurface = nullptr;
+    if (const auto &parent = windowInfo.parent()) {
+        parentSurface = find(parent);
     }
 
     auto surface = new MirSurface(window, m_windowController, session, parentSurface);
@@ -139,16 +143,6 @@ MirSurface *SurfaceManager::find(const miral::Window &window) const
 {
     Q_FOREACH(const auto surface, m_allSurfaces) {
         if (surface->window() == window) {
-            return surface;
-        }
-    }
-    return nullptr;
-}
-
-MirSurface *SurfaceManager::find(const std::shared_ptr<mir::scene::Surface> &needle) const
-{
-    Q_FOREACH(const auto surface, m_allSurfaces) {
-        if (surface->window() == needle) {
             return surface;
         }
     }
