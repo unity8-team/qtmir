@@ -50,8 +50,11 @@
 // Unity API
 #include <unity/shell/application/MirSurfaceInterface.h>
 
-namespace ms = mir::scene;
+// Ubuntu App Launch
+#include <ubuntu-app-launch/appid.h>
 
+namespace ms = mir::scene;
+namespace ual = ubuntu::app_launch;
 namespace unityapi = unity::shell::application;
 
 #define DEBUG_MSG qCDebug(QTMIR_APPLICATIONS).nospace() << "ApplicationManager::" << __func__
@@ -63,12 +66,10 @@ namespace {
 
 // FIXME: To be removed once shell has fully adopted short appIds!!
 QString toShortAppIdIfPossible(const QString &appId) {
-    QRegExp longAppIdMask(QStringLiteral("[a-z0-9][a-z0-9+.-]+_[a-zA-Z0-9+.-]+_[0-9][a-zA-Z0-9.+:~-]*"));
-    if (longAppIdMask.exactMatch(appId)) {
+    auto ualAppID = ual::AppID::parse(appId.toStdString());
+    if (!ualAppID.empty()) {
         qWarning() << "WARNING: long App ID encountered:" << appId;
-        // input string a long AppId, chop the version string off the end
-        QStringList parts = appId.split(QStringLiteral("_"));
-        return QStringLiteral("%1_%2").arg(parts.first(), parts.at(1));
+        return QString::fromStdString(ualApp.persistentID());
     }
     return appId;
 }
