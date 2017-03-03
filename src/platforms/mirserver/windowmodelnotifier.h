@@ -92,8 +92,6 @@ public:
     WindowNotifierObserver(const miral::Window &window);
     virtual ~WindowNotifierObserver();
 
-    static void foreachObserverForWindow(const miral::Window &window, std::function<void(WindowNotifierObserver*)> fn);
-
 Q_SIGNALS:
     void surfaceCreated();
     void surfaceRemoved();
