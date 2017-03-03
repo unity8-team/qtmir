@@ -108,8 +108,8 @@ set(MIRSERVER_QPA_PLUGIN_SRC
     ${APPLICATION_API_INCLUDEDIR}/unity/shell/application/Mir.h
     ${CMAKE_SOURCE_DIR}/src/common/appnotifier.h
     ${CMAKE_SOURCE_DIR}/src/common/windowcontrollerinterface.h
-    ${CMAKE_SOURCE_DIR}/src/common/windowmodelnotifier.h
     inputdeviceobserver.cpp
+    windowmodelnotifier.cpp
     $<TARGET_OBJECTS:miral-prototypes>
 # We need to run moc on these headers
     ${APPLICATION_API_INCLUDEDIR}/unity/shell/application/MirMousePointerInterface.h

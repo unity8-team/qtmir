@@ -251,6 +251,8 @@ private:
 
     class SurfaceObserverImpl;
     std::shared_ptr<SurfaceObserverImpl> m_surfaceObserver;
+    class WindowNotifierObserverImpl;
+    std::shared_ptr<WindowNotifierObserverImpl> m_windowModelObserver;
 
     QPoint m_position;
     QPoint m_requestedPosition;

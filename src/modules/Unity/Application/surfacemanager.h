@@ -48,22 +48,16 @@ public:
 private Q_SLOTS:
     void onWindowAdded(const qtmir::NewWindow &windowInfo);
     void onWindowRemoved(const miral::WindowInfo &windowInfo);
-    void onWindowReady(const miral::WindowInfo &windowInfo);
-    void onWindowMoved(const miral::WindowInfo &windowInfo, const QPoint topLeft);
-    void onWindowStateChanged(const miral::WindowInfo &windowInfo, Mir::State state);
-    void onWindowFocusChanged(const miral::WindowInfo &windowInfo, bool focused);
-    void onWindowsRaised(const std::vector<miral::Window> &windows);
-    void onWindowsRequestedRaise(const miral::WindowInfo &windowInfo);
 
 private:
     void connectToWindowModelNotifier(WindowModelNotifier *notifier);
     void rememberMirSurface(MirSurface *surface);
     void forgetMirSurface(const miral::Window &window);
-    MirSurface* find(const miral::WindowInfo &needle) const;
-    MirSurface* find(const miral::Window &needle) const;
-    MirSurface* find(const std::shared_ptr<mir::scene::Surface> &needle) const;
+    MirSurface* find(const miral::Window &window) const;
+    MirSurface* find(const std::shared_ptr<mir::scene::Surface> &surface) const;
+    QVector<unity::shell::application::MirSurfaceInterface*> find(const std::vector<miral::Window> &windows) const;
 
-    QVector<MirSurface*> m_allSurfaces;
+    QHash<qintptr, MirSurface*> m_allSurfaces;
 
     WindowControllerInterface *m_windowController;
     SessionManager* m_sessionManager;

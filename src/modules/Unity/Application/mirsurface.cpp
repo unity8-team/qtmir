@@ -20,6 +20,7 @@
 #include "session_interface.h"
 #include "timer.h"
 #include "timestamp.h"
+#include "tracepoints.h" // generated from tracepoints.tp
 
 // from common dir
 #include <debughelpers.h>
@@ -107,6 +108,33 @@ private:
     QMap<QByteArray, Qt::CursorShape> m_cursorNameToShape;
 };
 
+class MirSurface::WindowNotifierObserverImpl : public WindowNotifierObserver
+{
+public:
+    WindowNotifierObserverImpl(MirSurface* surface, const miral::Window &window)
+        : WindowNotifierObserver(window)
+    {
+        connect(this, &WindowNotifierObserver::surfaceRemoved, this, [surface]() {
+            surface->setLive(false);
+        });
+        connect(this, &WindowNotifierObserver::surfaceReady, this, [surface]() {
+            tracepoint(qtmir, firstFrameDrawn); // MirAL decides surface ready when it swaps its first frame
+            surface->setReady();
+        });
+        connect(this, &WindowNotifierObserver::surfaceMoved, this, [surface](const QPoint topLeft) {
+            surface->setPosition(topLeft);
+        });
+        connect(this, &WindowNotifierObserver::surfaceStateChanged, this, [surface](Mir::State state) {
+            surface->updateState(state);
+        });
+        connect(this, &WindowNotifierObserver::surfaceFocusChanged,   this, [surface]( bool focused) {
+            surface->setFocused(focused);
+        });
+        connect(this, &WindowNotifierObserver::surfaceRequestedRaise, this, [surface]() {
+            surface->requestFocus();
+        });
+    }
+};
 
 MirSurface::MirSurface(NewWindow newWindowInfo,
         WindowControllerInterface* controller,
@@ -132,6 +160,7 @@ MirSurface::MirSurface(NewWindow newWindowInfo,
     , m_visible(newWindowInfo.windowInfo.is_visible())
     , m_live(true)
     , m_surfaceObserver(std::make_shared<SurfaceObserverImpl>())
+    , m_windowModelObserver(std::make_shared<WindowNotifierObserverImpl>(this, m_window))
     , m_size(toQSize(m_window.size()))
     , m_state(toQtState(newWindowInfo.windowInfo.state()))
     , m_shellChrome(Mir::NormalChrome)
